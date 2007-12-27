@@ -1,0 +1,616 @@
+<?php
+
+function apachesolr_menu($may_cache) {
+  $items = array();
+  if ($may_cache) {
+    $items[] = array(
+      'path' => 'admin/settings/apachesolr',
+      'title' => t('Apache Solr search'),
+      'description' => t('Administer Apache Solr.'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => 'apachesolr_settings',
+      'access' => user_access('administer site configuration'),
+      );
+    $items[] = array(
+      'path' => 'admin/settings/apachesolr/index',
+      'title' => t('Apache Solr search index'),
+      'callback' => 'apachesolr_index_page',
+      'access' => user_access('administer site configuration'),
+    );
+  }
+  return $items;
+}
+
+function apachesolr_settings() {
+  $form = array();
+
+  $form['apachesolr_host'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Solr host name'),
+    '#default_value' => variable_get('apachesolr_host', 'localhost'),
+    '#description' => t('Host name of your Solr server, e.g. <code>localhost</code> or <code>example.com</code>.'),
+    );
+  $form['apachesolr_port'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Solr port'),
+    '#default_value' => variable_get('apachesolr_port', '8983'),
+    '#description' => t('Port on which the Solr server listens. Tomcat is 8080 by default.'),
+    );
+  $form['apachesolr_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Solr path'),
+    '#default_value' => variable_get('apachesolr_path', '/solr'),
+    '#description' => t('Path that identifies the Solr request handler to be used. Leave this as /solr for now.'),
+    );
+  return system_settings_form($form);
+}
+
+function apachesolr_index_page() {
+  //TODO: Should we be generating the dynamic blocks based on what is indexed?
+  // Or should we be using things like node_field.type to get this list?
+  $response = drupal_http_request(apachesolr_base_url(). "/admin/luke?numTerms=0");
+  if ($response->code == '200') {
+    $xml_response = simplexml_load_string($response->data);
+    $fields = $xml_response->xpath("//lst[@name='fields']/lst");
+    $rows = array();
+    foreach ((array)$fields as $field) {
+      $field_name = $field['name'];
+      $field_type = $field->xpath('./str');
+      $rows[] = array(
+        $field_name,
+        $field_type[0],
+      );
+    }
+  }
+  return theme('table', array(t('Field name'), t('Field index type')), $rows);
+}
+
+
+/**
+ * The point of this class is to manage the update index needs of multiple
+ * search modules. Each one needs to track its own list of nodes that need
+ * updating.
+ */
+class ApacheSolrUpdate {
+  private static $_namespaces = array();
+
+  /**
+   * Function to generically handle the fetching of nodes that need indexing on a cron run.
+   * It takes a namespace which needs to be unique to the calling module and manages
+   * all of the global variables and the shutdown function so that every search
+   * implementation can have its own without needing to duplicate the query.
+   * Returns a db_query $result.
+   * Modules need to then call apache_update_success after each node is successfully
+   * indexed.
+   */
+  static function getNodesToIndex($namespace) {
+    $change = $namespace. '_last_change';
+    $last = $namespace. '_last_id';
+    $limit = $namespace. '_cron_limit';
+
+    register_shutdown_function('ApacheSolrUpdate::shutdown');
+
+    $cron_last = variable_get($change, 0);
+    $cron_last_id = variable_get($last, 0);
+    $cron_limit = variable_get($limit, 100);
+
+    $result = db_query_range('SELECT GREATEST(IF(c.last_comment_timestamp IS NULL, 0, c.last_comment_timestamp), n.changed) as last_change, n.nid '.
+                             'FROM {node} n LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid '.
+                             'WHERE n.status = 1 '.
+                             '  AND ((GREATEST(n.changed, c.last_comment_timestamp) = %d AND n.nid > %d) OR (n.changed > %d OR c.last_comment_timestamp > %d)) '.
+                             'ORDER BY GREATEST(n.changed, c.last_comment_timestamp) ASC, n.nid ASC', $cron_last, $cron_last_id, $cron_last, $cron_last, $cron_last, 0, $cron_limit);
+    return $result;
+  }
+
+  static function shutdown() {
+    foreach (self::$_namespaces as $namespace => $vars) {
+      extract($vars);
+      if ($last_change && $last_id) {
+        variable_set("{$namespace}_cron_last", $last_change);
+        variable_set("{$namespace}_cron_last_nid", $last_id);
+      }
+    }
+  }
+
+  static function success($namespace, $last_change, $last_id) {
+    self::$_namespaces[$namespace] = array('last_change' => $last_change, 'last_id' => $last_id);
+  }
+
+}
+
+function apachesolr_update_index() {
+  // Get CCK fields list
+  $cck_fields = apachesolr_cck_fields();
+
+  $result = ApacheSolrUpdate::getNodesToIndex('apachesolr');
+  $count = 0;
+  while ($row = db_fetch_object($result)) {
+    // Variables to track the last item changed.
+    $solr_last_change = $row->last_change;
+    $solr_last_nid = $row->nid;
+
+    $node = node_load($row->nid);
+
+    // Build the node body.
+    $node = node_build_content($node, FALSE, FALSE);
+    $node->body = drupal_render($node->content);
+
+    $text = check_plain($node->title) .  $node->body;
+
+    // Fetch extra data normally not visible
+    $extra = node_invoke_nodeapi($node, 'update index');
+    foreach ($extra as $t) {
+      $text .= $t;
+    }
+
+    // Update solr index.
+    try {
+      $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
+      $document = new Apache_Solr_Document();
+      $fields = array('title', 'body', 'type', 'uid', 'changed', 'nid', 'comment_count');
+      foreach ((array)$node as $key => $value) {
+        if (in_array($key, $fields)) {
+          $document->$key = $value;
+        }
+
+        if ($cck_fields && strpos($key, 'field_') === 0) {
+          // Got a CCK field. See if it is to be indexed.
+          if (in_array($key, array_keys($cck_fields))) {
+            $function = $cck_fields[$key]['callback'];
+            if ($cck_fields[$key]['callback'] && function_exists($function)) {
+              $dynamic_fields = call_user_func_array($function, array($node, $key));
+            }
+            else {
+              $dynamic_fields = $node->$key;
+            }
+            if (is_array($dynamic_fields) && count($dynamic_fields) > 0) {
+              foreach ($dynamic_fields as $field) {
+                if (!empty($field['view'])) {
+                  $index_key = apachesolr_index_key($cck_fields[$key]);
+                  if ($cck_fields[$key]['multiple']) {
+                    $document->setMultiValue($index_key, $field['view']);
+                  }
+                  else {
+                    $document->$index_key = $field['view'];
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      if (is_array($node->taxonomy)) {
+        foreach ($node->taxonomy as $term) {
+          $document->setMultiValue('tid', $term->tid);
+          $document->setMultiValue('vid', $term->vid);
+          $document->setMultiValue('taxonomy_name', $term->name);
+        }
+      }
+      $document->text = $text;
+      $documents[] = $document;
+      if ($count++ % 20 == 19) {
+        watchdog('Apache Solr', "Adding ". count($documents). " docs");
+        $solr->addDocuments($documents);
+        $count = 0;
+        $documents = array();
+      }
+    }
+    catch (Exception $e) {
+      watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
+    }
+  }
+  if (is_object($solr)) {
+    // remaining documents
+    try {
+      watchdog('Apache Solr', "Adding ". count($documents). " docs in cleanup");
+      $solr->addDocuments($documents);
+    }
+    catch (Exception $e) {
+      watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
+    }
+    $solr->commit();
+    $solr->optimize(FALSE, FALSE);
+    ApacheSolrUpdate::success('apachesolr', $solr_last_change, $solr_last_nid);
+  }
+}
+
+function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  switch ($op) {
+    case 'delete':
+      try {
+        $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
+        $solr->deleteById($node->nid);
+        $solr->commit();
+      }
+      catch (Exception $e) {
+        watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
+      }
+      break;
+  }
+}
+
+function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
+  $term_title = t('Filter by term');
+  $type_title = t('Filter by type');
+  $author_title = t('Filter by author');
+  switch ($op) {
+    case 'list':
+      if (module_exists('taxonomy')) {
+        $vocabs = taxonomy_get_vocabularies();
+        foreach ($vocabs as $vid => $vocab) {
+          $blocks['vocabulary-'. $vid] = array('info' => t('Filter by @name', array('@name' => $vocab->name)));
+        }
+      }
+      $blocks['type'] = array('info' => $type_title);
+      $blocks['author'] = array('info' => $author_title);
+
+      if ($fields = apachesolr_cck_fields()) {
+        foreach ($fields as $name => $field) {
+          $index_key = apachesolr_index_key($field);
+          $label = db_result(db_query("SELECT label FROM {node_field_instance} WHERE field_name = '%s'", $name));
+          $blocks[$index_key] = array('info' => t('Filter by @field', array('@field' => $label)));
+        }
+      }
+      return $blocks;
+
+    case 'view':
+      if (arg(0) == 'search') {
+        $query =& apachesolr_drupal_query();
+        $response =& apachesolr_static_response_cache();
+        if (empty($response)) {
+          return;
+        }
+
+        if ((strpos($delta, 'vocabulary-') === 0) && module_exists('taxonomy')) {
+          // On first time through here build all the terms. Static caching
+          // will make them available for other vocabulary blocks.
+          static $terms;
+          if (empty($terms)) {
+            if (is_array($response->facets->tid)) {
+              $contains_active = FALSE;
+              foreach ($response->facets->tid as $tid => $count) {
+                unset($unclick_link);
+                unset($active);
+                $term = taxonomy_get_term($tid);
+                $new_query = clone $query;
+                if ($active = $query->has_field('tid', $tid)) {
+                  $contains_active = TRUE;
+                  $new_query->remove_field('tid', $term->tid);
+                  $path = 'search/'. arg(1). '/'. $new_query->get_query();
+                  $unclick_link = theme('apachesolr_unclick_link', $path);
+                }
+                else {
+                  $new_query->add_field('tid', $term->tid);
+                  $path = 'search/'. arg(1). '/'. $new_query->get_query();
+                }
+                $countsort = $count == 0 ? '' : 1 / $count;
+                // if numdocs == 1 and !active, don't add.
+                if ($response->numFound == 1 && !$active) {
+                  // skip
+                }
+                else {
+                  $terms[$term->vid][$active ? $countsort. $term->name : 1 + $countsort. $term->name] = theme('apachesolr_facet_item', $term->name, $count, $path, $active, $unclick_link);
+                }
+              }
+            }
+          }
+          $vid = substr($delta, 11, 1);
+          $vocab = taxonomy_get_vocabulary($vid);
+          if (is_numeric($vid) && is_array($terms) && is_array($terms[$vid])) {
+            ksort($terms[$vid]);
+            return array('subject' => t('Filter by @name', array('@name' => $vocab->name)),
+                         'content' => theme('apachesolr_facet_list', $terms[$vid]));
+          }
+          else {
+            return;
+          }
+        }
+
+        switch ($delta) {
+          case 'type':
+            if (is_array($response->facets->type)) {
+              $contains_active = FALSE;
+              foreach ($response->facets->type as $t => $count) {
+                unset($unclick_link);
+                unset($active);
+                $type = node_get_types('name', $t);
+                $new_query = clone $query;
+                if ($active = $query->has_field('type', $t)) {
+                  $contains_active = TRUE;
+                  $new_query->remove_field('type', $t);
+                  $path = 'search/'. arg(1). '/'. $new_query->get_query();
+                  $unclick_link = theme('apachesolr_unclick_link', $path);
+                }
+                else {
+                  $new_query->add_field('type', $t);
+                  $path = 'search/'. arg(1). '/'. $new_query->get_query();
+                }
+                $countsort = $count == 0 ? '' : 1 / $count;
+                // if numdocs == 1 and !active, don't add.
+                if ($response->numFound == 1 && !$active) {
+                  // skip
+                }
+                else {
+                  $types[$active ? $countsort. $type : 1 + $countsort. $type] = theme('apachesolr_facet_item', $type, $count, $path, $active, $unclick_link);
+                }
+              }
+              if (is_array($types)) {
+                ksort($types);
+                $output = theme('apachesolr_facet_list', $types);
+                return array('subject' => $type_title, 'content' => $output);
+              }
+            }
+            break;
+          case 'author':
+            if (is_array($response->facets->uid)) {
+              $contains_active = FALSE;
+              foreach ($response->facets->uid as $uid => $count) {
+                unset($unclick_link);
+                unset($active);
+                $name = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $uid));
+                $new_query = clone $query;
+                if ($active = $query->has_field('uid', $uid)) {
+                  $contains_active = TRUE;
+                  $new_query->remove_field('uid', $uid);
+                  $path = 'search/'. arg(1). '/'. $new_query->get_query();
+                  $unclick_link = theme('apachesolr_unclick_link', $path);
+                }
+                else {
+                  $new_query->add_field('uid', $uid);
+                  $path = 'search/'. arg(1). '/'. $new_query->get_query();
+                }
+                $countsort = $count == 0 ? '' : 1 / $count;
+                // if numdocs == 1 and !active, don't add.
+                if ($response->numFound == 1 && !$active) {
+                  // skip
+                }
+                else {
+                  $users[$active ? $countsort. name : 1 + $countsort. $name] = theme('apachesolr_facet_item', $name, $count, $path, $active, $unclick_link);
+                }
+              }
+              if (is_array($users)) {
+                ksort($users);
+                $output = theme('apachesolr_facet_list', $users);
+                return array('subject' => $author_title, 'content' => $output);
+              }
+            }
+            break;
+
+          default:
+           if ($fields = apachesolr_cck_fields()) {
+            foreach ($fields as $name => $field) {
+              $index_key = apachesolr_index_key($field);
+              if ($index_key == $delta) {
+                if (is_array($response->facets->$index_key)) {
+                  $contains_active = FALSE;
+                  foreach ($response->facets->$index_key as $facet => $count) {
+                    unset($unclick_link);
+                    unset($active);
+                    $new_query = clone $query;
+                    if ($active = $query->has_field($index_key, $facet)) {
+                      $contains_active = TRUE;
+                      $new_query->remove_field($index_key, $facet);
+                      $path = 'search/'. arg(1). '/'. $new_query->get_query();
+                      $unclick_link = theme('apachesolr_unclick_link', $path);
+                    }
+                    else {
+                      $new_query->add_field($index_key, $facet);
+                      $path = 'search/'. arg(1). '/'. $new_query->get_query();
+                    }
+                    $countsort = $count == 0 ? '' : 1 / $count;
+                    // if numdocs == 1 and !active, don't add.
+                    if ($response->numFound == 1 && !$active) {
+                      // skip
+                    }
+                    else {
+                      $facets[$active ? $countsort. $facet : 1 + $countsort. $facet] = theme('apachesolr_facet_item', $facet, $count, $path, $active, $unclick_link);
+                    }
+                  }
+                  if (is_array($facets)) {
+                    ksort($facets);
+                    $output = theme('apachesolr_facet_list', $facets);
+                    $label = db_result(db_query("SELECT label FROM {node_field_instance} WHERE field_name = '%s'", $name));
+                    return array('subject' => t('Filter by @field', array('@field' => $label)),
+                                 'content' => $output);
+                  }
+                }
+              }
+            }
+          }
+        }
+        break;
+      }
+  }
+}
+
+function apachesolr_form_alter($form_id, &$form) {
+  $arg = arg(1);
+  $alias = drupal_lookup_path('alias', "search/{$arg}");
+  if (preg_match("&/search/{$arg}&", $form['#action']) ||
+      preg_match("&/{$alias}&", $form['#action'])  ||
+      strpos($form['#action'], 'search/sheetmusic') ||
+      strpos($form['#action'], $alias)) {
+    if (!isset($_POST['form_id'])) {
+      // Set up our validation function
+      $form['#validate']['apachesolr_search_validate'] = array();
+
+      // if no keys, there's nothing to do.
+      if (empty($form['basic']['inline']['keys']['#default_value'])) {
+        return;
+      }
+
+      // The $query is the true source for search key information
+      $query =& apachesolr_drupal_query();
+      $form['basic']['inline']['keys']['#default_value'] = $query->get_query_basic();
+    }
+  }
+}
+
+/**
+ * Factory method for solr singleton object. Structure allows for an arbitrary
+ * number of solr objects to be used based on the host, port, path combination.
+ * Get an instance like this:
+ *   $solr =& apachesolr_get_solr();
+ */
+function &apachesolr_get_solr($host = 'localhost', $port = 8983, $path = '/solr') {
+  static $solr_cache;
+
+  if (empty($solr_cache[$host][$port][$path])) {
+    $include_path = get_include_path();
+    set_include_path ('./'. drupal_get_path('module', 'apachesolr') .'/SolrPhpClient/');
+    include_once('Apache/Solr/Service.php');
+    set_include_path($include_path);
+    $solr_cache[$host][$port][$path] = new Apache_Solr_Service($host, $port, $path);
+  }
+  return $solr_cache[$host][$port][$path];
+}
+
+/**
+ * It is important to hold on to the Solr response object for the duration of the
+ * page request so that we can use it for things like building facet blocks.
+ */
+function &apachesolr_static_response_cache($response = NULL) {
+  static $_response;
+
+  if (!empty($response)) {
+    $_response = drupal_clone($response);
+  }
+  return $_response;
+}
+
+/*
+ * The query object is built from the keys. If you want to build queries
+ * programmatically you can pass in different keys. If you don't pass in
+ * any keys, search_get_keys() is used instead.
+ */
+function &apachesolr_drupal_query($keys = NULL, $reset = FALSE) {
+  static $_queries;
+
+  if ($reset) {
+    unset($_queries);
+  }
+
+  if (empty($keys)) {
+    $keys = search_get_keys();
+  }
+  if (empty($keys)) {
+    return;
+  }
+  if (empty($_queries) || empty($_queries[$keys])) {
+    include_once drupal_get_path('module', 'apachesolr'). '/Solr_Base_Query.php';
+    $_queries[$keys] = new Solr_Base_Query($keys);
+  }
+  return $_queries[$keys];
+}
+
+function apachesolr_base_url() {
+  return "http://". variable_get('apachesolr_host', 'localhost'). ':'. variable_get('apachesolr_port', '8983'). variable_get('apachesolr_path', '/solr');
+}
+
+function apachesolr_index_key($field) {
+  switch ($field['index_type']) {
+    case 'text':
+      $type_prefix = 't';
+      break;
+    case 'string':
+      $type_prefix = 's';
+      break;
+    case 'integer':
+      $type_prefix = 'i';
+      break;
+    case 'double':
+      $type_prefix = 'p'; // reserve d for date
+      break;
+    case 'boolean':
+      $type_prefix = 'b';
+      break;
+    case 'date':
+      $type_prefix = 'd';
+      break;
+    default:
+      $type_prefix = 's';
+  }
+  $sm = $field['multiple'] ? 'm' : 's';
+  return $type_prefix . $sm . $field['name'];
+}
+
+/**
+ * This invokes the hook_apachesolr_cck_field_mappings to find out how to handle
+ * CCK fields.
+ */
+function apachesolr_cck_fields() {
+  static $_fields;
+  if (module_exists('text')) {
+    $mappings = module_invoke_all('apachesolr_cck_field_mappings');
+    if (is_null($_fields)) {
+      $_fields = array();
+      $result = db_query("SELECT field_name, multiple, type FROM {node_field}");
+
+      while ($row = db_fetch_object($result)) {
+        if (in_array($row->type, array_keys($mappings))) {
+          $_fields[$row->field_name] = array(
+            'name' => $row->field_name,
+            'multiple' => $row->multiple ? TRUE : FALSE,
+            'field_type' => $row->type,
+            'index_type' => empty($mappings) ? 'string' : $mappings[$row->type]['index_type'],
+            'callback' => empty($mappings[$row->type]['callback']) ? NULL : $mappings[$row->type]['callback'],
+          );
+        }
+      }
+    }
+    return $_fields;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+function apachesolr_simpletest() {
+  $dir = drupal_get_path('module', 'apachesolr'). '/tests';
+  $tests = file_scan_directory($dir, '\.test$');
+  return array_keys($tests);
+}
+
+function theme_apachesolr_facet_item($name, $count, $path, $active = FALSE, $unclick_link = NULL) {
+  $attributes = array();
+  if ($active) {
+    $attributes['class'] = 'active';
+  }
+  if ($unclick_link) {
+    return $unclick_link . " $name";
+  }
+  else {
+    return l($name. " ($count)",  $path, $attributes);
+  }
+}
+
+function theme_apachesolr_unclick_link($url) {
+  return l("(-)", $url);
+}
+
+function theme_apachesolr_facet_list($items) {
+  return theme('item_list', $items);
+}
+
+/**
+ * Return the human readable text for a content type.
+ */
+function theme_apachesolr_breadcrumb_type($type) {
+  return node_get_types('name', $type);
+}
+
+/**
+ * Return the username from $uid
+ */
+function theme_apachesolr_breadcrumb_uid($uid) {
+  $user = user_load(array('uid' => $uid));
+  return $user->name;
+}
+
+/**
+ * Return the term name from $tid.
+ */
+function theme_apachesolr_breadcrumb_tid($tid) {
+  $term = taxonomy_get_term($tid);
+  return $term->name;
+}

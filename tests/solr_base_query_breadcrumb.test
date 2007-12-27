@@ -1,0 +1,36 @@
+<?php
+
+class DrupalSolrQueryBreadcrumbTests extends DrupalTestCase {
+  function get_info() {
+    return array('name' => 'Solr/query breadcrumb',
+      'desc' => 'Make sure breadcrumbs get formed correctly.',
+      'group' => 'Apache Solr tests');
+  }
+
+  private $breadcrumb;
+  private $menu_active_breadcrumb;
+
+  function setUp() {
+    parent::setUp();
+    $types = node_get_types('types');
+    shuffle($types);
+    $type = array_pop($types);
+    $this->query_string = "sudo tid:44 uid:46 type:". $type->type. ' tid:58';
+    $query =& apachesolr_drupal_query($this->query_string, TRUE);
+    $this->breadcrumb = $query->get_breadcrumb();
+    $this->menu_active_breadcrumb = menu_get_active_breadcrumb();
+  }
+
+  function testBreadcrumbIsArray() {
+    return $this->assertTrue(is_array($this->breadcrumb));
+  }
+
+  function testBreadcrumbCount() {
+    $string_count = count(explode(' ', $this->query_string));
+    $menu_active_count = count($this->menu_active_breadcrumb);
+    $breadcrumb_count = $menu_active_count + $string_count - 1;
+    $query_breadcrumb_count = count($this->breadcrumb);
+    $message = "The number of items in the breadcrumb ($query_breadcrumb_count) should be equal to the number of items in \$menu_active_breadcrumb ($menu_active_count) plus the number of words in \$string ($string_count) minus 1.";
+    return $this->assertEqual($query_breadcrumb_count, $breadcrumb_count, "'%s' ". t($message));
+  }
+}

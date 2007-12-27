@@ -1,0 +1,9 @@
+<?php
+
+function apachesolr_uninstall() {
+  variable_del('apachesolr_cron_last');
+  variable_del('apachesolr_cron_last_nid');
+  variable_del('apachesolr_host');
+  variable_del('apachesolr_port');
+  variable_del('apachesolr_path');
+}

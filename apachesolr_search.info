@@ -1,0 +1,4 @@
+name = Apache Solr search
+description = Search with solr
+dependencies = search apachesolr
+package = Solr
