@@ -1,0 +1,61 @@
+<?php
+
+function apachesolr_image_apachesolr_update_index(&$document, $node) {
+  if ($node->type == 'image') {
+    $areas = array();
+    $sizes = image_get_derivative_sizes($node->images['_original']);
+    foreach ($sizes as $name => $info) {
+      $areas[$name] = $info['width'] * $info['height'];
+    }
+    asort($areas);
+    $image = FALSE;
+    foreach ($areas as $preset => $size) {
+      $image = $node->images[$preset];
+      break;
+    }
+    if ($image) {
+      $index_key = 'ssfield_imagemodule_image';
+      $document->$index_key = $image;
+    }
+  }
+}
+
+/**
+ * Format a single result entry of a search query. This function is normally
+ * called by theme_search_page() or hook_search_page().
+ *
+ * @param $item
+ *   A single search result as returned by hook_search(). The result should be
+ *   an array with keys "link", "title", "type", "user", "date", and "snippet".
+ *   Optionally, "extra" can be an array of extra info to show along with the
+ *   result.
+ * @param $type
+ *   The type of item found, such as "user" or "contentsearch".
+ *
+ * @ingroup themeable
+ */
+function phptemplate_search_item($item, $type) {
+  $output = ' <dt class="title"><a href="'. check_url($item['link']) .'">'. check_plain($item['title']) .'</a></dt>';
+  $info = array();
+  if ($item['type']) {
+    $info[] = check_plain($item['type']);
+  }
+  if ($item['user']) {
+    $info[] = $item['user'];
+  }
+  if ($item['date']) {
+    $info[] = format_date($item['date'], 'small');
+  }
+  if (is_array($item['extra'])) {
+    $info = array_merge($info, $item['extra']);
+  }
+  $break = '';
+  if ($node = $item['node']) {
+    if ($path = $node->ssfield_imagemodule_image) {
+      $item['snippet'] = '<span class="image">'. theme('image', $path, '', '', array('align' => 'left')). '</span>'. $item['snippet'];
+      $break = '<br clear="all"/>';
+    }
+  }
+  $output .= ' <dd>'. ($item['snippet'] ? '<p>'. $item['snippet'] . $break. '</p>' : '') .'<p class="search-info">'. implode(' - ', $info) .'</p></dd>';
+  return $output;
+}
