@@ -56,8 +56,12 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         if ($total > 0) {
           foreach ($response->documents as $doc) {
             $doc->name = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $doc->uid));
-            $extra = node_invoke_nodeapi($doc, 'search result');
+            $extra = node_invoke_nodeapi(&$doc, 'search result');
             $extra['score'] = $doc->score;
+            $snippet = search_excerpt($keys, $doc->body);
+            if (trim($snippet) == '...') {
+              $snippet = '';
+            }
             $results[] = array('link' => url('node/'. $doc->nid, NULL, NULL, TRUE),
                                'type' => node_get_types('name', $doc),
                                'title' => $doc->title,
@@ -66,7 +70,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
                                'node' => $doc,
                                'extra' => $extra,
                                'score' => $doc->score,
-                               'snippet' => search_excerpt($keys, $doc->body));
+                               'snippet' => $snippet);
           }
         }
         // Set breadcrumb

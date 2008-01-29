@@ -99,13 +99,12 @@ class ApacheSolrUpdate {
   static function getNodesToIndex($namespace) {
     $change = $namespace. '_last_change';
     $last = $namespace. '_last_id';
-    $limit = $namespace. '_cron_limit';
 
     register_shutdown_function('ApacheSolrUpdate::shutdown');
 
     $cron_last = variable_get($change, 0);
     $cron_last_id = variable_get($last, 0);
-    $cron_limit = variable_get($limit, 100);
+    $cron_limit = variable_get('search_cron_limit', 100);
 
     $result = db_query_range('SELECT GREATEST(IF(c.last_comment_timestamp IS NULL, 0, c.last_comment_timestamp), n.changed) as last_change, n.nid '.
                              'FROM {node} n LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid '.
@@ -162,7 +161,7 @@ class ApacheSolrUpdate {
         $document = new Apache_Solr_Document();
 
         // Let modules add to the document
-        //module_invoke_all('apachesolr_update_index', &$document, $node);
+        module_invoke_all('apachesolr_update_index', &$document, $node);
 
         $fields = array('title', 'body', 'type', 'uid', 'changed', 'nid', 'comment_count');
         foreach ((array)$node as $key => $value) {
