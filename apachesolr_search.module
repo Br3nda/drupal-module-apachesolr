@@ -1,5 +1,8 @@
 <?php
 
+function apachesolr_update_index() {
+  ApacheSolrUpdate::update_index('apachesolr');
+}
 
 function apachesolr_search_search($op = 'search', $keys = NULL) {
 
@@ -8,17 +11,16 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       return t('Search');
 
     case 'reset':
-      variable_del('apachesolr_cron_last');
-      variable_del('apachesolr_cron_last_nid');
+      ApacheSolrUpdate::reset('apachesolr');
       return;
 
     case 'status':
-      $last = variable_get('apachesolr_cron_last', 0);
-      $last_nid = variable_get('apachesolr_cron_last_nid', 0);
+      $change = ApacheSolrUpdate::get_change('apachesolr');
+      $last = ApacheSolrUpdate::get_last('apachesolr');
       $total = db_result(db_query('SELECT COUNT(*) FROM {node} WHERE status = 1'));
       $remaining = db_result(db_query('SELECT COUNT(*) FROM {node} n '.
                                          'LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid '.
-                                         'WHERE n.status = 1 AND ((GREATEST(n.created, n.changed, c.last_comment_timestamp) = %d AND n.nid > %d ) OR (n.created > %d OR n.changed > %d OR c.last_comment_timestamp > %d))', $last, $last_nid, $last, $last, $last));
+                                         'WHERE n.status = 1 AND ((GREATEST(n.created, n.changed, c.last_comment_timestamp) = %d AND n.nid > %d ) OR (n.created > %d OR n.changed > %d OR c.last_comment_timestamp > %d))', $change, $last, $change, $change, $change));
       return array('remaining' => $remaining, 'total' => $total);
 
     case 'search':
@@ -46,13 +48,13 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         }
         $params['start'] = $_GET['page'] * $params['rows'];
         $response = $solr->search($query->get_query(), $params['start'], $params['rows'], $params);
-        $total = $response->response->numFound;
+        $total = $response->numFound;
         // The response is cached so that it is accessible to the blocks and anything
         // else that needs it beyond the initial search.
         apachesolr_static_response_cache($response);
         pager_query("SELECT %d", 10, 0, NULL, $total);
-        if ($pager_total > 0) {
-          foreach ($response->response->docs as $doc) {
+        if ($total > 0) {
+          foreach ($response->documents as $doc) {
             $doc->name = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $doc->uid));
             $extra = node_invoke_nodeapi($doc, 'search result');
             $extra['score'] = $doc->score;

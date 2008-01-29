@@ -233,7 +233,7 @@ class Apache_Solr_Response
     $this->_parsedData->documents = $documents;
 
 
-    if ($fields = $xml->xpath("//lst[@name='facet_fields']/lst") && $fields) {
+    if ($fields = $xml->xpath("//lst[@name='facet_fields']/lst")) {
       foreach ($fields as $field) {
         $facet_name = (string) $field['name'];
         $facet_counts = array();
