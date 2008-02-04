@@ -72,7 +72,7 @@ function apachesolr_index_page() {
  * updating.
  */
 class ApacheSolrUpdate {
-  private static $_namespaces = array();
+  public static $_namespaces = array();
 
   static function reset($namespace) {
     variable_del($namespace. '_last_change');
@@ -80,11 +80,13 @@ class ApacheSolrUpdate {
   }
 
   static function get_change($namespace) {
-    return variable_get($namespace. '_last_change', 0);
+    $var = variable_get($namespace. '_last_change', 0);
+    return $var;
   }
 
   static function get_last($namespace) {
-    return variable_get($namespace. '_last_id', 0);
+    $var = variable_get($namespace. '_last_id', 0);
+    return $var;
   }
 
   /**
@@ -97,7 +99,7 @@ class ApacheSolrUpdate {
    * indexed.
    */
   static function getNodesToIndex($namespace) {
-    register_shutdown_function('ApacheSolrUpdate::shutdown');
+    register_shutdown_function('apachesolr_shutdown');
 
     $cron_change = self::get_change($namespace);
     $cron_last = self::get_last($namespace);
@@ -109,16 +111,6 @@ class ApacheSolrUpdate {
                              '  AND ((GREATEST(n.changed, c.last_comment_timestamp) = %d AND n.nid > %d) OR (n.changed > %d OR c.last_comment_timestamp > %d)) '.
                              'ORDER BY GREATEST(n.changed, c.last_comment_timestamp) ASC, n.nid ASC', $cron_change, $cron_last, $cron_change, $cron_change, $cron_change, 0, $cron_limit);
     return $result;
-  }
-
-  static function shutdown() {
-    foreach (self::$_namespaces as $namespace => $vars) {
-      extract($vars);
-      if ($last_change && $last_id) {
-        variable_set("{$namespace}_last_change", $last_change);
-        variable_set("{$namespace}_last_id", $last_id);
-      }
-    }
   }
 
   static function success($namespace, $last_change, $last_id) {
@@ -134,7 +126,7 @@ class ApacheSolrUpdate {
     while ($row = db_fetch_object($result)) {
       // Variables to track the last item changed.
       $solr_last_change = $row->last_change;
-      $solr_last_nid = $row->nid;
+      $solr_last_id = $row->nid;
 
       $node = node_load($row->nid);
 
@@ -222,7 +214,17 @@ class ApacheSolrUpdate {
       catch (Exception $e) {
         watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
       }
-      self::success('apachesolr', $solr_last_change, $solr_last_nid);
+      self::success('apachesolr', $solr_last_change, $solr_last_id);
+    }
+  }
+}
+
+function apachesolr_shutdown() {
+  foreach (ApacheSolrUpdate::$_namespaces as $namespace => $vars) {
+    extract($vars);
+    if ($last_change && $last_id) {
+      variable_set("{$namespace}_last_change", $last_change);
+      variable_set("{$namespace}_last_id", $last_id);
     }
   }
 }
