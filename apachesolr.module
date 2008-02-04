@@ -80,11 +80,11 @@ class ApacheSolrUpdate {
   }
 
   static function get_change($namespace) {
-    return variable_get($namespace. '_last_change');
+    return variable_get($namespace. '_last_change', 0);
   }
 
   static function get_last($namespace) {
-    return variable_get($namespace. '_last_id');
+    return variable_get($namespace. '_last_id', 0);
   }
 
   /**
@@ -97,20 +97,17 @@ class ApacheSolrUpdate {
    * indexed.
    */
   static function getNodesToIndex($namespace) {
-    $change = $namespace. '_last_change';
-    $last = $namespace. '_last_id';
-
     register_shutdown_function('ApacheSolrUpdate::shutdown');
 
-    $cron_last = variable_get($change, 0);
-    $cron_last_id = variable_get($last, 0);
+    $cron_change = self::get_change($namespace);
+    $cron_last = self::get_last($namespace);
     $cron_limit = variable_get('search_cron_limit', 100);
 
     $result = db_query_range('SELECT GREATEST(IF(c.last_comment_timestamp IS NULL, 0, c.last_comment_timestamp), n.changed) as last_change, n.nid '.
                              'FROM {node} n LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid '.
                              'WHERE n.status = 1 '.
                              '  AND ((GREATEST(n.changed, c.last_comment_timestamp) = %d AND n.nid > %d) OR (n.changed > %d OR c.last_comment_timestamp > %d)) '.
-                             'ORDER BY GREATEST(n.changed, c.last_comment_timestamp) ASC, n.nid ASC', $cron_last, $cron_last_id, $cron_last, $cron_last, $cron_last, 0, $cron_limit);
+                             'ORDER BY GREATEST(n.changed, c.last_comment_timestamp) ASC, n.nid ASC', $cron_change, $cron_last, $cron_change, $cron_change, $cron_change, 0, $cron_limit);
     return $result;
   }
 
@@ -119,7 +116,7 @@ class ApacheSolrUpdate {
       extract($vars);
       if ($last_change && $last_id) {
         variable_set("{$namespace}_last_change", $last_change);
-        variable_set("{$namespace}_last_nid", $last_id);
+        variable_set("{$namespace}_last_id", $last_id);
       }
     }
   }
@@ -127,7 +124,6 @@ class ApacheSolrUpdate {
   static function success($namespace, $last_change, $last_id) {
     self::$_namespaces[$namespace] = array('last_change' => $last_change, 'last_id' => $last_id);
   }
-
 
   static function update_index($namespace) {
     // Get CCK fields list
@@ -220,17 +216,15 @@ class ApacheSolrUpdate {
       try {
         watchdog('Apache Solr', "Adding ". count($documents). " docs in cleanup");
         $solr->addDocuments($documents);
+        $solr->commit();
+        $solr->optimize(FALSE, FALSE);
       }
       catch (Exception $e) {
         watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
       }
-      $solr->commit();
-      $solr->optimize(FALSE, FALSE);
       self::success('apachesolr', $solr_last_change, $solr_last_nid);
     }
   }
-
-
 }
 
 function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {

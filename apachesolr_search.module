@@ -54,8 +54,12 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         apachesolr_static_response_cache($response);
         pager_query("SELECT %d", 10, 0, NULL, $total);
         if ($total > 0) {
+          static $users = array();
           foreach ($response->documents as $doc) {
-            $doc->name = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $doc->uid));
+            if (empty($users[$doc->uid])) {
+              $users[$doc->uid] = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $doc->uid));
+            }
+            $doc->name = $users[$doc->uid];
             $extra = node_invoke_nodeapi(&$doc, 'search result');
             $extra['score'] = $doc->score;
             $snippet = search_excerpt($keys, $doc->body);
