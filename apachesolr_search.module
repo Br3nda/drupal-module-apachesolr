@@ -28,7 +28,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       // This is the object that does the communication with the solr server.
       $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
       // This is the object that knows about the query coming from the user.
-      $query =& apachesolr_drupal_query();
+      $query =& apachesolr_drupal_query($keys);
       try {
         $params = array(
           //'qt' => 'standard',

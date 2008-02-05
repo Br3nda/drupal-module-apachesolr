@@ -443,7 +443,6 @@ function apachesolr_form_alter($form_id, &$form) {
   $alias = drupal_lookup_path('alias', "search/{$arg}");
   if (preg_match("&/search/{$arg}&", $form['#action']) ||
       preg_match("&/{$alias}&", $form['#action'])  ||
-      strpos($form['#action'], 'search/sheetmusic') ||
       strpos($form['#action'], $alias)) {
     if (!isset($_POST['form_id'])) {
       // Set up our validation function
@@ -455,8 +454,9 @@ function apachesolr_form_alter($form_id, &$form) {
       }
 
       // The $query is the true source for search key information
-      $query =& apachesolr_drupal_query();
-      $form['basic']['inline']['keys']['#default_value'] = $query->get_query_basic();
+      if ($query =& apachesolr_drupal_query()) {
+        $form['basic']['inline']['keys']['#default_value'] = $query->get_query_basic();
+      }
     }
   }
 }
@@ -507,9 +507,6 @@ function &apachesolr_drupal_query($keys = NULL, $reset = FALSE) {
 
   if (empty($keys)) {
     $keys = search_get_keys();
-  }
-  if (empty($keys)) {
-    return;
   }
   if (empty($_queries) || empty($_queries[$keys])) {
     include_once drupal_get_path('module', 'apachesolr'). '/Solr_Base_Query.php';
