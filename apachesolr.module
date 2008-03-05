@@ -519,6 +519,11 @@ function apachesolr_base_url() {
   return "http://". variable_get('apachesolr_host', 'localhost'). ':'. variable_get('apachesolr_port', '8983'). variable_get('apachesolr_path', '/solr');
 }
 
+/**
+ * array('index_type' => 'integer',
+ *        'multiple' => TRUE,
+ *        ),
+ */
 function apachesolr_index_key($field) {
   switch ($field['index_type']) {
     case 'text':
