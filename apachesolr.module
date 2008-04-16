@@ -557,14 +557,16 @@ function apachesolr_index_key($field) {
  */
 function apachesolr_cck_fields() {
   static $_fields;
-  if (module_exists('text')) {
+  // If CCK isn't enabled, do nothing.
+  if (module_exists('content')) {
     $mappings = module_invoke_all('apachesolr_cck_field_mappings');
     if (is_null($_fields)) {
       $_fields = array();
-      $result = db_query("SELECT field_name, multiple, type FROM {node_field}");
+      $result = db_query("SELECT i.field_name, f.multiple, f.type, i.widget_type FROM {node_field_instance} i INNER JOIN {node_field} f ON i.field_name = f.field_name;");
 
       while ($row = db_fetch_object($result)) {
-        if (in_array($row->type, array_keys($mappings))) {
+        // Only deal with fields that have options widgets (facets don't make sense otherwise), or fields that have specific mappings.
+        if (($row->type == 'text' && in_array($row->widget_type, array('options_select', 'options_buttons'))) || in_array($row->type, array_keys($mappings))) {
           $_fields[$row->field_name] = array(
             'name' => $row->field_name,
             'multiple' => $row->multiple ? TRUE : FALSE,
