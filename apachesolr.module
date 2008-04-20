@@ -129,92 +129,93 @@ class ApacheSolrUpdate {
       $solr_last_id = $row->nid;
 
       $node = node_load($row->nid);
+                                       
+      if ($node->nid) {
+        // Build the node body.
+        $node = node_build_content($node, FALSE, FALSE);
+        $node->body = drupal_render($node->content);
 
-      // Build the node body.
-      $node = node_build_content($node, FALSE, FALSE);
-      $node->body = drupal_render($node->content);
+        $text = check_plain($node->title) .  $node->body;
 
-      $text = check_plain($node->title) .  $node->body;
+        // Fetch extra data normally not visible
+        $extra = node_invoke_nodeapi($node, 'update index');
+        foreach ($extra as $t) {
+          $text .= $t;
+        }
 
-      // Fetch extra data normally not visible
-      $extra = node_invoke_nodeapi($node, 'update index');
-      foreach ($extra as $t) {
-        $text .= $t;
-      }
+        // Update solr index.
+        try {
+          $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
+          $document = new Apache_Solr_Document();
 
+          // Let modules add to the document
+          module_invoke_all('apachesolr_update_index', &$document, $node);
 
-      // Update solr index.
-      try {
-        $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
-        $document = new Apache_Solr_Document();
+          $fields = array('title', 'body', 'type', 'uid', 'changed', 'nid', 'comment_count');
+          foreach ((array)$node as $key => $value) {
+            if (in_array($key, $fields)) {
+              $document->$key = $value;
+            }
 
-        // Let modules add to the document
-        module_invoke_all('apachesolr_update_index', &$document, $node);
-
-        $fields = array('title', 'body', 'type', 'uid', 'changed', 'nid', 'comment_count');
-        foreach ((array)$node as $key => $value) {
-          if (in_array($key, $fields)) {
-            $document->$key = $value;
-          }
-
-          if ($cck_fields && strpos($key, 'field_') === 0) {
-            // Got a CCK field. See if it is to be indexed.
-            if (in_array($key, array_keys($cck_fields))) {
-              $function = $cck_fields[$key]['callback'];
-              if ($cck_fields[$key]['callback'] && function_exists($function)) {
-                $dynamic_fields = call_user_func_array($function, array($node, $key));
-              }
-              else {
-                $dynamic_fields = $node->$key;
-              }
-              if (is_array($dynamic_fields) && count($dynamic_fields) > 0) {
-                foreach ($dynamic_fields as $field) {
-                  if (!empty($field['view'])) {
-                    $index_key = apachesolr_index_key($cck_fields[$key]);
-                    if ($cck_fields[$key]['multiple']) {
-                      $document->setMultiValue($index_key, $field['view']);
-                    }
-                    else {
-                      $document->$index_key = $field['view'];
+            if ($cck_fields && strpos($key, 'field_') === 0) {
+              // Got a CCK field. See if it is to be indexed.
+              if (in_array($key, array_keys($cck_fields))) {
+                $function = $cck_fields[$key]['callback'];
+                if ($cck_fields[$key]['callback'] && function_exists($function)) {
+                  $dynamic_fields = call_user_func_array($function, array($node, $key));
+                }
+                else {
+                  $dynamic_fields = $node->$key;
+                }
+                if (is_array($dynamic_fields) && count($dynamic_fields) > 0) {
+                  foreach ($dynamic_fields as $field) {
+                    if (!empty($field['view'])) {
+                      $index_key = apachesolr_index_key($cck_fields[$key]);
+                      if ($cck_fields[$key]['multiple']) {
+                        $document->setMultiValue($index_key, $field['view']);
+                      }
+                      else {
+                        $document->$index_key = $field['view'];
+                      }
                     }
                   }
                 }
               }
             }
           }
-        }
-        if (is_array($node->taxonomy)) {
-          foreach ($node->taxonomy as $term) {
-            $document->setMultiValue('tid', $term->tid);
-            $document->setMultiValue('vid', $term->vid);
-            $document->setMultiValue('taxonomy_name', $term->name);
+          if (is_array($node->taxonomy)) {
+            foreach ($node->taxonomy as $term) {
+              $document->setMultiValue('tid', $term->tid);
+              $document->setMultiValue('vid', $term->vid);
+              $document->setMultiValue('taxonomy_name', $term->name);
+            }
+          }
+          $document->text = $text;
+          $documents[] = $document;
+          if ($count++ % 20 == 19) {
+            watchdog('Apache Solr', "Adding ". count($documents). " docs");
+            $solr->addDocuments($documents);
+            $count = 0;
+            $documents = array();
           }
         }
-        $document->text = $text;
-        $documents[] = $document;
-        if ($count++ % 20 == 19) {
-          watchdog('Apache Solr', "Adding ". count($documents). " docs");
-          $solr->addDocuments($documents);
-          $count = 0;
-          $documents = array();
+        catch (Exception $e) {
+          watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
         }
       }
-      catch (Exception $e) {
-        watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
+      if (is_object($solr)) {
+        // remaining documents
+        try {
+          watchdog('Apache Solr', "Adding ". count($documents). " docs in cleanup");
+          $solr->addDocuments($documents);
+          $solr->commit();
+          $solr->optimize(FALSE, FALSE);
+        }
+        catch (Exception $e) {
+          watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
+        }
+        self::success('apachesolr', $solr_last_change, $solr_last_id);
       }
-    }
-    if (is_object($solr)) {
-      // remaining documents
-      try {
-        watchdog('Apache Solr', "Adding ". count($documents). " docs in cleanup");
-        $solr->addDocuments($documents);
-        $solr->commit();
-        $solr->optimize(FALSE, FALSE);
-      }
-      catch (Exception $e) {
-        watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
-      }
-      self::success('apachesolr', $solr_last_change, $solr_last_id);
     }
   }
 }
