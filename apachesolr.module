@@ -151,7 +151,7 @@ class ApacheSolrUpdate {
           // Let modules add to the document
           module_invoke_all('apachesolr_update_index', &$document, $node);
 
-          $fields = array('title', 'body', 'type', 'uid', 'changed', 'nid', 'comment_count');
+          $fields = array('title', 'body', 'type', 'uid', 'changed', 'nid', 'comment_count', 'name');
           foreach ((array)$node as $key => $value) {
             if (in_array($key, $fields)) {
               $document->$key = $value;
@@ -246,9 +246,9 @@ function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
 }
 
 function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
-  $term_title = t('Filter by term');
-  $type_title = t('Filter by type');
-  $author_title = t('Filter by author');
+  $term_title = t('ApacheSolr: Filter by term');
+  $type_title = t('ApacheSolr: Filter by type');
+  $author_title = t('ApacheSolr: Filter by author');
   switch ($op) {
     case 'list':
       if (module_exists('taxonomy')) {
@@ -264,17 +264,50 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
         foreach ($fields as $name => $field) {
           $index_key = apachesolr_index_key($field);
           $label = db_result(db_query("SELECT label FROM {node_field_instance} WHERE field_name = '%s'", $name));
-          $blocks[$index_key] = array('info' => t('Filter by @field', array('@field' => $label)));
+          $blocks[$index_key] = array('info' => t('ApacheSolr: Filter by @field', array('@field' => $label)));
         }
       }
+      
+      // Sorting block
+      $blocks['sort'] = array('info' => t('ApacheSolr: Sorting'));
       return $blocks;
 
     case 'view':
       if (arg(0) == 'search') {
+        // Get the query and response. Without these no blocks make sense.
         $query =& apachesolr_drupal_query();
         $response =& apachesolr_static_response_cache();
         if (empty($response)) {
           return;
+        }
+        
+        // Sorting block
+        if ($delta == 'sort') {
+          $sorts = array(
+            'title' => array('name' => t('Title'), 'default' => 'asc'),
+            'type' => array('name' => t('Type'), 'default' => 'asc'),
+            'name' => array('name' => t('Author'), 'default' => 'asc'),
+            'changed' => array('name' => t('Date'), 'default' => 'desc'),
+          );
+          
+          $solrsorts = array();
+          foreach(explode(',', check_plain($_GET['solrsort'])) as $solrsort) {
+            $parts = explode(' ', $solrsort);
+            if (!empty($parts[0]) && !empty($parts[1])) {
+              $solrsorts[$parts[0]] = $parts[1];
+            }
+          }
+          
+          $sort_links = array();
+          $path = 'search/'. arg(1). '/'. $query->get_query();
+          foreach ($sorts as $type => $sort) {
+            $new_sort = isset($solrsorts[$type]) ? $solrsorts[$type] == 'asc' ? 'desc' : 'asc' : $sort['default'];
+            $sort_links[] = theme('apachesolr_sort_link', $sort['name'], $path, "solrsort={$type} {$new_sort}", $solrsorts[$type]);
+          }
+                  
+          return array('subject' => t('Sort by') . ':',
+                       'content' => theme('apachesolr_sort_list', $sort_links));
+
         }
 
         if ((strpos($delta, 'vocabulary-') === 0) && module_exists('taxonomy')) {
@@ -604,11 +637,23 @@ function theme_apachesolr_facet_item($name, $count, $path, $active = FALSE, $unc
   }
 }
 
-function theme_apachesolr_unclick_link($url) {
-  return l("(-)", $url);
+function theme_apachesolr_unclick_link($path) {
+  return l("(-)", $path);
+}
+
+function theme_apachesolr_sort_link($text, $path, $query, $direction = NULL) {
+  $icon = '';
+  if ($direction) {
+    $icon = theme('tablesort_indicator', $direction);
+  }
+  return $icon . ' ' . l($text, $path, NULL, $query);
 }
 
 function theme_apachesolr_facet_list($items) {
+  return theme('item_list', $items);
+}
+
+function theme_apachesolr_sort_list($items) {
   return theme('item_list', $items);
 }
 

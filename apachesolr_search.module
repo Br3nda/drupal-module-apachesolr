@@ -38,8 +38,11 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
           'facet.limit' => -1,
           'facet.field' => array('tid', 'type', 'uid'),
           'facet.mincount' => 1,
-          'facet.sort' => 'true',
+          'facet.sort' => 'true'
         );
+        if ($sort = check_plain($_GET['solrsort'])) {
+          $params['sort'] = $sort;
+        }
         if ($fields = apachesolr_cck_fields()) {
           foreach ($fields as $name => $field) {
             $index_key = apachesolr_index_key($field);
@@ -56,10 +59,6 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         if ($total > 0) {
           static $users = array();
           foreach ($response->documents as $doc) {
-            if (empty($users[$doc->uid])) {
-              $users[$doc->uid] = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $doc->uid));
-            }
-            $doc->name = $users[$doc->uid];
             $extra = node_invoke_nodeapi(&$doc, 'search result');
             $extra['score'] = $doc->score;
             $snippet = search_excerpt($keys, $doc->body);
