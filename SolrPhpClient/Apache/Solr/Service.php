@@ -414,8 +414,8 @@ class Apache_Solr_Service
     $start = microtime(true);
 
     //try to connect to the host with timeout
-    $fp = fsockopen($this->_host, $this->_port, $errno, $errstr, $timeout);
-
+    $fp = @fsockopen($this->_host, $this->_port, $errno, $errstr, $timeout);
+    
     if ($fp)
     {
       //If we have a timeout set, then determine the amount of time we have left

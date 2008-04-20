@@ -45,6 +45,40 @@ function apachesolr_settings() {
   return system_settings_form($form);
 }
 
+function apachesolr_requirements($phase) {
+  // Ensure translations don't break at install time
+  $t = get_t();
+  if ($phase == 'runtime') {
+    $host = variable_get('apachesolr_host', 'localhost');
+    $port = variable_get('apachesolr_port', 8983);
+    $path = variable_get('apachesolr_path', '/solr');
+    $ping = FALSE;
+    try {
+      $solr =& apachesolr_get_solr($host, $port, $path);
+      $ping = $solr->ping();
+      // If there is no $solr object, there is no server available, so don't continue.
+      if (!$ping) {
+        throw new Exception(t('No Solr instance available during indexing'));
+      }
+    }
+    catch (Exception $e) {
+      watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
+    }
+    $value =  $ping ? $t('Solr can be pinged.'): $t('No Solr instance is available.');
+    $severity = $ping ? REQUIREMENT_OK: REQUIREMENT_ERROR;
+    $description = theme('item_list', array($t('Host: %host', array('%host' => $host)),
+                        $t('Port: %port', array('%port' => $port)),
+                        $t('Path: %path', array('%path' => $path))));
+    $requirements['apachesolr'] = array(
+      'title' => $t('ApacheSolr'),
+      'value' => $value,
+      'description' => $description,
+      'severity' => $severity,
+    );
+    return $requirements;
+  }
+}
+
 function apachesolr_index_page() {
   //TODO: Should we be generating the dynamic blocks based on what is indexed?
   // Or should we be using things like node_field.type to get this list?
