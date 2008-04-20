@@ -29,6 +29,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
       // This is the object that knows about the query coming from the user.
       $query =& apachesolr_drupal_query($keys);
+      
       try {
         $params = array(
           //'qt' => 'standard',
@@ -51,6 +52,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         }
         $params['start'] = $_GET['page'] * $params['rows'];
         $response = $solr->search($query->get_query(), $params['start'], $params['rows'], $params);
+        apachesolr_has_searched(TRUE);
         $total = $response->numFound;
         // The response is cached so that it is accessible to the blocks and anything
         // else that needs it beyond the initial search.

@@ -320,7 +320,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
       return $blocks;
 
     case 'view':
-      if (arg(0) == 'search') {
+      if (apachesolr_has_searched()) {
         // Get the query and response. Without these no blocks make sense.
         $query =& apachesolr_drupal_query();
         $response =& apachesolr_static_response_cache();
@@ -522,9 +522,15 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
 function apachesolr_form_alter($form_id, &$form) {
   $arg = arg(1);
   $alias = drupal_lookup_path('alias', "search/{$arg}");
-  if (preg_match("&/search/{$arg}&", $form['#action']) ||
+  // Ok, this really sucks. I want a way to know whether the action of the form
+  // is suposed to be handled by an ApacheSolr module or not. I manually
+  // exclude node and user here, but there are many other hook_search implementations
+  // in the wild and this code will potentially interfere with them. It also
+  // creates a Solr instance wasting resources.
+  if ($arg != 'node' && $arg != 'user' && (
+      preg_match("&/search/{$arg}&", $form['#action']) ||
       preg_match("&/{$alias}&", $form['#action'])  ||
-      strpos($form['#action'], $alias)) {
+      strpos($form['#action'], $alias))) {
     if (!isset($_POST['form_id'])) {
       // Set up our validation function
       $form['#validate']['apachesolr_search_validate'] = array();
@@ -542,6 +548,24 @@ function apachesolr_form_alter($form_id, &$form) {
   }
 }
 
+/**
+ * Semaphore that indicates whether a search has been done. Blocks use this
+ * later to decide whether they should load or not.
+ *
+ * @param $searched
+ *   A boolean indicating whether a search has been executed.
+ *
+ * @return
+ *   TRUE if a search has been executed.
+ *   FALSE otherwise.
+ */
+function apachesolr_has_searched($searched = NULL) {
+  static $_searched = FALSE;
+  if (is_bool($searched)) {
+    $_searched = $searched;
+  }
+  return $_searched;
+}
 /**
  * Factory method for solr singleton object. Structure allows for an arbitrary
  * number of solr objects to be used based on the host, port, path combination.
