@@ -118,6 +118,20 @@ class ApacheSolrUpdate {
   }
 
   static function update_index($namespace) {
+    $solr = FALSE;
+    try {
+      // Get the $solr object
+      $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
+      // If there is no $solr object, there is no server available, so don't continue.
+      if (!$solr->ping()) {
+        throw new Exception(t('No Solr instance available during indexing'));
+      }
+    }
+    catch (Exception $e) {
+      watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
+      return;
+    }
+
     // Get CCK fields list
     $cck_fields = apachesolr_cck_fields();
 
@@ -145,7 +159,6 @@ class ApacheSolrUpdate {
 
         // Update solr index.
         try {
-          $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
           $document = new Apache_Solr_Document();
 
           // Let modules add to the document
