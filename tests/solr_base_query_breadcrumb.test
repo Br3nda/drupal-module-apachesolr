@@ -1,4 +1,5 @@
 <?php
+// $Id: solr_base_query_breadcrumb.test,v 1.1.4.1 2008/05/04 19:54:02 drunkenmonkey Exp $
 
 class DrupalSolrQueryBreadcrumbTests extends DrupalTestCase {
   function get_info() {
@@ -15,7 +16,7 @@ class DrupalSolrQueryBreadcrumbTests extends DrupalTestCase {
     $types = node_get_types('types');
     shuffle($types);
     $type = array_pop($types);
-    $this->query_string = "sudo tid:44 uid:46 type:". $type->type. ' tid:58';
+    $this->query_string = "sudo tid:44 uid:46 type:". $type->type .' tid:58';
     $query =& apachesolr_drupal_query($this->query_string, TRUE);
     $this->breadcrumb = $query->get_breadcrumb();
     $this->menu_active_breadcrumb = menu_get_active_breadcrumb();

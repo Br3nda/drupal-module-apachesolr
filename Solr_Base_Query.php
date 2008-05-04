@@ -1,4 +1,5 @@
 <?php
+// $Id: Solr_Base_Query.php,v 1.1.4.1 2008/05/04 19:54:02 drunkenmonkey Exp $
 
 class Solr_Base_Query {
 

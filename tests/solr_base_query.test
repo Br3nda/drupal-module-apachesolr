@@ -1,4 +1,5 @@
 <?php
+// $Id: solr_base_query.test,v 1.1.4.1 2008/05/04 19:54:02 drunkenmonkey Exp $
 
 class DrupalSolrQueryTests extends DrupalTestCase {
   function get_info() {
@@ -38,7 +39,7 @@ class DrupalSolrQueryTests extends DrupalTestCase {
     foreach ($this->queries as $string) {
       $query =& apachesolr_drupal_query($string, TRUE);
       $query->add_field('wham', '1');
-      if (!$this->assertEqual($string. ' wham:1', $query->get_query())) {
+      if (!$this->assertEqual($string .' wham:1', $query->get_query())) {
         return FALSE;
       }
     }
