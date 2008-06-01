@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.1 2008/05/04 19:54:02 drunkenmonkey Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.2 2008/06/01 23:51:14 drunkenmonkey Exp $
 
 function apachesolr_update_index() {
   ApacheSolrUpdate::update_index('apachesolr');
@@ -68,7 +68,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
             if (trim($snippet) == '...') {
               $snippet = '';
             }
-            $results[] = array('link' => url('node/'. $doc->nid, NULL, NULL, TRUE),
+            $results[] = array('link' => url('node/'. $doc->nid, array('absolute' => TRUE)),
                                'type' => node_get_types('name', $doc),
                                'title' => $doc->title,
                                'user' => theme('username', $doc),

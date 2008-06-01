@@ -1,18 +1,18 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.1 2008/05/04 19:54:02 drunkenmonkey Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.2 2008/06/01 23:51:14 drunkenmonkey Exp $
 
 function apachesolr_menu() {
   $items = array();
     $items['admin/settings/apachesolr'] = array(
-      'title' => t('Apache Solr search'),
-      'description' => t('Administer Apache Solr.'),
+      'title' => 'Apache Solr search',
+      'description' => 'Administer Apache Solr.',
       'page callback' => 'drupal_get_form',
-      'page arguments' => 'apachesolr_settings',
+      'page arguments' => array('apachesolr_settings'),
       'access callback' => 'user_access',
       'access arguments' => array('administer site configuration'),
       );
     $items['admin/settings/apachesolr/index'] = array(
-      'title' => t('Apache Solr search index'),
+      'title' => 'Apache Solr search index',
       'page callback' => 'apachesolr_index_page',
       'access callback' => 'user_access',
       'access arguments' => array('administer site configuration'),
@@ -460,7 +460,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
                   // skip
                 }
                 else {
-                  $users[$active ? $countsort . name : 1 + $countsort . $name] = theme('apachesolr_facet_item', $name, $count, $path, $active, $unclick_link);
+                  $users[$active ? $countsort . $name : 1 + $countsort . $name] = theme('apachesolr_facet_item', $name, $count, $path, $active, $unclick_link);
                 }
               }
               if (is_array($users)) {
@@ -518,7 +518,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
   }
 }
 
-function apachesolr_form_alter($form_id, &$form) {
+function apachesolr_form_alter(&$form, $form_state, $form_id) {
   $arg = arg(1);
   $alias = drupal_lookup_path('alias', "search/{$arg}");
   // Ok, this really sucks. I want a way to know whether the action of the form
@@ -666,7 +666,7 @@ function apachesolr_cck_fields() {
     $mappings = module_invoke_all('apachesolr_cck_field_mappings');
     if (is_null($_fields)) {
       $_fields = array();
-      $result = db_query("SELECT i.field_name, f.multiple, f.type, i.widget_type FROM {node_field_instance} i INNER JOIN {node_field} f ON i.field_name = f.field_name;");
+      $result = db_query("SELECT i.field_name, f.multiple, f.type, i.widget_type FROM {content_node_field_instance} i INNER JOIN {content_node_field} f ON i.field_name = f.field_name;");
 
       while ($row = db_fetch_object($result)) {
         // Only deal with fields that have options widgets (facets don't make sense otherwise), or fields that have specific mappings.
@@ -703,7 +703,7 @@ function theme_apachesolr_facet_item($name, $count, $path, $active = FALSE, $unc
     return $unclick_link ." $name";
   }
   else {
-    return l($name ." ($count)",  $path, $attributes);
+    return l($name ." ($count)",  $path, array('attributes' => $attributes));
   }
 }
 
@@ -716,7 +716,7 @@ function theme_apachesolr_sort_link($text, $path, $query, $direction = NULL) {
   if ($direction) {
     $icon = theme('tablesort_indicator', $direction);
   }
-  return $icon . ' ' . l($text, $path, NULL, $query);
+  return $icon . ' ' . l($text, $path, array('query' => $query));
 }
 
 function theme_apachesolr_facet_list($items) {
