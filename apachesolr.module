@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.2 2008/06/01 23:51:14 drunkenmonkey Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.3 2008/06/07 00:17:00 drunkenmonkey Exp $
 
 function apachesolr_menu() {
   $items = array();
@@ -327,35 +327,6 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
           return;
         }
         
-        // Sorting block
-        if ($delta == 'sort') {
-          $sorts = array(
-            'title' => array('name' => t('Title'), 'default' => 'asc'),
-            'type' => array('name' => t('Type'), 'default' => 'asc'),
-            'name' => array('name' => t('Author'), 'default' => 'asc'),
-            'changed' => array('name' => t('Date'), 'default' => 'desc'),
-          );
-          
-          $solrsorts = array();
-          foreach(explode(',', check_plain($_GET['solrsort'])) as $solrsort) {
-            $parts = explode(' ', $solrsort);
-            if (!empty($parts[0]) && !empty($parts[1])) {
-              $solrsorts[$parts[0]] = $parts[1];
-            }
-          }
-          
-          $sort_links = array();
-          $path = 'search/'. arg(1). '/'. $query->get_query();
-          foreach ($sorts as $type => $sort) {
-            $new_sort = isset($solrsorts[$type]) ? $solrsorts[$type] == 'asc' ? 'desc' : 'asc' : $sort['default'];
-            $sort_links[] = theme('apachesolr_sort_link', $sort['name'], $path, "solrsort={$type} {$new_sort}", $solrsorts[$type]);
-          }
-                  
-          return array('subject' => t('Sort by') . ':',
-                       'content' => theme('apachesolr_sort_list', $sort_links));
-
-        }
-
         if ((strpos($delta, 'vocabulary-') === 0) && module_exists('taxonomy')) {
           // On first time through here build all the terms. Static caching
           // will make them available for other vocabulary blocks.
@@ -402,6 +373,32 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
         }
 
         switch ($delta) {
+          case 'sort':
+	    $sorts = array(
+              'title' => array('name' => t('Title'), 'default' => 'asc'),
+	      'type' => array('name' => t('Type'), 'default' => 'asc'),
+	      'name' => array('name' => t('Author'), 'default' => 'asc'),
+	      'changed' => array('name' => t('Date'), 'default' => 'desc'),
+            );
+          
+	    $solrsorts = array();
+	    foreach(explode(',', check_plain($_GET['solrsort'])) as $solrsort) {
+	      $parts = explode(' ', $solrsort);
+	      if (!empty($parts[0]) && !empty($parts[1])) {
+		$solrsorts[$parts[0]] = $parts[1];
+	      }
+	    }
+	    
+	    $sort_links = array();
+	    $path = 'search/'. arg(1). '/'. $query->get_query();
+	    foreach ($sorts as $type => $sort) {
+	      $new_sort = isset($solrsorts[$type]) ? $solrsorts[$type] == 'asc' ? 'desc' : 'asc' : $sort['default'];
+	      $sort_links[] = theme('apachesolr_sort_link', $sort['name'], $path, "solrsort={$type} {$new_sort}", $solrsorts[$type]);
+	    }
+	    return array('subject' => t('Sort by') . ':',
+			 'content' => theme('apachesolr_sort_list', $sort_links));
+
+            break;
           case 'type':
             if (is_array($response->facets->type)) {
               $contains_active = FALSE;
@@ -763,6 +760,12 @@ function apachesolr_theme() {
     ),
     'apachesolr_facet_list' => array(
       'arguments' => array('items' => NULL),
+    ),
+    'apachesolr_sort_list' => array(
+      'arguments' => array('items' => NULL),
+    ),
+    'apachesolr_sort_link' => array(
+      'arguments' => array('text' => NULL, 'path' => NULL, 'query' => NULL, 'direction' => NULL),
     ),
     'apachesolr_breadcrumb_type' => array(
       'arguments' => array('type' => NULL),
