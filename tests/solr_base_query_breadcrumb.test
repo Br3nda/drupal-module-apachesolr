@@ -1,5 +1,5 @@
 <?php
-// $Id: solr_base_query_breadcrumb.test,v 1.1.4.1 2008/05/04 19:54:02 drunkenmonkey Exp $
+// $Id: solr_base_query_breadcrumb.test,v 1.1.4.2 2008/06/07 00:18:49 drunkenmonkey Exp $
 
 class DrupalSolrQueryBreadcrumbTests extends DrupalTestCase {
   function get_info() {
@@ -27,11 +27,50 @@ class DrupalSolrQueryBreadcrumbTests extends DrupalTestCase {
   }
 
   function testBreadcrumbCount() {
-    $string_count = count(explode(' ', $this->query_string));
+    $query_count = count(explode(' ', $this->query_string));
     $menu_active_count = count($this->menu_active_breadcrumb);
-    $breadcrumb_count = $menu_active_count + $string_count - 1;
+    $expected_breadcrumb_count = $menu_active_count + $query_count;
     $query_breadcrumb_count = count($this->breadcrumb);
-    $message = "The number of items in the breadcrumb ($query_breadcrumb_count) should be equal to the number of items in \$menu_active_breadcrumb ($menu_active_count) plus the number of words in \$string ($string_count) minus 1.";
-    return $this->assertEqual($query_breadcrumb_count, $breadcrumb_count, "'%s' ". t($message));
+    $message = 'The number of items in the breadcrumb (@breadcrumb_count) ' .
+        'should be equal to the number of items in $menu_active_breadcrumb ' .
+        '(@menu_active_count) plus the number of words in $query ' .
+        '(@query_count).';
+    $vars = array(
+      '@breadcrumb_count' => $query_breadcrumb_count,
+      '@menu_active_count' => $menu_active_count,
+      '@query_count' => $query_count,
+    );
+    return $this->assertEqual($query_breadcrumb_count, $expected_breadcrumb_count,
+      "'%s' ". t($message, $vars));
+  }
+  
+  function testBreadcrumbLinks() {
+    $link_part = '<a ';
+    $result = TRUE;
+    
+    for ($i = 0; $i + 1 < count($this->breadcrumb); ++$i) {
+      $result &= $this->assertTrue(strpos($this->breadcrumb[$i], $link_part) !== FALSE,
+          'Breadcrumb items other than the ' .
+          'last should be links. But ' . ($i + 1) . 'th item is: ' .
+          str_replace('%', '%%', $this->breadcrumb[$i]) .
+          (is_array($this->breadcrumb[$i]) ? ' true' : ' false'));
+    }
+    $result &= $this->assertTrue(
+        strpos($this->breadcrumb[count($this->breadcrumb) - 1], $link_part)
+        === FALSE, 'Last breadcrumb item should not be a link.');
+    
+    return $result;
+  }
+  
+  function testBreadcrumbsClean() {
+    $result = TRUE;
+    $prefix_re = '/\w+:/';
+    
+    foreach ($this->breadcrumb as $item) {
+      $this->assertTrue(preg_match($prefix_re, strip_tags($item)) == 0,
+          'Field prefixes like "uid:" should be stripped from the breadcrumbs.');
+    }
+        
+    return $result;
   }
 }
