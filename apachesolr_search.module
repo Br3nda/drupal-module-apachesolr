@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.2 2008/06/01 23:51:14 drunkenmonkey Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.3 2008/06/07 00:18:30 drunkenmonkey Exp $
 
 function apachesolr_update_index() {
   ApacheSolrUpdate::update_index('apachesolr');
@@ -30,6 +30,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
       // This is the object that knows about the query coming from the user.
       $query =& apachesolr_drupal_query($keys);
+      $results = array();
       
       try {
         $params = array(
@@ -60,7 +61,6 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         apachesolr_static_response_cache($response);
         pager_query("SELECT %d", 10, 0, NULL, $total);
         if ($total > 0) {
-          static $users = array();
           foreach ($response->documents as $doc) {
             $extra = node_invoke_nodeapi(&$doc, 'search result');
             $extra['score'] = $doc->score;
