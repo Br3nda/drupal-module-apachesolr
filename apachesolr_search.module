@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.4 2008/06/14 18:45:18 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.5 2008/06/14 20:24:37 robertDouglass Exp $
 
 /**
  * @file
@@ -48,7 +48,8 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
           'facet.mincount' => 1,
           'facet.sort' => 'true'
         );
-        if ($sort = check_plain($_GET['solrsort'])) {
+        if (isset($_GET['solrsort'])) {
+          $sort = check_plain($_GET['solrsort']);
           $params['sort'] = $sort;
         }
         if ($fields = apachesolr_cck_fields()) {
@@ -57,7 +58,8 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
             $params['facet.field'][] = $index_key;
           }
         }
-        $params['start'] = $_GET['page'] * $params['rows'];
+        $page = isset($_GET['page']) ? $_GET['page'] : 0;
+        $params['start'] = $page * $params['rows'];
         $response = $solr->search($query->get_query(), $params['start'], $params['rows'], $params);
         apachesolr_has_searched(TRUE);
         $total = $response->numFound;

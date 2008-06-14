@@ -1,5 +1,5 @@
 <?php
-// $Id: Service.php,v 1.1.2.1.2.1 2008/06/14 18:45:18 robertDouglass Exp $
+// $Id: Service.php,v 1.1.2.1.2.2 2008/06/14 20:24:37 robertDouglass Exp $
 /**
  * @copyright Copyright 2007 Conduit Internet Technologies, Inc. (http://conduit-it.com)
  * @license Apache Licence, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
@@ -447,7 +447,7 @@ class Apache_Solr_Service
       //check the stream meta data to see if we timed out during the operation
       $metaData = stream_get_meta_data($fp);
 
-      if ($metaData['timeout'])
+      if (isset($metaData['timeout']) && $metaData['timeout'])
       {
         fclose($fp);
         return false;
@@ -477,7 +477,7 @@ class Apache_Solr_Service
       //check the stream meta data to see if we timed out during the operation
       $metaData = stream_get_meta_data($fp);
 
-      if ($metaData['timeout'])
+      if (isset($metaData['timeout']) && $metaData['timeout'])
       {
         fclose($fp);
         return false;
@@ -554,23 +554,27 @@ class Apache_Solr_Service
    */
   public function addDocuments($documents, $allowDups = false, $overwritePending = true, $overwriteCommitted = true)
   {
-    $dupValue = $allowDups ? 'true' : 'false';
-    $pendingValue = $overwritePending ? 'true' : 'false';
-    $committedValue = $overwriteCommitted ? 'true' : 'false';
-
-    $rawPost = '<add allowDups="' . $dupValue . '" overwritePending="' . $pendingValue . '" overwriteCommitted="' . $committedValue . '">';
-
-    foreach ($documents as $document)
-    {
-      if ($document instanceof Apache_Solr_Document)
+    if (count($documents) > 0) {
+      $dupValue = $allowDups ? 'true' : 'false';
+      $pendingValue = $overwritePending ? 'true' : 'false';
+      $committedValue = $overwriteCommitted ? 'true' : 'false';
+  
+      $rawPost = '<add allowDups="' . $dupValue . '" overwritePending="' . $pendingValue . '" overwriteCommitted="' . $committedValue . '">';
+  
+      
+      foreach ($documents as $document)
       {
-        $rawPost .= $this->_documentToXmlFragment($document);
+        if ($document instanceof Apache_Solr_Document)
+        {
+          $rawPost .= $this->_documentToXmlFragment($document);
+        }
       }
+      
+  
+      $rawPost .= '</add>';
+  
+      return $this->add($rawPost);
     }
-
-    $rawPost .= '</add>';
-
-    return $this->add($rawPost);
   }
 
   /**
