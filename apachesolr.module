@@ -1,5 +1,10 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.3 2008/06/07 00:17:00 drunkenmonkey Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.4 2008/06/14 18:45:18 robertDouglass Exp $
+
+/**
+ * @file
+ *   Integration with the Apache Solr search application.
+ */
 
 function apachesolr_menu() {
   $items = array();
@@ -238,7 +243,7 @@ class ApacheSolrUpdate {
           }
           $document->text = $text;
           $documents[] = $document;
-          if ($count++ % 20 == 19) {
+          if ($count++ % 500 == 499) {
           watchdog('Apache Solr', "Adding ". count($documents) ." docs");
             $solr->addDocuments($documents);
             $count = 0;

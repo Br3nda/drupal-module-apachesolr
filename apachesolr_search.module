@@ -1,6 +1,11 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.3 2008/06/07 00:18:30 drunkenmonkey Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.4 2008/06/14 18:45:18 robertDouglass Exp $
 
+/**
+ * @file
+ *   Provides a content search implementation for node content for use with the
+ *   Apache Solr search application.
+ */
 function apachesolr_update_index() {
   ApacheSolrUpdate::update_index('apachesolr');
 }
