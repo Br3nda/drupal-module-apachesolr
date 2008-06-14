@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.6 2008/06/14 20:36:21 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.7 2008/06/14 21:08:20 robertDouglass Exp $
 
 /**
  * @file
@@ -113,17 +113,17 @@ class ApacheSolrUpdate {
   public static $_namespaces = array();
 
   static function reset($namespace) {
-    variable_del($namespace .'_last_change');
-    variable_del($namespace .'_last_id');
+    variable_del($namespace . '_last_change');
+    variable_del($namespace . '_last_id');
   }
 
   static function get_change($namespace) {
-    $var = variable_get($namespace .'_last_change', 0);
+    $var = variable_get($namespace . '_last_change', 0);
     return $var;
   }
 
   static function get_last($namespace) {
-    $var = variable_get($namespace .'_last_id', 0);
+    $var = variable_get($namespace . '_last_id', 0);
     return $var;
   }
 
