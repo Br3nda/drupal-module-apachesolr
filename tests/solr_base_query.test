@@ -1,4 +1,5 @@
 <?php
+// $Id: solr_base_query.test,v 1.1.2.1 2008/06/14 18:44:30 robertDouglass Exp $
 
 class DrupalSolrQueryTests extends DrupalTestCase {
   function get_info() {

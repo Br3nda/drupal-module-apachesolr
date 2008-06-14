@@ -1,4 +1,10 @@
 <?php
+// $Id: apachesolr.module,v 1.1.2.13 2008/06/14 18:44:29 robertDouglass Exp $
+
+/**
+ * @file
+ *   Integration with the Apache Solr search application.
+ */
 
 function apachesolr_menu($may_cache) {
   $items = array();
