@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.13 2008/06/14 18:44:29 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.14 2008/06/14 20:48:11 robertDouglass Exp $
 
 /**
  * @file
@@ -115,17 +115,17 @@ class ApacheSolrUpdate {
   public static $_namespaces = array();
 
   static function reset($namespace) {
-    variable_del($namespace. '_last_change');
-    variable_del($namespace. '_last_id');
+    variable_del($namespace . '_last_change');
+    variable_del($namespace . '_last_id');
   }
 
   static function get_change($namespace) {
-    $var = variable_get($namespace. '_last_change', 0);
+    $var = variable_get($namespace . '_last_change', 0);
     return $var;
   }
 
   static function get_last($namespace) {
-    $var = variable_get($namespace. '_last_id', 0);
+    $var = variable_get($namespace . '_last_id', 0);
     return $var;
   }
 
@@ -245,8 +245,8 @@ class ApacheSolrUpdate {
           }
           $document->text = $text;
           $documents[] = $document;
-          if ($count++ % 20 == 19) {
-            watchdog('Apache Solr', "Adding ". count($documents). " docs");
+          if ($count++ % 50 == 49) {
+            watchdog('Apache Solr', t("Adding @count documents", array('@count' => count($documents))));
             $solr->addDocuments($documents);
             $count = 0;
             $documents = array();
@@ -256,22 +256,23 @@ class ApacheSolrUpdate {
           watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
         }
       }
-      if (is_object($solr)) {
-        // remaining documents
-        try {
-          watchdog('Apache Solr', "Adding ". count($documents). " docs in cleanup");
-          $solr->addDocuments($documents);
-          $solr->commit();
-          $solr->optimize(FALSE, FALSE);
-        }
-        catch (Exception $e) {
-          watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
-        }
-        self::success('apachesolr', $solr_last_change, $solr_last_id);
+      self::success('apachesolr', $solr_last_change, $solr_last_id);
+    }
+    if (is_object($solr)) {
+      // remaining documents
+      try {
+        watchdog('Apache Solr', "Adding " . count($documents) ." documents in cleanup");
+        $solr->addDocuments($documents);
+        $solr->commit();
+        $solr->optimize(FALSE, FALSE);
+      }
+      catch (Exception $e) {
+        watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
       }
     }
   }
 }
+
 
 function apachesolr_shutdown() {
   foreach (ApacheSolrUpdate::$_namespaces as $namespace => $vars) {
@@ -307,7 +308,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
       if (module_exists('taxonomy')) {
         $vocabs = taxonomy_get_vocabularies();
         foreach ($vocabs as $vid => $vocab) {
-          $blocks['vocabulary-'. $vid] = array('info' => t('Filter by @name', array('@name' => $vocab->name)));
+          $blocks['vocabulary-'. $vid] = array('info' => t('ApacheSolr: Filter by @name', array('@name' => $vocab->name)));
         }
       }
       $blocks['type'] = array('info' => $type_title);
