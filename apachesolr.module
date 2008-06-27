@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.9 2008/06/27 11:48:12 drunkenmonkey Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.10 2008/06/27 12:23:12 drunkenmonkey Exp $
 
 /**
  * @file
@@ -317,12 +317,10 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
   $type_title = t('ApacheSolr: Filter by type');
   $author_title = t('ApacheSolr: Filter by author');
   
-  $facet_limit_var = variable_get('apachesolr_facet_limits', array());
-  if (!isset($facet_limit_var[$delta])) {
-    $facet_limit_var[$delta] = 100;
+  $facet_limits = variable_get('apachesolr_facet_limits', array());
+  if (!isset($facet_limits[$delta])) {
+    $facet_limits[$delta] = 100;
   }
-  
-  $facet_limit_var_name = 0;
   
   switch ($op) {
     case 'list':
@@ -394,7 +392,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
           $vocab = taxonomy_vocabulary_load($vid);
           if (is_numeric($vid) && is_array($terms) && isset($terms[$vid]) && is_array($terms[$vid])) {
             ksort($terms[$vid]);
-            $terms[$vid] = array_slice($terms[$vid], 0, $facet_limit_var[$delta]);
+            $terms[$vid] = array_slice($terms[$vid], 0, $facet_limits[$delta]);
             return array('subject' => t('Filter by @name', array('@name' => $vocab->name)),
                          'content' => theme('apachesolr_facet_list', $terms[$vid]));
           }
@@ -460,7 +458,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
               }
               if (count($types) > 0) {
                 ksort($types);
-                $types = array_slice($types, 0, $facet_limit_var[$delta]);
+                $types = array_slice($types, 0, $facet_limits[$delta]);
                 $output = theme('apachesolr_facet_list', $types);
                 return array('subject' => $type_title, 'content' => $output);
               }
@@ -495,7 +493,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
               }
               if (is_array($users)) {
                 ksort($users);
-                $users = array_slice($users, 0, $facet_limit_var[$delta]);
+                $users = array_slice($users, 0, $facet_limits[$delta]);
                 $output = theme('apachesolr_facet_list', $users);
                 return array('subject' => $author_title, 'content' => $output);
               }
@@ -534,7 +532,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
                   }
                   if (is_array($facets)) {
                     ksort($facets);
-                    $facets = array_slice($facets, 0, $facet_limit_var[$delta]);
+                    $facets = array_slice($facets, 0, $facet_limits[$delta]);
                     $output = theme('apachesolr_facet_list', $facets);
                     $label = db_result(db_query("SELECT label FROM {node_field_instance} WHERE field_name = '%s'", $name));
                     return array('subject' => t('Filter by @field', array('@field' => $label)),
@@ -557,7 +555,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
             '#type' => 'textfield',
             '#title' => t('Facet Limit'),
             '#description' => t('Maximum number of facets to display in this block. Set to -1 for no limit.'),
-            '#default_value' => $facet_limit_var[$delta],
+            '#default_value' => $facet_limits[$delta],
           ),
           '#validate' => array('_apachesolr_facet_limit_validate'),
         );
@@ -567,7 +565,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
     case 'save':
       if ($delta != 'sort') {
         $val = intval($edit['facet_limit']);
-        $prev_val = $facet_limit_var[$delta];
+        $prev_val = $facet_limits[$delta];
         $prev_max = variable_get('apachesolr_facet_limit', 100);
         
         if ($val == $prev_val) {
@@ -575,8 +573,8 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
         }
         
         // First save the new facet limit for this facet
-        $facet_limit_var[$delta] = $val;
-        variable_set('apachesolr_facet_limits', $facet_limit_var);
+        $facet_limits[$delta] = $val;
+        variable_set('apachesolr_facet_limits', $facet_limits);
         
         // This is, where it gets tricky: if appropriate, set maximum facet
         // limit that is used in the actual search query
@@ -590,7 +588,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
           if ($prev_val == $prev_max && $val < $prev_max) {
             $max = $val;
             // Loop through all facet limits and search for highest
-            foreach ($facet_limit_var as $limit) {
+            foreach ($facet_limits as $limit) {
               if ($limit > $max) {
                 $max = $limit;
               }
