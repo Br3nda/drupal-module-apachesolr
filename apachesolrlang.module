@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolrlang.module,v 1.1.2.3 2008/06/29 22:00:12 drunkenmonkey Exp $
+// $Id: apachesolrlang.module,v 1.1.2.4 2008/06/29 23:50:35 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_block().
@@ -9,7 +9,7 @@ function apachesolrlang_block($op = 'list', $delta = 0, $edit = array()) {
   $title = t('ApacheSolr: Filter by language');
   switch ($op) {
     case 'list':
-      $blocks['type'] = array('info' => $title);
+      $blocks['language'] = array('info' => $title);
       return $blocks;
 
     case 'view':
@@ -45,10 +45,11 @@ function apachesolrlang_block($op = 'list', $delta = 0, $edit = array()) {
                   // skip
                 }
                 else {
-                  $types[] = theme('apachesolr_facet_item', locale_language_name($language), $count, $path, $active, $unclick_link);
+                  $languages[] = theme('apachesolr_facet_item', locale_language_name($language), $count, $path, $active, $unclick_link);
                 }
               }
-              $output = theme('apachesolr_facet_list', $types);
+              ksort($languages);
+              $output = theme('apachesolr_facet_list', $languages);
               return array('subject' => $title, 'content' => $output);
             }
 
