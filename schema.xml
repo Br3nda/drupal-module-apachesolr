@@ -256,7 +256,7 @@
    <field name="vid"  type="integer" indexed="true" stored="true" multiValued="true"/>
    <field name="taxonomy_name" type="string" indexed="true" stored="true" multiValued="true"/>
    <field name="text" type="text" indexed="true" stored="false"/>
-
+   <field name="language" type="string" indexed="true" stored="true"/>
 
    <!-- Here, default is used to create a "timestamp" field indicating
         When each document was indexed.
