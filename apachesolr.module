@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.15 2008/06/28 13:02:00 drunkenmonkey Exp $
+// $Id: apachesolr.module,v 1.1.2.16 2008/06/29 13:53:29 drunkenmonkey Exp $
 
 /**
  * @file
@@ -47,6 +47,17 @@ function apachesolr_settings() {
     '#title' => t('Solr path'),
     '#default_value' => variable_get('apachesolr_path', '/solr'),
     '#description' => t('Path that identifies the Solr request handler to be used. Leave this as /solr for now.'),
+    );
+  $options = array();
+  foreach (array(5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100) as $option) {
+    $options[$option] = $option;
+  }
+  $form['apachesolr_rows'] = array(
+    '#type' => 'select',
+    '#title' => t('Results per page'),
+    '#default_value' => variable_get('apachesolr_rows', 10),
+    '#options' => $options,
+    '#description' => t('The number of results that will be shown per page.'),
     );
   return system_settings_form($form);
 }
@@ -547,7 +558,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
             '#type' => 'textfield',
             '#title' => t('Facet Limit'),
             '#required' => TRUE,
-            '#description' => t('Enter an number 1 or greater that is the maximum number of facets to display in this block.'),
+            '#description' => t('Enter a number 1 or greater that is the maximum number of facets to display in this block.'),
             '#default_value' => isset($facet_limits[$delta]) ? $facet_limits[$delta] : 10,
             '#validate' => array('apachesolr_facet_limit_validate' => array()),
           ),
