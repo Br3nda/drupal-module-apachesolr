@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.6 2008/06/27 11:32:24 drunkenmonkey Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.7 2008/06/29 13:56:58 drunkenmonkey Exp $
 
 /**
  * @file
@@ -48,7 +48,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         $params = array(
           //'qt' => 'standard',
           'fl' => '*,score',
-          'rows' => 10,
+          'rows' => variable_get('apachesolr_rows', 10),
           'facet' => 'true',
           'facet.limit' => variable_get('apachesolr_facet_limit', 100),
           'facet.field' => array('tid', 'type', 'uid'),
@@ -73,7 +73,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         // The response is cached so that it is accessible to the blocks and anything
         // else that needs it beyond the initial search.
         apachesolr_static_response_cache($response);
-        pager_query("SELECT %d", 10, 0, NULL, $total);
+        pager_query("SELECT %d", $params['rows'], 0, NULL, $total);
         if ($total > 0) {
           foreach ($response->documents as $doc) {
             $extra = node_invoke_nodeapi(&$doc, 'search result');

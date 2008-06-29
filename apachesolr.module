@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.10 2008/06/27 12:23:12 drunkenmonkey Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.11 2008/06/29 13:56:58 drunkenmonkey Exp $
 
 /**
  * @file
@@ -48,6 +48,17 @@ function apachesolr_settings() {
     '#title' => t('Solr path'),
     '#default_value' => variable_get('apachesolr_path', '/solr'),
     '#description' => t('Path that identifies the Solr request handler to be used. Leave this as /solr for now.'),
+    );
+  $options = array();
+  foreach (array(5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100) as $option) {
+    $options[$option] = $option;
+  }
+  $form['apachesolr_rows'] = array(
+    '#type' => 'select',
+    '#title' => t('Results per page'),
+    '#default_value' => variable_get('apachesolr_rows', 10),
+    '#options' => $options,
+    '#description' => t('The number of results that will be shown per page.'),
     );
   return system_settings_form($form);
 }
