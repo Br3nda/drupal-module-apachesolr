@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.7 2008/06/29 13:56:58 drunkenmonkey Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.8 2008/06/29 15:03:22 robertDouglass Exp $
 
 /**
  * @file
@@ -51,7 +51,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
           'rows' => variable_get('apachesolr_rows', 10),
           'facet' => 'true',
           'facet.limit' => variable_get('apachesolr_facet_limit', 100),
-          'facet.field' => array('tid', 'type', 'uid'),
+          'facet.field' => array('tid', 'type', 'uid', 'language'),
           'facet.mincount' => 1,
           'facet.sort' => 'true'
         );

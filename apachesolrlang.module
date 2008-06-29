@@ -1,8 +1,59 @@
-; $Id: apachesolrlang.module,v 1.1.2.1 2008/06/29 14:25:03 robertDouglass Exp $
-name = Apache Solr languages
-description = Adds language facets.
-dependencies[] = locale
-dependencies[] = apachesolr
-dependencies[] = search
-package = ApacheSolr
-core = "6.x"
+<?php
+
+// $Id: apachesolrlang.module,v 1.1.2.2 2008/06/29 15:03:22 robertDouglass Exp $
+
+/**
+ * Implementation of hook_block().
+ */
+function apachesolrlang_block($op = 'list', $delta = 0, $edit = array()) {
+  $title = t('ApacheSolr: Filter by language');
+  switch ($op) {
+    case 'list':
+      $blocks['type'] = array('info' => $type_title);
+      return $blocks;
+
+    case 'view':
+      if (apachesolr_has_searched()) {
+        // Get the query and response. Without these no blocks make sense.
+        $response =& apachesolr_static_response_cache();
+        if (empty($response)) {
+          return;
+        }
+        $query =& apachesolr_drupal_query();
+        
+        switch ($delta) {
+          case 'language':
+            if (is_array($response->facets->language)) {
+              $contains_active = FALSE;
+              foreach ($response->facets->language as $language => $count) {
+                $unclick_link = '';
+                unset($active);
+                $new_query = clone $query;
+                if ($active = $query->has_field('language', $language)) {
+                  $contains_active = TRUE;
+                  $new_query->remove_field('language', $language);
+                  $path = 'search/'. arg(1). '/'. $new_query->get_query();
+                  $unclick_link = theme('apachesolr_unclick_link', $path);
+                }
+                else {
+                  $new_query->add_field('language', $language);
+                  $path = 'search/'. arg(1). '/'. $new_query->get_query();
+                }
+                $countsort = $count == 0 ? '' : 1 / $count;
+                // if numdocs == 1 and !active, don't add.
+                if ($response->numFound == 1 && !$active) {
+                  // skip
+                }
+                else {
+                  $types[] = theme('apachesolr_facet_item', locale_language_name($language), $count, $path, $active, $unclick_link);
+                }
+              }
+              $output = theme('apachesolr_facet_list', $types);
+              return array('subject' => $title, 'content' => $output);
+            }
+
+            break;
+      }
+    }
+  }
+}
