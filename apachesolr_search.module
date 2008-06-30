@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.8 2008/06/29 15:03:22 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.9 2008/06/30 15:26:37 drunkenmonkey Exp $
 
 /**
  * @file
@@ -45,12 +45,14 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       $results = array();
       
       try {
+        $facet_limits = variable_get('apachesolr_facet_limits', array());
+        $facet_limit = (count($facet_limits) > 0) ? max($facet_limits) : 10;
         $params = array(
           //'qt' => 'standard',
           'fl' => '*,score',
           'rows' => variable_get('apachesolr_rows', 10),
           'facet' => 'true',
-          'facet.limit' => variable_get('apachesolr_facet_limit', 100),
+          'facet.limit' => $facet_limit,
           'facet.field' => array('tid', 'type', 'uid', 'language'),
           'facet.mincount' => 1,
           'facet.sort' => 'true'
