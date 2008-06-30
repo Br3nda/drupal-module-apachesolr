@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+<!-- Id$ -->
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
  contributor license agreements.  See the NOTICE file distributed with
@@ -243,10 +244,11 @@
      Lucene store title, body, type, etc., is that we retrieve them with the search
      result set and don't need to go to the database with a node_load. -->
 
-   <field name="title" type="text" indexed="false" stored="true"/>
+   <field name="title" type="string" indexed="true" stored="true"/>
    <field name="body" type="text" indexed="false" stored="true"/>
    <field name="type" type="string" indexed="true" stored="true"/>
    <field name="uid"  type="integer" indexed="true" stored="true"/>
+   <field name="name" type="string" indexed="true" stored="true"/>
    <field name="changed" type="integer" indexed="true" stored="true"/>
    <field name="nid"  type="integer" indexed="true" stored="true"/>
    <field name="comment_count" type="integer" indexed="true" stored="true"/>
@@ -254,7 +256,7 @@
    <field name="vid"  type="integer" indexed="true" stored="true" multiValued="true"/>
    <field name="taxonomy_name" type="string" indexed="true" stored="true" multiValued="true"/>
    <field name="text" type="text" indexed="true" stored="false"/>
-
+   <field name="language" type="string" indexed="true" stored="true"/>
 
    <!-- Here, default is used to create a "timestamp" field indicating
         When each document was indexed.

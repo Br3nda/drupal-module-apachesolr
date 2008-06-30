@@ -1,4 +1,6 @@
+; $Id: apachesolr.info,v 1.2 2008/06/30 17:46:45 drunkenmonkey Exp $
 name = Apache Solr framework
 description = Framework for searching with solr
-dependencies = search
-package = Solr
+dependencies [] = search
+package = ApacheSolr
+core = "6.x"

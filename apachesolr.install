@@ -1,9 +1,11 @@
 <?php
-
+// $Id: apachesolr.install,v 1.2 2008/06/30 17:46:45 drunkenmonkey Exp $
 function apachesolr_uninstall() {
   variable_del('apachesolr_cron_last');
   variable_del('apachesolr_cron_last_nid');
   variable_del('apachesolr_host');
   variable_del('apachesolr_port');
   variable_del('apachesolr_path');
+  variable_del('apachesolr_rows');
+  variable_del('apachesolr_facet_limits');
 }

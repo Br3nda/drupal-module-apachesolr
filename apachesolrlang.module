@@ -1,0 +1,69 @@
+<?php
+
+// $Id: apachesolrlang.module,v 1.2 2008/06/30 17:46:45 drunkenmonkey Exp $
+
+/**
+ * Implementation of hook_block().
+ */
+function apachesolrlang_block($op = 'list', $delta = 0, $edit = array()) {
+  $title = t('ApacheSolr: Filter by language');
+  switch ($op) {
+    case 'list':
+      $blocks['language'] = array('info' => $title);
+      return $blocks;
+
+    case 'view':
+      if (apachesolr_has_searched()) {
+        // Get the query and response. Without these no blocks make sense.
+        $response =& apachesolr_static_response_cache();
+        if (empty($response)) {
+          return;
+        }
+        $query =& apachesolr_drupal_query();
+        
+        switch ($delta) {
+          case 'language':
+            if (is_array($response->facets->language)) {
+              $contains_active = FALSE;
+              foreach ($response->facets->language as $language => $count) {
+                $unclick_link = '';
+                unset($active);
+                $new_query = clone $query;
+                if ($active = $query->has_field('language', $language)) {
+                  $contains_active = TRUE;
+                  $new_query->remove_field('language', $language);
+                  $path = 'search/'. arg(1). '/'. $new_query->get_query();
+                  $unclick_link = theme('apachesolr_unclick_link', $path);
+                }
+                else {
+                  $new_query->add_field('language', $language);
+                  $path = 'search/'. arg(1). '/'. $new_query->get_query();
+                }
+                $countsort = $count == 0 ? '' : 1 / $count;
+                // if numdocs == 1 and !active, don't add.
+                if ($response->numFound == 1 && !$active) {
+                  // skip
+                }
+                else {
+                  $languages[] = theme('apachesolr_facet_item', locale_language_name($language), $count, $path, $active, $unclick_link);
+                }
+              }
+              ksort($languages);
+              $facet_limit = isset($facet_limits[$delta]) ? $facet_limits[$delta] : 10;
+              $languages = array_slice($languages, 0, $facet_limit);
+              $output = theme('apachesolr_facet_list', $languages);
+              return array('subject' => $title, 'content' => $output);
+            }
+
+            break;
+        }
+      }
+      break;
+    
+    case 'configure':
+      return apachesolr_block($op, $delta);
+    
+    case 'edit':
+      return apachesolr_block($op, $delta, $edit);
+  }
+}
