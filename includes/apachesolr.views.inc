@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr.views.inc,v 1.1 2008/06/30 17:46:45 drunkenmonkey Exp $
+// $Id: apachesolr.views.inc,v 1.2 2008/07/01 23:56:10 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -14,6 +14,10 @@ function apachesolr_views_data() {
     'filter' => array(
       'field' => 'nid',
       'handler' => 'views_handler_filter_apachesolr_query',
+    ),
+    'argument' => array(
+      'field' => 'nid',
+      'handler' => 'views_handler_argument_apachesolr_query',
     ),
   );
   
@@ -64,6 +68,72 @@ class views_handler_filter_apachesolr_query extends views_handler_filter {
 }
 
 /**
+ * Class for filtering the node according to the apachesolr query. 
+ */
+class views_handler_argument_apachesolr_query extends views_handler_argument {
+
+  /**
+   * Display the filter on the administrative summary
+   */
+  function admin_summary() {
+    return 'Display Apache Solr search results';
+  }
+
+  /**
+   * Add a where clause to the query that leaves only the results of the
+   * last apachesolr search in the view.
+   * If no search was performed, don't show any nodes.
+   */
+  function query() {
+    $this->ensure_my_table();
+
+    // This is the object that does the communication with the solr server.
+    $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
+    // This is the object that knows about the query coming from the user.
+    $query =& apachesolr_drupal_query($this->argument);
+    
+    try {
+      $params = array(
+        //'qt' => 'standard',
+        'fl' => '*,score',
+        'rows' => 1E6,
+        'facet' => 'true',
+        'facet.limit' => 0,
+        'facet.field' => array('tid', 'type', 'uid', 'language'),
+        'facet.mincount' => 1,
+        'facet.sort' => 'true'
+      );
+      if ($fields = apachesolr_cck_fields()) {
+        foreach ($fields as $name => $field) {
+          $index_key = apachesolr_index_key($field);
+          $params['facet.field'][] = $index_key;
+        }
+      }
+      $response = $solr->search($query->get_query(), 0, 1E6, $params);
+
+      $nid_list = '';
+      foreach ($response->documents as $doc) {
+        $nid_list .= ', ' . $doc->nid;
+      }
+
+      if (strlen($nid_list) > 2) {
+        $nid_list = substr($nid_list, 2);
+        $where = "$this->table_alias.$this->real_field IN ($nid_list)";
+      }
+      else {
+        $where = "0 = 1";
+      }
+
+      $this->query->add_where($this->options['group'], $where);
+    }
+    catch (Exception $e) {
+      watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
+    }
+  }
+
+}
+
+/**
  * Implementation of hook_views_default_views().
  * 
  * Returns a view for displaying apachesolr search results.
@@ -71,7 +141,7 @@ class views_handler_filter_apachesolr_query extends views_handler_filter {
 function apachesolr_views_default_views() {
   $view = new view;
   $view->name = 'apachesolr_search_result';
-  $view->description = 'Display the result of the current Apache Solr search.';
+  $view->description = 'Display the results of the current Apache Solr search.';
   $view->tag = 'apachesolr';
   $view->view_php = '';
   $view->base_table = 'node';
@@ -200,13 +270,178 @@ function apachesolr_views_default_views() {
   $handler = $view->new_display('block', 'Block', 'block_1');
   $handler->override_option('block_description', 'ApacheSolr: Search results');
   
-  
-  
   // Add view to list of views to provide.
   $views[$view->name] = $view;
 
-  // ...Repeat all of the above for each view the module should provide.
 
-  // At the end, return array of default views.
+
+
+  $view = new view;
+  $view->name = 'apachesolr_search';
+  $view->description = 'Search the site with Apache Solr';
+  $view->tag = 'apachesolr';
+  $view->view_php = '';
+  $view->base_table = 'node';
+  $view->is_cacheable = '0';
+  $view->api_version = 2;
+  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+  $handler = $view->new_display('default', 'Defaults', 'default');
+  $handler->override_option('fields', array(
+    'title' => array(
+      'label' => 'Title',
+      'link_to_node' => 1,
+      'exclude' => 0,
+      'id' => 'title',
+      'table' => 'node',
+      'field' => 'title',
+      'relationship' => 'none',
+    ),
+    'timestamp' => array(
+      'label' => 'Has new content',
+      'link_to_node' => 0,
+      'comments' => 1,
+      'exclude' => 0,
+      'id' => 'timestamp',
+      'table' => 'history_user',
+      'field' => 'timestamp',
+      'relationship' => 'none',
+    ),
+    'name' => array(
+      'label' => 'Name',
+      'link_to_user' => 1,
+      'exclude' => 0,
+      'id' => 'name',
+      'table' => 'users',
+      'field' => 'name',
+      'relationship' => 'none',
+    ),
+    'created' => array(
+      'label' => 'Post date',
+      'date_format' => 'large',
+      'custom_date_format' => '',
+      'exclude' => 0,
+      'id' => 'created',
+      'table' => 'node',
+      'field' => 'created',
+      'relationship' => 'none',
+    ),
+    'edit_node' => array(
+      'label' => 'Edit link',
+      'text' => '',
+      'exclude' => 0,
+      'id' => 'edit_node',
+      'table' => 'node',
+      'field' => 'edit_node',
+      'relationship' => 'none',
+    ),
+    'delete_node' => array(
+      'label' => 'Delete link',
+      'text' => '',
+      'exclude' => 0,
+      'id' => 'delete_node',
+      'table' => 'node',
+      'field' => 'delete_node',
+      'relationship' => 'none',
+    ),
+  ));
+  $handler->override_option('arguments', array(
+    'apachesolr' => array(
+      'default_action' => 'ignore',
+      'style_plugin' => 'default_summary',
+      'style_options' => array(),
+      'wildcard' => '*:*',
+      'wildcard_substitution' => 'All',
+      'title' => 'Search for %1',
+      'default_argument_type' => 'fixed',
+      'default_argument' => '',
+      'validate_type' => 'none',
+      'validate_fail' => 'not found',
+      'id' => 'apachesolr',
+      'table' => 'node',
+      'field' => 'apachesolr',
+      'relationship' => 'none',
+      'default_argument_user' => 0,
+      'default_argument_fixed' => '',
+      'default_argument_php' => '',
+      'validate_argument_node_type' => array(
+        'blog' => 0,
+        'page' => 0,
+        'story' => 0,
+      ),
+      'validate_argument_node_access' => 0,
+      'validate_argument_nid_type' => 'nid',
+      'validate_argument_vocabulary' => array(
+        '2' => 0,
+      ),
+      'validate_argument_type' => 'tid',
+      'validate_argument_php' => '',
+    ),
+  ));
+  $handler->override_option('access', array(
+    'type' => 'none',
+    'role' => array(),
+    'perm' => '',
+  ));
+  $handler->override_option('title', 'Search results');
+  $handler->override_option('use_ajax', TRUE);
+  $handler->override_option('use_pager', '1');
+  $handler->override_option('style_plugin', 'table');
+  $handler->override_option('style_options', array(
+    'grouping' => '',
+    'override' => 1,
+    'sticky' => 1,
+    'order' => 'desc',
+    'columns' => array(
+      'delete_node' => 'edit_node',
+      'edit_node' => 'edit_node',
+      'timestamp' => 'title',
+      'created' => 'created',
+      'title' => 'title',
+      'name' => 'name',
+    ),
+    'info' => array(
+      'delete_node' => array(
+        'separator' => '',
+      ),
+      'edit_node' => array(
+        'separator' => ' | ',
+      ),
+      'timestamp' => array(
+        'separator' => '',
+      ),
+      'created' => array(
+        'sortable' => 1,
+        'separator' => '',
+      ),
+      'title' => array(
+        'sortable' => 1,
+        'separator' => ' ',
+      ),
+      'name' => array(
+        'sortable' => 1,
+        'separator' => '',
+      ),
+    ),
+    'default' => 'created',
+  ));
+  $handler = $view->new_display('page', 'Page', 'page_1');
+  $handler->override_option('path', 'solrsearch/results');
+  $handler->override_option('menu', array(
+    'type' => 'normal',
+    'title' => 'Solr Views search',
+    'weight' => '0',
+  ));
+  $handler->override_option('tab_options', array(
+    'type' => 'none',
+    'title' => '',
+    'weight' => 0,
+  ));
+  
+  $views[$view->name] = $view;
+
+
+
+
+
   return $views;
 }
