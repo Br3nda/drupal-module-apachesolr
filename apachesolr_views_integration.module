@@ -8,8 +8,8 @@ function apachesolr_views_integration_menu() {
   $items['solrsearch'] = array(
     'title' => 'Search',
     'description' => 'Search the site with Apache Solr.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('apachesolr_views_integration_form'),
+    'page callback' => 'apachesolr_views_integration_search_page',
+    'page arguments' => array(),
     'access callback' => 'user_access',
     'access arguments' => array(),
     'type' => MENU_NORMAL_ITEM,
@@ -18,14 +18,33 @@ function apachesolr_views_integration_menu() {
 }
 
 /**
+ * Shows the search form or results, depending on arguments.
+ */
+function apachesolr_views_integration_search_page() {
+  $args = func_get_args();
+  if (count($args) > 0) {
+    $output = views_embed_view('apachesolr_search', 'page', $args[0]);
+    $response = apachesolr_static_response_cache();
+    if ($response->numFound != 0) {
+      return $output;
+    }
+    return '<p>' . t('Your search yielded no results.') . '</p>';
+  }
+  else {
+    return drupal_get_form('apachesolr_views_integration_form');
+  }
+}
+
+/**
  * Returns the search form.
  */
 function apachesolr_views_integration_form() {
   $form = array();
-  $form['query'] = array(
+  $form['keys'] = array(
     '#prefix' => '<p>',
     '#type' => 'textfield',
     '#title' => t('Enter your keywords'),
+    '#maxlength' => 255,
   );
   $form['submit'] = array(
     '#type' => 'submit',
@@ -39,8 +58,8 @@ function apachesolr_views_integration_form() {
  * Ensures that somethig is entered into the search field.
  */
 function apachesolr_views_integration_form_validate($form, &$form_state) {
-  if ($form_state['values']['query'] == '') {
-    form_set_error('query', t('Please enter some keywords.'));
+  if ($form_state['values']['keys'] == '') {
+    form_set_error('keys', t('Please enter some keywords.'));
   }
 }
 
@@ -48,6 +67,6 @@ function apachesolr_views_integration_form_validate($form, &$form_state) {
  * Redirects to the search results.
  */
 function apachesolr_views_integration_form_submit($form, &$form_state) {
-  $form_state['redirect'] = 'solrsearch/results/' . urlencode($form_state['values']['query']);
+  $form_state['redirect'] = 'solrsearch/' . urlencode($form_state['values']['keys']);
 }
 
