@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.3 2008/07/04 12:33:44 drunkenmonkey Exp $
+// $Id: apachesolr.module,v 1.4 2008/07/04 14:10:42 drunkenmonkey Exp $
 
 /**
  * @file
@@ -723,6 +723,9 @@ function apachesolr_current_keys($keys = NULL, $reset = FALSE) {
   
   if (!empty($keys)) {
     $_keys = $keys;
+  }
+  if (empty($_keys)) {
+    $_keys = search_get_keys();
   }
   return $_keys;
 }
