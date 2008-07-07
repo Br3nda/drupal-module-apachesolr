@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.2 2008/06/30 17:46:45 drunkenmonkey Exp $ */
+/* $Id: README.txt,v 1.3 2008/07/07 16:56:51 drunkenmonkey Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search can be used as a replacement for core content search and boasts both extra features and better performance. Among the extra features is the ability to have faceted search on facets ranging from content author to taxonomy to arbitrary CCK fields.
 
@@ -30,3 +30,11 @@ Test that your solr server is now available by visiting http://localhost:8983/so
 Now run cron on your Drupal site until your content is indexed.
 
 Enable blocks for facets at Administer > Site building > Blocks.
+
+
+Views integration
+-----------------
+
+At the current state of the Views integration for the module, there is a view that uses an apachesolr argument to search the site with Apache Solr. It's located at /solrsearch, just enable the corresponding menu item and you are ready to go.
+
+There is also a block named "ApacheSolr: Search results" which will display the results of the current ApacheSolr search, if there was one. You can use this one to display a view containing the results in addtion to the normal display, disabling the default display is currently not possible.
