@@ -23,7 +23,7 @@ function apachesolr_views_integration_menu() {
 function apachesolr_views_integration_search_page() {
   $args = func_get_args();
   if (count($args) > 0) {
-    $output = views_embed_view('apachesolr_search', 'page', $args[0]);
+    $output = views_embed_view('apachesolr_search', 'default', $args[0]);
     $response = apachesolr_static_response_cache();
     if ($response->numFound != 0) {
       return $output;

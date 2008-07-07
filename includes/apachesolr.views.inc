@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr.views.inc,v 1.2 2008/07/01 23:56:10 drunkenmonkey Exp $
+// $Id: apachesolr.views.inc,v 1.3 2008/07/07 16:57:24 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -423,18 +423,6 @@ function apachesolr_views_default_views() {
       ),
     ),
     'default' => 'created',
-  ));
-  $handler = $view->new_display('page', 'Page', 'page_1');
-  $handler->override_option('path', 'solrsearch/results');
-  $handler->override_option('menu', array(
-    'type' => 'normal',
-    'title' => 'Solr Views search',
-    'weight' => '0',
-  ));
-  $handler->override_option('tab_options', array(
-    'type' => 'none',
-    'title' => '',
-    'weight' => 0,
   ));
   
   $views[$view->name] = $view;
