@@ -1,5 +1,7 @@
 <?php
 
+// $Id: apachesolr_views_integration.module,v 1.5 2008/07/08 19:17:28 drunkenmonkey Exp $
+
 /**
  * Implementation of hook_menu().
  */
@@ -10,18 +12,10 @@ function apachesolr_views_integration_menu() {
     'description' => 'Search the site with Apache Solr.',
     'page callback' => 'apachesolr_views_integration_search_page',
     'page arguments' => array(),
-    'access callback' => 'apachesolr_views_integration_access_view',
-    'access arguments' => array(''),
+    'access callback' => TRUE,
     'type' => MENU_NORMAL_ITEM,
   );
   return $items;
-}
-
-/*
- *View should be displayed to everyone, so just return TRUE.
- */
-function apachesolr_views_integration_access_view() {
-    return TRUE;
 }
 
 /**
