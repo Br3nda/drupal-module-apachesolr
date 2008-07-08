@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.3 2008/07/08 14:39:20 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.4 2008/07/08 18:06:51 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -42,6 +42,7 @@ class views_handler_filter_apachesolr_query extends views_handler_filter {
    * If no search was performed, don't show any nodes.
    */
   function query() {
+    echo "BLAAA";
     $this->ensure_my_table();
     
     if (!apachesolr_has_searched()) {
@@ -142,7 +143,7 @@ class views_handler_argument_apachesolr_query extends views_handler_argument {
  * 
  * Returns a view for displaying apachesolr search results.
  */
-function apachesolr_views_default_views() {
+function apachesolr_views_integration_views_default_views() {
   $view = new view;
   $view->name = 'apachesolr_search_result';
   $view->description = 'Display the results of the current Apache Solr search.';
