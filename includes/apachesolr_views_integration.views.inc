@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.2 2008/07/08 14:33:25 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.3 2008/07/08 14:39:20 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -353,8 +353,8 @@ function apachesolr_views_default_views() {
       'default_action' => 'ignore',
       'style_plugin' => 'default_summary',
       'style_options' => array(),
-      'wildcard' => '*:*',
-      'wildcard_substitution' => 'All',
+      'wildcard' => '',
+      'wildcard_substitution' => '',
       'title' => 'Search for %1',
       'default_argument_type' => 'fixed',
       'default_argument' => '',
