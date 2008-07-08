@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.1 2008/07/08 14:20:54 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.2 2008/07/08 14:33:25 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -93,12 +93,14 @@ class views_handler_argument_apachesolr_query extends views_handler_argument {
     $query =& apachesolr_drupal_query($this->argument);
     
     try {
+      $facet_limits = variable_get('apachesolr_facet_limits', array());
+      $facet_limit = (count($facet_limits) > 0) ? max($facet_limits) : 10;
       $params = array(
         //'qt' => 'standard',
         'fl' => '*,score',
         'rows' => 1E6,
         'facet' => 'true',
-        'facet.limit' => 0,
+        'facet.limit' => $facet_limit,
         'facet.field' => array('tid', 'type', 'uid', 'language'),
         'facet.mincount' => 1,
         'facet.sort' => 'true'
@@ -110,6 +112,8 @@ class views_handler_argument_apachesolr_query extends views_handler_argument {
         }
       }
       $response = $solr->search($query->get_query(), 0, 1E6, $params);
+      apachesolr_has_searched(TRUE);
+      apachesolr_static_response_cache($response);
 
       $nid_list = '';
       foreach ($response->documents as $doc) {
