@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr.views.inc,v 1.3 2008/07/07 16:57:24 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.1 2008/07/08 14:20:54 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
