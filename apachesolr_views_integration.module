@@ -10,11 +10,18 @@ function apachesolr_views_integration_menu() {
     'description' => 'Search the site with Apache Solr.',
     'page callback' => 'apachesolr_views_integration_search_page',
     'page arguments' => array(),
-    'access callback' => 'user_access',
-    'access arguments' => array(),
+    'access callback' => 'apachesolr_views_integration_access_view',
+    'access arguments' => array(''),
     'type' => MENU_NORMAL_ITEM,
   );
   return $items;
+}
+
+/*
+ *View should be displayed to everyone, so just return TRUE.
+ */
+function apachesolr_views_integration_access_view() {
+    return TRUE;
 }
 
 /**
@@ -23,7 +30,7 @@ function apachesolr_views_integration_menu() {
 function apachesolr_views_integration_search_page() {
   $args = func_get_args();
   if (count($args) > 0) {
-    $output = views_embed_view('apachesolr_search', 'default', $args[0]);
+    $output = views_embed_view('apachesolr_search', 'default', array_shift($args));
     $response = apachesolr_static_response_cache();
     if ($response->numFound != 0) {
       return $output;
@@ -67,6 +74,6 @@ function apachesolr_views_integration_form_validate($form, &$form_state) {
  * Redirects to the search results.
  */
 function apachesolr_views_integration_form_submit($form, &$form_state) {
-  $form_state['redirect'] = 'solrsearch/' . urlencode($form_state['values']['keys']);
+  $form_state['redirect'] = 'solrsearch/' . /*urlencode(str_replace('+', ' ', */$form_state['values']['keys'];
 }
 
