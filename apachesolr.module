@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.16 2008/06/29 13:53:29 drunkenmonkey Exp $
+// $Id: apachesolr.module,v 1.1.2.17 2008/07/09 16:41:27 robertDouglass Exp $
 
 /**
  * @file
@@ -377,7 +377,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
         }
 
         // Get information needed by the rest of the blocks about limits.
-        $facet_limits = variable_get('apachesolr_facet_limits', array());
+        $facet_display_limits = variable_get('apachesolr_facet_display_limits', array());
         
         if ((strpos($delta, 'vocabulary-') === 0) && module_exists('taxonomy')) {
           // On first time through here build all the terms. Static caching
@@ -416,8 +416,8 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
           $vocab = taxonomy_get_vocabulary($vid);
           if (is_numeric($vid) && is_array($terms) && is_array($terms[$vid])) {
             ksort($terms[$vid]);
-            $facet_limit = isset($facet_limits[$delta]) ? $facet_limits[$delta] : 10;
-            $terms[$vid] = array_slice($terms[$vid], 0, $facet_limit);
+            $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
+            $terms[$vid] = array_slice($terms[$vid], 0, $facet_display_limit);
             return array('subject' => t('Filter by @name', array('@name' => $vocab->name)),
                          'content' => theme('apachesolr_facet_list', $terms[$vid]));
           }
@@ -456,8 +456,8 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
               }
               if (is_array($types)) {
                 ksort($types);
-                $facet_limit = isset($facet_limits[$delta]) ? $facet_limits[$delta] : 10;
-                $types = array_slice($types, 0, $facet_limit);
+                $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
+                $types = array_slice($types, 0, $facet_display_limit);
                 $output = theme('apachesolr_facet_list', $types);
                 return array('subject' => $type_title, 'content' => $output);
               }
@@ -492,8 +492,8 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
               }
               if (is_array($users)) {
                 ksort($users);
-                $facet_limit = isset($facet_limits[$delta]) ? $facet_limits[$delta] : 10;
-                $users = array_slice($users, 0, $facet_limit);
+                $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
+                $users = array_slice($users, 0, $facet_display_limit);
                 $output = theme('apachesolr_facet_list', $users);
                 return array('subject' => $author_title, 'content' => $output);
               }
@@ -532,8 +532,8 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
                   }
                   if (is_array($facets)) {
                     ksort($facets);
-                    $facet_limit = isset($facet_limits[$delta]) ? $facet_limits[$delta] : 10;
-                    $facets = array_slice($facets, 0, $facet_limit);
+                    $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
+                    $facets = array_slice($facets, 0, $facet_display_limit);
                     $output = theme('apachesolr_facet_list', $facets);
                     $label = db_result(db_query("SELECT label FROM {node_field_instance} WHERE field_name = '%s'", $name));
                     return array('subject' => t('Filter by @field', array('@field' => $label)),
@@ -547,47 +547,69 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
         break;
       }
       break;
-      
+
     case 'configure':
       if ($delta != 'sort') {
-        $facet_limits = variable_get('apachesolr_facet_limits', array());
+        $facet_display_limits = variable_get('apachesolr_facet_display_limits', array());
+        $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
         
         // If the block is not 'sort' (and therefore is a facet block),
         // display facet limit option.
-        return array('facet_limit' => array(
-            '#type' => 'textfield',
-            '#title' => t('Facet Limit'),
-            '#required' => TRUE,
-            '#description' => t('Enter a number 1 or greater that is the maximum number of facets to display in this block.'),
-            '#default_value' => isset($facet_limits[$delta]) ? $facet_limits[$delta] : 10,
-            '#validate' => array('apachesolr_facet_limit_validate' => array()),
-          ),
+        $form['facet_display_limit'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Facet Display Limit'),
+          '#required' => TRUE,
+          '#description' => t('Enter a number 1 or greater that is the maximum number of facet links to display in this block.'),
+          '#default_value' => isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10,
+          '#validate' => array('apachesolr_facet_display_limit_validate' => array()),
         );
+        $form['facet_query_limit'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Facet Query Limit'),
+          '#required' => TRUE,
+          '#description' => t('Enter a number, either -1 or a (large) positive integer. This is the number of documents that Solr will consider while building facets. If you are not having problems with performance on your ApacheSolr searches, leave this set to -1 (no limit). Setting a limit will affect the number of results that are counted when building your facet links, so the tradeoff is between completeness (-1, no limit) and performance. If you need to set a limit, start with a large number such as 1000 and see if that helps. Smaller numbers will result in better performance but fewer documents in the facet counts.'),
+          '#default_value' => isset($facet_query_limits[$delta]) ? $facet_query_limits[$delta] : -1,
+          '#validate' => array('apachesolr_facet_query_limit_validate' => array()),
+        );
+        return $form;
       }
       break;
-      
+
     case 'save':
       if ($delta != 'sort') {
-        $val = intval($edit['facet_limit']);
-        // Save the new facet limit for this facet
-        $facet_limits = variable_get('apachesolr_facet_limits', array());
-        $facet_limits[$delta] = $val;
-        variable_set('apachesolr_facet_limits', $facet_limits);
+        // Save display limits
+        $display_limit = intval($edit['facet_display_limit']);
+        $facet_display_limits = variable_get('apachesolr_facet_display_limits', array());
+        $facet_display_limits[$delta] = $display_limit;
+        variable_set('apachesolr_facet_display_limits', $facet_display_limits);
+        
+        // Save query limits
+        $query_limit = intval($edit['facet_query_limit']);
+        $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
+        $facet_query_limits[$delta] = $query_limit;
+        variable_set('apachesolr_facet_query_limits', $facet_query_limits);
       }
       break;
   }
 }
 
 /*
- * Validates a facet limit input. Must be a positive integer.
+ * Validates a facet display limit input. Must be a positive integer.
  */
-function apachesolr_facet_limit_validate($form) {
-  if (isset($form['#value'])) {
-    $value = $form['#value'];
-    if ($value < 1) {
-      form_set_error('facet_limit', t('Please enter a number greater than 1 for the facet limit.'));
-      return FALSE;
-    }
+function apachesolr_facet_display_limit_validate($form_values) {
+  if ($form_values['#post']['facet_display_limit'] < 1) {
+    form_set_error('facet_display_limit', t('Please enter a number greater than 1 for the facet display limit.'));
+    return FALSE;
+  }
+}
+
+/*
+ * Validates a facet query limit input. Must be a positive integer or -1.
+ */
+function apachesolr_facet_query_limit_validate($form_values) {
+  if ($form_values['#post']['facet_query_limit'] < 1 && $form_values['#post']['facet_query_limit'] != -1) {
+    form_set_error('facet_query_limit', t('Please enter either -1 (for no limit) or a (large) number greater than 1 for the facet query limit. Suggested values: -1, or 1000 if performance is a concern.'));
+    return FALSE;
   }
 }
 
