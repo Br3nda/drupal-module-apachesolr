@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.14 2008/07/09 15:06:00 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.15 2008/07/11 17:37:09 drunkenmonkey Exp $
 
 /**
  * @file
@@ -83,7 +83,7 @@ function apachesolr_requirements($phase) {
       }
     }
     catch (Exception $e) {
-      watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
+      watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
     }
     $value =  $ping ? $t('Solr can be pinged.') : $t('No Solr instance is available.');
     $severity = $ping ? REQUIREMENT_OK: REQUIREMENT_ERROR;
@@ -183,7 +183,7 @@ class ApacheSolrUpdate {
       }
     }
     catch (Exception $e) {
-      watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
+      watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
       return;
     }
 
@@ -269,7 +269,7 @@ class ApacheSolrUpdate {
           }
         }
         catch (Exception $e) {
-          watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
+          watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
         }
       }
       self::success('apachesolr', $solr_last_change, $solr_last_id);
@@ -277,13 +277,13 @@ class ApacheSolrUpdate {
     if (is_object($solr)) {
       // remaining documents
       try {
-        watchdog('Apache Solr', "Adding " . count($documents) ." documents in cleanup");
+        watchdog('Apache Solr', 'Adding %count documents in cleanup', array('%count' => count($documents)));
         $solr->addDocuments($documents);
         $solr->commit();
         $solr->optimize(FALSE, FALSE);
       }
       catch (Exception $e) {
-        watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
+        watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
       }
     }
   }

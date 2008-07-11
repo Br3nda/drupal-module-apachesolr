@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.10 2008/07/09 15:06:00 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.11 2008/07/11 17:37:09 drunkenmonkey Exp $
 
 /**
  * @file
@@ -106,7 +106,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
 
       } // try
       catch (Exception $e) {
-        watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
+        watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
       }
 
   } // switch
