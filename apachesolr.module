@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.16 2008/07/11 17:41:41 drunkenmonkey Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.17 2008/07/12 09:59:27 robertDouglass Exp $
 
 /**
  * @file
@@ -571,7 +571,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
           '#type' => 'textfield',
           '#title' => t('Facet Display Limit'),
           '#required' => TRUE,
-          '#description' => t('Enter a number 1 or greater that is the maximum number of facet links to display in this block.'),
+          '#description' => t('Enter a number that is the maximum number of facet links to display in this block. Must be 1 or greater.'),
           '#default_value' => isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10,
           '#validate' => array('apachesolr_facet_display_limit_validate'),
         );
@@ -579,8 +579,8 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
           '#type' => 'textfield',
           '#title' => t('Facet Query Limit'),
           '#required' => TRUE,
-          '#description' => t('Enter a number, either -1 or a (large) positive integer. This is the number of documents that Solr will consider while building facets. If you are not having problems with performance on your ApacheSolr searches, leave this set to -1 (no limit). Setting a limit will affect the number of results that are counted when building your facet links, so the tradeoff is between completeness (-1, no limit) and performance. If you need to set a limit, start with a large number such as 1000 and see if that helps. Smaller numbers will result in better performance but fewer documents in the facet counts.'),
-          '#default_value' => isset($facet_query_limits[$delta]) ? $facet_query_limits[$delta] : -1,
+          '#description' => t('This number indicates the maximum number of constraint counts that should be returned for the facet fields. -1 means unlimited. The default value is 100. See !link for more information.', array('!link' => 'http://tinyurl.com/6lpdzv')),
+          '#default_value' => isset($facet_query_limits[$delta]) ? $facet_query_limits[$delta] : 100,
           '#validate' => array('apachesolr_facet_query_limit_validate'),
         );
         return $form;
