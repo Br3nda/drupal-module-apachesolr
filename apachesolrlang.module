@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolrlang.module,v 1.3 2008/07/04 12:33:44 drunkenmonkey Exp $
+// $Id: apachesolrlang.module,v 1.4 2008/07/13 20:15:56 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_block().
@@ -25,6 +25,7 @@ function apachesolrlang_block($op = 'list', $delta = 0, $edit = array()) {
           case 'language':
             if (is_array($response->facets->language)) {
               $contains_active = FALSE;
+              $languages = array();
               foreach ($response->facets->language as $language => $count) {
                 $unclick_link = '';
                 unset($active);
@@ -48,11 +49,12 @@ function apachesolrlang_block($op = 'list', $delta = 0, $edit = array()) {
                   $languages[] = theme('apachesolr_facet_item', locale_language_name($language), $count, $path, $active, $unclick_link);
                 }
               }
-              ksort($languages);
-              $facet_limit = isset($facet_limits[$delta]) ? $facet_limits[$delta] : 10;
-              $languages = array_slice($languages, 0, $facet_limit);
-              $output = theme('apachesolr_facet_list', $languages);
-              return array('subject' => $title, 'content' => $output);
+              if (count($languages) > 0) {
+                $facet_limit = isset($facet_limits[$delta]) ? $facet_limits[$delta] : 10;
+                $languages = array_slice($languages, 0, $facet_limit);
+                $output = theme('apachesolr_facet_list', $languages);
+                return array('subject' => $title, 'content' => $output);
+              }
             }
 
             break;
