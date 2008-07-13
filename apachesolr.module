@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.17 2008/07/12 09:59:27 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.18 2008/07/13 19:33:06 drunkenmonkey Exp $
 
 /**
  * @file
@@ -277,7 +277,7 @@ class ApacheSolrUpdate {
     if (is_object($solr)) {
       // remaining documents
       try {
-        watchdog('Apache Solr', 'Adding %count documents in cleanup', array('%count' => count($documents)));
+        watchdog('Apache Solr', 'Adding @count documents in cleanup', array('@count' => count($documents)));
         $solr->addDocuments($documents);
         $solr->commit();
         $solr->optimize(FALSE, FALSE);
@@ -609,8 +609,8 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
  * Validates a facet display limit input. Must be a positive integer.
  */
 function apachesolr_facet_display_limit_validate($form, &$form_state) {
-  if ($form_state['values']['facet_limit'] < 1) {
-    form_set_error('facet_limit', t('Please enter a number greater than 1 for the facet limit.'));
+  if ($form_state['values']['facet_display_limit'] < 1) {
+    form_set_error('facet_limit', t('Please enter a number greater than 1 for the facet display limit.'));
     return FALSE;
   }
 }
@@ -619,8 +619,8 @@ function apachesolr_facet_display_limit_validate($form, &$form_state) {
  * Validates a facet query limit input. Must be a positive integer or -1.
  */
 function apachesolr_facet_query_limit_validate($form, &$form_state) {
-  if ($form_state['values']['facet_limit'] < 1) {
-    form_set_error('facet_limit', t('Please enter a number greater than 1 for the facet limit.'));
+  if ($form_state['values']['facet_query_limit'] < 1 && $form_state['values']['facet_query_limit'] != -1) {
+    form_set_error('facet_limit', t('Please enter a number greater than 1 or -1 for the facet query limit.'));
     return FALSE;
   }
 }
