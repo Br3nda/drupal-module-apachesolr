@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.6 2008/07/13 20:15:56 drunkenmonkey Exp $
+// $Id: apachesolr.module,v 1.7 2008/07/14 11:53:39 drunkenmonkey Exp $
 
 /**
  * @file
@@ -420,6 +420,9 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
         // Get information needed by the rest of the blocks about limits.
         $facet_display_limits = variable_get('apachesolr_facet_display_limits', array());
         
+        // Get the path to this node for appending a new query
+        $path_base = substr($_GET['q'], 0, strrpos($_GET['q'], '/')) . '/';
+        
         if ((strpos($delta, 'vocabulary-') === 0) && module_exists('taxonomy')) {
           // On first time through here build all the terms. Static caching
           // will make them available for other vocabulary blocks.
@@ -435,12 +438,12 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
                 if ($active = $query->has_field('tid', $tid)) {
                   $contains_active = TRUE;
                   $new_query->remove_field('tid', $term->tid);
-                  $path = 'search/' . arg(1) . '/' . $new_query->get_query();
+                  $path = $path_base. $new_query->get_query();
                   $unclick_link = theme('apachesolr_unclick_link', $path);
                 }
                 else {
                   $new_query->add_field('tid', $term->tid);
-                  $path = 'search/' . arg(1) . '/' . $new_query->get_query();
+                  $path = $path_base. $new_query->get_query();
                 }
                 $countsort = $count == 0 ? '' : 1 / $count;
                 // if numdocs == 1 and !active, don't add.
@@ -487,7 +490,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
             }
 
             $sort_links = array();
-            $path = 'search/'. arg(1). '/'. $query->get_query();
+            $path = $path_base. $query->get_query();
             foreach ($sorts as $type => $sort) {
               $new_sort = isset($solrsorts[$type]) ? $solrsorts[$type] == 'asc' ? 'desc' : 'asc' : $sort['default'];
               $sort_links[] = theme('apachesolr_sort_link', $sort['name'], $path, "solrsort={$type} {$new_sort}", isset($solrsorts[$type]) ? $solrsorts[$type] : '');
@@ -507,12 +510,12 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
                 if ($active = $query->has_field('type', $t)) {
                   $contains_active = TRUE;
                   $new_query->remove_field('type', $t);
-                  $path = 'search/'. arg(1) .'/'. $new_query->get_query();
+                  $path = $path_base. $new_query->get_query();
                   $unclick_link = theme('apachesolr_unclick_link', $path);
                 }
                 else {
                   $new_query->add_field('type', $t);
-                  $path = 'search/'. arg(1) .'/'. $new_query->get_query();
+                  $path = $path_base. $new_query->get_query();
                 }
                 $countsort = $count == 0 ? '' : 1 / $count;
                 // if numdocs == 1 and !active, don't add.
@@ -543,12 +546,12 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
                 if ($active = $query->has_field('uid', $uid)) {
                   $contains_active = TRUE;
                   $new_query->remove_field('uid', $uid);
-                  $path = 'search/'. arg(1) .'/'. $new_query->get_query();
+                  $path = $path_base. $new_query->get_query();
                   $unclick_link = theme('apachesolr_unclick_link', $path);
                 }
                 else {
                   $new_query->add_field('uid', $uid);
-                  $path = 'search/'. arg(1) .'/'. $new_query->get_query();
+                  $path = $path_base. $new_query->get_query();
                 }
                 $countsort = $count == 0 ? '' : 1 / $count;
                 // if numdocs == 1 and !active, don't add.
@@ -583,12 +586,12 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
                     if ($active = $query->has_field($index_key, $facet)) {
                       $contains_active = TRUE;
                       $new_query->remove_field($index_key, $facet);
-                      $path = 'search/'. arg(1) .'/'. $new_query->get_query();
+                      $path = $path_base. $new_query->get_query();
                       $unclick_link = theme('apachesolr_unclick_link', $path);
                     }
                     else {
                       $new_query->add_field($index_key, $facet);
-                      $path = 'search/'. arg(1) .'/'. $new_query->get_query();
+                      $path = $path_base. $new_query->get_query();
                     }
                     $countsort = $count == 0 ? '' : 1 / $count;
                     // if numdocs == 1 and !active, don't add.

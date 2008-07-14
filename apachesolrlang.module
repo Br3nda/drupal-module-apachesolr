@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolrlang.module,v 1.4 2008/07/13 20:15:56 drunkenmonkey Exp $
+// $Id: apachesolrlang.module,v 1.5 2008/07/14 11:53:39 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_block().
@@ -26,6 +26,10 @@ function apachesolrlang_block($op = 'list', $delta = 0, $edit = array()) {
             if (is_array($response->facets->language)) {
               $contains_active = FALSE;
               $languages = array();
+              
+              // Get the path to this node for appending a new query
+              $path_base = substr($_GET['q'], 0, strrpos($_GET['q'], '/')) . '/';
+              
               foreach ($response->facets->language as $language => $count) {
                 $unclick_link = '';
                 unset($active);
@@ -33,12 +37,12 @@ function apachesolrlang_block($op = 'list', $delta = 0, $edit = array()) {
                 if ($active = $query->has_field('language', $language)) {
                   $contains_active = TRUE;
                   $new_query->remove_field('language', $language);
-                  $path = 'search/'. arg(1). '/'. $new_query->get_query();
+                  $path = $path_base. $new_query->get_query();
                   $unclick_link = theme('apachesolr_unclick_link', $path);
                 }
                 else {
                   $new_query->add_field('language', $language);
-                  $path = 'search/'. arg(1). '/'. $new_query->get_query();
+                  $path = $path_base. $new_query->get_query();
                 }
                 $countsort = $count == 0 ? '' : 1 / $count;
                 // if numdocs == 1 and !active, don't add.
@@ -50,8 +54,9 @@ function apachesolrlang_block($op = 'list', $delta = 0, $edit = array()) {
                 }
               }
               if (count($languages) > 0) {
-                $facet_limit = isset($facet_limits[$delta]) ? $facet_limits[$delta] : 10;
-                $languages = array_slice($languages, 0, $facet_limit);
+                $facet_display_limits = variable_get('apachesolr_facet_display_limits', array());
+                $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
+                $languages = array_slice($languages, 0, $facet_display_limit);
                 $output = theme('apachesolr_facet_list', $languages);
                 return array('subject' => $title, 'content' => $output);
               }

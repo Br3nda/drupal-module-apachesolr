@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.4 2008/07/08 18:06:51 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.5 2008/07/14 11:53:39 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -94,18 +94,21 @@ class views_handler_argument_apachesolr_query extends views_handler_argument {
     $query =& apachesolr_drupal_query($this->argument);
     
     try {
-      $facet_limits = variable_get('apachesolr_facet_limits', array());
-      $facet_limit = (count($facet_limits) > 0) ? max($facet_limits) : 10;
       $params = array(
         //'qt' => 'standard',
         'fl' => '*,score',
-        'rows' => 1E6,
+        'rows' => variable_get('apachesolr_rows', 10),
         'facet' => 'true',
-        'facet.limit' => $facet_limit,
         'facet.field' => array('tid', 'type', 'uid', 'language'),
         'facet.mincount' => 1,
         'facet.sort' => 'true'
       );
+      
+      // Facet limits
+      $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
+      foreach ($facet_query_limits as $fieldname => $limit) {
+        $params[$fieldname . '.facet.limit'] = $limit;
+      }
       if ($fields = apachesolr_cck_fields()) {
         foreach ($fields as $name => $field) {
           $index_key = apachesolr_index_key($field);
