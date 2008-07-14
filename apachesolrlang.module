@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolrlang.module,v 1.1.2.8 2008/07/12 09:59:27 robertDouglass Exp $
+// $Id: apachesolrlang.module,v 1.1.2.9 2008/07/14 11:24:28 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_block().
@@ -50,9 +50,9 @@ function apachesolrlang_block($op = 'list', $delta = 0, $edit = array()) {
                 }
               }
               if (count($languages) > 0) {
-                $facet_limits = variable_get('apachesolr_facet_limits', array());
-                $facet_limit = isset($facet_limits[$delta]) ? $facet_limits[$delta] : 10;
-                $languages = array_slice($languages, 0, $facet_limit);
+                $facet_display_limits = variable_get('apachesolr_facet_display_limits', array());
+                $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
+                $languages = array_slice($languages, 0, $facet_display_limit);
                 $output = theme('apachesolr_facet_list', $languages);
                 return array('subject' => $title, 'content' => $output);
               }
