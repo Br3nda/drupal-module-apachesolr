@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.5 2008/07/14 11:53:39 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.6 2008/07/18 23:53:19 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -42,7 +42,6 @@ class views_handler_filter_apachesolr_query extends views_handler_filter {
    * If no search was performed, don't show any nodes.
    */
   function query() {
-    echo "BLAAA";
     $this->ensure_my_table();
     
     if (!apachesolr_has_searched()) {
@@ -440,4 +439,152 @@ function apachesolr_views_integration_views_default_views() {
 
 
   return $views;
+}
+
+/**
+ * Class for handling a view that gets its data not from the database, but from
+ * a Solr server.
+ */
+class apachesolr_views_query {
+  
+  /** Array storing the keys that will be used for the search. */
+  private $_keys;
+  
+  /** Array containing the parameters that will be handed to Solr. */
+  private $_params;
+  
+  /** Stores the search's result, once available. */
+  private $_results;
+  
+  /** Stores the Solr server's response, once available. */
+  private $_response;
+  
+  
+  /** Constructs this objects and fills it with default values. */
+  public function __construct() {
+    $this->_keys = array();
+    $this->_params = apachesolr_search_get_params();
+    _apachesolr_include_solrclient();
+  }
+  
+  /** Adds the specified term to the search. */
+  public function addTerm($term, $field = 'text') {
+    $term = self::escapeTerm($term);
+    if ($field != 'text') {
+      $term = $field . ':' . $term; 
+    }
+    $this->_keys[] = $term;
+  }
+  
+  /**
+   * Add a group of search terms to the query, connected by OR operators.
+   * 
+   * @param $terms an array where each entry must be either of the form
+   *     array('term' => $term, 'field' => $field);
+   * (the 'field' entry can be omitted, in which case 'text' is assumed), or
+   *     $term
+   */
+  public function addOrGroup($terms) {
+    if (count($terms) == 0 || !is_array($terms)) {
+      return;
+    }
+    $keys = array();
+    foreach ($terms as $term) {
+      if (is_array($term)) {
+        if (empty($term['field']) || $term['field'] == 'text') {
+          $keys[] = self::escapeTerm($term['term']);
+        }
+        else {
+          $keys[] = $term['field'] . ':' . self::escapeTerm($term['term']);
+        }
+      }
+      else {
+        $keys[] = self::escapeTerm($term);
+      }
+    }
+    $this->_keys[] = '(' . implode(' OR ', $keys) . ')';
+  }
+  
+  /** Sets the specified Solr search parameter to the specified value. */
+  public function setParam($param, $value) {
+    $this->_params[$param] = $value;
+  }
+  
+  /**
+   * Adds the specified parameters to the Solr search parameters, overwriting
+   * old values where necessary. Parameters must be specified as
+   * $param => $value in the array.
+   */
+  public function setParams($params) {
+    $this->_params = $params + $this->_params;
+  }
+  
+  /** Runs the search and returns the result. */
+  public function execute() {
+    if (!empty($this->_results)) {
+      return $this->_results;
+    }
+    $keys = implode(' ', $this->_keys);
+    
+    try {
+      $response = $solr->search($query->get_query(), $this->_params['start'], $this->_params['rows'], $this->_params);
+      apachesolr_has_searched(TRUE);
+      $total = $response->numFound;
+      // The response is cached so that it is accessible to the blocks and anything
+      // else that needs it beyond the initial search.
+      apachesolr_static_response_cache($response);
+      $results = array();
+      
+      if ($total > 0) {
+        $fields = _apachesolr_fields();
+        $fields[] = 'score';
+        $results = array();
+        foreach ($response->documents as $doc) {
+          $result = array();
+          foreach ($fields as $field) {
+            $result[$field] = $doc->$field;
+          }
+          if (!empty($doc->tid)) {
+            $taxonomies = array();
+            while (!empty($doc->tid) && !empty($doc->taxonomy_name)) {
+              $tid = array_shift($doc->tid);
+              $name = array_shift($doc->taxonomy_name);
+              $taxonomies[] = l($name, 'taxonomy/term/' . $tid, array('absolute' => TRUE));
+            }
+            $result['taxonomies'] = implode(', ', $taxonomies);
+          }
+          else {
+            $result['taxonomies'] = '';
+          }
+          
+          $results[] = $result;
+        }
+      }
+      
+      // Set breadcrumb
+      drupal_set_breadcrumb($query->get_breadcrumb());
+      
+      $this->_response = $response;
+      $this->_results = $results;
+      return $results;
+    } // try
+    catch (Exception $e) {
+      watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
+    }
+  }
+  
+  
+  /** Escapes a term for passing it to the query. */
+  static private function escapeTerm($term) {
+    $term = trim($term);
+    if (($term{0} == '"' && $term{strlen($term)-1} == '"')
+        || $term{0} == '(' && $term{strlen($term)-1} == ')') {
+      return $term;
+    }
+    if (strpos($term, ' ') !== FALSE) {
+      return Apache_Solr_Service::phrase($term);
+    }
+    return Apache_Solr_Service::escape($term);
+  }
+  
 }

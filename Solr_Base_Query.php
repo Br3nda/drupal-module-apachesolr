@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.2 2008/06/30 17:46:45 drunkenmonkey Exp $
+// $Id: Solr_Base_Query.php,v 1.3 2008/07/18 23:53:19 drunkenmonkey Exp $
 
 class Solr_Base_Query {
 
@@ -153,8 +153,9 @@ class Solr_Base_Query {
     ksort($this->_fields);
 
     $progressive_crumb = array();
-    // TODO: Don't know if hardcoding this is going to come back to bite.
-    $base = 'search/'. arg(1). '/';
+    
+    // This should also work for paths other than search/%/*
+    $base = substr($_GET['q'], 0, strrpos($_GET['q'], '/')) . '/';
 
     foreach ($this->_fields as $field) {
       $progressive_crumb[] = Solr_Base_Query::make_field($field);

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.4 2008/07/13 20:15:56 drunkenmonkey Exp $
+// $Id: apachesolr_search.module,v 1.5 2008/07/18 23:53:19 drunkenmonkey Exp $
 
 /**
  * @file
@@ -45,33 +45,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       $results = array();
       
       try {
-        $params = array(
-          //'qt' => 'standard',
-          'fl' => '*,score',
-          'rows' => variable_get('apachesolr_rows', 10),
-          'facet' => 'true',
-          'facet.field' => array('tid', 'type', 'uid', 'language'),
-          'facet.mincount' => 1,
-          'facet.sort' => 'true'
-        );
-        
-        // Facet limits
-        $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
-        foreach ($facet_query_limits as $fieldname => $limit) {
-          $params[$fieldname . '.facet.limit'] = $limit;
-        }
-        if (isset($_GET['solrsort'])) {
-          $sort = check_plain($_GET['solrsort']);
-          $params['sort'] = $sort;
-        }
-        if ($fields = apachesolr_cck_fields()) {
-          foreach ($fields as $name => $field) {
-            $index_key = apachesolr_index_key($field);
-            $params['facet.field'][] = $index_key;
-          }
-        }
-        $page = isset($_GET['page']) ? $_GET['page'] : 0;
-        $params['start'] = $page * $params['rows'];
+        $params = apachesolr_search_get_params();
         $response = $solr->search($query->get_query(), $params['start'], $params['rows'], $params);
         apachesolr_has_searched(TRUE);
         $total = $response->numFound;
@@ -108,4 +82,39 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       }
 
   } // switch
+}
+
+/*
+ * Returns the parameters that should be passed to Solr when searching.
+ */
+function apachesolr_search_get_params() {
+  $params = array(
+    //'qt' => 'standard',
+    'fl' => '*,score',
+    'rows' => variable_get('apachesolr_rows', 10),
+    'facet' => 'true',
+    'facet.field' => array('tid', 'type', 'uid', 'language'),
+    'facet.mincount' => 1,
+    'facet.sort' => 'true'
+  );
+  
+  // Facet limits
+  $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
+  foreach ($facet_query_limits as $fieldname => $limit) {
+    $params[$fieldname . '.facet.limit'] = $limit;
+  }
+  if (isset($_GET['solrsort'])) {
+    $sort = check_plain($_GET['solrsort']);
+    $params['sort'] = $sort;
+  }
+  if ($fields = apachesolr_cck_fields()) {
+    foreach ($fields as $name => $field) {
+      $index_key = apachesolr_index_key($field);
+      $params['facet.field'][] = $index_key;
+    }
+  }
+  $page = isset($_GET['page']) ? $_GET['page'] : 0;
+  $params['start'] = $page * $params['rows'];
+  
+  return $params;
 }
