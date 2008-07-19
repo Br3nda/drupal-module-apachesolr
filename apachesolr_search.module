@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.10 2008/07/09 16:41:27 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.11 2008/07/19 14:22:43 robertDouglass Exp $
 
 /**
  * @file
@@ -37,24 +37,34 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       // This is the object that knows about the query coming from the user.
       $query =& apachesolr_drupal_query($keys);
       
-      try {
-        $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
-        if (array_search(-1, $facet_query_limits)) {
-          $facet_query_limit = -1;
-        }
-        else {
-          $facet_query_limit = (count($facet_query_limits) > 0) ? max($facet_query_limits) : -1;
-        }
+      try {      
         $params = array(
-          //'qt' => 'standard',
           'fl' => '*,score',
           'rows' => variable_get('apachesolr_rows', 10),
           'facet' => 'true',
-          'facet.limit' => $facet_query_limit,
-          'facet.field' => array('tid', 'type', 'uid'),
           'facet.mincount' => 1,
           'facet.sort' => 'true'
         );
+        
+        foreach (apachesolr_block() as $name => $values) {
+          // TODO: Instead of getting this list from apachesolr_block, there
+          // should instead be an API function that gets the list FOR apachesolr_block
+          // as well as for here.
+          if ($name != 'sort') {
+            $params['facet.field'][] = $name;
+          }
+        }
+        
+        // Facet limits
+        $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
+        foreach ($facet_query_limits as $fieldname => $limit) {
+          $params['f.' . $fieldname . '.facet.limit'] = $limit;
+        }
+        if (isset($_GET['solrsort'])) {
+          $sort = check_plain($_GET['solrsort']);
+          $params['sort'] = $sort;
+        }
+        
         if ($sort = check_plain($_GET['solrsort'])) {
           $params['sort'] = $sort;
         }
