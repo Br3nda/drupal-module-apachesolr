@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.12 2008/07/12 09:59:27 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.13 2008/07/19 13:06:09 robertDouglass Exp $
 
 /**
  * @file
@@ -50,15 +50,23 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
           'fl' => '*,score',
           'rows' => variable_get('apachesolr_rows', 10),
           'facet' => 'true',
-          'facet.field' => array('tid', 'type', 'uid', 'language'),
           'facet.mincount' => 1,
           'facet.sort' => 'true'
         );
         
+        foreach (apachesolr_block() as $name => $values) {
+          // TODO: Instead of getting this list from apachesolr_block, there
+          // should instead be an API function that gets the list FOR apachesolr_block
+          // as well as for here.
+          if ($name != 'sort') {
+            $params['facet.field'][] = $name;
+          }
+        }
+        
         // Facet limits
         $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
         foreach ($facet_query_limits as $fieldname => $limit) {
-          $params[$fieldname . '.facet.limit'] = $limit;
+          $params['f.' . $fieldname . '.facet.limit'] = $limit;
         }
         if (isset($_GET['solrsort'])) {
           $sort = check_plain($_GET['solrsort']);

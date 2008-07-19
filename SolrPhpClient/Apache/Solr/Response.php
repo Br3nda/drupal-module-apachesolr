@@ -1,5 +1,5 @@
 <?php
-// $Id: Response.php,v 1.1.2.1.2.1 2008/06/14 18:45:18 robertDouglass Exp $
+// $Id: Response.php,v 1.1.2.1.2.2 2008/07/19 13:06:09 robertDouglass Exp $
 /**
  * @copyright Copyright 2007 Conduit Internet Technologies, Inc. (http://conduit-it.com)
  * @license Apache Licence, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
@@ -239,10 +239,9 @@ class Apache_Solr_Response
         $facet_name = (string) $field['name'];
         $facet_counts = array();
         foreach ($field as $facet) {
-          if ($name = (string) $facet['name']) {
-            $count = (string) $facet;
-            $facet_counts[$name] = $count;
-          }
+          $name = (string) $facet['name'];
+          $count = (string) $facet;
+          $facet_counts[$name] = $count;
         }
         $this->_parsedData->facets->$facet_name = $facet_counts;
       }
