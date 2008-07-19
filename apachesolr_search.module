@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.12 2008/07/19 18:07:43 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.13 2008/07/19 18:16:57 robertDouglass Exp $
 
 /**
  * @file
@@ -85,7 +85,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         if ($total > 0) {
           static $users = array();
           foreach ($response->documents as $doc) {
-            $extra = node_invoke_nodeapi(&$doc, 'search result');
+            $extra = node_invoke_nodeapi($doc, 'search result');
             $extra['score'] = $doc->score;
             $snippet = search_excerpt($keys, $doc->body);
             if (trim($snippet) == '...') {
