@@ -1,5 +1,5 @@
 <?php
-// $Id: Response.php,v 1.1.2.1.2.2 2008/07/19 13:06:09 robertDouglass Exp $
+// $Id: Response.php,v 1.1.2.1.2.3 2008/07/19 17:59:53 robertDouglass Exp $
 /**
  * @copyright Copyright 2007 Conduit Internet Technologies, Inc. (http://conduit-it.com)
  * @license Apache Licence, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
@@ -214,6 +214,7 @@ class Apache_Solr_Response
             $document->$key = (string) $element;
           break;
           case 'arr':
+            $values = array();
             foreach ($element as $child) {
               // TODO: Respect types.
               $values[] = (string) $child;
