@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.18 2008/07/19 14:22:43 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.19 2008/07/19 19:07:55 robertDouglass Exp $
 
 /**
  * @file
@@ -219,6 +219,20 @@ class ApacheSolrUpdate {
           foreach ((array)$node as $key => $value) {
             if (in_array($key, $fields)) {
               $document->$key = $value;
+            }
+
+            // Path aliases can have important information about the content.
+            // Add them to the index as well.
+            if (function_exists('drupal_get_path_alias')) {
+              // Add any path alias to the index, looking first for language specific
+              // aliases but using language neutral aliases otherwise.
+              $language = empty($node->language) ? '' : $node->language;
+              $path = 'node/' . $node->nid;
+              $output = drupal_get_path_alias($path, $language);
+              if ($output && $output != $path) {
+                $document->path = $output;
+                $text .= $output;
+              }
             }
 
             if ($cck_fields && strpos($key, 'field_') === 0) {
