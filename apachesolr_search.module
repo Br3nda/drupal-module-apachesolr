@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.13 2008/07/19 13:06:09 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.14 2008/07/19 18:06:49 robertDouglass Exp $
 
 /**
  * @file
@@ -68,6 +68,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         foreach ($facet_query_limits as $fieldname => $limit) {
           $params['f.' . $fieldname . '.facet.limit'] = $limit;
         }
+
         if (isset($_GET['solrsort'])) {
           $sort = check_plain($_GET['solrsort']);
           $params['sort'] = $sort;
@@ -114,6 +115,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       catch (Exception $e) {
         watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
       }
+      break;
 
   } // switch
 }
