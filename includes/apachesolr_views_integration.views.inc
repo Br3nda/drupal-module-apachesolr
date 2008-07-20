@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.6 2008/07/18 23:53:19 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.7 2008/07/20 22:38:11 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -445,6 +445,12 @@ function apachesolr_views_integration_views_default_views() {
  * Class for handling a view that gets its data not from the database, but from
  * a Solr server.
  */
+/*
+ * TODO: derive this from an abstract views query class that defines the methods
+ * needed for executing the view.
+ * Methods used by filters/arguments/... shouldn't/can't be included, since they
+ * are too specfic to one back-end.
+ */
 class apachesolr_views_query {
   
   /** Array storing the keys that will be used for the search. */
@@ -468,7 +474,7 @@ class apachesolr_views_query {
   }
   
   /** Adds the specified term to the search. */
-  public function addTerm($term, $field = 'text') {
+  public function add_term($term, $field = 'text') {
     $term = self::escapeTerm($term);
     if ($field != 'text') {
       $term = $field . ':' . $term; 
@@ -484,7 +490,7 @@ class apachesolr_views_query {
    * (the 'field' entry can be omitted, in which case 'text' is assumed), or
    *     $term
    */
-  public function addOrGroup($terms) {
+  public function add_or_group($terms) {
     if (count($terms) == 0 || !is_array($terms)) {
       return;
     }
@@ -506,7 +512,7 @@ class apachesolr_views_query {
   }
   
   /** Sets the specified Solr search parameter to the specified value. */
-  public function setParam($param, $value) {
+  public function set_param($param, $value) {
     $this->_params[$param] = $value;
   }
   
@@ -515,7 +521,7 @@ class apachesolr_views_query {
    * old values where necessary. Parameters must be specified as
    * $param => $value in the array.
    */
-  public function setParams($params) {
+  public function set_params($params) {
     $this->_params = $params + $this->_params;
   }
   
@@ -524,16 +530,11 @@ class apachesolr_views_query {
     if (!empty($this->_results)) {
       return $this->_results;
     }
-    $keys = implode(' ', $this->_keys);
     
     try {
-      $response = $solr->search($query->get_query(), $this->_params['start'], $this->_params['rows'], $this->_params);
-      apachesolr_has_searched(TRUE);
-      $total = $response->numFound;
-      // The response is cached so that it is accessible to the blocks and anything
-      // else that needs it beyond the initial search.
-      apachesolr_static_response_cache($response);
+      $response = $this->_get_response();
       $results = array();
+      $total = $response->numFound;
       
       if ($total > 0) {
         $fields = _apachesolr_fields();
@@ -564,18 +565,51 @@ class apachesolr_views_query {
       // Set breadcrumb
       drupal_set_breadcrumb($query->get_breadcrumb());
       
-      $this->_response = $response;
       $this->_results = $results;
       return $results;
-    } // try
+    }
     catch (Exception $e) {
       watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
     }
   }
   
+  /* Returns the Solr server's response, executing the query if necessary. */
+  private function _get_response() {
+    if (empty($this->_response)) {
+      $keys = trim(implode(' ', $this->_keys));
+      if (empty($keys)) {
+        $keys = '*:*';
+      }
+      $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
+      $query =& apachesolr_drupal_query($keys);
+      $this->_response = $solr->search($query->get_query(), $this->_params['start'], $this->_params['rows'], $this->_params);
+      apachesolr_has_searched(TRUE);
+      // The response is cached so that it is accessible to the blocks and anything
+      // else that needs it beyond the initial search.
+      apachesolr_static_response_cache($this->_response);
+    }
+    return $this->_response;
+  }
+  
+  /** Returns the number of results found by the search. */
+  public function get_total_rows() {
+    $response = $this->_get_response();
+    return $response->numFound;
+  }
+  
+  /** Set the start index of the returned results. */
+  public function set_start($start) {
+    $this->set_param('start', $start);
+  }
+  
+  /** Set the number of returned results. */
+  public function set_count($count) {
+    $this->set_param('rows', $count);
+  }
+  
   
   /** Escapes a term for passing it to the query. */
-  static private function escapeTerm($term) {
+  static private function escape_term($term) {
     $term = trim($term);
     if (($term{0} == '"' && $term{strlen($term)-1} == '"')
         || $term{0} == '(' && $term{strlen($term)-1} == ')') {
