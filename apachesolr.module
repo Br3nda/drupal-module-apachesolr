@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.20 2008/07/19 18:59:18 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.21 2008/07/20 13:18:01 robertDouglass Exp $
 
 /**
  * @file
@@ -826,7 +826,7 @@ function apachesolr_theme() {
     'apachesolr_breadcrumb_type' => array(
       'arguments' => array('type' => NULL),
     ),
-    'content_apachesolr_breadcrumb_uid' => array(
+    'apachesolr_breadcrumb_uid' => array(
       'arguments' => array('uid' => NULL),
     ),
     'apachesolr_breadcrumb_tid' => array(
