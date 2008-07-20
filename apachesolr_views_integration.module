@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.module,v 1.5 2008/07/08 19:17:28 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.module,v 1.6 2008/07/20 15:58:12 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_menu().
@@ -24,12 +24,13 @@ function apachesolr_views_integration_menu() {
 function apachesolr_views_integration_search_page() {
   $args = func_get_args();
   if (count($args) > 0) {
-    $output = views_embed_view('apachesolr_search', 'default', array_shift($args));
+    $arg = array_shift($args);
+    $output = views_embed_view('apachesolr_search', 'default', $arg);
     $response = apachesolr_static_response_cache();
-    if ($response->numFound != 0) {
-      return $output;
+    if ($response->numFound == 0) {
+      $output = '<p>' . t('Your search yielded no results.') . '</p>';
     }
-    return '<p>' . t('Your search yielded no results.') . '</p>';
+    return drupal_get_form('apachesolr_views_integration_form', $arg) . $output;
   }
   else {
     return drupal_get_form('apachesolr_views_integration_form');
@@ -39,18 +40,17 @@ function apachesolr_views_integration_search_page() {
 /**
  * Returns the search form.
  */
-function apachesolr_views_integration_form() {
+function apachesolr_views_integration_form(&$form_state = array(), $keys = '') {
   $form = array();
   $form['keys'] = array(
-    '#prefix' => '<p>',
     '#type' => 'textfield',
     '#title' => t('Enter your keywords'),
     '#maxlength' => 255,
+    '#default_value' => $keys,
   );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Search'),
-    '#suffix' => '</p>',
   );
   return $form;
 }
