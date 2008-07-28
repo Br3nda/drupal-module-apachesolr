@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.3 2008/07/07 16:56:51 drunkenmonkey Exp $ */
+/* $Id: README.txt,v 1.4 2008/07/28 07:09:40 robertDouglass Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search can be used as a replacement for core content search and boasts both extra features and better performance. Among the extra features is the ability to have faceted search on facets ranging from content author to taxonomy to arbitrary CCK fields.
 
@@ -31,6 +31,17 @@ Now run cron on your Drupal site until your content is indexed.
 
 Enable blocks for facets at Administer > Site building > Blocks.
 
+Troubleshooting
+--------------
+Problem:
+Your Solr instance is running and you can test it in the Solr 
+admin interface (comes with the Java application). Yet your 
+Drupal ApacheSolr module cannot connect to it to do a search.
+
+Solution:
+To be able to use file_get_contents() in PHP, the "allow_url_fopen" 
+directive must be enabled. In php.ini set the following value:
+allow_url_fopen = On
 
 Views integration
 -----------------
