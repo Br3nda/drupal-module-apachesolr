@@ -1,12 +1,11 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.7 2008/07/20 22:38:11 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.8 2008/07/29 00:13:11 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
  */
 function apachesolr_views_data() {
-  
   $data['node']['apachesolr'] = array(
     'group' => t('Apachesolr'),
     'title' => t('Apache Solr search'),
@@ -18,6 +17,103 @@ function apachesolr_views_data() {
     'argument' => array(
       'field' => 'nid',
       'handler' => 'views_handler_argument_apachesolr_query',
+    ),
+  );
+  
+  
+  $data['apachesolr']['table']['group']  = t('Apache Solr');
+
+  $data['apachesolr']['table']['base'] = array(
+    'query class' => 'apachesolr_views_query',
+    'field' => 'nid',
+    'title' => t('Apache Solr'),
+    'help' => t('Searches the site with the Apache Solr search engine.'),
+    'weight' => 0,
+  );
+
+  $data['apachesolr']['nid'] = array(
+    'title' => t('Nid'),
+    'help' => t('The node ID of the node.'),
+    'field' => array(
+      'handler' => 'apachesolr_dummy_views_field_handler',
+      'click sortable' => FALSE,
+    ),
+  );
+  $data['apachesolr']['title'] = array(
+    'title' => t('Title'),
+    'help' => t('The title of the node.'),
+    'field' => array(
+      'field' => 'title',
+      'group' => t('Node'),
+      'handler' => 'apachesolr_dummy_views_field_handler',
+      'click sortable' => FALSE,
+     ),
+  );
+  $data['apachesolr']['changed'] = array(
+    'title' => t('Updated date'),
+    'help' => t('The date the node was last updated.'),
+    'field' => array(
+      'handler' => 'apachesolr_dummy_views_field_handler',
+      'click sortable' => FALSE,
+    ),
+  );
+  $data['apachesolr']['type'] = array(
+    'title' => t('Type'),
+    'help' => t('The type of a node (for example, "blog entry", "forum post", "story", etc).'),
+    'field' => array(
+      'handler' => 'apachesolr_dummy_views_field_handler',
+      'click sortable' => FALSE,
+    ),
+  );
+  $data['apachesolr']['uid'] = array(
+    'title' => t('Author Uid'),
+    'help' => t("The node's author's user ID."),
+    'field' => array(
+      'handler' => 'apachesolr_dummy_views_field_handler',
+        'click sortable' => FALSE,
+    ),
+  );
+  $data['apachesolr']['name'] = array(
+    'title' => t('Author name'),
+    'help' => t("The node's author's name."),
+    'field' => array(
+      'handler' => 'apachesolr_dummy_views_field_handler',
+      'click sortable' => FALSE,
+    ),
+  );
+  $data['apachesolr']['body'] = array(
+    'title' => t('Body'),
+    'help' => t("The node's content."),
+    'field' => array(
+      'handler' => 'apachesolr_dummy_views_field_handler',
+      'click sortable' => FALSE,
+    ),
+  );
+  $data['apachesolr']['comment_count'] = array(
+    'title' => t('Comment_count'),
+    'help' => t('The number of comments that were posted to the node.'),
+    'field' => array(
+      'handler' => 'apachesolr_dummy_views_field_handler',
+      'click sortable' => FALSE,
+    ),
+  );
+  if (module_exists('translation')) {
+    $data['apachesolr']['language'] = array(
+      'title' => t('Language'),
+      'help' => t('The language the node is in.'),
+      'field' => array(
+        'handler' => 'apachesolr_dummy_views_field_handler',
+        'click sortable' => FALSE,
+      ),
+    );
+  }
+  
+  $data['apachesolr']['search'] = array(
+    'title' => t('Search'),
+    'help' => t('Searches the content with Solr'),
+    'argument' => array(
+      'field' => 'nid',
+      'handler' => 'apachesolr_search_views_argument_handler',
     ),
   );
   
@@ -138,6 +234,22 @@ class views_handler_argument_apachesolr_query extends views_handler_argument {
     }
   }
 
+}
+
+/**
+ * Class for telling views about the fields apachesolr provides.
+ * Since a search result always contains all fields, no query manipulation
+ * whatsoever is necessary.
+ */
+class apachesolr_dummy_views_field_handler extends views_field_handler {
+  //TODO What should be added here?
+}
+
+/**
+ * Class that allows searching the site with Apache Solr through a view.
+ */
+class apachesolr_search_views_argument_handler extends views_argument_handler {
+  //TODO Add query(), etc.
 }
 
 /**
@@ -448,8 +560,8 @@ function apachesolr_views_integration_views_default_views() {
 /*
  * TODO: derive this from an abstract views query class that defines the methods
  * needed for executing the view.
- * Methods used by filters/arguments/... shouldn't/can't be included, since they
- * are too specfic to one back-end.
+ * Methods used by filters/arguments/... shouldn't/can't be included in this
+ * base class, since they are too specfic to one back-end.
  */
 class apachesolr_views_query {
   
