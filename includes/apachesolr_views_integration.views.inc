@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.8 2008/07/29 00:13:11 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.9 2008/07/31 20:56:58 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -43,8 +43,6 @@ function apachesolr_views_data() {
     'title' => t('Title'),
     'help' => t('The title of the node.'),
     'field' => array(
-      'field' => 'title',
-      'group' => t('Node'),
       'handler' => 'apachesolr_dummy_views_field_handler',
       'click sortable' => FALSE,
      ),
@@ -70,7 +68,7 @@ function apachesolr_views_data() {
     'help' => t("The node's author's user ID."),
     'field' => array(
       'handler' => 'apachesolr_dummy_views_field_handler',
-        'click sortable' => FALSE,
+      'click sortable' => FALSE,
     ),
   );
   $data['apachesolr']['name'] = array(
@@ -241,14 +239,14 @@ class views_handler_argument_apachesolr_query extends views_handler_argument {
  * Since a search result always contains all fields, no query manipulation
  * whatsoever is necessary.
  */
-class apachesolr_dummy_views_field_handler extends views_field_handler {
+class apachesolr_dummy_views_field_handler extends views_handler_field {
   //TODO What should be added here?
 }
 
 /**
  * Class that allows searching the site with Apache Solr through a view.
  */
-class apachesolr_search_views_argument_handler extends views_argument_handler {
+class apachesolr_search_views_argument_handler extends views_handler_argument {
   //TODO Add query(), etc.
 }
 
@@ -688,12 +686,8 @@ class apachesolr_views_query {
   /* Returns the Solr server's response, executing the query if necessary. */
   private function _get_response() {
     if (empty($this->_response)) {
-      $keys = trim(implode(' ', $this->_keys));
-      if (empty($keys)) {
-        $keys = '*:*';
-      }
       $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
-      $query =& apachesolr_drupal_query($keys);
+      $query =& apachesolr_drupal_query($this->_query);
       $this->_response = $solr->search($query->get_query(), $this->_params['start'], $this->_params['rows'], $this->_params);
       apachesolr_has_searched(TRUE);
       // The response is cached so that it is accessible to the blocks and anything
@@ -719,10 +713,21 @@ class apachesolr_views_query {
     $this->set_param('rows', $count);
   }
   
+  /** Prepares the query. */
+  public function query() {
+    $this->_query = trim(implode(' ', $this->_keys));
+    if (empty($this->_query)) {
+      $this->_query = '*:*';
+    }
+  }
+  
   
   /** Escapes a term for passing it to the query. */
   static private function escape_term($term) {
     $term = trim($term);
+    if (empty($term)) {
+      return '';
+    }
     if (($term{0} == '"' && $term{strlen($term)-1} == '"')
         || $term{0} == '(' && $term{strlen($term)-1} == ')') {
       return $term;
