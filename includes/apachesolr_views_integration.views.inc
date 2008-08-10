@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.9 2008/07/31 20:56:58 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.10 2008/08/10 13:35:05 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -239,8 +239,12 @@ class views_handler_argument_apachesolr_query extends views_handler_argument {
  * Since a search result always contains all fields, no query manipulation
  * whatsoever is necessary.
  */
-class apachesolr_dummy_views_field_handler extends views_handler_field {
+class apachesolr_dummy_views_field_handler extends views_handler_field_node {
   //TODO What should be added here?
+  
+  public function ensure_my_table() {}
+  public function query() {}
+  
 }
 
 /**
@@ -561,7 +565,8 @@ function apachesolr_views_integration_views_default_views() {
  * Methods used by filters/arguments/... shouldn't/can't be included in this
  * base class, since they are too specfic to one back-end.
  */
-class apachesolr_views_query {
+include_once(drupal_get_path('module', 'views') . '/includes/query.inc');
+class apachesolr_views_query extends views_query {
   
   /** Array storing the keys that will be used for the search. */
   private $_keys;
@@ -571,9 +576,6 @@ class apachesolr_views_query {
   
   /** Stores the search's result, once available. */
   private $_results;
-  
-  /** Stores the Solr server's response, once available. */
-  private $_response;
   
   
   /** Constructs this objects and fills it with default values. */
@@ -636,17 +638,23 @@ class apachesolr_views_query {
   }
   
   /** Runs the search and returns the result. */
-  public function execute() {
+  public function execute(&$view) {
     if (!empty($this->_results)) {
       return $this->_results;
     }
     
     try {
-      $response = $this->_get_response();
-      $results = array();
-      $total = $response->numFound;
+      $start = microtime();
+      $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
+      $query =& apachesolr_drupal_query($this->_query);
+      $response = $solr->search($query->get_query(), $this->_params['start'], $this->_params['rows'], $this->_params);
+      apachesolr_has_searched(TRUE);
       
-      if ($total > 0) {
+      apachesolr_static_response_cache($response);
+      $results = array();
+      $ret['total_rows'] = $response->numFound;
+      
+      if ($ret['total_rows'] > 0) {
         $fields = _apachesolr_fields();
         $fields[] = 'score';
         $results = array();
@@ -667,40 +675,24 @@ class apachesolr_views_query {
           else {
             $result['taxonomies'] = '';
           }
+          $result['view_name'] = 'test2:page';//TODO
           
-          $results[] = $result;
+          $results[] = (object) $result;
         }
       }
+      
+      $ret['result'] = $results;
+      $ret['execute_time'] = microtime() - $start;
       
       // Set breadcrumb
       drupal_set_breadcrumb($query->get_breadcrumb());
       
-      $this->_results = $results;
-      return $results;
+      $this->_results = $ret;
+      return $ret;
     }
     catch (Exception $e) {
       watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
     }
-  }
-  
-  /* Returns the Solr server's response, executing the query if necessary. */
-  private function _get_response() {
-    if (empty($this->_response)) {
-      $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
-      $query =& apachesolr_drupal_query($this->_query);
-      $this->_response = $solr->search($query->get_query(), $this->_params['start'], $this->_params['rows'], $this->_params);
-      apachesolr_has_searched(TRUE);
-      // The response is cached so that it is accessible to the blocks and anything
-      // else that needs it beyond the initial search.
-      apachesolr_static_response_cache($this->_response);
-    }
-    return $this->_response;
-  }
-  
-  /** Returns the number of results found by the search. */
-  public function get_total_rows() {
-    $response = $this->_get_response();
-    return $response->numFound;
   }
   
   /** Set the start index of the returned results. */
@@ -717,9 +709,13 @@ class apachesolr_views_query {
   public function query() {
     $this->_query = trim(implode(' ', $this->_keys));
     if (empty($this->_query)) {
-      $this->_query = '*:*';
+      $this->_query = 'Google'; // TODO
     }
   }
+  
+  
+  /* Implementation of necessary dummy functions. */
+  public function get_where_args() {}
   
   
   /** Escapes a term for passing it to the query. */

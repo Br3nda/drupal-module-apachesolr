@@ -1,10 +1,10 @@
 Index: includes/view.inc
 ===================================================================
 RCS file: /cvs/drupal-contrib/contributions/modules/views/includes/view.inc,v
-retrieving revision 1.118
-diff -u -r1.118 view.inc
---- includes/view.inc	28 Jul 2008 19:10:27 -0000	1.118
-+++ includes/view.inc	31 Jul 2008 22:54:26 -0000
+retrieving revision 1.120
+diff -u -r1.120 view.inc
+--- includes/view.inc	8 Aug 2008 21:55:01 -0000	1.120
++++ includes/view.inc	10 Aug 2008 13:32:37 -0000
 @@ -490,7 +490,9 @@
        $this->base_database = $views_data['table']['base']['database'];
      }
@@ -44,7 +44,7 @@ diff -u -r1.118 view.inc
      $this->built = TRUE;
      $this->build_time = microtime() - $start;
      return TRUE;
-@@ -617,79 +622,15 @@
+@@ -617,79 +622,16 @@
        return TRUE;
      }
  
@@ -89,7 +89,8 @@ diff -u -r1.118 view.inc
 -          $pager_total_items[$this->pager['element']] = $this->total_rows;
 -          // total pages
 -          $pager_total[$this->pager['element']] = ceil($pager_total_items[$this->pager['element']] / $this->pager['items_per_page']);
--
++    $response = $this->query->execute($this);
+ 
 -          // What page was requested:
 -          $pager_page_array = isset($_GET['page']) ? explode(',', $_GET['page']) : array();
 -
@@ -118,13 +119,11 @@ diff -u -r1.118 view.inc
 -      }
 -      if (!empty($external)) {
 -        db_set_active();
--      }
-+    $response = $this->query->execute($this);
 +    if (is_array($response)) {
 +      $this->total_rows = $response['total_rows'];
 +      if (isset($response['current_page'])) {
 +        $this->pager['current_page'] = $response['current_page'];
-+      }
+       }
 +      $this->result = $response['result'];
 +      $this->execute_time = $response['execute_time'];
      }
@@ -132,7 +131,7 @@ diff -u -r1.118 view.inc
      $this->executed = TRUE;
    }
  
-@@ -1092,7 +1036,7 @@
+@@ -1092,7 +1034,7 @@
          $cache[$arg] = NULL;
        }
        else {
@@ -144,10 +143,10 @@ diff -u -r1.118 view.inc
 Index: includes/query.inc
 ===================================================================
 RCS file: /cvs/drupal-contrib/contributions/modules/views/includes/query.inc,v
-retrieving revision 1.21
-diff -u -r1.21 query.inc
---- includes/query.inc	23 Jun 2008 23:49:40 -0000	1.21
-+++ includes/query.inc	31 Jul 2008 22:54:24 -0000
+retrieving revision 1.23
+diff -u -r1.23 query.inc
+--- includes/query.inc	8 Aug 2008 21:55:01 -0000	1.23
++++ includes/query.inc	10 Aug 2008 13:32:35 -0000
 @@ -66,6 +66,16 @@
    var $distinct = FALSE;
  
