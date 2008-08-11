@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.11 2008/08/11 13:41:06 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.12 2008/08/11 13:42:47 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -677,7 +677,6 @@ class apachesolr_views_query extends views_query {
           else {
             $result['taxonomies'] = '';
           }
-          $result['view_name'] = 'test2:page';//TODO
           
           $results[] = (object) $result;
         }
@@ -711,7 +710,7 @@ class apachesolr_views_query extends views_query {
   public function query() {
     $this->_query = trim(implode(' ', $this->_keys));
     if (empty($this->_query)) {
-      $this->_query = 'Google'; // TODO
+      $this->_query = '*:*';
     }
   }
   
