@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.12 2008/08/11 13:42:47 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.13 2008/08/11 16:49:19 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -253,7 +253,16 @@ class apachesolr_dummy_views_field_handler extends views_handler_field_node {
  * Class that allows searching the site with Apache Solr through a view.
  */
 class apachesolr_search_views_argument_handler extends views_handler_argument {
-  //TODO Add query(), etc.
+  //TODO What needs to be added here?
+  
+  public function query() {
+    $this->query->add_term($this->argument);
+  }
+  
+  public function set_breadcrumb() {
+    drupal_set_breadcrumb($this->query->get_breadcrumb());
+  }
+  
 }
 
 /**
@@ -579,6 +588,9 @@ class apachesolr_views_query extends views_query {
   /** Stores the search's result, once available. */
   private $_results;
   
+  /** The breadcrumb to be set if it is fit for the display. */
+  private $_breadcrumb;
+  
   
   /** Constructs this objects and fills it with default values. */
   public function __construct() {
@@ -589,7 +601,6 @@ class apachesolr_views_query extends views_query {
   
   /** Adds the specified term to the search. */
   public function add_term($term, $field = 'text') {
-    $term = self::escapeTerm($term);
     if ($field != 'text') {
       $term = $field . ':' . $term; 
     }
@@ -612,14 +623,14 @@ class apachesolr_views_query extends views_query {
     foreach ($terms as $term) {
       if (is_array($term)) {
         if (empty($term['field']) || $term['field'] == 'text') {
-          $keys[] = self::escapeTerm($term['term']);
+          $keys[] = $term['term'];
         }
         else {
-          $keys[] = $term['field'] . ':' . self::escapeTerm($term['term']);
+          $keys[] = $term['field'] . ':' . $term['term'];
         }
       }
       else {
-        $keys[] = self::escapeTerm($term);
+        $keys[] = $term;
       }
     }
     $this->_keys[] = '(' . implode(' OR ', $keys) . ')';
@@ -686,7 +697,7 @@ class apachesolr_views_query extends views_query {
       $ret['execute_time'] = microtime() - $start;
       
       // Set breadcrumb
-      drupal_set_breadcrumb($query->get_breadcrumb());
+      $this->_breadcrumb = $query->get_breadcrumb();
       
       $this->_results = $ret;
       return $ret;
@@ -694,6 +705,11 @@ class apachesolr_views_query extends views_query {
     catch (Exception $e) {
       watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
     }
+  }
+  
+  /** Return the breadcrumb. */
+  public function get_breadcrumb() {
+    return $this->_breadcrumb;
   }
   
   /** Set the start index of the returned results. */
@@ -720,7 +736,7 @@ class apachesolr_views_query extends views_query {
   
   
   /** Escapes a term for passing it to the query. */
-  static private function escape_term($term) {
+  static public function escape_term($term) {
     $term = trim($term);
     if (empty($term)) {
       return '';
