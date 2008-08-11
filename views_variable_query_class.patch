@@ -4,7 +4,7 @@ RCS file: /cvs/drupal-contrib/contributions/modules/views/includes/view.inc,v
 retrieving revision 1.120
 diff -u -r1.120 view.inc
 --- includes/view.inc	8 Aug 2008 21:55:01 -0000	1.120
-+++ includes/view.inc	10 Aug 2008 13:32:37 -0000
++++ includes/view.inc	11 Aug 2008 13:40:06 -0000
 @@ -490,7 +490,9 @@
        $this->base_database = $views_data['table']['base']['database'];
      }
@@ -146,7 +146,7 @@ RCS file: /cvs/drupal-contrib/contributions/modules/views/includes/query.inc,v
 retrieving revision 1.23
 diff -u -r1.23 query.inc
 --- includes/query.inc	8 Aug 2008 21:55:01 -0000	1.23
-+++ includes/query.inc	10 Aug 2008 13:32:35 -0000
++++ includes/query.inc	11 Aug 2008 13:40:04 -0000
 @@ -66,6 +66,16 @@
    var $distinct = FALSE;
  

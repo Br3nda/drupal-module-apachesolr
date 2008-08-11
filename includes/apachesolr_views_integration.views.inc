@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.10 2008/08/10 13:35:05 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.11 2008/08/11 13:41:06 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -88,7 +88,7 @@ function apachesolr_views_data() {
     ),
   );
   $data['apachesolr']['comment_count'] = array(
-    'title' => t('Comment_count'),
+    'title' => t('Comment count'),
     'help' => t('The number of comments that were posted to the node.'),
     'field' => array(
       'handler' => 'apachesolr_dummy_views_field_handler',
@@ -240,10 +240,12 @@ class views_handler_argument_apachesolr_query extends views_handler_argument {
  * whatsoever is necessary.
  */
 class apachesolr_dummy_views_field_handler extends views_handler_field_node {
-  //TODO What should be added here?
   
   public function ensure_my_table() {}
-  public function query() {}
+  
+  public function query() {
+    $this->field_alias = $this->real_field;
+  }
   
 }
 
