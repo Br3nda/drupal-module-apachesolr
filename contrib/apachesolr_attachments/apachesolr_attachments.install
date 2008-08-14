@@ -1,0 +1,19 @@
+<?php
+// $Id: apachesolr_attachments.install,v 1.1.2.1 2008/08/14 03:25:40 febbraro Exp $
+
+/**
+ * Implementation of hook_install().
+ */
+function apachesolr_attachments_install() {
+  variable_set('apachesolr_attachment_pdf_path', '/usr/local/bin/pdftotext "%file%" -');
+  variable_set('apachesolr_attachment_txt_path', '/bin/cat "%file%"');
+  
+  // Module weights: put after apachesolr_search.
+  db_query("UPDATE {system} SET weight = 10 WHERE name = 'apachesolr_attachments'");
+} 
+
+
+function apachesolr_attachments_uninstall() {
+  variable_del('apachesolr_attachment_pdf_path');
+  variable_del('apachesolr_attachment_txt_path');
+} 
