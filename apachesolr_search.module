@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.13 2008/07/19 18:16:57 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.14 2008/08/14 04:00:10 febbraro Exp $
 
 /**
  * @file
@@ -101,6 +101,12 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
                                'score' => $doc->score,
                                'snippet' => $snippet);
           }
+          
+          // Hook to allow modifications of the retrieved results
+          foreach (module_implements('apachesolr_process_results') as $module) {
+            $function = $module .'_apachesolr_process_results';
+            call_user_func_array($function, array(&$results));
+          }                    
         }
         // Set breadcrumb
         drupal_set_breadcrumb($query->get_breadcrumb());
