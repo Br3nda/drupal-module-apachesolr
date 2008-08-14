@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.13 2008/08/11 16:49:19 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.14 2008/08/14 15:43:41 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -35,55 +35,62 @@ function apachesolr_views_data() {
     'title' => t('Nid'),
     'help' => t('The node ID of the node.'),
     'field' => array(
-      'handler' => 'apachesolr_dummy_views_field_handler',
-      'click sortable' => FALSE,
+      'handler' => 'views_handler_field_apachesolr',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort_apachesolr',
     ),
   );
   $data['apachesolr']['title'] = array(
     'title' => t('Title'),
     'help' => t('The title of the node.'),
     'field' => array(
-      'handler' => 'apachesolr_dummy_views_field_handler',
-      'click sortable' => FALSE,
+      'handler' => 'views_handler_field_apachesolr',
+      'click sortable' => TRUE,
      ),
+    'sort' => array(
+      'handler' => 'views_handler_sort_apachesolr',
+    ),
   );
   $data['apachesolr']['changed'] = array(
     'title' => t('Updated date'),
     'help' => t('The date the node was last updated.'),
     'field' => array(
-      'handler' => 'apachesolr_dummy_views_field_handler',
-      'click sortable' => FALSE,
+      'handler' => 'views_handler_field_apachesolr_date',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort_apachesolr',
     ),
   );
   $data['apachesolr']['type'] = array(
     'title' => t('Type'),
     'help' => t('The type of a node (for example, "blog entry", "forum post", "story", etc).'),
     'field' => array(
-      'handler' => 'apachesolr_dummy_views_field_handler',
-      'click sortable' => FALSE,
+      'handler' => 'views_handler_field_apachesolr_type',
+      'click sortable' => TRUE,
     ),
-  );
-  $data['apachesolr']['uid'] = array(
-    'title' => t('Author Uid'),
-    'help' => t("The node's author's user ID."),
-    'field' => array(
-      'handler' => 'apachesolr_dummy_views_field_handler',
-      'click sortable' => FALSE,
+    'sort' => array(
+      'handler' => 'views_handler_sort_apachesolr',
     ),
   );
   $data['apachesolr']['name'] = array(
-    'title' => t('Author name'),
-    'help' => t("The node's author's name."),
+    'title' => t('Author'),
+    'help' => t("The node's author."),
     'field' => array(
-      'handler' => 'apachesolr_dummy_views_field_handler',
-      'click sortable' => FALSE,
+      'handler' => 'views_handler_field_apachesolr_author',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort_apachesolr',
     ),
   );
   $data['apachesolr']['body'] = array(
     'title' => t('Body'),
     'help' => t("The node's content."),
     'field' => array(
-      'handler' => 'apachesolr_dummy_views_field_handler',
+      'handler' => 'views_handler_field_apachesolr_body',
       'click sortable' => FALSE,
     ),
   );
@@ -91,8 +98,11 @@ function apachesolr_views_data() {
     'title' => t('Comment count'),
     'help' => t('The number of comments that were posted to the node.'),
     'field' => array(
-      'handler' => 'apachesolr_dummy_views_field_handler',
-      'click sortable' => FALSE,
+      'handler' => 'views_handler_field_apachesolr',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort_apachesolr',
     ),
   );
   if (module_exists('translation')) {
@@ -100,8 +110,11 @@ function apachesolr_views_data() {
       'title' => t('Language'),
       'help' => t('The language the node is in.'),
       'field' => array(
-        'handler' => 'apachesolr_dummy_views_field_handler',
-        'click sortable' => FALSE,
+        'handler' => 'views_handler_field_apachesolr',
+        'click sortable' => TRUE,
+      ),
+      'sort' => array(
+        'handler' => 'views_handler_sort_apachesolr',
       ),
     );
   }
@@ -235,16 +248,232 @@ class views_handler_argument_apachesolr_query extends views_handler_argument {
 }
 
 /**
- * Class for telling views about the fields apachesolr provides.
- * Since a search result always contains all fields, no query manipulation
- * whatsoever is necessary.
+ * Default class for a field of the apachesolr base table. Inherits from the
+ * node default class and overrides methods where necessary.
  */
-class apachesolr_dummy_views_field_handler extends views_handler_field_node {
+class views_handler_field_apachesolr extends views_handler_field_node {
   
   public function ensure_my_table() {}
+  public function query() {}
   
+  /**
+   * Render the field value.
+   * 
+   * This is copied from views_handler_field_node, but without the indirection
+   * via $field_alias, since in Apache Solr there are no field aliases.
+   */
+  public function render($values) {
+    return $this->render_link(check_plain($values->{$this->real_field}), $values);
+  }
+  
+  /**
+   * Render whatever the data is as a link to the node, if the according option
+   * is set.
+   * 
+   * This is copied from views_handler_field_node, but without the indirection
+   * via the aliases table, since in Apache Solr there are no field aliases.
+   */
+  public function render_link($data, $values) {
+    if (!empty($this->options['link_to_node'])) {
+      return l($data, "node/" . $values->nid, array('html' => TRUE));
+    }
+    else {
+      return $data;
+    }
+  }
+  
+  /**
+   * Called when click-sorting.
+   */
+   public function click_sort($order) {
+     $this->query->set_param('sort',
+        $this->real_field . ' ' . strtolower($order));
+   }
+  
+}
+
+/**
+ * Class for rendering the node author.
+ */
+class views_handler_field_apachesolr_author
+    extends views_handler_field_apachesolr {
+  
+  function option_definition() {
+    $options = parent::option_definition();
+    if (isset($options['link_to_node'])) {
+      unset($options['link_to_node']);
+    }
+    $options['link_to_profile'] = array('default' => TRUE);
+    return $options;
+  }
+
+  /**
+   * Provide link_to_profile option
+   */
+  function options_form(&$form, &$form_state) {
+    parent::options_form($form, $form_state);
+    if (isset($form['link_to_node'])) {
+      unset($form['link_to_node']);
+    }
+    $form['link_to_profile'] = array(
+      '#title' => t("Link the name to the user's profile."),
+      '#type' => 'checkbox',
+      '#default_value' => !empty($this->options['link_to_profile']),
+    );
+  }
+
+  /**
+   * Render the field. If the link_to_profile option is set, the name links to
+   * the user's profile.
+   */
+  function render($values) {
+    if (empty($this->options['link_to_profile'])) {
+      return check_plain($values->name);
+    }
+    else {
+      return l(check_plain($values->name),
+          "user/" . $values->uid, array('html' => TRUE));
+    }
+  }
+  
+}
+
+/**
+ * Class for rendering the node body.
+ */
+class views_handler_field_apachesolr_body
+    extends views_handler_field_apachesolr {
+  
+  function option_definition() {
+    $options = parent::option_definition();
+    if (isset($options['link_to_node'])) {
+      unset($options['link_to_node']);
+    }
+    $options['teaser'] = array('default' => TRUE);
+    $options['teaser_length'] =
+        array('default' => variable_get('teaser_length', 600));
+    return $options;
+  }
+
+  /**
+   * Provide teaser option
+   */
+  function options_form(&$form, &$form_state) {
+    parent::options_form($form, $form_state);
+    if (isset($form['link_to_node'])) {
+      unset($form['link_to_node']);
+    }
+    $form['teaser'] = array(
+      '#title' => t('Show only teaser.'),
+      '#type' => 'checkbox',
+      '#default_value' => !empty($this->options['teaser']),
+    );
+    $form['teaser_length'] = array(
+      '#title' => t('Teaser length'),
+      '#type' => 'select',
+      '#options' => array(
+        100 => 100,
+        200 => 200,
+        300 => 300,
+        400 => 400,
+        500 => 500,
+        600 => 600,
+        700 => 700,
+        800 => 800,
+        900 => 900,
+        1000 => 1000,
+      ),
+      '#default_value' => isset($this->options['teaser'])
+                          ? $this->options['teaser']
+                          : variable_get('teaser_length', 600),
+      '#description' => t('The approximate length of the teaser, ' .
+          'if displayed, in characters.'),
+    );
+  }
+
+  /**
+   * Render the field. If the teaser option is set, the name links to
+   * the user's profile.
+   */
+   //TODO This should use check_plain() if the format doesn't allow HTML.
+   //     Also, contained PHP code (if allowed by the format) is not handled.
+  function render($values) {
+    if (empty($this->options['teaser'])) {
+      return $values->body;
+    }
+    else {
+      return node_teaser($values->body, NULL, $this->options['teaser_length']);
+    }
+  }
+  
+}
+
+/**
+ * Class for rendering the node type.
+ */
+class views_handler_field_apachesolr_type
+    extends views_handler_field_apachesolr {
+  
+  /**
+   * Render the field value.
+   */
+  public function render($values) {
+    return $this->render_link(node_get_types('name', $values->{$this->real_field}), $values);
+  }
+  
+}
+
+/**
+ * Class for rendering the node type.
+ */
+class views_handler_field_apachesolr_date
+    extends views_handler_field_apachesolr {
+  
+  function option_definition() {
+    $options = parent::option_definition();
+    $options['date_format'] =
+        array('default' => 'medium');
+    return $options;
+  }
+
+  /**
+   * Provide teaser option
+   */
+  function options_form(&$form, &$form_state) {
+    parent::options_form($form, $form_state);
+    $form['date_format'] = array(
+      '#title' => t('Date format'),
+      '#type' => 'select',
+      '#options' => array(
+        'small' => t('Small'),
+        'medium' => t('Medium'),
+        'large' => t('Large'),
+      ),
+      '#default_value' => $this->options['date_format'],
+    );
+  }
+  
+  /**
+   * Render the field value.
+   */
+  public function render($values) {
+    return $this->render_link(format_date($values->{$this->real_field},
+        $this->options['date_format']), $values);
+  }
+  
+}
+
+/**
+ * Class for sorting for a field.
+ */
+class views_handler_sort_apachesolr extends views_handler_sort {
+  
+  /**
+   * Places the sort into the search parameters.
+   */
   public function query() {
-    $this->field_alias = $this->real_field;
+    $this->query->set_param('sort',
+        $this->real_field . ' ' . strtolower($this->options['order']));
   }
   
 }
@@ -641,6 +870,11 @@ class apachesolr_views_query extends views_query {
     $this->_params[$param] = $value;
   }
   
+  /** Get the specified Solr search parameter. */
+  public function get_param($param) {
+    return isset($this->_params[$param]) ? $this->_params[$param] : '';
+  }
+  
   /**
    * Adds the specified parameters to the Solr search parameters, overwriting
    * old values where necessary. Parameters must be specified as
@@ -678,6 +912,10 @@ class apachesolr_views_query extends views_query {
           }
           if (!empty($doc->tid)) {
             $taxonomies = array();
+if (!is_array($doc->tid)) {//TODO
+  file_put_contents('temp.txt', print_r($doc->tid, TRUE));
+}
+else
             while (!empty($doc->tid) && !empty($doc->taxonomy_name)) {
               $tid = array_shift($doc->tid);
               $name = array_shift($doc->taxonomy_name);
