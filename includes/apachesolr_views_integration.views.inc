@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.14 2008/08/14 15:43:41 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.15 2008/08/15 23:03:45 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -123,8 +123,12 @@ function apachesolr_views_data() {
     'title' => t('Search'),
     'help' => t('Searches the content with Solr'),
     'argument' => array(
-      'field' => 'nid',
-      'handler' => 'apachesolr_search_views_argument_handler',
+      'field' => 'text',
+      'handler' => 'views_handler_argument_apachesolr_search',
+    ),
+    'filter' => array(
+      'field' => 'text',
+      'handler' => 'views_handler_filter_apachesolr_search',
     ),
   );
   
@@ -139,7 +143,7 @@ class views_handler_filter_apachesolr_query extends views_handler_filter {
   /**
    * Display the filter on the administrative summary
    */
-  function admin_summary() {
+  public function admin_summary() {
     return 'Filter by Apache Solr search';
   }
 
@@ -148,7 +152,7 @@ class views_handler_filter_apachesolr_query extends views_handler_filter {
    * last apachesolr search in the view.
    * If no search was performed, don't show any nodes.
    */
-  function query() {
+  public function query() {
     $this->ensure_my_table();
     
     if (!apachesolr_has_searched()) {
@@ -182,7 +186,7 @@ class views_handler_argument_apachesolr_query extends views_handler_argument {
   /**
    * Display the filter on the administrative summary
    */
-  function admin_summary() {
+  public function admin_summary() {
     return 'Display Apache Solr search results';
   }
 
@@ -191,7 +195,7 @@ class views_handler_argument_apachesolr_query extends views_handler_argument {
    * last apachesolr search in the view.
    * If no search was performed, don't show any nodes.
    */
-  function query() {
+  public function query() {
     $this->ensure_my_table();
 
     // This is the object that does the communication with the solr server.
@@ -253,7 +257,12 @@ class views_handler_argument_apachesolr_query extends views_handler_argument {
  */
 class views_handler_field_apachesolr extends views_handler_field_node {
   
+  // Necessary overidden functions.
   public function ensure_my_table() {}
+  /**
+   * Since the search results always contain all fields, no query manipulation
+   * is necessary.
+   */
   public function query() {}
   
   /**
@@ -298,7 +307,7 @@ class views_handler_field_apachesolr extends views_handler_field_node {
 class views_handler_field_apachesolr_author
     extends views_handler_field_apachesolr {
   
-  function option_definition() {
+  public function option_definition() {
     $options = parent::option_definition();
     if (isset($options['link_to_node'])) {
       unset($options['link_to_node']);
@@ -310,7 +319,7 @@ class views_handler_field_apachesolr_author
   /**
    * Provide link_to_profile option
    */
-  function options_form(&$form, &$form_state) {
+  public function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
     if (isset($form['link_to_node'])) {
       unset($form['link_to_node']);
@@ -326,7 +335,7 @@ class views_handler_field_apachesolr_author
    * Render the field. If the link_to_profile option is set, the name links to
    * the user's profile.
    */
-  function render($values) {
+  public function render($values) {
     if (empty($this->options['link_to_profile'])) {
       return check_plain($values->name);
     }
@@ -344,7 +353,7 @@ class views_handler_field_apachesolr_author
 class views_handler_field_apachesolr_body
     extends views_handler_field_apachesolr {
   
-  function option_definition() {
+  public function option_definition() {
     $options = parent::option_definition();
     if (isset($options['link_to_node'])) {
       unset($options['link_to_node']);
@@ -358,7 +367,7 @@ class views_handler_field_apachesolr_body
   /**
    * Provide teaser option
    */
-  function options_form(&$form, &$form_state) {
+  public function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
     if (isset($form['link_to_node'])) {
       unset($form['link_to_node']);
@@ -397,7 +406,7 @@ class views_handler_field_apachesolr_body
    */
    //TODO This should use check_plain() if the format doesn't allow HTML.
    //     Also, contained PHP code (if allowed by the format) is not handled.
-  function render($values) {
+  public function render($values) {
     if (empty($this->options['teaser'])) {
       return $values->body;
     }
@@ -429,7 +438,7 @@ class views_handler_field_apachesolr_type
 class views_handler_field_apachesolr_date
     extends views_handler_field_apachesolr {
   
-  function option_definition() {
+  public function option_definition() {
     $options = parent::option_definition();
     $options['date_format'] =
         array('default' => 'medium');
@@ -439,7 +448,7 @@ class views_handler_field_apachesolr_date
   /**
    * Provide teaser option
    */
-  function options_form(&$form, &$form_state) {
+  public function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
     $form['date_format'] = array(
       '#title' => t('Date format'),
@@ -481,15 +490,74 @@ class views_handler_sort_apachesolr extends views_handler_sort {
 /**
  * Class that allows searching the site with Apache Solr through a view.
  */
-class apachesolr_search_views_argument_handler extends views_handler_argument {
-  //TODO What needs to be added here?
+class views_handler_argument_apachesolr_search extends views_handler_argument {
   
+  /**
+   * Add argument to query.
+   */
   public function query() {
     $this->query->add_term($this->argument);
   }
   
+  /**
+   * Set breadcrumb. Only called when appropriate.
+   */
   public function set_breadcrumb() {
     drupal_set_breadcrumb($this->query->get_breadcrumb());
+  }
+  
+}
+
+/**
+ * Class that allows searching the site with Apache Solr through a view.
+ */
+class views_handler_filter_apachesolr_search extends views_handler_filter_string {
+  
+  /**
+   * Override options to remove case sensitivity option.
+   */
+  public function option_definition() {
+    $options = parent::option_definition();
+    unset($options['case']);
+    return $options;
+  }
+  
+  /**
+   * Override options to remove case sensitivity option.
+   */
+  public function options_form(&$form, &$form_state) {
+    parent::options_form($form, $form_state);
+    unset($form['case']);
+  }
+  
+  /**
+   * Override list of available operators.
+   */
+  public function operators() {
+    $operators = array(
+      'append' => array(
+        'title' => t('Append to query'),
+        'short' => '',
+        'method' => 'query',
+        'values' => 1,
+      ),
+    );
+
+    return $operators;
+  }
+  
+  public function query() {
+    if (!empty($this->value)) {
+      $this->query->add_term('(' . $this->value . ')');
+    }
+  }
+  
+  public function admin_summary() {
+    if (!empty($this->options['exposed'])) {
+      return t('exposed');
+    }
+
+    return $this->value;
   }
   
 }
@@ -912,10 +980,6 @@ class apachesolr_views_query extends views_query {
           }
           if (!empty($doc->tid)) {
             $taxonomies = array();
-if (!is_array($doc->tid)) {//TODO
-  file_put_contents('temp.txt', print_r($doc->tid, TRUE));
-}
-else
             while (!empty($doc->tid) && !empty($doc->taxonomy_name)) {
               $tid = array_shift($doc->tid);
               $name = array_shift($doc->taxonomy_name);
