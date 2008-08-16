@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.15 2008/08/15 23:03:45 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.16 2008/08/16 14:29:22 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -882,9 +882,6 @@ class apachesolr_views_query extends views_query {
   /** Array containing the parameters that will be handed to Solr. */
   private $_params;
   
-  /** Stores the search's result, once available. */
-  private $_results;
-  
   /** The breadcrumb to be set if it is fit for the display. */
   private $_breadcrumb;
   
@@ -952,14 +949,42 @@ class apachesolr_views_query extends views_query {
     $this->_params = $params + $this->_params;
   }
   
-  /** Runs the search and returns the result. */
+  /**
+   * Runs the search and fills the view object with the results and meta
+   * information.
+   */
   public function execute(&$view) {
-    if (!empty($this->_results)) {
-      return $this->_results;
-    }
-    
     try {
       $start = microtime();
+      
+      
+      /*
+       * We're having a little trouble here, setting the pager variables before
+       * actually executing the query, since in Apache Solr we get the total
+       * number of rows with the same query as the results, not with a separate
+       * count query.
+       * Therefore we can only make an honest attempt at this time.
+       */
+      if (!empty($view->pager['items_per_page'])) {
+        if (!empty($view->pager['use_pager'])) {
+          global $pager_page_array, $pager_total, $pager_total_items;
+          
+          $elem = $view->pager['element'];
+          
+          $pager_page_array = isset($_GET['page']) ? explode(',', $_GET['page']) : array();
+          if (!empty($pager_page_array[$elem])) {
+            $page = intval($pager_page_array[$elem]);
+            if ($page > 0) {
+              $view->pager['current_page'] = $page;
+            }
+          }
+          $pager_page_array[$elem] = $view->pager['current_page'];
+        }
+        
+        $this->set_param('start', $view->pager['current_page'] *
+            $view->pager['items_per_page'] + $view->pager['offset']);
+      }
+      
       $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
       $query =& apachesolr_drupal_query($this->_query);
       $response = $solr->search($query->get_query(), $this->_params['start'], $this->_params['rows'], $this->_params);
@@ -967,12 +992,32 @@ class apachesolr_views_query extends views_query {
       
       apachesolr_static_response_cache($response);
       $results = array();
-      $ret['total_rows'] = $response->numFound;
+      $view->total_rows = $response->numFound;
       
-      if ($ret['total_rows'] > 0) {
+      if (!empty($view->pager['items_per_page'])
+          && !empty($view->pager['use_pager'])) {
+        $pager_total_items[$elem] = $view->total_rows;
+        $pager_total[$elem] = ceil($pager_total_items[$elem]
+            / $view->pager['items_per_page']);
+        
+        if ($view->pager['current_page'] >= $pager_total[$elem]) {
+          /*
+           * The specified page is above the maximum. Since this couldn't be
+           * predicted beforehand, we have to execute the whole query again.
+           * Another option would be to just display an error message and
+           * not show any results.
+           * TODO: Decide, which option to choose.
+           */
+          $pager_page_array[$elem] = $view->pager['current_page'] = 0;
+          $this->execute($view);
+          return;
+        }
+      }
+      
+      if ($view->total_rows > 0) {
         $fields = _apachesolr_fields();
         $fields[] = 'score';
-        $results = array();
+        $view->result = array();
         foreach ($response->documents as $doc) {
           $result = array();
           foreach ($fields as $field) {
@@ -991,18 +1036,14 @@ class apachesolr_views_query extends views_query {
             $result['taxonomies'] = '';
           }
           
-          $results[] = (object) $result;
+          $view->result[] = (object) $result;
         }
       }
       
-      $ret['result'] = $results;
-      $ret['execute_time'] = microtime() - $start;
+      $view->execute_time = microtime() - $start;
       
       // Set breadcrumb
       $this->_breadcrumb = $query->get_breadcrumb();
-      
-      $this->_results = $ret;
-      return $ret;
     }
     catch (Exception $e) {
       watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
