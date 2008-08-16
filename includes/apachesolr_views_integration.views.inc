@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.16 2008/08/16 14:29:22 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.17 2008/08/16 15:57:17 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -434,40 +434,81 @@ class views_handler_field_apachesolr_type
 
 /**
  * Class for rendering the node type.
+ * Largely copied from views_handler_field_date.
  */
 class views_handler_field_apachesolr_date
     extends views_handler_field_apachesolr {
   
   public function option_definition() {
     $options = parent::option_definition();
-    $options['date_format'] =
-        array('default' => 'medium');
+
+    $options['date_format'] = array('default' => 'small');
+    $options['custom_date_format'] = array('default' => '');
+
     return $options;
   }
-
-  /**
-   * Provide teaser option
-   */
+  
   public function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
+    $time = time();
+
     $form['date_format'] = array(
-      '#title' => t('Date format'),
       '#type' => 'select',
+      '#title' => t('Date format'),
       '#options' => array(
-        'small' => t('Small'),
-        'medium' => t('Medium'),
-        'large' => t('Large'),
+        'small' => format_date($time, 'small'),
+        'medium' => format_date($time, 'medium'),
+        'large' => format_date($time, 'large'),
+        'custom' => t('Custom'),
+        'time ago' => t('Time ago'),
       ),
-      '#default_value' => $this->options['date_format'],
+      '#default_value' =>
+          isset($this->options['date_format'])
+          ? $this->options['date_format']
+          : 'small',
+    );
+    $form['custom_date_format'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Custom date format'),
+      '#description' => t('If "Custom", see <a href="!url" target="_blank">' .
+          'the PHP docs</a> for date formats. If "Time ago" this is the the ' .
+          'number of different units to display, which defaults to two.',
+          array('!url' => 'http://us.php.net/manual/en/function.date.php')),
+      '#default_value' =>
+          isset($this->options['custom_date_format'])
+          ? $this->options['custom_date_format']
+          : '',
+      '#process' => array('views_process_dependency'),
+      '#dependency' =>
+          array('edit-options-date-format' => array('custom', 'time ago')),
     );
   }
-  
-  /**
-   * Render the field value.
-   */
+
   public function render($values) {
-    return $this->render_link(format_date($values->{$this->real_field},
-        $this->options['date_format']), $values);
+    $value = $values->{$this->real_field};
+    $format = $this->options['date_format'];
+    if ($format == 'custom' || $format == 'time ago') {
+      $custom_format = $this->options['custom_date_format'];
+    }
+
+    switch ($format) {
+      case 'time ago':
+        return $this->render_link(
+            $value
+            ? t('%time ago', array('%time' => format_interval(time() - $value,
+                is_numeric($custom_format) ? $custom_format : 2)))
+            : theme('views_nodate'), $values);
+      case 'custom':
+        return $this->render_link(
+            $value
+            ? format_date($value, $format, $custom_format)
+            : theme('views_nodate'), $values);
+      default:
+        return $this->render_link(
+            $value
+            ? format_date($value, $format)
+            : theme('views_nodate'), $values);
+    }
   }
   
 }
