@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.18 2008/08/17 00:06:48 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.19 2008/08/17 22:26:49 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -71,6 +71,9 @@ function apachesolr_views_data() {
       'handler' => 'views_handler_field_apachesolr_type',
       'click sortable' => TRUE,
     ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_apachesolr_type',
+    ),
     'sort' => array(
       'handler' => 'views_handler_sort_apachesolr',
     ),
@@ -78,6 +81,9 @@ function apachesolr_views_data() {
   $data['apachesolr']['name'] = array(
     'title' => t('Author'),
     'help' => t("The node's author."),
+    'argument' => array(
+      'handler' => 'views_handler_argument_apachesolr_author',
+    ),
     'field' => array(
       'handler' => 'views_handler_field_apachesolr_author',
       'click sortable' => TRUE,
@@ -553,6 +559,28 @@ class views_handler_argument_apachesolr_search extends views_handler_argument {
 }
 
 /**
+ * Argument for only displaying posts of a specific author.
+ */
+class views_handler_argument_apachesolr_author extends views_handler_argument {
+  
+  /**
+   * Add argument to query.
+   */
+  public function query() {
+    $this->query->add_term(
+        apachesolr_views_query::escape_term($this->argument), 'name');
+  }
+  
+  /**
+   * Set breadcrumb. Only called when appropriate.
+   */
+  public function set_breadcrumb() {
+    drupal_set_breadcrumb($this->query->get_breadcrumb());
+  }
+  
+}
+
+/**
  * Class that allows searching the site with Apache Solr through a view.
  */
 class views_handler_filter_apachesolr_search extends views_handler_filter_string {
@@ -664,12 +692,96 @@ class views_handler_filter_apachesolr_author extends views_handler_filter {
     else {
       $not = $this->options['operator'] == 'not one of';
       $names = array_map('trim', explode(',', $this->options['value']));
-      foreach ($names as $name) {
-        if (!empty($name)) {
-          $this->query->add_term(($not ? 'NOT ' : '') . 'name:' .
-              apachesolr_views_query::escape_term($name));
+      foreach ($names as $i => $name) {
+        if (empty($name)) {
+          unset($names[$i]);
         }
       }
+      if (empty($names)) {
+        if (!$not) {
+          $this->query->add_term('nid:-1');//Add term that will yield no results
+        }
+      }
+      else if (count($names) == 1) {
+        $this->query->add_term(($not ? 'NOT ' : '') . 'name:' . 
+            array_shift($names));
+      }
+      else {
+        $key = 'name:' . array_shift($names);
+        foreach ($names as $name) {
+          $key .= ' OR name:' . $name;
+        }
+        $this->query->add_term($not ? 'NOT (' . $key . ')' : $key);
+      }
+    }
+  }
+  
+}
+
+/**
+ * Class for filtering by type.
+ */
+class views_handler_filter_apachesolr_type extends views_handler_filter {
+  
+  public function option_definition() {
+    $options = parent::option_definition();
+
+    $options['operator'] = array('default' => 'one of');
+    $options['value'] = array('default' => '');
+
+    return $options;
+  }
+  
+  public function options_form(&$form, &$form_state) {
+    parent::options_form($form, $form_state);
+    $time = time();
+
+    $form['operator'] = array(
+      '#type' => 'select',
+      '#title' => t('Filter for'),
+      '#options' => array(
+        'one of' => t('One of these'),
+        'not one of' => t('Not one of these'),
+      ),
+      '#default_value' =>
+          isset($this->options['operator'])
+          ? $this->options['operator']
+          : 'one of',
+    );
+    $form['value'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Usernames'),
+      '#description' => t('Enter a comma seperated list of types.'),
+      '#default_value' =>
+          isset($this->options['value'])
+          ? $this->options['value']
+          : '',
+    );
+  }
+
+  public function query() {
+    $not = $this->options['operator'] == 'not one of';
+    $types = array_map('trim', explode(',', $this->options['value']));
+    foreach ($types as $i => $type) {
+      if (empty($type)) {
+        unset($types[$i]);
+      }
+    }
+    if (empty($types)) {
+      if (!$not) {
+        $this->query->add_term('nid:-1');//Add term that will yield no results
+      }
+    }
+    else if (count($types) == 1) {
+      $this->query->add_term(($not ? 'NOT ' : '') . 'type:' . 
+          array_shift($types));
+    }
+    else {
+      $key = 'type:' . array_shift($types);
+      foreach ($types as $type) {
+        $key .= ' OR type:' . $type;
+      }
+      $this->query->add_term($not ? 'NOT (' . $key . ')' : $key);
     }
   }
   
