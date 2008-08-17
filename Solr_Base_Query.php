@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.3 2008/07/18 23:53:19 drunkenmonkey Exp $
+// $Id: Solr_Base_Query.php,v 1.4 2008/08/17 16:55:59 drunkenmonkey Exp $
 
 class Solr_Base_Query {
 
@@ -172,7 +172,7 @@ class Solr_Base_Query {
     // the last breadcrumb is the current page, so it shouldn't be a link.
     $last = count($breadcrumb) - 1;
     $breadcrumb[$last] = strip_tags($breadcrumb[$last]);
-    drupal_set_breadcrumb($breadcrumb);
+    
     return $breadcrumb;
   }
 
