@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.20 2008/08/18 21:36:26 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.21 2008/08/18 21:39:00 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -136,10 +136,7 @@ function apachesolr_views_data() {
     'help' => t('Taxonomy terms associated with the node.'),
     'field' => array(
       'handler' => 'views_handler_field_apachesolr',
-      'click sortable' => TRUE,
-    ),
-    'sort' => array(
-      'handler' => 'views_handler_sort_apachesolr',
+      'click sortable' => FALSE,
     ),
   );
   if (module_exists('translation')) {
