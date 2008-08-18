@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.19 2008/08/17 22:26:49 drunkenmonkey Exp $
+// $Id: apachesolr_views_integration.views.inc,v 1.20 2008/08/18 21:36:26 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
@@ -12,11 +12,11 @@ function apachesolr_views_data() {
     'help' => t('Only shows the nodes returned by the current Apache Solr search.'),
     'filter' => array(
       'field' => 'nid',
-      'handler' => 'views_handler_filter_apachesolr_query',
+      'handler' => 'views_handler_filter_node_apachesolr',
     ),
     'argument' => array(
       'field' => 'nid',
-      'handler' => 'views_handler_argument_apachesolr_query',
+      'handler' => 'views_handler_argument_node_apachesolr',
     ),
   );
   
@@ -45,6 +45,9 @@ function apachesolr_views_data() {
   $data['apachesolr']['title'] = array(
     'title' => t('Title'),
     'help' => t('The title of the node.'),
+    'argument' => array(
+      'handler' => 'views_handler_argument_apachesolr',
+    ),
     'field' => array(
       'handler' => 'views_handler_field_apachesolr',
       'click sortable' => TRUE,
@@ -67,6 +70,9 @@ function apachesolr_views_data() {
   $data['apachesolr']['type'] = array(
     'title' => t('Type'),
     'help' => t('The type of a node (for example, "blog entry", "forum post", "story", etc).'),
+    'argument' => array(
+      'handler' => 'views_handler_argument_apachesolr',
+    ),
     'field' => array(
       'handler' => 'views_handler_field_apachesolr_type',
       'click sortable' => TRUE,
@@ -82,7 +88,7 @@ function apachesolr_views_data() {
     'title' => t('Author'),
     'help' => t("The node's author."),
     'argument' => array(
-      'handler' => 'views_handler_argument_apachesolr_author',
+      'handler' => 'views_handler_argument_apachesolr',
     ),
     'field' => array(
       'handler' => 'views_handler_field_apachesolr_author',
@@ -93,6 +99,17 @@ function apachesolr_views_data() {
     ),
     'sort' => array(
       'handler' => 'views_handler_sort_apachesolr',
+    ),
+  );
+  $data['apachesolr']['uid'] = array(
+    'title' => t('Author Uid'),
+    'help' => t("The node's author's user ID."),
+    'argument' => array(
+      'handler' => 'views_handler_argument_apachesolr',
+    ),
+    'field' => array(
+      'handler' => 'views_handler_field_apachesolr_author',
+      'click sortable' => TRUE,
     ),
   );
   $data['apachesolr']['body'] = array(
@@ -114,10 +131,24 @@ function apachesolr_views_data() {
       'handler' => 'views_handler_sort_apachesolr',
     ),
   );
+  $data['apachesolr']['taxonomies'] = array(
+    'title' => t('Taxonomy terms'),
+    'help' => t('Taxonomy terms associated with the node.'),
+    'field' => array(
+      'handler' => 'views_handler_field_apachesolr',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort_apachesolr',
+    ),
+  );
   if (module_exists('translation')) {
     $data['apachesolr']['language'] = array(
       'title' => t('Language'),
       'help' => t('The language the node is in.'),
+      'argument' => array(
+        'handler' => 'views_handler_argument_apachesolr',
+      ),
       'field' => array(
         'handler' => 'views_handler_field_apachesolr',
         'click sortable' => TRUE,
@@ -128,15 +159,13 @@ function apachesolr_views_data() {
     );
   }
   
-  $data['apachesolr']['search'] = array(
+  $data['apachesolr']['text'] = array(
     'title' => t('Search'),
     'help' => t('Searches the content with Solr'),
     'argument' => array(
-      'field' => 'text',
-      'handler' => 'views_handler_argument_apachesolr_search',
+      'handler' => 'views_handler_argument_apachesolr',
     ),
     'filter' => array(
-      'field' => 'text',
       'handler' => 'views_handler_filter_apachesolr_search',
     ),
   );
@@ -147,7 +176,7 @@ function apachesolr_views_data() {
 /**
  * Class for filtering the node according to the apachesolr query. 
  */
-class views_handler_filter_apachesolr_query extends views_handler_filter {
+class views_handler_filter_node_apachesolr extends views_handler_filter {
 
   /**
    * Display the filter on the administrative summary
@@ -190,7 +219,7 @@ class views_handler_filter_apachesolr_query extends views_handler_filter {
 /**
  * Class for filtering the node according to the apachesolr query. 
  */
-class views_handler_argument_apachesolr_query extends views_handler_argument {
+class views_handler_argument_node_apachesolr extends views_handler_argument {
 
   /**
    * Display the filter on the administrative summary
@@ -346,10 +375,10 @@ class views_handler_field_apachesolr_author
    */
   public function render($values) {
     if (empty($this->options['link_to_profile'])) {
-      return check_plain($values->name);
+      return check_plain($values->{$this->real_field});
     }
     else {
-      return l(check_plain($values->name),
+      return l(check_plain($values->{$this->real_field}),
           "user/" . $values->uid, array('html' => TRUE));
     }
   }
@@ -540,6 +569,29 @@ class views_handler_sort_apachesolr extends views_handler_sort {
 /**
  * Class that allows searching the site with Apache Solr through a view.
  */
+class views_handler_argument_apachesolr extends views_handler_argument {
+  
+  /**
+   * Add argument to query.
+   */
+  public function query() {
+    $this->query->add_term(apachesolr_views_query::escape_term($this->argument),
+        $this->real_field);
+  }
+  
+  /**
+   * Set breadcrumb. Only called when appropriate.
+   */
+  // TODO Fix this so only argument gets added to breadcrumb.
+  public function set_breadcrumb() {
+    drupal_set_breadcrumb($this->query->get_breadcrumb());
+  }
+  
+}
+
+/**
+ * Class that allows searching the site with Apache Solr through a view.
+ */
 class views_handler_argument_apachesolr_search extends views_handler_argument {
   
   /**
@@ -620,7 +672,7 @@ class views_handler_filter_apachesolr_search extends views_handler_filter_string
   
   public function query() {
     if (!empty($this->value)) {
-      $this->query->add_term('(' . $this->value . ')');
+      $this->query->add_term($this->value);
     }
   }
   
@@ -1248,7 +1300,7 @@ class apachesolr_views_query extends views_query {
           foreach ($fields as $field) {
             $result[$field] = $doc->$field;
           }
-          if (!empty($doc->tid)) {
+          if (is_array($doc->tid)) {
             $taxonomies = array();
             while (!empty($doc->tid) && !empty($doc->taxonomy_name)) {
               $tid = array_shift($doc->tid);
@@ -1292,9 +1344,14 @@ class apachesolr_views_query extends views_query {
   
   /** Prepares the query. */
   public function query() {
-    $this->_query = trim(implode(' ', $this->_keys));
-    if (empty($this->_query)) {
+    if (empty($this->_keys)) {
       $this->_query = '*:*';
+    }
+    else if (count($this->_keys) == 1) {
+      $this->_query = array_shift($this->_keys);
+    }
+    else {
+      $this->_query = '(' . trim(implode(') (', $this->_keys)) . ')';
     }
   }
   
