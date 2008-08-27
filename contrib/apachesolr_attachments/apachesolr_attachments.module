@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_attachments.module,v 1.1.2.1 2008/08/14 03:25:40 febbraro Exp $
+// $Id: apachesolr_attachments.module,v 1.1.2.2 2008/08/27 15:38:06 robertDouglass Exp $
 
 /**
  * @file
@@ -32,12 +32,12 @@ function apachesolr_attachments_menu() {
 */
 function apachesolr_attachments_settings() {
   $instruction_text = 'For each type of attachment, enter the path to the helper application installed on your server. "%file%" is a placeholder for the path of the attachment file and is required. If you don\'t want to search a type of attachment, leave the path setting blank (i.e., remove the content from the appropriate field below).';	
-	 
+
   $form['instructions'] = array(
     '#type' => 'markup',
     '#value' => t($instruction_text)
-  );	
-	
+  );
+
   $form['apachesolr_attachment_pdf_path'] = array(
     '#type' => 'textfield',
     '#title' => t('PDF Helper'),
@@ -111,7 +111,7 @@ function apachesolr_attachments_update_index() {
       // node (but that action will trigger it to be indexed again), lets remove 
       // all indexed attachments then add all attached (if any)
       _asa_remove_attachments_from_index($node->nid);
-      watchdog('NODE', '<pre>'.print_r($node, true).'</pre>');
+      watchdog('NODE', '<pre>' . print_r($node, true) . '</pre>');
  
       $files = _asa_get_indexable_files($node);
       if(!empty($files)) {
@@ -134,13 +134,13 @@ function apachesolr_attachments_update_index() {
               $document->title = $file->filename; 
               $document->changed = $node->changed;
               $document->uid = $node->uid;
-              $document->body = $text;  
-              $document->text = "$file->filename $text";  
+              $document->body = $text;
+              $document->text = "$file->filename $text";
               $document->type = SOLR_ATTACHMENT_TYPE;
               _as_configure_taxonomy($document, $node);
 
-              $documents[] = $document;  
-            }              
+              $documents[] = $document;
+            }
           }
         }
         catch (Exception $e) {
@@ -166,7 +166,7 @@ function apachesolr_attachments_nodeapi($node, $op) {
     case 'search result':
       if ($node->type == SOLR_ATTACHMENT_TYPE) {
         list($nid, $fid) = split(SOLR_ATTACHMENT_ID_DELIM, $node->nid);
-        return array('nid' => $nid, 'fid' => $fid);        
+        return array('nid' => $nid, 'fid' => $fid);
       }
       break;
     case 'delete':
@@ -254,7 +254,7 @@ function _asa_get_attachment_text($file) {
   // Wierd control characters make things behave wierd, especially in XML
   $cleaned_text = iconv("utf-8", "utf-8//IGNORE", $text);
   
-  return $cleaned_text;        
+  return $cleaned_text;
 }
 
 /**
@@ -347,10 +347,10 @@ function _as_configure_taxonomy($document, $node) {
   if (is_array($node->taxonomy)) {
     foreach ($node->taxonomy as $term) {
       $document->setMultiValue('tid', $term->tid);
-              
+
       // Double indexing of tids lets us do effecient searches (on tid)
       // and do accurate per-vocabulary faceting.
-      $document->setMultiValue('imfield_vid' . $term->vid, $term->tid);              
+      $document->setMultiValue('imfield_vid' . $term->vid, $term->tid);
       
       $document->setMultiValue('vid', $term->vid);
       $document->setMultiValue('taxonomy_name', $term->name);
@@ -380,8 +380,4 @@ function _as_index_documents($documents) {
       watchdog(SOLR_ATTACHMENT_WD, $e->getMessage(), WATCHDOG_ERROR);
     }
   }
-
 }
-
-
-
