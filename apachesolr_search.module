@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.5 2008/07/18 23:53:19 drunkenmonkey Exp $
+// $Id: apachesolr_search.module,v 1.6 2008/08/28 12:46:56 drunkenmonkey Exp $
 
 /**
  * @file
@@ -55,7 +55,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         pager_query("SELECT %d", $params['rows'], 0, NULL, $total);
         if ($total > 0) {
           foreach ($response->documents as $doc) {
-            $extra = node_invoke_nodeapi(&$doc, 'search result');
+            $extra = node_invoke_nodeapi($doc, 'search result');
             $extra['score'] = $doc->score;
             $snippet = search_excerpt($keys, $doc->body);
             if (trim($snippet) == '...') {
@@ -71,6 +71,12 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
                                'score' => $doc->score,
                                'snippet' => $snippet);
           }
+          
+          // Hook to allow modifications of the retrieved results
+          foreach (module_implements('apachesolr_process_results') as $module) {
+            $function = $module .'_apachesolr_process_results';
+            call_user_func_array($function, array(&$results));
+          }          
         }
         // Set breadcrumb
         drupal_set_breadcrumb($query->get_breadcrumb());
@@ -80,6 +86,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       catch (Exception $e) {
         watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
       }
+      break;
 
   } // switch
 }
