@@ -7,8 +7,8 @@ diff -u -r1.123 view.inc
 +++ includes/view.inc	16 Aug 2008 14:00:54 -0000
 @@ -1,5 +1,5 @@
  <?php
--// $Id: views_variable_query_class.patch,v 1.5 2008/08/16 14:29:22 drunkenmonkey Exp $
-+// $Id: views_variable_query_class.patch,v 1.5 2008/08/16 14:29:22 drunkenmonkey Exp $
+-// $Id: views_variable_query_class.patch,v 1.1 2008/08/28 11:05:48 drunkenmonkey Exp $
++// $Id: views_variable_query_class.patch,v 1.1 2008/08/28 11:05:48 drunkenmonkey Exp $
  /**
   * @file view.inc
   * Provides the view object type and associated methods.

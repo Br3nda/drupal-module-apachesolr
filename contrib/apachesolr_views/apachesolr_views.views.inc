@@ -1,11 +1,11 @@
 <?php
 
-// $Id: apachesolr_views_integration.views.inc,v 1.21 2008/08/18 21:39:00 drunkenmonkey Exp $
+// $Id: apachesolr_views.views.inc,v 1.1 2008/08/28 11:05:48 drunkenmonkey Exp $
 
 /**
  * Implementation of hook_views_data().
  */
-function apachesolr_views_data() {
+function apachesolr_views_views_data() {
   $data['node']['apachesolr'] = array(
     'group' => t('Apachesolr'),
     'title' => t('Apache Solr search'),
@@ -841,7 +841,7 @@ class views_handler_filter_apachesolr_type extends views_handler_filter {
  * 
  * Returns a view for displaying apachesolr search results.
  */
-function apachesolr_views_integration_views_default_views() {
+function apachesolr_views_views_default_views() {
   $view = new view;
   $view->name = 'apachesolr_search_result';
   $view->description = 'Display the results of the current Apache Solr search.';
