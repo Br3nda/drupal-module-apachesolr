@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_image.module,v 1.1.2.2 2008/06/14 18:44:30 robertDouglass Exp $
+// $Id: apachesolr_image.module,v 1.1.2.3 2008/09/04 23:13:10 janusman Exp $
 
 function apachesolr_image_apachesolr_update_index(&$document, $node) {
   if ($node->type == 'image') {
@@ -53,10 +53,10 @@ function phptemplate_search_item($item, $type) {
   $break = '';
   if ($node = $item['node']) {
     if ($path = $node->ssfield_imagemodule_image) {
-      $item['snippet'] = '<span class="image">'. theme('image', $path, '', '', array('align' => 'left')). '</span>'. $item['snippet'];
+      $item['snippet'] = '<span class="image">'. theme('image', $path, '', '', array('align' => 'left')) .'</span>'. $item['snippet'];
       $break = '<br clear="all"/>';
     }
   }
-  $output .= ' <dd>'. ($item['snippet'] ? '<p>'. $item['snippet'] . $break. '</p>' : '') .'<p class="search-info">'. implode(' - ', $info) .'</p></dd>';
+  $output .= ' <dd>'. ($item['snippet'] ? '<p>'. $item['snippet'] . $break .'</p>' : '') .'<p class="search-info">'. implode(' - ', $info) .'</p></dd>';
   return $output;
 }

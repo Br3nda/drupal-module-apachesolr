@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_attachments.module,v 1.1.4.2 2008/08/14 04:01:18 febbraro Exp $
+// $Id: apachesolr_attachments.module,v 1.1.4.3 2008/09/04 23:10:32 janusman Exp $
 
 /**
  * @file
@@ -34,12 +34,12 @@ function apachesolr_attachments_menu($may_cache) {
 */
 function apachesolr_attachments_settings() {
   $instruction_text = 'For each type of attachment, enter the path to the helper application installed on your server. "%file%" is a placeholder for the path of the attachment file and is required. If you don\'t want to search a type of attachment, leave the path setting blank (i.e., remove the content from the appropriate field below).';	
-	 
+
   $form['instructions'] = array(
     '#type' => 'markup',
     '#value' => t($instruction_text)
-  );	
-	
+  );
+
   $form['apachesolr_attachment_pdf_path'] = array(
     '#type' => 'textfield',
     '#title' => t('PDF Helper'),
@@ -135,13 +135,13 @@ function apachesolr_attachments_update_index() {
               $document->title = $file->filename; 
               $document->changed = $node->changed;
               $document->uid = $node->uid;
-              $document->body = $text;  
-              $document->text = "$file->filename $text";  
+              $document->body = $text;
+              $document->text = "$file->filename $text";
               $document->type = SOLR_ATTACHMENT_TYPE;
               _as_configure_taxonomy($document, $node);
 
-              $documents[] = $document;  
-            }              
+              $documents[] = $document;
+            }
           }
         }
         catch (Exception $e) {
@@ -167,7 +167,7 @@ function apachesolr_attachments_nodeapi($node, $op) {
     case 'search result':
       if ($node->type == SOLR_ATTACHMENT_TYPE) {
         list($nid, $fid) = split(SOLR_ATTACHMENT_ID_DELIM, $node->nid);
-        return array('nid' => $nid, 'fid' => $fid);        
+        return array('nid' => $nid, 'fid' => $fid);
       }
       break;
     case 'delete':
@@ -255,7 +255,7 @@ function _asa_get_attachment_text($file) {
   // Wierd control characters make things behave wierd, especially in XML
   $cleaned_text = iconv("utf-8", "utf-8//IGNORE", $text);
   
-  return $cleaned_text;        
+  return $cleaned_text;
 }
 
 /**
@@ -329,7 +329,10 @@ function _asa_get_solr_instance() {
  * Get a reference to the Solr service. This consolidates cal to varaible_get, etc.
  */
 function _get_solr_instance() {
-  $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
+  $host = variable_get('apachesolr_host', 'localhost');
+  $port = variable_get('apachesolr_port', 8983);
+  $path = variable_get('apachesolr_path', '/solr');
+  $solr =& apachesolr_get_solr($host, $port, $path);
   if (!$solr->ping()) {
     throw new Exception(t('No Solr instance available'));
   }
@@ -349,7 +352,7 @@ function _as_configure_taxonomy($document, $node) {
       // Double indexing of tids lets us do effecient searches (on tid)
       // and do accurate per-vocabulary faceting.
       $document->setMultiValue('imfield_vid' . $term->vid, $term->tid);
-
+      
       $document->setMultiValue('vid', $term->vid);
       $document->setMultiValue('taxonomy_name', $term->name);
     }
@@ -378,8 +381,4 @@ function _as_index_documents($documents) {
       watchdog(SOLR_ATTACHMENT_WD, $e->getMessage(), WATCHDOG_ERROR);
     }
   }
-
 }
-
-
-
