@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.22 2008/09/04 23:00:47 janusman Exp $
+// $Id: apachesolr.module,v 1.1.2.23 2008/09/04 23:21:27 janusman Exp $
 
 /**
  * @file
@@ -808,7 +808,7 @@ function theme_apachesolr_facet_item($name, $count, $path, $active = FALSE, $unc
     return $unclick_link . " $name";
   }
   else {
-    return l($name. " ($count)",  $path, $attributes);
+    return l($name ." ($count)",  $path, $attributes);
   }
 }
 
