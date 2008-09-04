@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.21 2008/09/04 21:56:00 janusman Exp $
+// $Id: apachesolr.module,v 1.1.2.22 2008/09/04 23:00:47 janusman Exp $
 
 /**
  * @file
@@ -298,7 +298,7 @@ class ApacheSolrUpdate {
     if (is_object($solr)) {
       // remaining documents
       try {
-        watchdog('Apache Solr', 'Adding @count documents in cleanup', array('@count' => count($documents)));
+        watchdog('Apache Solr', t('Adding @count documents in cleanup', array('@count' => count($documents))));
         $solr->addDocuments($documents);
         $solr->commit();
         $solr->optimize(FALSE, FALSE);
