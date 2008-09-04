@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.14 2008/08/14 04:00:10 febbraro Exp $
+// $Id: apachesolr_search.module,v 1.1.2.15 2008/09/04 22:11:03 janusman Exp $
 
 /**
  * @file
@@ -7,10 +7,16 @@
  *   Apache Solr search application.
  */
 
+/**
+ * Implementation of hook_update_index().
+ */
 function apachesolr_update_index() {
   ApacheSolrUpdate::update_index('apachesolr');
 }
 
+/**
+ * Implementation of hook_search().
+ */
 function apachesolr_search_search($op = 'search', $keys = NULL) {
 
   switch ($op) {
@@ -36,9 +42,11 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
       // This is the object that knows about the query coming from the user.
       $query =& apachesolr_drupal_query($keys);
+      $results = array();
       
-      try {      
+      try {
         $params = array(
+          //'qt' => 'standard',
           'fl' => '*,score',
           'rows' => variable_get('apachesolr_rows', 10),
           'facet' => 'true',
@@ -60,12 +68,9 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         foreach ($facet_query_limits as $fieldname => $limit) {
           $params['f.' . $fieldname . '.facet.limit'] = $limit;
         }
+
         if (isset($_GET['solrsort'])) {
           $sort = check_plain($_GET['solrsort']);
-          $params['sort'] = $sort;
-        }
-        
-        if ($sort = check_plain($_GET['solrsort'])) {
           $params['sort'] = $sort;
         }
         if ($fields = apachesolr_cck_fields()) {
@@ -74,7 +79,8 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
             $params['facet.field'][] = $index_key;
           }
         }
-        $params['start'] = $_GET['page'] * $params['rows'];
+        $page = isset($_GET['page']) ? $_GET['page'] : 0;
+        $params['start'] = $page * $params['rows'];
         $response = $solr->search($query->get_query(), $params['start'], $params['rows'], $params);
         apachesolr_has_searched(TRUE);
         $total = $response->numFound;
@@ -83,7 +89,6 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         apachesolr_static_response_cache($response);
         pager_query("SELECT %d", $params['rows'], 0, NULL, $total);
         if ($total > 0) {
-          static $users = array();
           foreach ($response->documents as $doc) {
             $extra = node_invoke_nodeapi($doc, 'search result');
             $extra['score'] = $doc->score;
