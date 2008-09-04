@@ -1,5 +1,5 @@
 <?php
-// $Id: solr_base_query.test,v 1.1.2.1 2008/06/14 18:44:30 robertDouglass Exp $
+// $Id: solr_base_query.test,v 1.1.2.2 2008/09/04 23:17:03 janusman Exp $
 
 class DrupalSolrQueryTests extends DrupalTestCase {
   function get_info() {
@@ -24,71 +24,98 @@ class DrupalSolrQueryTests extends DrupalTestCase {
   );
 
   function testParseSimple() {
+    $result = TRUE;
     foreach ($this->queries as $string) {
       $query =& apachesolr_drupal_query($string, TRUE);
       // force the query to be rebuilt without removing any fields.
       $query->remove_field('fake-field-name');
       if (!$this->assertEqual($string, $query->get_query())) {
-        return FALSE;
+        $result =  FALSE;
       }
     }
-    return TRUE;
+    return $result;
   }
 
   function testAddTerm() {
+    $result = TRUE;
     foreach ($this->queries as $string) {
       $query =& apachesolr_drupal_query($string, TRUE);
       $query->add_field('wham', '1');
-      if (!$this->assertEqual($string. ' wham:1', $query->get_query())) {
-        return FALSE;
+      if (!$this->assertEqual($string .' wham:1', $query->get_query())) {
+        $result =  FALSE;
       }
     }
-    return TRUE;
+    return $result;
   }
 
   function testRemoveTerm() {
+    $result = TRUE;
     $string = 'foo';
     $query =& apachesolr_drupal_query($string, TRUE);
     $query->remove_field('', 'foo');
     if (!$this->assertEqual('foo', $query->get_query())) {
-      return FALSE;
+      $result = FALSE;
     }
 
     $string = 'foo bar';
     $query =& apachesolr_drupal_query($string, TRUE);
     $query->remove_field('', 'foo');
     if (!$this->assertEqual('foo bar', $query->get_query())) {
-      return FALSE;
+      $result = FALSE;
     }
 
     $string = 'foo uid:1 bar';
     $query =& apachesolr_drupal_query($string, TRUE);
     $query->remove_field('uid', '1');
     if (!$this->assertEqual('foo bar', $query->get_query())) {
-      return FALSE;
+      $result = FALSE;
     }
 
     $string = 'foo uid:1 bar';
     $query =& apachesolr_drupal_query($string, TRUE);
     $query->remove_field('uid');
     if (!$this->assertEqual('foo bar', $query->get_query())) {
-      return FALSE;
+      $result = FALSE;
     }
 
     $string = 'foo uid:1 bar uid:2 tid:3';
     $query =& apachesolr_drupal_query($string, TRUE);
     $query->remove_field('uid', '1');
+    /*// May not work because query doesn't necessarily get rebuilt in same order
     if (!$this->assertEqual('foo bar uid:2 tid:3', $query->get_query())) {
-      return FALSE;
+      $result = FALSE;
+    }*/
+    // Not very beautiful, but probably best way there is:
+    $pass = TRUE;
+    $components = array('foo', 'bar', 'uid:2', 'tid:3');
+    $q = $query->get_query();
+    if (count($components) != count(explode(' ', $q))) {
+      $pass = FALSE;
     }
+    else {
+      foreach ($components as $s) {
+        if (strpos($q, $s) === FALSE) {
+          $pass = false;
+          break;
+        }
+      }
+    }
+    if ($pass) {
+      $this->assertEqual($q, $q);
+    }
+    else {
+      $this->assertEqual('foo bar tid:3 uid:2', $q);
+      $result = FALSE;
+    }
+    
 
     $string = 'foo uid:1 bar uid:2 tid:3';
     $query =& apachesolr_drupal_query($string, TRUE);
     $query->remove_field('uid');
     if (!$this->assertEqual('foo bar tid:3', $query->get_query())) {
-      return FALSE;
+      $result = FALSE;
     }
 
-    return TRUE;
+    return $result;
   }
 }
