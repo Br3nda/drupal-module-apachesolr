@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.23 2008/09/04 23:21:27 janusman Exp $
+// $Id: apachesolr.module,v 1.1.2.24 2008/09/05 07:58:30 jacobsingh Exp $
 
 /**
  * @file
@@ -18,13 +18,13 @@ function apachesolr_menu($may_cache) {
       'description' => t('Administer Apache Solr.'),
       'callback' => 'drupal_get_form',
       'callback arguments' => 'apachesolr_settings',
-      'access' => user_access('administer site configuration'),
+      'access' => user_access('administer search'),
       );
     $items[] = array(
       'path' => 'admin/settings/apachesolr/index',
       'title' => t('Apache Solr search index'),
       'callback' => 'apachesolr_index_page',
-      'access' => user_access('administer site configuration'),
+      'access' => user_access('administer search'),
     );
   }
   return $items;
