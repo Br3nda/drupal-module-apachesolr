@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.23 2008/09/09 10:39:22 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.24 2008/09/09 12:57:34 robertDouglass Exp $
 
 /**
  * @file
@@ -262,7 +262,7 @@ class ApacheSolrUpdate {
         $node = node_build_content($node, FALSE, FALSE);
         $node->body = drupal_render($node->content);
 
-        $text = check_plain($node->title) .  $node->body;
+        $text = check_plain($node->title) . ' ' . $node->body;
 
         // Fetch extra data normally not visible
         $extra = node_invoke_nodeapi($node, 'update index');
