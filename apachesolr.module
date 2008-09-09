@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.21 2008/07/20 13:18:01 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.22 2008/09/09 10:18:15 robertDouglass Exp $
 
 /**
  * @file
@@ -762,6 +762,9 @@ function apachesolr_index_key($field) {
       break;
     case 'date':
       $type_prefix = 'd';
+      break;
+    case 'float':
+      $type_prefix = 'f';
       break;
     default:
       $type_prefix = 's';
