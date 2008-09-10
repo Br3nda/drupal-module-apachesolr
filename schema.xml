@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- $Id: schema.xml,v 1.1.2.4 2008/09/09 10:20:24 robertDouglass Exp $ -->
+<!-- $Id: schema.xml,v 1.1.2.5 2008/09/10 08:34:10 robertDouglass Exp $ -->
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
  contributor license agreements.  See the NOTICE file distributed with
@@ -245,6 +245,7 @@
      result set and don't need to go to the database with a node_load. -->
 
    <field name="title" type="text" indexed="true" stored="true"/>
+   <field name="stitle" type="string" indexed="true" stored="true"/>
    <field name="body" type="text" indexed="false" stored="true"/>
    <field name="type" type="string" indexed="true" stored="true"/>
    <field name="path" type="text" indexed="true" stored="true"/>
