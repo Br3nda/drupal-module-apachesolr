@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.25 2008/09/09 15:24:22 janusman Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.26 2008/09/10 08:33:09 robertDouglass Exp $
 
 /**
  * @file
@@ -323,6 +323,10 @@ class ApacheSolrUpdate {
               }
             }
           }
+          
+          // This is the string value of the title. Used for sorting.
+          $document->stitle = $node->title;
+          
           if (is_array($node->taxonomy)) {
             foreach ($node->taxonomy as $term) {
               $document->setMultiValue('tid', $term->tid);
@@ -487,7 +491,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
         switch ($delta) {
           case 'sort':
             $sorts = array(
-              'title' => array('name' => t('Title'), 'default' => 'asc'),
+              'stitle' => array('name' => t('Title'), 'default' => 'asc'),
               'type' => array('name' => t('Type'), 'default' => 'asc'),
               'name' => array('name' => t('Author'), 'default' => 'asc'),
               'changed' => array('name' => t('Date'), 'default' => 'desc'),
