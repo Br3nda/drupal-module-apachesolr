@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.30 2008/09/16 09:25:44 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.31 2008/09/16 11:05:02 robertDouglass Exp $
 
 /**
  * @file
@@ -588,7 +588,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
                   $users[$active ? $countsort . $name : 1 + $countsort . $name] = theme('apachesolr_facet_item', $name, $count, $path, $active, $unclick_link);
                 }
               }
-              if (is_array($users)) {
+              if (count($users) > 0) {
                 ksort($users);
                 $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
                 $users = array_slice($users, 0, ($facet_display_limit == -1 ? NULL : $facet_display_limit));
