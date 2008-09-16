@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.31 2008/09/16 11:05:02 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.32 2008/09/16 11:26:58 robertDouglass Exp $
 
 /**
  * @file
@@ -472,7 +472,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
               }
               else {
                 $terms[$term->vid][$active ? $countsort . $term->name : 1 + $countsort . $term->name] =
-                    theme('apachesolr_facet_item', $term->name, $count, $path, $active, $unclick_link);
+                    theme('apachesolr_facet_item', $term->name, $count, $path, $active, $unclick_link, $response->numFound);
               }
             }
           }
@@ -542,7 +542,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
                   // skip
                 }
                 else {
-                  $types[$active ? $countsort . $type : 1 + $countsort . $type] = theme('apachesolr_facet_item', $type, $count, $path, $active, $unclick_link);
+                  $types[$active ? $countsort . $type : 1 + $countsort . $type] = theme('apachesolr_facet_item', $type, $count, $path, $active, $unclick_link, $response->numFound);
                 }
               }
               if (count($types) > 0) {
@@ -585,7 +585,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
                   // skip
                 }
                 else {
-                  $users[$active ? $countsort . $name : 1 + $countsort . $name] = theme('apachesolr_facet_item', $name, $count, $path, $active, $unclick_link);
+                  $users[$active ? $countsort . $name : 1 + $countsort . $name] = theme('apachesolr_facet_item', $name, $count, $path, $active, $unclick_link, $response->numFound);
                 }
               }
               if (count($users) > 0) {
@@ -625,7 +625,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
                       // skip
                     }
                     else {
-                      $facets[$active ? $countsort . $facet : 1 + $countsort . $facet] = theme('apachesolr_facet_item', $facet, $count, $path, $active, $unclick_link);
+                      $facets[$active ? $countsort . $facet : 1 + $countsort . $facet] = theme('apachesolr_facet_item', $facet, $count, $path, $active, $unclick_link, $response->numFound);
                     }
                   }
                   if (is_array($facets)) {
@@ -863,7 +863,7 @@ function apachesolr_simpletest() {
   return array_keys($tests);
 }
 
-function theme_apachesolr_facet_item($name, $count, $path, $active = FALSE, $unclick_link = NULL) {
+function theme_apachesolr_facet_item($name, $count, $path, $active = FALSE, $unclick_link = NULL, $num_found = NULL) {
   $attributes = array();
   if ($active) {
     $attributes['class'] = 'active';
