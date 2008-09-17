@@ -1,5 +1,5 @@
 <?php
-// $Id: Service.php,v 1.1.2.1.2.3 2008/07/19 13:06:09 robertDouglass Exp $
+// $Id: Service.php,v 1.1.2.1.2.4 2008/09/17 07:52:32 robertDouglass Exp $
 /**
  * @copyright Copyright 2007 Conduit Internet Technologies, Inc. (http://conduit-it.com)
  * @license Apache Licence, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
@@ -239,8 +239,10 @@ class Apache_Solr_Service
   private function _sendRawGet($url)
   {
     // drupal_set_message(url($url, array('absolute' => TRUE)));
-    //$http_response_header is set by file_get_contents
-    $response = new Apache_Solr_Response(@file_get_contents($url), $http_response_header);
+    // $http_response_header is set by file_get_contents
+    $http_response_header = FALSE;
+    $contents = @file_get_contents($url);
+    $response = new Apache_Solr_Response($contents, $http_response_header);
 
     if ($response->getHttpStatus() != 200)
     {
