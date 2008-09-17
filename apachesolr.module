@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.33 2008/09/17 08:07:28 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.34 2008/09/17 08:35:06 robertDouglass Exp $
 
 /**
  * @file
@@ -379,12 +379,6 @@ class ApacheSolrUpdate {
           }
           $document->text = $text;
           $documents[] = $document;
-          if ($count++ % 50 == 49) {
-            watchdog('Apache Solr', t("Adding @count documents", array('@count' => count($documents))));
-            $solr->addDocuments($documents);
-            $count = 0;
-            $documents = array();
-          }
         }
         catch (Exception $e) {
           watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
@@ -392,13 +386,17 @@ class ApacheSolrUpdate {
       }
       self::success('apachesolr', $solr_last_change, $solr_last_id);
     }
-    if (is_object($solr)) {
-      // remaining documents
+    if (is_object($solr) && count($documents) > 0) {
       try {
-        watchdog('Apache Solr', t('Adding @count documents in cleanup', array('@count' => count($documents))));
+        watchdog('Apache Solr', t('Adding @count documents.', array('@count' => count($documents))));
+        // Chunk the adds by 20s
+        $docs_chunk = array_chunk($documents, 20);
+        foreach ($docs_chunk as $docs) {
+          $solr->addDocuments($docs);
+        }
         $solr->addDocuments($documents);
         $solr->commit();
-        $solr->optimize(FALSE, FALSE);
+        $solr->optimize(FALSE, FALSE); 
       }
       catch (Exception $e) {
         watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
