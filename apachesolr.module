@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.34 2008/09/17 08:35:06 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.35 2008/09/18 07:07:27 robertDouglass Exp $
 
 /**
  * @file
@@ -292,8 +292,9 @@ class ApacheSolrUpdate {
       // Variables to track the last item changed.
       $solr_last_change = $row->last_change;
       $solr_last_id = $row->nid;
-
-      $node = node_load($row->nid);
+                                             
+      // Set reset = TRUE to avoid static caching of all nodes that get indexed.
+      $node = node_load($row->nid, NULL, TRUE);
                                        
       if ($node->nid) {
         // Build the node body.
