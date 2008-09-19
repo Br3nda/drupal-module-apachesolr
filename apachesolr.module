@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.32 2008/09/18 07:08:23 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.33 2008/09/19 17:23:43 robertDouglass Exp $
 
 /**
  * @file
@@ -366,14 +366,21 @@ class ApacheSolrUpdate {
           
           if (is_array($node->taxonomy)) {
             foreach ($node->taxonomy as $term) {
-              $document->setMultiValue('tid', $term->tid);
-              
               // Double indexing of tids lets us do effecient searches (on tid)
               // and do accurate per-vocabulary faceting.
-              $document->setMultiValue('imfield_vid' . $term->vid, $term->tid);
               
-              $document->setMultiValue('vid', $term->vid);
-              $document->setMultiValue('taxonomy_name', $term->name);
+              // By including the ancestors to a term in the index we make 
+              // sure that searches for general categories match specific
+              // categories, e.g. Fruit -> apple, a search for fruit will find
+              // content categorized with apple.
+              $ancestors = taxonomy_get_parents_all($term->tid);    
+              foreach ($ancestors as $ancestor) {
+                $document->setMultiValue('tid', $ancestor->tid);
+                $document->setMultiValue('imfield_vid'. $ancestor->vid, $ancestor->tid);
+                $document->setMultiValue('vid', $ancestor->vid);
+                $document->setMultiValue('taxonomy_name', $ancestor->name);
+                $text .= ' ' . $ancestor->name;
+              }
             }
           }
           $document->text = $text;
