@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.36 2008/09/19 16:45:57 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.37 2008/09/20 10:24:25 jacobsingh Exp $
 
 /**
  * @file
@@ -535,6 +535,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
         switch ($delta) {
           case 'sort':
             $sorts = array(
+              'relevancy' => array('name' => t('Relevancy'), 'default' => 'asc'),
               'stitle' => array('name' => t('Title'), 'default' => 'asc'),
               'type' => array('name' => t('Type'), 'default' => 'asc'),
               'name' => array('name' => t('Author'), 'default' => 'asc'),
@@ -554,7 +555,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
             $path = 'search/'. arg(1). '/'. $query->get_query();
             foreach ($sorts as $type => $sort) {
               $new_sort = isset($solrsorts[$type]) ? $solrsorts[$type] == 'asc' ? 'desc' : 'asc' : $sort['default'];
-              $sort_links[] = theme('apachesolr_sort_link', $sort['name'], $path, "solrsort={$type} {$new_sort}", isset($solrsorts[$type]) ? $solrsorts[$type] : '');
+              $sort_links[] = theme('apachesolr_sort_link', $sort['name'], $path, $type == "relevancy" ? '' : "solrsort={$type} {$new_sort}", isset($solrsorts[$type]) ? $solrsorts[$type] : '');
             }
             return array('subject' => t('Sort by') . ':',
              'content' => theme('apachesolr_sort_list', $sort_links));
@@ -915,12 +916,12 @@ function theme_apachesolr_facet_item($name, $count, $path, $active = FALSE, $unc
     return $unclick_link . " $name";
   }
   else {
-    return l($name ." ($count)",  $path, $attributes);
+    return l($name ." ($count)",  $path, $attributes, isset($_GET['solrsort']) ? "solrsort=" . check_plain($_GET['solrsort']) : FALSE);
   }
 }
 
 function theme_apachesolr_unclick_link($path) {
-  return l("(-)", $path);
+  return l("(-)", $path, NULL, isset($_GET['solrsort']) ? "solrsort=" . check_plain($_GET['solrsort']) : FALSE);
 }
 
 function theme_apachesolr_sort_link($text, $path, $query, $direction = NULL) {
