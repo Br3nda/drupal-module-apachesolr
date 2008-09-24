@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.34 2008/09/20 10:45:27 jacobsingh Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.35 2008/09/24 18:12:54 robertDouglass Exp $
 
 /**
  * @file
@@ -256,8 +256,8 @@ class ApacheSolrUpdate {
     $result = db_query_range('SELECT GREATEST(IF(c.last_comment_timestamp IS NULL, 0, c.last_comment_timestamp), n.changed) as last_change, n.nid '.
                              'FROM {node} n LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid '.
                              'WHERE n.status = 1 '.
-                             '  AND ((GREATEST(n.changed, c.last_comment_timestamp) = %d AND n.nid > %d) OR (n.changed > %d OR c.last_comment_timestamp > %d)) '.
-                             'ORDER BY GREATEST(n.changed, c.last_comment_timestamp) ASC, n.nid ASC', $cron_change, $cron_last, $cron_change, $cron_change, $cron_change, 0, $cron_limit);
+                             'AND ((GREATEST(IF(c.last_comment_timestamp IS NULL , 0, c.last_comment_timestamp ), n.changed) = %d AND n.nid > %d) OR n.changed > %d OR c.last_comment_timestamp > %d) ' . 
+                             'ORDER BY last_change ASC, n.nid ASC', $cron_change, $cron_last, $cron_change, $cron_change, 0, $cron_limit);
     return $result;
   }
 
@@ -952,12 +952,12 @@ function theme_apachesolr_facet_item($name, $count, $path, $active = FALSE, $unc
     return $unclick_link . " $name";
   }
   else {
-    return l($name ." ($count)",  $path, array('attributes' => $attributes, 'query' => ($_GET['solrsort']) ? "solrsort=" . check_plain($_GET['solrsort']) : FALSE));
+    return l($name ." ($count)",  $path, array('attributes' => $attributes, 'query' => isset($_GET['solrsort']) ? "solrsort=" . check_plain($_GET['solrsort']) : FALSE));
   }
 }
 
 function theme_apachesolr_unclick_link($path) {
-  return l("(-)", $path, array('query' => ($_GET['solrsort']) ? "solrsort=" . check_plain($_GET['solrsort']) : FALSE));
+  return l("(-)", $path, array('query' => isset($_GET['solrsort']) ? "solrsort=" . check_plain($_GET['solrsort']) : FALSE));
 }
 
 function theme_apachesolr_sort_link($text, $path, $query, $direction = NULL) {
