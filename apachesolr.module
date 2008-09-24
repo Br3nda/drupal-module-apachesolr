@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.37 2008/09/20 10:24:25 jacobsingh Exp $
+// $Id: apachesolr.module,v 1.1.2.38 2008/09/24 18:07:54 robertDouglass Exp $
 
 /**
  * @file
@@ -258,8 +258,8 @@ class ApacheSolrUpdate {
     $result = db_query_range('SELECT GREATEST(IF(c.last_comment_timestamp IS NULL, 0, c.last_comment_timestamp), n.changed) as last_change, n.nid '.
                              'FROM {node} n LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid '.
                              'WHERE n.status = 1 '.
-                             '  AND ((GREATEST(n.changed, c.last_comment_timestamp) = %d AND n.nid > %d) OR (n.changed > %d OR c.last_comment_timestamp > %d)) '.
-                             'ORDER BY GREATEST(n.changed, c.last_comment_timestamp) ASC, n.nid ASC', $cron_change, $cron_last, $cron_change, $cron_change, $cron_change, 0, $cron_limit);
+                             'AND ((GREATEST(IF(c.last_comment_timestamp IS NULL , 0, c.last_comment_timestamp ), n.changed) = %d AND n.nid > %d) OR n.changed > %d OR c.last_comment_timestamp > %d) ' . 
+                             'ORDER BY last_change ASC, n.nid ASC', $cron_change, $cron_last, $cron_change, $cron_change, 0, $cron_limit);
     return $result;
   }
 
