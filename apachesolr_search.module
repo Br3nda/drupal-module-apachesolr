@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.16 2008/09/17 08:07:28 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.17 2008/10/05 16:26:33 robertDouglass Exp $
 
 /**
  * @file
@@ -71,8 +71,13 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
 
         if (isset($_GET['solrsort'])) {
           $sort = check_plain($_GET['solrsort']);
+        }
+
+        // Validate sort parameter
+        if ($sort && preg_match('/^([a-z0-9_]+ (asc|desc)(,)?)+$/i', $sort)) {
           $params['sort'] = $sort;
         }
+
         if ($fields = apachesolr_cck_fields()) {
           foreach ($fields as $name => $field) {
             $index_key = apachesolr_index_key($field);
