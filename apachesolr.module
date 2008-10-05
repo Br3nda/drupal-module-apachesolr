@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.39 2008/10/05 15:17:57 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.40 2008/10/05 15:48:13 robertDouglass Exp $
 
 /**
  * @file
@@ -68,6 +68,11 @@ function apachesolr_help($section) {
 
 function apachesolr_settings() {
   $form = array();
+                               
+  //perform a check to ensure the server is there
+  $requirements = apachesolr_requirements('runtime');  
+  $status = $requirements['apachesolr']['severity'] == 2 ? 'error' : 'status';
+  drupal_set_message($requirements['apachesolr']['value'],$status);
 
   $form['apachesolr_host'] = array(
     '#type' => 'textfield',
@@ -160,7 +165,7 @@ function apachesolr_requirements($phase) {
       watchdog('Apache Solr', $e->getMessage(), WATCHDOG_ERROR);
     }
     $value =  $ping ? $t('Solr can be pinged.') : $t('No Solr instance is available.');
-    $severity = $ping ? REQUIREMENT_OK: REQUIREMENT_ERROR;
+    $severity = $ping ? 0: 2;
     $description = theme('item_list', array($t('Host: %host', array('%host' => $host)),
                         $t('Port: %port', array('%port' => $port)),
                         $t('Path: %path', array('%path' => $path))));
