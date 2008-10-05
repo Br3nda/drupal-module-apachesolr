@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.2 2008/07/28 07:11:40 robertDouglass Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.3 2008/10/05 17:29:15 robertDouglass Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search can be used as a replacement for core content search and boasts both extra features and better performance. Among the extra features is the ability to have faceted search on facets ranging from content author to taxonomy to arbitrary CCK fields.
 
@@ -42,3 +42,17 @@ Solution:
 To be able to use file_get_contents() in PHP, the "allow_url_fopen" 
 directive must be enabled. In php.ini set the following value:
 allow_url_fopen = On
+
+
+Developers
+--------------
+
+Exposed Hooks:
+
+@param &$document Apache_Solr_Document
+@param $node StdClass
+hook_apachesolr_update_index(&$document, $node)
+
+This hook is called just before indexing the document.
+It allows you to add fields to the $document object which is sent to Solr.
+For reference on the $document object, see SolrPhpClient/Apache/Solr/Document.php
