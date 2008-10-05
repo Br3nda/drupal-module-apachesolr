@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.37 2008/10/05 15:47:10 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.38 2008/10/05 17:18:21 robertDouglass Exp $
 
 /**
  * @file
@@ -783,7 +783,7 @@ function apachesolr_form_alter(&$form, $form_state, $form_id) {
   // exclude node and user here, but there are many other hook_search implementations
   // in the wild and this code will potentially interfere with them. It also
   // creates a Solr instance wasting resources.
-  if ($arg != 'node' && $arg != 'user' && (
+  if ($alias && $arg != 'node' && $arg != 'user' && (
     preg_match("&/search/{$arg}&", $form['#action']) ||
     preg_match("&/{$alias}&", $form['#action'])  ||
     strpos($form['#action'], $alias))) {
