@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.41 2008/10/05 17:20:32 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.42 2008/10/05 17:30:07 robertDouglass Exp $
 
 /**
  * @file
@@ -354,9 +354,6 @@ class ApacheSolrUpdate {
         try {
           $document = new Apache_Solr_Document();
 
-          // Let modules add to the document
-          module_invoke_all('apachesolr_update_index', &$document, $node);
-
           $fields = array('title', 'body', 'type', 'uid', 'changed', 'nid', 'comment_count', 'name', 'language');
           foreach ((array)$node as $key => $value) {
             if (in_array($key, $fields)) {
@@ -427,6 +424,13 @@ class ApacheSolrUpdate {
             }
           }
           $document->text = $text;
+          
+          // Let modules add to the document
+          foreach (module_implements('apachesolr_update_index') as $module) {
+            $function = $module .'_apachesolr_update_index';
+            $function($document, $node);
+          }
+          
           $documents[] = $document;
         }
         catch (Exception $e) {
