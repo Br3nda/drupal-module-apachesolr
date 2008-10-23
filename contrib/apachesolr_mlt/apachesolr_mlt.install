@@ -1,0 +1,32 @@
+<?php
+//$ID$
+
+function apachesolr_mlt_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysqli':
+    case 'mysql':
+      $pass = db_query("CREATE TABLE IF NOT EXISTS {apachesolr_mlt} (
+          `id` int(11) NOT NULL auto_increment,
+          `data` longtext NOT NULL,
+          PRIMARY KEY  (`id`)
+          )"
+        );
+    break;
+  }
+  if($pass) {
+    drupal_set_message(t('Created the apachesolr_mlt table'));
+  }
+}
+
+function apachesolr_mlt_uninstall(){
+  switch($GLOBALS['db_type']){
+    case 'mysqli':
+    case 'mysql':
+      $pass = db_query("DROP TABLE {apachesolr_mlt}");
+    break;
+    
+  }
+  if($pass) {
+    drupal_set_message(t('Dropped the apachesolr_mlt table'));
+  }
+}

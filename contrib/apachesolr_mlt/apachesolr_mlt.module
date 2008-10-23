@@ -1,0 +1,358 @@
+<?php
+// $ID$
+
+/**
+ * Implementation of hook_menu()
+ */
+function apachesolr_mlt_menu($may_cache) {
+  $items = array();
+  if (!$may_cache) {
+    $items[] = array(
+      'path' => 'admin/settings/apachesolr_mlt',
+      'title' => t('Apache Solr More Like This'),
+      'description' => t('Configure content recommendation blocks using the ApacheSolr "More Like This" handler.'),
+      'callback' => 'apachesolr_mlt_settings',
+      'access' => user_access('administer search'),
+    );
+    $items[] = array(
+      'path' => 'admin/settings/apachesolr_mlt/configure_block',
+      'type' => MENU_CALLBACK,
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('apachesolr_mlt_block_form', arg(4)),
+      'access' => user_access('administer search'),
+      );
+    $items[] = array(
+      'path' => 'admin/settings/apachesolr_mlt/delete_block',
+      'type' => MENU_CALLBACK,
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('apachesolr_mlt_delete_block_form', arg(4)),
+      'access' => user_access('administer search'),
+      );
+    
+  }
+  return $items;
+}
+
+/**
+ * Implementation of hook_block
+ */
+function apachesolr_mlt_block ($op = 'list', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    //return all of the moreLikeThis blocks that the user has created
+    $blocks = apachesolr_mlt_list_blocks();
+    return $blocks;
+  }
+  else if ($op == 'view' && !empty($delta)) {
+    //return the content of the block, based on the delta
+    return apachesolr_mlt_suggestions($delta);
+  }
+}
+
+/**
+ * function apachesolr_mlt_suggestions()
+ * This function loads a the parameters for each moreLikeThis query, performs
+ * the query, and returns a list of linked node titles.
+ * 
+ * @param int $block_id A block ID for loading the suggestions
+ *
+ * @return array An array to be returned to hook_block
+ */
+function apachesolr_mlt_suggestions($block_id) {
+  if (arg(0) == 'node' && is_numeric(arg(1))) {
+    $nid = check_plain(arg(1));
+    $solr = & apachesolr_get_solr ( variable_get ( 'apachesolr_host', 'localhost' ), variable_get ( 'apachesolr_port', 8983 ), variable_get ( 'apachesolr_path', '/solr' ) );
+    
+    try {
+      $fields = array('mlt.mintf', 'mlt.mindf', 'mlt.minwl', 'mlt.maxwl', 'mlt.maxqt', 'mlt.boost', 'mlt.qf');
+      $block = apachesolr_mlt_load_block($block_id);
+      $params = array(
+          'mlt' => 'true',
+          'fl' => '*,score',
+          'mlt.fl' => check_plain(implode(',', $block['mlt_fl'])),
+      );
+      unset($block['mlt_fl']);
+      foreach ($fields as $field) {
+        $drupal_fieldname = str_replace('.', '_', $field);
+        if (!empty($block[$drupal_fieldname])) {
+          $params[$field] = check_plain($block[$drupal_fieldname]);
+        }
+      }
+      $response = $solr->search('nid:' . $nid, 0, 10, $params);
+      
+      $r =  (array) end($response->moreLikeThis);
+      //TODO: Figure out why this works
+      $links = array();
+      
+      foreach ($r['docs'] as $doc) {
+        $links[] = l($doc->title, 'node/' . $doc->nid);
+      }
+
+      $suggestions = array();
+      if (count($links) > 0) {
+        $suggestions['subject'] = $block['name'];
+        $suggestions['content'] = theme('apachesolr_mlt_recommendation_block', $links);
+      }
+      return $suggestions;
+    } catch ( Exception $e ) {
+        watchdog ( 'Apache Solr', $e->getMessage (), WATCHDOG_ERROR );
+    }
+  }
+}
+
+function theme_apachesolr_mlt_recommendation_block($links) {
+  return theme('item_list', $links);
+}
+
+/**
+ * function apachesolr_mlt_settings()
+ * returns the settings page.
+ */
+function apachesolr_mlt_settings() {
+  $query = "SELECT * FROM {apachesolr_mlt}";
+  $results = db_query($query);
+  $rows = array();
+  while ($block = db_fetch_object($results)) {
+    $block->data = unserialize($block->data);
+    $rows[] = array(
+      $block->id,
+      $block->data['name'],
+      l('Edit', 'admin/settings/apachesolr_mlt/configure_block/' . check_plain($block->id)) .' | ' . l('Delete', 'admin/settings/apachesolr_mlt/delete_block/'.check_plain($block->id)),
+    );
+  }
+  $header = array('Id', 'name', 'options');
+  $output = l('Add block', 'admin/settings/apachesolr_mlt/configure_block');
+  $output .= theme('table', $header, $rows);
+  return $output;
+}
+
+/**
+ * function apachesolr_mlt_block_form()
+ * Allows users to create and edit moreLikeThis Blocks.
+ * @param int $block_id If editing, the id of the block to edit.
+ *
+ * @return array The form used for editing.
+ * TODO:
+ *   Add term boost settings
+ *   Enable the user to specify a query, rather then forcing suggestions based
+ *     on the node id.
+ *
+ */
+function apachesolr_mlt_block_form($block_id = NULL) {
+  //if editing, load the current settings for the block.
+  if($block_id && is_numeric($block_id)) {
+    $block = apachesolr_mlt_load_block($block_id);
+    $form['block_id'] = array(
+      '#type' => 'hidden',
+      '#value' => $block_id,
+    );
+  }
+
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Block Name'),
+    '#description' => t('Please enter then block name.  This will only be seen by the administratior'),
+    '#default_value' => check_plain($block['name']),
+    '#weight' => '-2',
+  );
+  $form['mlt.count'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Maximum number of results'),
+    '#default_value' => $block['mlt_count'] ? $block['mlt_count'] : 5,
+    '#weight' => -1,
+    );
+ 
+  $form['comparison'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Comparison settings'),
+    '#weight' => 0,
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    );
+  $form['comparison']['mlt_fl'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Fields for comparison'),
+    '#description' => t('The fields to be used in caclulating similarity.'),
+    '#options' => apachesolr_mlt_get_fields(),
+    '#default_value' => $block['mlt_fl'],
+  );
+
+  $form['advanced'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Advanced Configuration'),
+    '#weight' => '1',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['advanced']['mlt_mintf'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Minimum Term Frequency'),
+    '#description' => t('The frequency below which terms will be ignored in the source document.'),
+    '#default_value' => $block['mlt_mintf'] ? (int) $block['mlt_mintf'] : 1,
+  );
+  $form['advanced']['mlt_mindf'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Minimum Document Frequency'),
+    '#description' => t('The frequency at which words will be ignored which do not occur in at least this many documents.'),
+    '#default_value' => $block['mlt_mindf'] ? (int) $block['mlt_mindf'] : 1,
+  );
+  $form['advanced']['mlt_minwl'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Minimum Word Length'),
+    '#description' => 'Words must be at least this long or they will be ignored.',
+    '#default_value' => $block['mlt_minwl'] ? (int) $block['mlt_minwl'] : 3,
+  );
+  $form['advanced']['mlt_maxwl'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Maximum World Length'),
+    '#description' => t('Words above this length will be ignored.'),
+    '#default_value' => $block['mlt_maxwl'] ? (int) $block['mlt_maxwl'] : 15,
+  );
+  $form['advanced']['mlt_maxqt'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Maximum number of query terms'),
+    '#description' => t('The maximum number of query terms that will be included in any generated query. Lower numbers will result in fewer recommendations but perform better.'),
+    '#default_value' => $block['mlt_maxqt'] ? (int) $block['mlt_maxqt'] : 30,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#weight' => '5',
+  );
+
+  $form['#redirect'] = 'admin/settings/apachesolr_mlt';
+
+  return $form;
+}
+
+/**
+ * function apachesolr_mlt_block_validate()
+ *
+ * Perform basic form field validation on the morelikethis fields
+ * 
+ * @param string $form_id the form ID
+ * @param array $form_values an array of from values
+ */
+function apachesolr_mlt_block_form_validate($form_id, $form_values) {
+  if ($form_id == 'apachesolr_mlt_block_form') {
+    foreach ($form_values as $key => $value) {
+      //make sure the user inputed a number, accept for the field list
+      if (strpos($key, 'mlt_') === 0 && $key != 'mlt_fl') {
+        if (!empty($value) && !is_numeric($value)) {
+          form_set_error($key, t("This field must contain a whole number."));
+        }
+      }
+    }
+  }
+}
+
+/**
+ * function apachesolr_mlt_block_submit()
+ * @param string $form_id the form ID
+ * @param array $form_values an array of from values
+ */
+function apachesolr_mlt_block_form_submit($form_id, $form_values) {
+  if ($form_id == 'apachesolr_mlt_block_form') {
+    $form_values['mlt_fl'] = array_diff($form_values['mlt_fl'], array(0));
+    apachesolr_mlt_save_block($form_values, $form_values['block_id']);
+  }
+}
+
+
+/**
+ * function apachesolr_mlt_get_fields()
+ * A list of field names used on the settings form.
+ * @return array An array containing a the fields in the solr instance.
+ */
+function apachesolr_mlt_get_fields() {
+  $response = drupal_http_request(apachesolr_base_url() ."/admin/luke?numTerms=0&wt=json");
+
+  if ($response->code == '200') {
+    $data = json_decode($response->data);
+    $rows = array();
+    foreach ((array)$data->fields as $field_name => $field) {
+      if ($field->schema{4} == 'V')
+      $rows[$field_name] = $field_name;
+    }
+  }
+  return $rows;
+}
+
+
+/**
+ * function apachesolr_mlt_load_block()
+ * A loader function for the apachesolr more like this module.  If the function
+ * is passed a proper block id, the function will return the settings for the
+ * moreLikeThis request.  If the block id is invalid the function returns an
+ * empty array.
+ *
+ * @param int $block_id the id of the block you wish to load
+ *
+ * @return array Either the array of settings to perform the moreLikeThis request
+ * or an empty array if the block id is invalid.
+ */
+function apachesolr_mlt_load_block($block_id = 0) {
+  if (is_numeric($block_id)) {
+    $query_results = db_result(db_query('SELECT data FROM {apachesolr_mlt} WHERE id = %d', $block_id));
+    if (strlen($query_results)) {
+      return unserialize($query_results);
+    }
+  }
+  else {
+    return array();
+  }
+}
+
+/**
+ * function apachesolr_mlt_save_block()
+ * A helper function save the block data to the database.  If passed a valid
+ * block id, the function will update block settings in the database.  If it is
+ * not passed a block id, the function will create a new block.
+ *
+ * @param array $block_settings An array containing the settings required to form
+ * a moreLikeThis request.
+ *
+ * @param int $block_id The id of the block you wish to update.
+ */
+function apachesolr_mlt_save_block($block_settings = array(), $block_id = 0) {
+  if (is_numeric($block_id) && $block_id > 0) {
+    db_query("UPDATE {apachesolr_mlt} SET data = '%s' WHERE id = %d", serialize($block_settings), $block_id);
+  }
+  else {
+    db_query("INSERT INTO {apachesolr_mlt} (data) VALUES ('%s')", serialize($block_settings));
+  }
+}
+
+/**
+ * function apachesolr_mlt_list_blocks()
+ * returns a list of blocks.  used by hook_block
+ */
+function apachesolr_mlt_list_blocks() {
+  $block_results = db_query("SELECT * FROM {apachesolr_mlt}");
+  $blocks = array();
+  while ($block = db_fetch_object($block_results)) {
+    $block->data = unserialize($block->data);
+    $blocks[$block->id] = array('info' => t('ApacheSolr moreLikeThis: ') . $block->data['name']);
+  }
+  return $blocks;
+}
+
+function apachesolr_mlt_delete_block_form($block_id = NULL) {
+  if (is_numeric($block_id)) {
+    $block = apachesolr_mlt_load_block($block_id);
+    $form['block_id'] = array(
+      '#type' => 'value',
+      '#value' => $block_id
+    );
+    $form['#redirect'] = 'admin/settings/apachesolr_mlt';
+    return confirm_form($form,
+      t('Are you sure you want to delete the apachesolr moreLikeThis block %name?', array('%name' => $block['name'])),
+      'admin/settings/apachesolr_mlt',
+      t('The block will be deleted. This action cannot be undone.'),
+      t('Delete'), t('Cancel'));
+  }
+}
+
+function apachesolr_mlt_delete_block_form_submit($form_id, $form_values) {
+  db_query('DELETE FROM {apachesolr_mlt} WHERE id = %d', $form_values['block_id']['#value']);
+}
