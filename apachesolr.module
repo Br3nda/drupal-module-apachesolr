@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.42 2008/10/05 17:30:07 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.43 2008/10/23 20:28:51 robertDouglass Exp $
 
 /**
  * @file
@@ -325,11 +325,12 @@ class ApacheSolrUpdate {
 
     // Get CCK fields list
     $cck_fields = apachesolr_cck_fields();
-
     $result = self::getNodesToIndex($namespace);
     $count = 0;
     $documents = array();
+    
     while ($row = db_fetch_object($result)) {
+      
       // Variables to track the last item changed.
       $solr_last_change = $row->last_change;
       $solr_last_id = $row->nid;
@@ -534,10 +535,12 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
         $facet_display_limits = variable_get('apachesolr_facet_query_limits', array());
         
         if ((strpos($delta, 'imfield_vid') === 0) && module_exists('taxonomy')) {
-          if (is_array($response->facets->$delta)) {
+          
+          if (is_object($response->facet_counts->facet_fields->$delta)) {
             $contains_active = FALSE;
             $terms = array();
-            foreach ($response->facets->$delta as $tid => $count) {
+            
+            foreach ($response->facet_counts->facet_fields->$delta as $tid => $count) {
               $unclick_link = '';
               unset($active);
               $term = taxonomy_get_term($tid);
@@ -606,10 +609,10 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
              'content' => theme('apachesolr_sort_list', $sort_links));
 
           case 'type':
-            if (is_array($response->facets->type)) {
+            if (is_object($response->facet_counts->facet_fields->type)) {
               $contains_active = FALSE;
               $types = array();
-              foreach ($response->facets->type as $t => $count) {
+              foreach ($response->facet_counts->facet_fields->type as $t => $count) {
                 $unclick_link = '';
                 unset($active);
                 $type = node_get_types('name', $t);
@@ -643,10 +646,10 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
             }
             break;
           case 'uid':
-            if (is_array($response->facets->uid)) {
+            if (is_object($response->facet_counts->facet_fields->uid)) {
               $contains_active = FALSE;
               $users = array();
-              foreach ($response->facets->uid as $uid => $count) {
+              foreach ($response->facet_counts->facet_fields->uid as $uid => $count) {
                 $unclick_link = '';
                 unset($active);
                 if ($uid == 0) {

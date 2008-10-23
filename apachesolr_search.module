@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.17 2008/10/05 16:26:33 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.18 2008/10/23 20:28:51 robertDouglass Exp $
 
 /**
  * @file
@@ -87,14 +87,14 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         $page = isset($_GET['page']) ? $_GET['page'] : 0;
         $params['start'] = $page * $params['rows'];
         $response = $solr->search($query->get_query(), $params['start'], $params['rows'], $params);
-        apachesolr_has_searched(TRUE);
-        $total = $response->numFound;
         // The response is cached so that it is accessible to the blocks and anything
         // else that needs it beyond the initial search.
         apachesolr_static_response_cache($response);
+        apachesolr_has_searched(TRUE);
+        $total = $response->response->numFound;
         pager_query("SELECT %d", $params['rows'], 0, NULL, $total);
         if ($total > 0) {
-          foreach ($response->documents as $doc) {
+          foreach ($response->response->docs as $doc) {
             $extra = node_invoke_nodeapi($doc, 'search result');
             $extra['score'] = $doc->score;
             $snippet = search_excerpt($keys, $doc->body);
