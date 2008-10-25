@@ -1,5 +1,5 @@
 <?php
-// $ID$
+// $Id: apachesolr_mlt.module,v 1.1.2.2 2008/10/25 16:56:53 robertDouglass Exp $
 
 /**
  * Implementation of hook_menu()
@@ -67,7 +67,7 @@ function apachesolr_mlt_suggestions($block_id) {
       $block = apachesolr_mlt_load_block($block_id);
       $params = array(
           'mlt' => 'true',
-          'fl' => '*,score',
+          'fl' => 'nid,title',
           'mlt.fl' => check_plain(implode(',', $block['mlt_fl'])),
       );
       unset($block['mlt_fl']);
@@ -166,14 +166,14 @@ function apachesolr_mlt_block_form($block_id = NULL) {
     '#title' => t('Comparison settings'),
     '#weight' => 0,
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
+    '#collapsed' => FALSE,
     );
   $form['comparison']['mlt_fl'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Fields for comparison'),
     '#description' => t('The fields to be used in caclulating similarity.'),
     '#options' => apachesolr_mlt_get_fields(),
-    '#default_value' => $block['mlt_fl'],
+    '#default_value' => isset($block['mlt_fl']) ? $block['mlt_fl'] : array('title', 'taxonomy_name'),
   );
 
   $form['advanced'] = array(
@@ -181,7 +181,7 @@ function apachesolr_mlt_block_form($block_id = NULL) {
     '#title' => t('Advanced Configuration'),
     '#weight' => '1',
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
+    '#collapsed' => FALSE,
   );
   $form['advanced']['mlt_mintf'] = array(
     '#type' => 'textfield',
@@ -332,7 +332,7 @@ function apachesolr_mlt_list_blocks() {
   $blocks = array();
   while ($block = db_fetch_object($block_results)) {
     $block->data = unserialize($block->data);
-    $blocks[$block->id] = array('info' => t('ApacheSolr moreLikeThis: ') . $block->data['name']);
+    $blocks[$block->id] = array('info' => t('ApacheSolr recommendations: ') . $block->data['name']);
   }
   return $blocks;
 }
@@ -346,7 +346,7 @@ function apachesolr_mlt_delete_block_form($block_id = NULL) {
     );
     $form['#redirect'] = 'admin/settings/apachesolr_mlt';
     return confirm_form($form,
-      t('Are you sure you want to delete the apachesolr moreLikeThis block %name?', array('%name' => $block['name'])),
+      t('Are you sure you want to delete the ApacheSolr content recommendation block %name?', array('%name' => $block['name'])),
       'admin/settings/apachesolr_mlt',
       t('The block will be deleted. This action cannot be undone.'),
       t('Delete'), t('Cancel'));
