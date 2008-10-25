@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.40 2008/10/25 14:47:29 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.41 2008/10/25 16:49:24 robertDouglass Exp $
 
 /**
  * @file
@@ -64,7 +64,7 @@ function apachesolr_help($section) {
 
 function apachesolr_settings() {
   $form = array();
-                               
+
   //perform a check to ensure the server is there
   $requirements = apachesolr_requirements('runtime');  
   $status = $requirements['apachesolr']['severity'] == 2 ? 'error' : 'status';
@@ -120,7 +120,7 @@ function apachesolr_settings() {
  *   The name of the search implementation.
  *
  * @param $querystring
- *   The search query that was issued at the time of failure.                         
+ *   The search query that was issued at the time of failure.
  */
 function apachesolr_failure($search_name, $querystring) {
   $fail_rule = variable_get('apachesolr_failure', 'show_error');
@@ -333,7 +333,7 @@ class ApacheSolrUpdate {
 
       // Set reset = TRUE to avoid static caching of all nodes that get indexed.
       $node = node_load($row->nid, NULL, TRUE);
-                                       
+
       if ($node->nid) {
         // Build the node body.
         $node = node_build_content($node, FALSE, FALSE);
@@ -397,20 +397,20 @@ class ApacheSolrUpdate {
               }
             }
           }
-          
+
           // This is the string value of the title. Used for sorting.
           $document->stitle = $node->title;
-          
+
           if (is_array($node->taxonomy)) {
             foreach ($node->taxonomy as $term) {
               // Double indexing of tids lets us do effecient searches (on tid)
               // and do accurate per-vocabulary faceting.
-              
+
               // By including the ancestors to a term in the index we make 
               // sure that searches for general categories match specific
               // categories, e.g. Fruit -> apple, a search for fruit will find
               // content categorized with apple.
-              $ancestors = taxonomy_get_parents_all($term->tid);    
+              $ancestors = taxonomy_get_parents_all($term->tid);
               foreach ($ancestors as $ancestor) {
                 $document->setMultiValue('tid', $ancestor->tid);
                 $document->setMultiValue('imfield_vid'. $ancestor->vid, $ancestor->tid);
@@ -421,7 +421,7 @@ class ApacheSolrUpdate {
             }
           }
           $document->text = $text;
-          
+
           // Let modules add to the document
           foreach (module_implements('apachesolr_update_index') as $module) {
             $function = $module .'_apachesolr_update_index';

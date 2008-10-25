@@ -1,0 +1,6 @@
+; $Id: apachesolr_mlt.info,v 1.1.4.2 2008/10/25 16:49:25 robertDouglass Exp $
+name = ApacheSolr More Like This
+description = Use Solr to make content recommendations using Solr Search
+dependencies[] = apachesolr
+package = ApacheSolr
+core = 6.x

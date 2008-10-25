@@ -1,0 +1,36 @@
+<?php
+//$Id: apachesolr_mlt.install,v 1.1.4.2 2008/10/25 16:49:25 robertDouglass Exp $
+
+function apachesolr_mlt_install() {
+  // Create tables.
+  $pass = drupal_install_schema('apachesolr_mlt');
+  if ($pass) {
+    drupal_set_message(t('Created the apachesolr_mlt table'));
+  }
+}
+
+function apachesolr_mlt_schema() {
+  $schema['apachesolr_mlt'] = array(
+    'description' => t('Tracks custom content recommendation blocks.'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('The primary identifier for a custom block.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'data' => array(
+        'description' => t('The serialized data for a block.'),
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+        'default' => ''),
+    ),
+    'primary key' => array('id'),
+  );
+  return $schema;
+}
+
+function apachesolr_mlt_uninstall() {
+  // Remove tables.
+  drupal_uninstall_schema('apachesolr_mlt');
+}

@@ -1,4 +1,5 @@
 <?php
+// $Id: Document.php,v 1.1.4.4 2008/10/25 16:49:25 robertDouglass Exp $
 /**
  * @copyright Copyright 2007 Conduit Internet Technologies, Inc. (http://conduit-it.com)
  * @license Apache Licence, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
@@ -54,146 +55,146 @@ class Apache_Solr_Document implements Iterator
 	  return $this->_fields[$key];
 	}
 
-	/**
-	 * Magic set for field values. Multi-valued fields should be set as arrays
-	 * or instead use the setMultiValue(...) function which will automatically
-	 * make sure the field is an array.
-	 *
-	 * @param string $key
-	 * @param mixed $value
-	 */
-	public function __set($key, $value)
-	{
-		$this->_fields[$key] = $value;
-	}
+  /**
+   * Magic set for field values. Multi-valued fields should be set as arrays
+   * or instead use the setMultiValue(...) function which will automatically
+   * make sure the field is an array.
+   *
+   * @param string $key
+   * @param mixed $value
+   */
+  public function __set($key, $value)
+  {
+    $this->_fields[$key] = $value;
+  }
 
-	/**
-	 * Magic isset for fields values.  Do no call directly. Allows usage:
-	 *
-	 * <code>
-	 * isset($document->some_field);
-	 * </code>
-	 *
-	 * @param string $key
-	 * @return boolean
-	 */
-	public function __isset($key)
-	{
-		return isset($this->_fields[$key]);
-	}
+  /**
+   * Magic isset for fields values.  Do no call directly. Allows usage:
+   *
+   * <code>
+   * isset($document->some_field);
+   * </code>
+   *
+   * @param string $key
+   * @return boolean
+   */
+  public function __isset($key)
+  {
+    return isset($this->_fields[$key]);
+  }
 
-	/**
-	 * Magic unset for field values. Do no call directly. Allows usage:
-	 *
-	 * <code>
-	 * unset($document->some_field);
-	 * </code>
-	 *
-	 * @param string $key
-	 */
-	public function __unset($key)
-	{
-		unset($this->_fields[$key]);
-	}
+  /**
+   * Magic unset for field values. Do no call directly. Allows usage:
+   *
+   * <code>
+   * unset($document->some_field);
+   * </code>
+   *
+   * @param string $key
+   */
+  public function __unset($key)
+  {
+    unset($this->_fields[$key]);
+  }
 
-	/**
-	 * Handle the array manipulation for a multi-valued field
-	 *
-	 * @param string $key
-	 * @param string $value
-	 */
-	public function setMultiValue($key, $value)
-	{
-		if (!isset($this->_fields[$key]))
-		{
-			$this->_fields[$key] = array();
-		}
+  /**
+   * Handle the array manipulation for a multi-valued field
+   *
+   * @param string $key
+   * @param string $value
+   */
+  public function setMultiValue($key, $value)
+  {
+    if (!isset($this->_fields[$key]))
+    {
+      $this->_fields[$key] = array();
+    }
 
-		if (!is_array($this->_fields[$key]))
-		{
-			$this->_fields[$key] = array($this->_fields[$key]);
-		}
+    if (!is_array($this->_fields[$key]))
+    {
+      $this->_fields[$key] = array($this->_fields[$key]);
+    }
 
-		$this->_fields[$key][] = $value;
-	}
+    $this->_fields[$key][] = $value;
+  }
 
-	/**
-	 * Get the names of all fields in this document
-	 *
-	 * @return array
-	 */
-	public function getFieldNames()
-	{
-		return array_keys($this->_fields);
-	}
+  /**
+   * Get the names of all fields in this document
+   *
+   * @return array
+   */
+  public function getFieldNames()
+  {
+    return array_keys($this->_fields);
+  }
 
-	/**
-	 * Iterator implementation function, proxies to _fields. Allows usage:
-	 *
-	 * <code>
-	 * foreach ($document as $key => $value)
-	 * {
-	 * 	...
-	 * }
-	 * </code>
-	 */
+  /**
+   * Iterator implementation function, proxies to _fields. Allows usage:
+   *
+   * <code>
+   * foreach ($document as $key => $value)
+   * {
+   *   ...
+   * }
+   * </code>
+   */
     public function rewind() {
         reset($this->_fields);
     }
 
-	/**
-	 * Iterator implementation function, proxies to _fields. Allows usage:
-	 *
-	 * <code>
-	 * foreach ($document as $key => $value)
-	 * {
-	 * 	...
-	 * }
-	 * </code>
-	 */
+  /**
+   * Iterator implementation function, proxies to _fields. Allows usage:
+   *
+   * <code>
+   * foreach ($document as $key => $value)
+   * {
+   *   ...
+   * }
+   * </code>
+   */
     public function current() {
-    	return current($this->_fields);
+      return current($this->_fields);
     }
 
-	/**
-	 * Iterator implementation function, proxies to _fields. Allows usage:
-	 *
-	 * <code>
-	 * foreach ($document as $key => $value)
-	 * {
-	 * 	...
-	 * }
-	 * </code>
-	 */
+  /**
+   * Iterator implementation function, proxies to _fields. Allows usage:
+   *
+   * <code>
+   * foreach ($document as $key => $value)
+   * {
+   *   ...
+   * }
+   * </code>
+   */
     public function key() {
-    	return key($this->_fields);
+      return key($this->_fields);
     }
 
-	/**
-	 * Iterator implementation function, proxies to _fields. Allows usage:
-	 *
-	 * <code>
-	 * foreach ($document as $key => $value)
-	 * {
-	 * 	...
-	 * }
-	 * </code>
-	 */
+  /**
+   * Iterator implementation function, proxies to _fields. Allows usage:
+   *
+   * <code>
+   * foreach ($document as $key => $value)
+   * {
+   *   ...
+   * }
+   * </code>
+   */
     public function next() {
-    	return next($this->_fields);
+      return next($this->_fields);
     }
 
-	/**
-	 * Iterator implementation function, proxies to _fields. Allows usage:
-	 *
-	 * <code>
-	 * foreach ($document as $key => $value)
-	 * {
-	 * 	...
-	 * }
-	 * </code>
-	 */
+  /**
+   * Iterator implementation function, proxies to _fields. Allows usage:
+   *
+   * <code>
+   * foreach ($document as $key => $value)
+   * {
+   *   ...
+   * }
+   * </code>
+   */
     public function valid() {
-    	return current($this->_fields) !== false;
+      return current($this->_fields) !== false;
     }
 }
