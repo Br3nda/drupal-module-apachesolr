@@ -1,11 +1,15 @@
 <?php
-// $Id: solr_base_query.test,v 1.1.4.4 2008/10/26 16:25:25 robertDouglass Exp $
+// $Id: solr_base_query.test,v 1.1.4.5 2008/10/26 21:16:15 robertDouglass Exp $
 
-class DrupalSolrQueryTests extends DrupalTestCase {
-  function get_info() {
-    return array('name' => 'Solr/query handling',
-      'desc' => 'Throw various queries at the query object and make sure they all parse correctly.',
-      'group' => 'Apache Solr tests');
+class DrupalSolrQueryTests extends DrupalWebTestCase {
+  function getInfo() {
+    return array('name' => 'Query handling',
+      'description' => 'Throw various queries at the query object and make sure they all parse correctly.',
+      'group' => 'ApacheSolr');
+  }
+
+  function setUp() {
+    parent::setUp('search', 'apachesolr');
   }
 
   private $queries = array(

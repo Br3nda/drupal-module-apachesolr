@@ -1,11 +1,15 @@
 <?php
-// $Id: solr_search_results.test,v 1.1.2.3 2008/10/26 16:25:25 robertDouglass Exp $
+// $Id: solr_search_results.test,v 1.1.2.4 2008/10/26 21:16:15 robertDouglass Exp $
 
-class DrupalSolrSearchResultTests extends DrupalTestCase {
-  function get_info() {
-    return array('name' => 'Solr/search results',
-      'desc' => 'Assure that searches with apachesolr yield correct results.',
-      'group' => 'Apache Solr tests');
+class DrupalSolrSearchResultTests extends DrupalWebTestCase {
+  function getInfo() {
+    return array('name' => 'Search results',
+      'description' => 'Assure that searches with ApacheSolr yield correct results.',
+      'group' => 'ApacheSolr');
+  }
+  
+  function setUp() {
+    parent::setup('search', 'apachesolr');
   }
 
   // Default Apache Solr stop words.
