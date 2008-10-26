@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.2.3 2008/10/26 15:22:35 robertDouglass Exp $
+// $Id: Solr_Base_Query.php,v 1.1.2.4 2008/10/26 16:27:43 robertDouglass Exp $
 
 class Solr_Base_Query {
 
@@ -82,6 +82,11 @@ class Solr_Base_Query {
   private $_fields;
 
   /**
+   * An array of subqueries.
+   */
+  private $_subqueries = array();
+
+  /**
    * The query string.
    */
   private $_query;
@@ -129,22 +134,38 @@ class Solr_Base_Query {
     return FALSE;
   }
 
+  /**
+   * A subquery is another instance of a Solr_Base_Query that should be joined
+   * to the query. The operator determines whether it will be joined with AND or
+   * OR.
+   *
+   * @param $query
+   *   An instance of Solr_Base_Query.
+   *   
+   * @param $operator
+   *   'AND' or 'OR'
+   */ 
   function add_subquery(Solr_Base_Query $query, $operator = 'AND') {
-    
+    $this->_subqueries[md5(serialize($query))] = array('#query' => $query, '#operator' => $operator);
   }
   
-  function remove_subquery(Solr_Base_Query $query, $operator = 'AND') {
-    
+  function remove_subquery(Solr_Base_Query $query) {
+    unset($this->_subqueries[md5(serialize($query))]);
   }
   
   function remove_subqueries() {
-    
+    $this->_subqueries = array();
   }
   
   function get_query() {
+    $this->rebuild_query();
     return $this->_query;
   }
 
+  /**
+   * A function to get just the keyword components of the query,
+   * omitting any field:value portions.
+   */
   function get_query_basic() {
     $nonames = array_filter($this->_fields, create_function('$a', 'return empty($a[\'#name\']);'));
     $result = array();
@@ -193,24 +214,23 @@ class Solr_Base_Query {
     $index_fields = Solr_Base_Query::get_fields_in_index();
 
     $rows = array();
-    foreach ((array)$index_fields as $field) {
-      $name = (array)$field->attributes()->name;
+    foreach ((array) $index_fields as $name => $field) {
       do {
         // save the strlen so we can detect if it has changed at the bottom
         // of the do loop
         $a = (int)strlen($_keys);
-        // Get the values for $name[0]
-        $values = Solr_Base_Query::query_extract($_keys, $name[0]);
+        // Get the values for $name
+        $values = Solr_Base_Query::query_extract($_keys, $name);
         if (count($values) > 0) {
           foreach ($values as $value) {
-            $found = Solr_Base_Query::make_field(array('#name' => $name[0], '#value' => $value));
+            $found = Solr_Base_Query::make_field(array('#name' => $name, '#value' => $value));
             $pos = strpos($_keys, $found);
             // $solr_keys and $solr_crumbs are keyed on $pos so that query order
             // is maintained. This is important for breadcrumbs.
-            $this->_fields[$pos] = array('#name' => $name[0], '#value' => trim($value));
+            $this->_fields[$pos] = array('#name' => $name, '#value' => trim($value));
           }
           // Update the local copy of $_keys by removing the key that was just found.
-          $_keys = trim(Solr_Base_Query::query_replace($_keys, $name[0]));
+          $_keys = trim(Solr_Base_Query::query_replace($_keys, $name));
         }
         // Take new strlen to compare with $a.
         $b = (int)strlen($_keys);
@@ -233,5 +253,10 @@ class Solr_Base_Query {
       $fields[] = Solr_Base_Query::make_field($values);
     }
     $this->_query = trim(implode(' ', array_filter($fields, 'trim')));
+    foreach ($this->_subqueries as $id => $data) {
+      $operator = $data['#operator'];
+      $subquery = $data['#query']->get_query();
+      $this->_query .= " {$operator} ({$subquery})";
+    }
   }
 }
