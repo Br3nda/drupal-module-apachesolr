@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.41 2008/10/25 16:49:24 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.42 2008/10/26 15:09:40 robertDouglass Exp $
 
 /**
  * @file
@@ -176,21 +176,12 @@ function apachesolr_requirements($phase) {
 }
 
 function apachesolr_index_page() {
-  //TODO: Should we be generating the dynamic blocks based on what is indexed?
-  // Or should we be using things like node_field.type to get this list?
-  $response = drupal_http_request(apachesolr_base_url() ."/admin/luke?numTerms=0");
-  if ($response->code == '200') {
-    $xml_response = simplexml_load_string($response->data);
-    $fields = $xml_response->xpath("//lst[@name='fields']/lst");
-    $rows = array();
-    foreach ((array)$fields as $field) {
-      $field_name = $field['name'];
-      $field_type = $field->xpath('./str');
-      $rows[] = array(
-        $field_name,
-        $field_type[0],
-      );
-    }
+  // Gets information about the fields already in solr index.
+  include_once drupal_get_path('module', 'apachesolr') .'/Solr_Base_Query.php';
+  $fields = Solr_Base_Query::get_fields_in_index();
+  $rows = array();
+  foreach ($fields as $name => $field) {
+    $rows[] = array($name, $field->type);
   }
   $output  = '';
   // Display the table of Field names and Field Index Types.

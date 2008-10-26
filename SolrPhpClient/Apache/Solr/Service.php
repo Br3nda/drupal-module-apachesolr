@@ -1,5 +1,5 @@
 <?php
-// $Id: Service.php,v 1.1.2.1.2.8 2008/10/25 16:49:25 robertDouglass Exp $
+// $Id: Service.php,v 1.1.2.1.2.9 2008/10/26 15:09:40 robertDouglass Exp $
 /**
  * @copyright Copyright 2007 Conduit Internet Technologies, Inc. (http://conduit-it.com)
  * @license Apache Licence, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
@@ -271,6 +271,7 @@ class Apache_Solr_Service
   protected function _sendRawGet($url, $timeout = FALSE)
   {
     //$http_response_header is set by file_get_contents
+    $http_response_header = NULL;
     $response = new Apache_Solr_Response(@file_get_contents($url), $http_response_header, $this->_createDocuments, $this->_collapseSingleValueArrays);
 
     if ($response->getHttpStatus() != 200)

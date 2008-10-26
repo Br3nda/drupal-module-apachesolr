@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.1 2008/05/04 19:54:02 drunkenmonkey Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.2 2008/10/26 15:09:40 robertDouglass Exp $
 
 class Solr_Base_Query {
 
@@ -9,17 +9,15 @@ class Solr_Base_Query {
  */
   static function get_fields_in_index() {
     static $fields;
-    // TODO: database caching.
     if (empty($fields)) {
     // TODO: The apachesolr_base_url() is the only dependency on the module. Make it a static
     // class method?
-      $response = drupal_http_request(apachesolr_base_url(). "/admin/luke?numTerms=0");
+      $response = drupal_http_request(apachesolr_base_url() ."/admin/luke?numTerms=0&wt=json");
       if ($response->code == '200') {
-        $xml_response = simplexml_load_string($response->data);
-        $fields = $xml_response->xpath("//lst[@name='fields']/lst");
+        $data = json_decode($response->data);
       }
     }
-    return $fields;
+    return $data->fields;
   }
 
     /**
@@ -88,8 +86,14 @@ class Solr_Base_Query {
    */
   private $_query;
 
-  function __construct($query) {
+  /**
+   * The base operator, AND or OR. Defaults to AND.
+   */
+  private $_operator;
+
+  function __construct($query, $operator = 'AND') {
     $this->_query = trim($query);
+    $this->_operator = $operator;
     $this->parse_query();
   }
 
@@ -131,6 +135,18 @@ class Solr_Base_Query {
     return FALSE;
   }
 
+  function add_subquery(Solr_Base_Query $query, $operator = 'AND') {
+    
+  }
+  
+  function remove_subquery(Solr_Base_Query $query, $operator = 'AND') {
+    
+  }
+  
+  function remove_subqueries() {
+    
+  }
+  
   function get_query() {
     return $this->_query;
   }
