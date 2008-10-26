@@ -1,11 +1,11 @@
 <?php
-// $Id: solr_base_query_breadcrumb.test,v 1.1.4.2 2008/06/07 00:18:49 drunkenmonkey Exp $
+// $Id: solr_base_query_breadcrumb.test,v 1.1.4.3 2008/10/26 16:18:58 robertDouglass Exp $
 
-class DrupalSolrQueryBreadcrumbTests extends DrupalTestCase {
-  function get_info() {
-    return array('name' => 'Solr/query breadcrumb',
-      'desc' => 'Make sure breadcrumbs get formed correctly.',
-      'group' => 'Apache Solr tests');
+class DrupalSolrQueryBreadcrumbTests extends DrupalWebTestCase {
+  function getInfo() {
+    return array('name' => 'Breadcrumb tests',
+      'description' => 'Make sure breadcrumbs get formed correctly.',
+      'group' => 'ApacheSolr');
   }
 
   private $breadcrumb;
