@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.2.2 2008/10/25 16:56:53 robertDouglass Exp $
+// $Id: apachesolr_mlt.module,v 1.1.2.3 2008/10/26 15:13:07 robertDouglass Exp $
 
 /**
  * Implementation of hook_menu()
@@ -265,16 +265,14 @@ function apachesolr_mlt_block_form_submit($form_id, $form_values) {
  * @return array An array containing a the fields in the solr instance.
  */
 function apachesolr_mlt_get_fields() {
-  $response = drupal_http_request(apachesolr_base_url() ."/admin/luke?numTerms=0&wt=json");
-
-  if ($response->code == '200') {
-    $data = json_decode($response->data);
-    $rows = array();
-    foreach ((array)$data->fields as $field_name => $field) {
-      if ($field->schema{4} == 'V')
-      $rows[$field_name] = $field_name;
-    }
+  include_once drupal_get_path('module', 'apachesolr') .'/Solr_Base_Query.php';
+  $fields = Solr_Base_Query::get_fields_in_index();
+  $rows = array();
+  foreach ($fields as $field_name => $field) {
+    if ($field->schema{4} == 'V')
+    $rows[$field_name] = $field_name;
   }
+
   return $rows;
 }
 
