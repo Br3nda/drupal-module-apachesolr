@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.2.2 2008/10/26 15:13:07 robertDouglass Exp $
+// $Id: Solr_Base_Query.php,v 1.1.2.3 2008/10/26 15:22:35 robertDouglass Exp $
 
 class Solr_Base_Query {
 
@@ -86,14 +86,8 @@ class Solr_Base_Query {
    */
   private $_query;
 
-  /**
-   * The base operator, AND or OR. Defaults to AND.
-   */
-  private $_operator;
-
-  function __construct($query, $operator = 'AND') {
+  function __construct($query) {
     $this->_query = trim($query);
-    $this->_operator = $operator;
     $this->parse_query();
   }
 
