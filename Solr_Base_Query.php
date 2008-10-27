@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.2.4 2008/10/26 16:27:43 robertDouglass Exp $
+// $Id: Solr_Base_Query.php,v 1.1.2.5 2008/10/27 11:17:59 jacobsingh Exp $
 
 class Solr_Base_Query {
 
@@ -91,7 +91,13 @@ class Solr_Base_Query {
    */
   private $_query;
 
-  function __construct($query) {
+  /**
+   * Should fields be AND'd or OR'd together?
+   */
+  private $_field_operator;
+  
+  function __construct($query, $field_operator = "AND") {
+    $this->_field_operator = $field_operator;
     $this->_query = trim($query);
     $this->parse_query();
   }
@@ -101,6 +107,10 @@ class Solr_Base_Query {
     // in order.
     $this->_fields[microtime()] = array('#name' => $field, '#value' => trim($value));
     $this->rebuild_query();
+  }
+  
+  function get_fields() {
+    return $this->_fields;
   }
 
   function remove_field($name, $value = NULL) {
@@ -252,7 +262,9 @@ class Solr_Base_Query {
     foreach ($this->_fields as $pos => $values) {
       $fields[] = Solr_Base_Query::make_field($values);
     }
-    $this->_query = trim(implode(' ', array_filter($fields, 'trim')));
+    
+    $join_delim = $this->_field_operator == 'AND' ? ' ' : ' OR ';    
+    $this->_query = trim(implode($join_delim, array_filter($fields, 'trim')));
     foreach ($this->_subqueries as $id => $data) {
       $operator = $data['#operator'];
       $subquery = $data['#query']->get_query();
