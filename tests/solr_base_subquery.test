@@ -1,0 +1,39 @@
+<?php
+// $Id: solr_base_subquery.test,v 1.1.2.1 2008/10/28 09:56:36 robertDouglass Exp $
+
+class DrupalSolrSubQueryTests extends DrupalWebTestCase {
+  function getInfo() {
+    return array('name' => 'Subquery handling',
+      'description' => 'Tests for subqueries.',
+      'group' => 'ApacheSolr');
+  }
+
+  function setUp() {
+    parent::setUp('search', 'apachesolr');
+  }
+  
+  function testSubQueries() {
+    $query1 =& apachesolr_drupal_query("foo");
+    $query2 =& apachesolr_drupal_query("bar");
+    $query1->add_subquery($query2);
+    $this->assertEqual($query1->get_query(), 'foo AND (bar)', 'foo AND (bar)');
+    $query1->remove_subquery($query2);
+    $this->assertEqual($query1->get_query(), 'foo', t('Remove bar query'));
+    $query1->add_subquery($query2);
+    $query1->add_subquery($query2);
+    $query1->add_subquery($query2);
+    $this->assertEqual($query1->get_query(), 'foo AND (bar)', t('Add bar several times; should only appear once.'));
+    $query1->remove_subquery($query2);
+    $query1->add_subquery($query2, 'OR');
+    $this->assertEqual($query1->get_query(), 'foo OR (bar)', 'foo OR (bar)');
+    $query3 =& apachesolr_drupal_query("uid:1 tid:5");
+    $query2->add_subquery($query3);
+    $this->assertEqual($query1->get_query(), 'foo OR (bar AND (uid:1 tid:5))', t('Sub-sub query'));
+    // Test getting a query from the apachesolr_drupal_query factory
+    $query4 =& apachesolr_drupal_query('foo');
+    $this->assertEqual($query4->get_query(), 'foo OR (bar AND (uid:1 tid:5))', t('Sub-sub query'));
+    $query5 =& apachesolr_drupal_query('bar');
+    $query4->remove_subquery($query5);
+    $this->assertEqual($query4->get_query(), 'foo', t('Remove bar query'));
+  }
+}
