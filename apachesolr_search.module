@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.21 2008/10/27 11:33:27 jacobsingh Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.22 2008/10/28 08:35:23 robertDouglass Exp $
 
 /**
  * @file
@@ -93,16 +93,16 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
          * Example:
          *
          *<code>
-         * function my_module_apachesolr_modify_query(&$query,&$params) {
+         * function my_module_apachesolr_modify_query(&$query, &$params) {
          *   // I only want to see articles by the admin!
-         *   $query->add_field("uid" => "1");
+         *   $query->add_field("uid", 1);
          * 
          * }
          * </code>
          */
         foreach (module_implements('apachesolr_modify_query') as $module) {
           $function_name = "{$module}_apachesolr_modify_query";
-          $function_name($query,$params);
+          $function_name($query, $params);
         }
         if (!$query) {
           return array();
