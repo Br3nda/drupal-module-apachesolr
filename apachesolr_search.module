@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.18 2008/10/23 20:28:51 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.19 2008/10/28 08:22:37 robertDouglass Exp $
 
 /**
  * @file
@@ -86,6 +86,50 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         }
         $page = isset($_GET['page']) ? $_GET['page'] : 0;
         $params['start'] = $page * $params['rows'];
+        
+        /**
+         * This hook allows modules to modify the query are params objects.
+         *
+         * Example:
+         *
+         *<code>
+         * function my_module_apachesolr_modify_query(&$query,&$params) {
+         *   // I only want to see articles by the admin!
+         *   $query->add_field("uid" => "1");
+         * 
+         * }
+         * </code>
+         */
+        foreach (module_implements('apachesolr_modify_query') as $module) {
+          $function_name = "{$module}_apachesolr_modify_query";
+          $function_name($query,$params);
+        }
+        if (!$query) {
+          return array();
+        }
+        
+
+        /**
+         * This hook allows modules to modify the query are params objects.
+         *
+         * Example:
+         *
+         *<code>
+         * function my_module_apachesolr_modify_query(&$query,&$params) {
+         *   // I only want to see articles by the admin!
+         *   $query->add_field("uid" => "1");
+         * 
+         * }
+         * </code>
+         */
+        foreach (module_implements('apachesolr_modify_query') as $module) {
+          $function_name = "{$module}_apachesolr_modify_query";
+          $function_name($query, $params);
+        }
+        if (!$query) {
+          return array();
+        }
+
         $response = $solr->search($query->get_query(), $params['start'], $params['rows'], $params);
         // The response is cached so that it is accessible to the blocks and anything
         // else that needs it beyond the initial search.
