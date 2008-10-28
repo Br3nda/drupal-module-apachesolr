@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.42 2008/10/26 15:09:40 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.43 2008/10/28 13:34:46 robertDouglass Exp $
 
 /**
  * @file
@@ -342,46 +342,49 @@ class ApacheSolrUpdate {
         try {
           $document = new Apache_Solr_Document();
 
-          $fields = array('title', 'body', 'type', 'uid', 'changed', 'nid', 'comment_count', 'name', 'language');
-          foreach ((array)$node as $key => $value) {
-            if (in_array($key, $fields)) {
-              $document->$key = $value;
-            }
+          $document->nid = $document->baseurl . '::' . $node->nid;
+          $document->uid = $document->baseurl . '::' . $node->nid;
+          $document->title = $node->title;
+          $document->body  = $node->body;
+          $document->type  = $node->type;
+          $document->changed = $node->changed;
+          $document->comment_count = $node->comment_count;
+          $document->name = $node->name;
+          $document->language = $node->language;
 
-            // Path aliases can have important information about the content.
-            // Add them to the index as well.
-            if (function_exists('drupal_get_path_alias')) {
-              // Add any path alias to the index, looking first for language specific
-              // aliases but using language neutral aliases otherwise.
-              $language = empty($node->language) ? '' : $node->language;
-              $path = 'node/' . $node->nid;
-              $output = drupal_get_path_alias($path, $language);
-              if ($output && $output != $path) {
-                $document->path = $output;
-                $text .= $output;
+          // Path aliases can have important information about the content.
+          // Add them to the index as well.
+          if (function_exists('drupal_get_path_alias')) {
+            // Add any path alias to the index, looking first for language specific
+            // aliases but using language neutral aliases otherwise.
+            $language = empty($node->language) ? '' : $node->language;
+            $path = 'node/' . $node->nid;
+            $output = drupal_get_path_alias($path, $language);
+            if ($output && $output != $path) {
+              $document->path = $output;
+              $text .= $output;
+            }
+          }
+
+          if ($cck_fields && strpos($key, 'field_') === 0) {
+            // Got a CCK field. See if it is to be indexed.
+            if (in_array($key, array_keys($cck_fields))) {
+              $function = $cck_fields[$key]['callback'];
+              if ($cck_fields[$key]['callback'] && function_exists($function)) {
+                $dynamic_fields = call_user_func_array($function, array($node, $key));
               }
-            }
-
-            if ($cck_fields && strpos($key, 'field_') === 0) {
-              // Got a CCK field. See if it is to be indexed.
-              if (in_array($key, array_keys($cck_fields))) {
-                $function = $cck_fields[$key]['callback'];
-                if ($cck_fields[$key]['callback'] && function_exists($function)) {
-                  $dynamic_fields = call_user_func_array($function, array($node, $key));
-                }
-                else {
-                  $dynamic_fields = $node->$key;
-                }
-                if (is_array($dynamic_fields) && count($dynamic_fields) > 0) {
-                  foreach ($dynamic_fields as $field) {
-                    if (!empty($field['view'])) {
-                      $index_key = apachesolr_index_key($cck_fields[$key]);
-                      if ($cck_fields[$key]['multiple']) {
-                        $document->setMultiValue($index_key, $field['view']);
-                      }
-                      else {
-                        $document->$index_key = $field['view'];
-                      }
+              else {
+                $dynamic_fields = $node->$key;
+              }
+              if (is_array($dynamic_fields) && count($dynamic_fields) > 0) {
+                foreach ($dynamic_fields as $field) {
+                  if (!empty($field['view'])) {
+                    $index_key = apachesolr_index_key($cck_fields[$key]);
+                    if ($cck_fields[$key]['multiple']) {
+                      $document->setMultiValue($index_key, $field['view']);
+                    }
+                    else {
+                      $document->$index_key = $field['view'];
                     }
                   }
                 }
