@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.45 2008/10/28 13:36:24 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.46 2008/10/29 13:35:57 robertDouglass Exp $
 
 /**
  * @file
@@ -346,8 +346,8 @@ class ApacheSolrUpdate {
         try {
           $document = new Apache_Solr_Document();
 
-          $document->nid = $document->baseurl . '::' . $node->nid;
-          $document->uid = $document->baseurl . '::' . $node->nid;
+          $document->nid = $node->nid;
+          $document->uid = $node->uid;
           $document->title = $node->title;
           $document->body  = $node->body;
           $document->type  = $node->type;
