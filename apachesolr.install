@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.1.4.5 2008/07/20 10:34:54 robertDouglass Exp $
+// $Id: apachesolr.install,v 1.1.4.6 2008/10/30 16:52:08 robertDouglass Exp $
 function apachesolr_uninstall() {
   variable_del('apachesolr_cron_last');
   variable_del('apachesolr_cron_last_nid');

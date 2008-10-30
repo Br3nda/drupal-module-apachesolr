@@ -1,5 +1,5 @@
-; $Id: apachesolr_search.info,v 1.1.2.1.2.3 2008/10/30 16:52:08 robertDouglass Exp $
-name = Apache Solr search
+; $Id: apachesolr_multisitesearch.info,v 1.1.2.1 2008/10/30 16:52:08 robertDouglass Exp $
+name = Apache Solr multisite search
 description = Search with solr
 dependencies[] = search
 dependencies[] = apachesolr
