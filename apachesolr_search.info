@@ -1,7 +1,8 @@
-; $Id: apachesolr_search.info,v 1.1.2.1.2.1 2008/05/04 19:54:02 drunkenmonkey Exp $
+; $Id: apachesolr_search.info,v 1.1.2.1.2.2 2008/10/30 05:11:26 jacobsingh Exp $
 name = Apache Solr search
 description = Search with solr
 dependencies[] = search
 dependencies[] = apachesolr
 package = ApacheSolr
 core = "6.x"
+php = 5.0

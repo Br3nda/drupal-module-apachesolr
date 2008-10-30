@@ -6,3 +6,4 @@ dependencies[] = apachesolr
 dependencies[] = search
 package = ApacheSolr
 core = "6.x"
+php = 5.0

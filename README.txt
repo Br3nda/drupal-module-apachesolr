@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.3 2008/10/05 17:29:15 robertDouglass Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.4 2008/10/30 05:11:26 jacobsingh Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search can be used as a replacement for core content search and boasts both extra features and better performance. Among the extra features is the ability to have faceted search on facets ranging from content author to taxonomy to arbitrary CCK fields.
 
@@ -12,7 +12,7 @@ Installation
 
 Install and enable the ApacheSolr Drupal module as you would any Drupal module.
 
-Prerequisite: Java 5 or higher.
+Prerequisite: Java 5 or higher.  PHP 5.0 or higher.
 
 Download Solr 1.2 or higher from a mirror site:
 http://www.apache.org/dyn/closer.cgi/lucene/solr/
