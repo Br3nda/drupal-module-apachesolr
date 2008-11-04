@@ -1,0 +1,5 @@
+; $Id: apachesolr_multisitesearch.info,v 1.1.2.1 2008/11/04 14:29:55 robertDouglass Exp $
+name = Apache Solr multisite search
+description = Search across multiple Drupal sites with solr
+dependencies = apachesolr
+package = ApacheSolr

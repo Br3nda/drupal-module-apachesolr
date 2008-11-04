@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.46 2008/10/29 13:35:57 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.47 2008/11/04 14:29:55 robertDouglass Exp $
 
 /**
  * @file
@@ -72,7 +72,7 @@ function apachesolr_settings() {
   //perform a check to ensure the server is there
   $requirements = apachesolr_requirements('runtime');  
   $status = $requirements['apachesolr']['severity'] == 2 ? 'error' : 'status';
-  drupal_set_message($requirements['apachesolr']['value'],$status);
+  drupal_set_message($requirements['apachesolr']['value'], $status);
 
   $form['apachesolr_host'] = array(
     '#type' => 'textfield',
@@ -233,6 +233,7 @@ function apachesolr_delete_index_form_submit($form, $form_values) {
     try {
       // Instantiate a new Solr object.
       $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
+      // TODO: Add site so that you can only delete your site's content.
       $solr->deleteByQuery('*:*');
       $solr->commit();
       variable_del('apachesolr_last_change');
@@ -346,6 +347,12 @@ class ApacheSolrUpdate {
         try {
           $document = new Apache_Solr_Document();
 
+          $site = url(NULL, NULL, NULL, TRUE);
+          $hash = md5($site);
+          $document->site = $site;
+          $document->hash = $hash;
+          $document->url = url('node/' . $node->nid, NULL, NULL, TRUE); 
+
           $document->nid = $node->nid;
           $document->uid = $node->uid;
           $document->title = $node->title;
@@ -453,6 +460,10 @@ class ApacheSolrUpdate {
   }
 }
 
+function apachesolr_apachesolr_facets() {
+  return array('type');
+}
+
 /**
  * Registered shutdown function.
  */
@@ -488,32 +499,11 @@ function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
  * Implementation of hook_block().
  */
 function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
-  $term_title = t('ApacheSolr: Filter by term');
-  $type_title = t('ApacheSolr: Filter by type');
-  $author_title = t('ApacheSolr: Filter by author');
-  
   switch ($op) {
     case 'list':
-      if (module_exists('taxonomy')) {
-        $vocabs = taxonomy_get_vocabularies();
-        foreach ($vocabs as $vid => $vocab) {
-          $blocks['imfield_vid' . $vid] = array('info' => t('ApacheSolr: Filter by @name', array('@name' => $vocab->name)));
-        }
-      }
-      $blocks['type'] = array('info' => $type_title);
-      $blocks['uid'] = array('info' => $author_title);
-
-      if ($fields = apachesolr_cck_fields()) {
-        foreach ($fields as $name => $field) {
-          $index_key = apachesolr_index_key($field);
-          $label = db_result(db_query("SELECT label FROM {node_field_instance} WHERE field_name = '%s'", $name));
-          // TODO: $index_key must be wrong here.
-          $blocks[$index_key] = array('info' => t('ApacheSolr: Filter by @field', array('@field' => $label)));
-        }
-      }
-      
       // Sorting block
-      $blocks['sort'] = array('info' => t('ApacheSolr: Sorting'));
+      $blocks['sort'] = array('info' => t('ApacheSolr Core: Sorting'));
+      $blocks['type'] = array('info' => t('ApacheSolr Core: Filter by type'));
       return $blocks;
 
     case 'view':
@@ -524,55 +514,9 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
           return;
         }
         $query =& apachesolr_drupal_query();
-        
+
         // Get information needed by the rest of the blocks about limits.
         $facet_display_limits = variable_get('apachesolr_facet_query_limits', array());
-        
-        if ((strpos($delta, 'imfield_vid') === 0) && module_exists('taxonomy')) {
-          
-          if (is_object($response->facet_counts->facet_fields->$delta)) {
-            $contains_active = FALSE;
-            $terms = array();
-            
-            foreach ($response->facet_counts->facet_fields->$delta as $tid => $count) {
-              $unclick_link = '';
-              unset($active);
-              $term = taxonomy_get_term($tid);
-              $new_query = clone $query;
-              if ($active = $query->has_field('tid', $tid)) {
-                $contains_active = TRUE;
-                $new_query->remove_field('tid', $term->tid);
-                $path = 'search/' . arg(1) . '/' . $new_query->get_query();
-                $unclick_link = theme('apachesolr_unclick_link', $path);
-              }
-              else {
-                $new_query->add_field('tid', $term->tid);
-                $path = 'search/' . arg(1) . '/' . $new_query->get_query();
-              }
-              $countsort = $count == 0 ? '' : 1 / $count;
-              // if numdocs == 1 and !active, don't add.
-              if ($response->numFound == 1 && !$active) {
-                // skip
-              }
-              else {
-                $terms[$term->vid][$active ? $countsort . $term->name : 1 + $countsort . $term->name] =
-                    theme('apachesolr_facet_item', $term->name, $count, $path, $active, $unclick_link, $response->numFound);
-              }
-            }
-          }
-          $vid = substr($delta, 11);
-          $vocab = taxonomy_get_vocabulary($vid);
-          if (is_numeric($vid) && is_array($terms) && isset($terms[$vid]) && is_array($terms[$vid])) {
-            ksort($terms[$vid]);
-            $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
-            $terms[$vid] = array_slice($terms[$vid], 0, ($facet_display_limit == -1 ? NULL : $facet_display_limit));
-            return array('subject' => t('Filter by @name', array('@name' => $vocab->name)),
-                         'content' => theme('apachesolr_facet_list', $terms[$vid]));
-          }
-          else {
-            return;
-          }
-        }
 
         switch ($delta) {
           case 'sort':
@@ -599,170 +543,78 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
               $new_sort = isset($solrsorts[$type]) ? $solrsorts[$type] == 'asc' ? 'desc' : 'asc' : $sort['default'];
               $sort_links[] = theme('apachesolr_sort_link', $sort['name'], $path, $type == "relevancy" ? '' : "solrsort={$type} {$new_sort}", isset($solrsorts[$type]) ? $solrsorts[$type] : '');
             }
-            return array('subject' => t('Sort by') . ':',
-             'content' => theme('apachesolr_sort_list', $sort_links));
+            return array('subject' => t('Sort by'),
+                         'content' => theme('apachesolr_sort_list', $sort_links));
 
           case 'type':
-            if (is_object($response->facet_counts->facet_fields->type)) {
-              $contains_active = FALSE;
-              $types = array();
-              foreach ($response->facet_counts->facet_fields->type as $t => $count) {
-                $unclick_link = '';
-                unset($active);
-                $type = node_get_types('name', $t);
-                $new_query = clone $query;
-                if ($active = $query->has_field('type', $t)) {
-                  $contains_active = TRUE;
-                  $new_query->remove_field('type', $t);
-                  $path = 'search/'. arg(1) .'/'. $new_query->get_query();
-                  $unclick_link = theme('apachesolr_unclick_link', $path);
-                }
-                else {
-                  $new_query->add_field('type', $t);
-                  $path = 'search/'. arg(1) .'/'. $new_query->get_query();
-                }
-                $countsort = $count == 0 ? '' : 1 / $count;
-                // if numdocs == 1 and !active, don't add.
-                if ($response->numFound == 1 && !$active) {
-                  // skip
-                }
-                else {
-                  $types[$active ? $countsort . $type : 1 + $countsort . $type] = theme('apachesolr_facet_item', $type, $count, $path, $active, $unclick_link, $response->numFound);
-                }
-              }
-              if (count($types) > 0) {
-                ksort($types);
-                $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
-                $types = array_slice($types, 0, ($facet_display_limit == -1 ? NULL : $facet_display_limit));
-                $output = theme('apachesolr_facet_list', $types);
-                return array('subject' => $type_title, 'content' => $output);
-              }
-            }
-            break;
-          case 'uid':
-            if (is_object($response->facet_counts->facet_fields->uid)) {
-              $contains_active = FALSE;
-              $users = array();
-              foreach ($response->facet_counts->facet_fields->uid as $uid => $count) {
-                $unclick_link = '';
-                unset($active);
-                if ($uid == 0) {
-                  $name = variable_get('anonymous', t('Anonymous'));
-                }
-                else {
-                  $name = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $uid));
-                }
-                
-                $new_query = clone $query;
-                if ($active = $query->has_field('uid', $uid)) {
-                  $contains_active = TRUE;
-                  $new_query->remove_field('uid', $uid);
-                  $path = 'search/'. arg(1) .'/'. $new_query->get_query();
-                  $unclick_link = theme('apachesolr_unclick_link', $path);
-                }
-                else {
-                  $new_query->add_field('uid', $uid);
-                  $path = 'search/'. arg(1) .'/'. $new_query->get_query();
-                }
-                $countsort = $count == 0 ? '' : 1 / $count;
-                // if numdocs == 1 and !active, don't add.
-                if ($response->numFound == 1 && !$active) {
-                  // skip
-                }
-                else {
-                  $users[$active ? $countsort . $name : 1 + $countsort . $name] = theme('apachesolr_facet_item', $name, $count, $path, $active, $unclick_link, $response->numFound);
-                }
-              }
-              if (count($users) > 0) {
-                ksort($users);
-                $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
-                $users = array_slice($users, 0, ($facet_display_limit == -1 ? NULL : $facet_display_limit));
-                $output = theme('apachesolr_facet_list', $users);
-                return array('subject' => $author_title, 'content' => $output);
-              }
-            }
-            break;
+            $filter_by = t('Filter by type');
+            return apachesolr_facet_block($response, $query, $delta, $filter_by, 'apachesolr_get_type');
 
           default:
-           if ($fields = apachesolr_cck_fields()) {
-            foreach ($fields as $name => $field) {
-              $index_key = apachesolr_index_key($field);
-              if ($index_key == $delta) {
-                if (is_array($response->facets->$index_key)) {
-                  $contains_active = FALSE;
-                  foreach ($response->facets->$index_key as $facet => $count) {
-                    $unclick_link = '';
-                    unset($active);
-                    $new_query = clone $query;
-                    if ($active = $query->has_field($index_key, $facet)) {
-                      $contains_active = TRUE;
-                      $new_query->remove_field($index_key, $facet);
-                      $path = 'search/'. arg(1) .'/'. $new_query->get_query();
-                      $unclick_link = theme('apachesolr_unclick_link', $path);
-                    }
-                    else {
-                      $new_query->add_field($index_key, $facet);
-                      $path = 'search/'. arg(1) .'/'. $new_query->get_query();
-                    }
-                    $countsort = $count == 0 ? '' : 1 / $count;
-                    // if numdocs == 1 and !active, don't add.
-                    if ($response->numFound == 1 && !$active) {
-                      // skip
-                    }
-                    else {
-                      $facets[$active ? $countsort . $facet : 1 + $countsort . $facet] = theme('apachesolr_facet_item', $facet, $count, $path, $active, $unclick_link, $response->numFound);
-                    }
-                  }
-                  if (is_array($facets)) {
-                    ksort($facets);
-                    $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
-                    $facets = array_slice($facets, 0, ($facet_display_limit == -1 ? NULL : $facet_display_limit));
-                    $output = theme('apachesolr_facet_list', $facets);
-                    $label = db_result(db_query("SELECT label FROM {node_field_instance} WHERE field_name = '%s'", $name));
-                    return array('subject' => t('Filter by @field', array('@field' => $label)),
-                                 'content' => $output);
-                  }
-                }
-              }
-            }
-          }
+            break;
         }
-        break;
       }
-      break;
-      
+    break;
+
     case 'configure':
-      if ($delta != 'sort') {
-        $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
-        
-        // If the block is not 'sort' (and therefore is a facet block),
-        // display facet limit option.
-        $form['apachesolr_facet_query_limit'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Facet Query Limit'),
-          '#required' => TRUE,
-          '#description' => t('The number of facet links to show in this block. Set to -1 for unlimited. Default is 10.'),
-          '#default_value' => isset($facet_query_limits[$delta]) ? $facet_query_limits[$delta] : 10,
-        );
-        return $form;
-      }
+      return apachesolr_facetcount_form($delta);
       break;
-      
+
     case 'save':
-      if ($delta != 'sort') {
-        // Save query limits
-        $query_limit = intval($edit['apachesolr_facet_query_limit']);
-        // Poorman's validation
-        if (($query_limit < 1) && $query_limit !== -1) {
-          form_set_error('apachesolr_facet_query_limit', t('The facet limit was not saved. Try editing this block again'));
-          return;
-        }
-        $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
-        $facet_query_limits[$delta] = $query_limit;
-        variable_set('apachesolr_facet_query_limits', $facet_query_limits);
-      }
+      apachesolr_facetcount_save($delta, $edit);
       break;
   }
+}
+
+function apachesolr_facet_block($response, $query, $delta, $filter_by, $facet_callback = FALSE) {
+  if (is_object($response->facet_counts->facet_fields->$delta)) {
+    $contains_active = FALSE;
+    $items = array();
+    foreach ($response->facet_counts->facet_fields->$delta as $facet => $count) {
+      $unclick_link = '';
+      unset($active);
+      if ($facet_callback && function_exists($facet_callback)) {
+        $facet_text = $facet_callback($facet);
+      }
+      else {
+        $facet_text = $facet;
+      }
+      $new_query = clone $query;
+      if ($active = $query->has_field($delta, $facet)) {
+        $contains_active = TRUE;
+        $new_query->remove_field($delta, $facet);
+        $path = 'search/'. arg(1) .'/'. $new_query->get_query();
+        $unclick_link = theme('apachesolr_unclick_link', $path);
+      }
+      else {
+        $new_query->add_field($delta, $facet);
+        $path = 'search/'. arg(1) .'/'. $new_query->get_query();
+      }
+      $countsort = $count == 0 ? '' : 1 / $count;
+      // if numdocs == 1 and !active, don't add.
+      if ($response->numFound == 1 && !$active) {
+        // skip
+      }
+      else {
+        $items[$active ? $countsort . $facet : 1 + $countsort . $facet] = theme('apachesolr_facet_item', $facet_text, $count, $path, $active, $unclick_link, $response->numFound);
+      }
+    }
+    if (count($items) > 0) {
+      ksort($items);
+      $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
+      $items = array_slice($items, 0, ($facet_display_limit == -1 ? NULL : $facet_display_limit));
+      $output = theme('apachesolr_facet_list', $items);
+      return array('subject' => t('Filter by @filter_by', array('@filter_by' => $filter_by)), 'content' => $output);
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Callback function for the 'Filter by type' facet block.
+ */
+function apachesolr_get_type($facet) {
+  return node_get_types('name', $facet);
 }
 
 /**
@@ -795,6 +647,36 @@ function apachesolr_form_alter($form_id, &$form) {
       }
     }
   }
+}
+
+/**
+ * Used by the 'configure' $op of hook_block so that modules can generically set
+ * facet limits on their blocks.
+ */
+function apachesolr_facetcount_form($delta) {
+  $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
+
+  // If the block is not 'sort' (and therefore is a facet block),
+  // display facet limit option.
+  $form['apachesolr_facet_query_limit'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Facet Query Limit'),
+    '#required' => TRUE,
+    '#description' => t('The number of facet links to show in this block. Set to -1 for unlimited. Default is 10.'),
+    '#default_value' => isset($facet_query_limits[$delta]) ? $facet_query_limits[$delta] : 10,
+  );
+  return $form;
+}
+
+/**
+ * Used by the 'save' $op of hook_block so that modules can generically set
+ * facet limits on their blocks.
+ */
+function apachesolr_facetcount_save($delta, $edit) {
+  // Save query limits
+  $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
+  $facet_query_limits[$delta] = intval($edit['apachesolr_facet_query_limit']);
+  variable_set('apachesolr_facet_query_limits', $facet_query_limits);
 }
 
 /**
@@ -987,20 +869,4 @@ function theme_apachesolr_sort_list($items) {
  */
 function theme_apachesolr_breadcrumb_type($type) {
   return node_get_types('name', $type);
-}
-
-/**
- * Return the username from $uid
- */
-function theme_apachesolr_breadcrumb_uid($uid) {
-  $user = user_load(array('uid' => $uid));
-  return $user->name;
-}
-
-/**
- * Return the term name from $tid.
- */
-function theme_apachesolr_breadcrumb_tid($tid) {
-  $term = taxonomy_get_term($tid);
-  return $term->name;
 }

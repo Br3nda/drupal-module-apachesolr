@@ -1,0 +1,281 @@
+<?php
+/**
+ * Implementation of hook_search().
+ */
+function apachesolr_multisitesearch_search($op = 'search', $keys = NULL) {
+
+  switch ($op) {
+    case 'name':
+      return t('Multisite');
+
+    case 'reset':
+      ApacheSolrUpdate::reset('apachesolr');
+      return;
+
+    case 'status':
+      $change = ApacheSolrUpdate::get_change('apachesolr');
+      $last = ApacheSolrUpdate::get_last('apachesolr');
+      $total = db_result(db_query('SELECT COUNT(*) FROM {node} WHERE status = 1'));
+      $remaining = db_result(db_query('SELECT COUNT(*) FROM {node} n '.
+                                         'LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid '.
+                                         'WHERE n.status = 1 AND ((GREATEST(n.created, n.changed, c.last_comment_timestamp) = %d AND n.nid > %d ) OR (n.created > %d OR n.changed > %d OR c.last_comment_timestamp > %d))', $change, $last, $change, $change, $change));
+      return array('remaining' => $remaining, 'total' => $total);
+
+    case 'search':
+      global $pager_total;
+      // This is the object that does the communication with the solr server.
+      $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
+      // This is the object that knows about the query coming from the user.
+      $query =& apachesolr_drupal_query($keys);
+      $results = array();
+      
+      try {
+        $params = array(
+          //'qt' => 'standard',
+          'fl' => '*,score',
+          'rows' => variable_get('apachesolr_rows', 10),
+          'facet' => 'true',
+          'facet.mincount' => 1,
+          'facet.sort' => 'true'
+        );
+        
+        // We have to add the site explicitly because it is needed in conjunction
+        // with the hash when doing multisite faceting.
+        $params['facet.field'][] = 'site';
+
+        // TODO: This adds all of the possible facets to the query. Not all
+        // of these facets have their blocks enabled, so the list should be
+        // filtered by the actual enabled blocks, otherwise we're putting
+        // unneeded strain on the Solr server.
+        foreach (module_implements('apachesolr_facets') as $module) {
+          $function = $module .'_apachesolr_facets';
+          $result = call_user_func_array($function, array());
+          if (isset($result) && is_array($result)) {
+            foreach ($result as $facet) {
+              $params['facet.field'][] = $facet; 
+            }
+          }
+        }
+
+        // Facet limits
+        $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
+        foreach ($facet_query_limits as $fieldname => $limit) {
+          $params['f.' . $fieldname . '.facet.limit'] = $limit;
+        }
+
+        if (isset($_GET['solrsort'])) {
+          $sort = check_plain($_GET['solrsort']);
+        }
+
+        // Validate sort parameter
+        if (isset($sort) && preg_match('/^([a-z0-9_]+ (asc|desc)(,)?)+$/i', $sort)) {
+          $params['sort'] = $sort;
+        }
+
+        if ($fields = apachesolr_cck_fields()) {
+          foreach ($fields as $name => $field) {
+            $index_key = apachesolr_index_key($field);
+            $params['facet.field'][] = $index_key;
+          }
+        }
+        $page = isset($_GET['page']) ? $_GET['page'] : 0;
+        $params['start'] = $page * $params['rows'];
+        
+        /**
+         * This hook allows modules to modify the query are params objects.
+         *
+         * Example:
+         *
+         *<code>
+         * function my_module_apachesolr_modify_query(&$query, &$params) {
+         *   // I only want to see articles by the admin!
+         *   $query->add_field("uid", 1);
+         * 
+         * }
+         * </code>
+         */
+        foreach (module_implements('apachesolr_modify_query') as $module) {
+          $function_name = "{$module}_apachesolr_modify_query";
+          $function_name($query, $params);
+        }
+        if (!$query) {
+          return array();
+        }
+
+        $response = $solr->search($query->get_query(), $params['start'], $params['rows'], $params);
+        // The response is cached so that it is accessible to the blocks and anything
+        // else that needs it beyond the initial search.
+        apachesolr_static_response_cache($response);
+        apachesolr_has_searched(TRUE);
+        $total = $response->response->numFound;
+        pager_query("SELECT %d", $params['rows'], 0, NULL, $total);
+        if ($total > 0) {
+          $extra = array();
+          foreach ($response->response->docs as $doc) {
+            $extra += node_invoke_nodeapi($doc, 'search result');
+            $extra['score'] = $doc->score;
+            $snippet = search_excerpt($keys, $doc->body);
+            if (trim($snippet) == '...') {
+              $snippet = '';
+            }
+            $results[] = array('link' => $doc->url,
+                               // TODO: This will break in multisite - the type name has to be saved to the index.
+                               'type' => $doc->type,
+                               'title' => $doc->title,
+                               'user' => $doc->name,
+                               'date' => $doc->changed,
+                               'node' => $doc,
+                               'extra' => $extra,
+                               'score' => $doc->score,
+                               'snippet' => $snippet);
+          }
+          
+          // Hook to allow modifications of the retrieved results
+          foreach (module_implements('apachesolr_process_results') as $module) {
+            $function = $module .'_apachesolr_process_results';
+            call_user_func_array($function, array(&$results));
+          }
+        }
+        // Set breadcrumb
+        drupal_set_breadcrumb($query->get_breadcrumb());
+        return $results;
+
+      } // try
+      catch (Exception $e) {
+        watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);   
+        apachesolr_failure(t('Search'), $query->get_query());
+      }
+      break;
+
+  } // switch
+}
+
+function apachesolr_multisitesearch_apachesolr_facets() {
+  $facets = array_keys(apachesolr_multisitesearch_block());
+  $facets[] = 'site';
+  return $facets;
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function apachesolr_multisitesearch_block($op = 'list', $delta = 0, $edit = array()) {
+  // A mapping between hashes and site URLs. Needed for themeing breadcrumbs.
+  static $sites;
+
+  switch ($op) {
+    // Special $op so we can get site from hash at the theme layer.
+    case 'get site':
+      $response =& apachesolr_static_response_cache();
+      if (empty($response)) {
+        return $delta;
+      }
+      // Calculate the hashes of the sites for lookukp. This is why
+      // we ask for the site facet in addition to the hash facet, and
+      // we trust that they are the same.
+      $sites = array();
+      foreach ($response->facet_counts->facet_fields->site as $site => $count) {
+        $sites[md5($site)] = $site;
+      }
+      return $sites[$delta];
+
+    case 'list':
+      $blocks['name'] = array('info' => t('ApacheSolr Multisite: Filter by author name'));
+      $blocks['hash'] = array('info' => t('ApacheSolr Multisite: Filter by site'));
+      $blocks['taxonomy_name'] = array('info' => t('ApacheSolr Multisite: Filter by taxonomy term name'));
+      return $blocks;
+
+    case 'view':
+      if (arg(1) == 'apachesolr_multisitesearch' && apachesolr_has_searched()) {
+        // Get the query and response. Without these no blocks make sense.
+        $response =& apachesolr_static_response_cache();
+        if (empty($response)) {
+          return;
+        }
+        $query =& apachesolr_drupal_query();
+
+        // Get information needed by the rest of the blocks about limits.
+        $facet_display_limits = variable_get('apachesolr_facet_query_limits', array());
+
+        switch ($delta) {
+          case 'name':
+            $filter_by = t('Filter by author name');
+            return apachesolr_facet_block($response, $query, $delta, $filter_by);
+          case 'taxonomy_name':
+            $filter_by = t('Filter by term name');
+            return apachesolr_facet_block($response, $query, $delta, $filter_by);
+
+          case 'hash':
+            if (is_object($response->facet_counts->facet_fields->$delta)) {
+              $contains_active = FALSE;
+              
+              // Calculate the hashes of the sites for lookukp. This is why
+              // we ask for the site facet in addition to the hash facet, and
+              // we trust that they are the same.
+              $sites = array();
+              foreach ($response->facet_counts->facet_fields->site as $site => $count) {
+                $sites[md5($site)] = $site;
+              }
+              
+              $hashes = array();
+              foreach ($response->facet_counts->facet_fields->$delta as $hash => $count) {
+                $unclick_link = '';
+                unset($active);
+                $new_query = clone $query;
+                if ($active = $query->has_field('hash', $hash)) {
+                  $contains_active = TRUE;
+                  $new_query->remove_field('hash', $hash);
+                  $path = 'search/'. arg(1) . '/' . $new_query->get_query();
+                  $unclick_link = theme('apachesolr_unclick_link', $path);
+                }
+                else {
+                  $new_query->add_field('hash', $hash);
+                  $path = 'search/'. arg(1) . '/' . $new_query->get_query();
+                }
+                $countsort = $count == 0 ? '' : 1 / $count;
+                // if numdocs == 1 and !active, don't add.
+                if ($response->numFound == 1 && !$active) {
+                  // skip
+                }
+                else {
+                  $hashes[$active ? $countsort . $hash : 1 + $countsort . $hash] = theme('apachesolr_facet_item', $sites[$hash], $count, $path, $active, $unclick_link, $response->numFound);
+                }
+              }
+              if (count($hashes) > 0) {
+                ksort($hashes);
+                $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
+                $hashes = array_slice($hashes, 0, ($facet_display_limit == -1 ? NULL : $facet_display_limit));
+                $output = theme('apachesolr_facet_list', $hashes);
+                return array('subject' => t('Filter by site'), 'content' => $output);
+              }
+            }
+            break;
+          
+          default:
+            break;
+        }
+        break;
+      }
+      break;
+
+    case 'configure':
+      if ($delta != 'sort') {
+        return apachesolr_facetcount_form($delta);
+      }
+      break;
+
+    case 'save':
+      if ($delta != 'sort') {
+        apachesolr_facetcount_save($delta, $edit);
+      }
+      break;
+  }
+}
+
+/**
+ * Return the site from $hash
+ */
+function theme_apachesolr_breadcrumb_hash($hash) {
+  return apachesolr_multisitesearch_block('get site', $hash);
+}
+
