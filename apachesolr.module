@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.47 2008/11/04 14:29:55 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.48 2008/11/04 14:57:40 robertDouglass Exp $
 
 /**
  * @file
@@ -155,7 +155,7 @@ function apachesolr_requirements($phase) {
     $ping = FALSE;
     try {
       $solr =& apachesolr_get_solr($host, $port, $path);
-      $ping = $solr->ping();
+      $ping = @$solr->ping();
       // If there is no $solr object, there is no server available, so don't continue.
       if (!$ping) {
         throw new Exception(t('No Solr instance available during indexing'));
