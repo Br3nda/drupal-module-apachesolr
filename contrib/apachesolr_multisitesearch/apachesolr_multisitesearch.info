@@ -1,4 +1,4 @@
-; $Id: apachesolr_multisitesearch.info,v 1.1.2.2 2008/11/04 14:32:27 robertDouglass Exp $
+; $Id: apachesolr_multisitesearch.info,v 1.1.4.2 2008/11/04 14:37:49 robertDouglass Exp $
 name = ApacheSolr multisite search
 description = Search multiple Drupal sites with Solr
 dependencies[] = search
