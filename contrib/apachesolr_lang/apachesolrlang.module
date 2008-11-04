@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolrlang.module,v 1.5.2.3 2008/09/04 22:18:10 janusman Exp $
+// $Id: apachesolrlang.module,v 1.1.2.1 2008/11/04 14:40:24 robertDouglass Exp $
 
 /**
  * Implementation of hook_block().
