@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.46 2008/10/30 17:43:45 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.47 2008/11/08 11:27:31 jacobsingh Exp $
 
 /**
  * @file
@@ -178,7 +178,13 @@ function apachesolr_requirements($phase) {
 function apachesolr_index_page() {
   // Gets information about the fields already in solr index.
   include_once drupal_get_path('module', 'apachesolr') .'/Solr_Base_Query.php';
-  $fields = Solr_Base_Query::get_fields_in_index();
+  try {
+    $fields = Solr_Base_Query::get_fields_in_index();
+  } catch (Exception $e) {
+    watchdog('apachesolr',$e->getMessage());
+    drupal_set_message($e->getMessage(),"warning");
+    $fields = array();
+  }
   $rows = array();
   foreach ($fields as $name => $field) {
     $rows[] = array($name, $field->type);
@@ -445,7 +451,6 @@ class ApacheSolrUpdate {
         foreach ($docs_chunk as $docs) {
           $solr->addDocuments($docs);
         }
-        $solr->addDocuments($documents);
         $solr->commit();
         $solr->optimize(FALSE, FALSE); 
       }

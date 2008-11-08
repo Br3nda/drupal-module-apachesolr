@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.8 2008/10/30 16:52:08 robertDouglass Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.9 2008/11/08 11:27:31 jacobsingh Exp $
 
 class Solr_Base_Query {
 
@@ -15,6 +15,8 @@ class Solr_Base_Query {
       $response = drupal_http_request(apachesolr_base_url() ."/admin/luke?numTerms=0&wt=json");
       if ($response->code == '200') {
         $data = json_decode($response->data);
+      } else {
+        throw new Exception('ApacheSolr Failed to get data from LUKE got '.$response->code.' from '  . apachesolr_base_url() ."/admin/luke?numTerms=0&wt=json");
       }
     }
     return $data->fields;
