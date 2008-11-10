@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- $Id: schema.xml,v 1.1.2.1.2.9 2008/10/30 16:52:08 robertDouglass Exp $ -->
+<!-- $Id: schema.xml,v 1.1.2.1.2.10 2008/11/10 22:12:28 jacobsingh Exp $ -->
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
  contributor license agreements.  See the NOTICE file distributed with
@@ -292,12 +292,12 @@
    <dynamicField name="fmfield*"  type="sfloat"  indexed="true"  stored="true" multiValued="true"/>
    <dynamicField name="psfield*"  type="sdouble" indexed="true"  stored="true" multiValued="false"/>
    <dynamicField name="pmfield*"  type="sdouble" indexed="true"  stored="true" multiValued="true"/>
+   <!-- This field is used to store node access records, as opposed to CCK field data -->
+   <dynamicField name="nodeaccess*" type="sint"  indexed="true"  stored="true" multiValued="true"/>
 
-
-
-   <!-- uncomment the following to ignore any fields that don't already match an existing
+   <!-- The following causes solr to ignore any fields that don't already match an existing
         field name or dynamic field, rather than reporting them as an error.
-        alternately, change the type="ignored" to some other type e.g. "text" if you want
+        Alternately, change the type="ignored" to some other type e.g. "text" if you want
         unknown fields indexed and/or stored by default -->
    <dynamicField name="*" type="ignored" />
 
