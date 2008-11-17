@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.48 2008/11/11 14:59:15 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.49 2008/11/17 16:53:18 pwolanin Exp $
 
 /**
  * @file
@@ -732,10 +732,11 @@ function &apachesolr_get_solr($host = 'localhost', $port = 8983, $path = '/solr'
 
   if (empty($solr_cache[$host][$port][$path])) {
     $include_path = get_include_path();
-    set_include_path('./'. drupal_get_path('module', 'apachesolr') .'/SolrPhpClient/');
-    include_once('Apache/Solr/Service.php');
+    list($module, $filepath, $class) = variable_get('apachesolr_service_class', array('apachesolr', 'Apache/Solr/Service.php', 'Apache_Solr_Service'));
+    set_include_path('./'. drupal_get_path('module', $module) .'/SolrPhpClient/');
+    include_once($filepath);
     set_include_path($include_path);
-    $solr_cache[$host][$port][$path] = new Apache_Solr_Service($host, $port, $path);
+    $solr_cache[$host][$port][$path] = new $class($host, $port, $path);
   }
   return $solr_cache[$host][$port][$path];
 }
@@ -753,7 +754,9 @@ function &apachesolr_static_response_cache($response = NULL) {
   return $_response;
 }
 
-/*
+/**
+ * Factory function for query objects.
+ *
  * The query object is built from the keys. If you want to build queries
  * programmatically you can pass in different keys. If you don't pass in
  * any keys, search_get_keys() is used instead.
@@ -769,8 +772,9 @@ function &apachesolr_drupal_query($keys = NULL, $reset = FALSE) {
     $keys = search_get_keys();
   }
   if (empty($_queries) || empty($_queries[$keys])) {
-    include_once drupal_get_path('module', 'apachesolr') .'/Solr_Base_Query.php';
-    $_queries[$keys] = new Solr_Base_Query($keys);
+    list($module, $class) = variable_get('apachesolr_query_class', array('apachesolr', 'Solr_Base_Query'));
+    include_once drupal_get_path('module', $module) .'/'. $class .'.php';
+    $_queries[$keys] = new $class($keys);
   }
   return $_queries[$keys];
 }
