@@ -4,16 +4,16 @@ require_once 'SolrPhpClient/Apache/Solr/Service.php';
 class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
 
   var $luke;
+  const LUKE_SERVLET = 'admin/luke';
 
+  /**
+   * Sets $this->luke to the return from admin/luke which provides meta-data about in the index including fields
+   *
+   */
   protected function setLuke() {
     if (empty($this->luke)) {
       //@TODO: WE should actually use the vars for connection we instantiated with.
-      $response = drupal_http_request(apachesolr_base_url() ."/admin/luke?numTerms=0&wt=json");
-      if ($response->code == '200') {
-        $this->luke = json_decode($response->data);
-      } else {
-        throw new Exception('ApacheSolr Failed to get data from LUKE got '.$response->code.' from '  . apachesolr_base_url() ."/admin/luke?numTerms=0&wt=json");
-      }
+      $this->luke = $this->_sendRawGet($this->_lukeUrl);
     }
   }
 
@@ -23,4 +23,14 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       }
       return $this->luke->fields;
   }
+
+  /**
+   * Construct the Full URLs for the three servlets we reference
+   */
+  protected function _initUrls()
+  {
+    parent::_initUrls();
+    $this->_lukeUrl = $this->_constructUrl(self::LUKE_SERVLET, array('numTerms' => '0', 'wt' => self::SOLR_WRITER ));
+  }
+
 }
