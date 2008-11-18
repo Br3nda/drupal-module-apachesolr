@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.test,v 1.1.2.1 2008/11/10 22:12:29 jacobsingh Exp $
+// $Id: apachesolr_nodeaccess.test,v 1.1.2.2 2008/11/18 16:40:13 jacobsingh Exp $
 
 class DrupalApacheSolrNodeAccess extends DrupalWebTestCase {
   function getInfo() {
@@ -84,7 +84,7 @@ class DrupalApacheSolrNodeAccess extends DrupalWebTestCase {
     $this->drupalLogin($basic_user);
 
     include_once drupal_get_path('module', 'apachesolr') .'/Solr_Base_Query.php';
-    $query = new Solr_Base_Query("keyword");
+    $query = apachesolr_drupal_query();
     $params = array();
 
     $subquery = _apachesolr_nodeaccess_build_subquery($basic_user);

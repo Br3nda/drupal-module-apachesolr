@@ -1,26 +1,7 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.9 2008/11/08 11:27:31 jacobsingh Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.10 2008/11/18 16:37:34 jacobsingh Exp $
 
 class Solr_Base_Query {
-
-  /**
- * Luke query to find out what fields the Lucene index already knows about.
- * TODO: Does this belong in this class? Or in a Service class? Or in the module itself?
- */
-  static function get_fields_in_index() {
-    static $fields;
-    if (empty($fields)) {
-    // TODO: The apachesolr_base_url() is the only dependency on the module. Make it a static
-    // class method?
-      $response = drupal_http_request(apachesolr_base_url() ."/admin/luke?numTerms=0&wt=json");
-      if ($response->code == '200') {
-        $data = json_decode($response->data);
-      } else {
-        throw new Exception('ApacheSolr Failed to get data from LUKE got '.$response->code.' from '  . apachesolr_base_url() ."/admin/luke?numTerms=0&wt=json");
-      }
-    }
-    return $data->fields;
-  }
 
     /**
    * This is copied from search module. The search module implementation doesn't
@@ -97,8 +78,18 @@ class Solr_Base_Query {
    * Should fields be AND'd or OR'd together?
    */
   private $_field_operator;
-  
+
+
   /**
+   * Apache_Solr_Service object
+   */
+  var $solr;
+
+  /**
+   * @param $solr
+   *  An instantiated Apache_Solr_Service Object.
+   *  Can be instantiated from apachesolr_get_solr.
+   *
    * @param $querystring
    *   The string that a user would type into the search box. Suitable input
    *   may come from search_get_keys()
@@ -106,10 +97,15 @@ class Solr_Base_Query {
    *   An object level operator. AND is the implicit default. All segments will
    *   be joined with this operator.
    */
-  function __construct($querystring, $field_operator = "AND") {
-    $this->_field_operator = $field_operator;
+  function __construct($solr, $querystring, $field_operator = "AND") {
+    $this->solr = $solr;
+    $this->set_field_operator($field_operator);
     $this->_query = trim($querystring);
     $this->parse_query();
+  }
+
+  function set_field_operator($field_operator = "AND") {
+    $this->_field_operator = $field_operator;
   }
 
   function add_field($field, $value) {
@@ -118,7 +114,7 @@ class Solr_Base_Query {
     $this->_fields[microtime()] = array('#name' => $field, '#value' => trim($value));
     $this->rebuild_query();
   }
-  
+
   function get_fields() {
     return $this->_fields;
   }
@@ -161,22 +157,22 @@ class Solr_Base_Query {
    *
    * @param $query
    *   An instance of Solr_Base_Query.
-   *   
+   *
    * @param $operator
    *   'AND' or 'OR'
-   */ 
+   */
   function add_subquery(Solr_Base_Query $query, $operator = 'AND') {
     $this->_subqueries[$query->get_query_basic()] = array('#query' => $query, '#operator' => $operator);
   }
-  
+
   function remove_subquery(Solr_Base_Query $query) {
     unset($this->_subqueries[$query->get_query_basic()]);
   }
-  
+
   function remove_subqueries() {
     $this->_subqueries = array();
   }
-  
+
   function get_query() {
     $this->rebuild_query();
     return $this->_query;
@@ -231,7 +227,7 @@ class Solr_Base_Query {
     $_keys = $this->_query;
 
     // Gets information about the fields already in solr index.
-    $index_fields = Solr_Base_Query::get_fields_in_index();
+    $index_fields = $this->solr->getFields();
 
     $rows = array();
     foreach ((array) $index_fields as $name => $field) {
@@ -272,7 +268,7 @@ class Solr_Base_Query {
     foreach ($this->_fields as $pos => $values) {
       $fields[] = Solr_Base_Query::make_field($values);
     }
-    $join_delim = $this->_field_operator == 'AND' ? ' ' : ' OR ';    
+    $join_delim = $this->_field_operator == 'AND' ? ' ' : ' OR ';
     $this->_query = trim(implode($join_delim, array_filter($fields, 'trim')));
     foreach ($this->_subqueries as $id => $data) {
       $operator = $data['#operator'];

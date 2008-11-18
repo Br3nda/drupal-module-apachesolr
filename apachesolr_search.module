@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.25 2008/11/04 14:32:27 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.26 2008/11/18 16:37:34 jacobsingh Exp $
 
 /**
  * @file
@@ -39,11 +39,11 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
     case 'search':
       global $pager_total;
       // This is the object that does the communication with the solr server.
-      $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
+      $solr =& apachesolr_get_solr();
       // This is the object that knows about the query coming from the user.
       $query =& apachesolr_drupal_query($keys);
       $results = array();
-      
+
       try {
         $params = array(
           //'qt' => 'standard',
@@ -63,7 +63,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
           $result = call_user_func_array($function, array());
           if (isset($result) && is_array($result)) {
             foreach ($result as $facet) {
-              $params['facet.field'][] = $facet; 
+              $params['facet.field'][] = $facet;
             }
           }
         }
@@ -91,7 +91,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         }
         $page = isset($_GET['page']) ? $_GET['page'] : 0;
         $params['start'] = $page * $params['rows'];
-        
+
         /**
          * This hook allows modules to modify the query are params objects.
          *
@@ -101,7 +101,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
          * function my_module_apachesolr_modify_query(&$query, &$params) {
          *   // I only want to see articles by the admin!
          *   $query->add_field("uid", 1);
-         * 
+         *
          * }
          * </code>
          */
@@ -115,7 +115,6 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
 
         $hash = md5(url(NULL, array('absolute' => TRUE)));
         $query->add_field('hash', $hash);
-        
         $response = $solr->search($query->get_query(), $params['start'], $params['rows'], $params);
         // The response is cached so that it is accessible to the blocks and anything
         // else that needs it beyond the initial search.
@@ -156,7 +155,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
 
       } // try
       catch (Exception $e) {
-        watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);   
+        watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
         apachesolr_failure(t('Search'), $query->get_query());
       }
       break;

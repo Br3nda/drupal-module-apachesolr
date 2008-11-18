@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.49 2008/11/17 16:53:18 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.50 2008/11/18 16:37:34 jacobsingh Exp $
 
 /**
  * @file
@@ -150,7 +150,7 @@ function apachesolr_requirements($phase) {
     $path = variable_get('apachesolr_path', '/solr');
     $ping = FALSE;
     try {
-      $solr =& apachesolr_get_solr($host, $port, $path);
+      $solr =& apachesolr_get_solr();
       $ping = @$solr->ping();
       // If there is no $solr object, there is no server available, so don't continue.
       if (!$ping) {
@@ -177,9 +177,9 @@ function apachesolr_requirements($phase) {
 
 function apachesolr_index_page() {
   // Gets information about the fields already in solr index.
-  include_once drupal_get_path('module', 'apachesolr') .'/Solr_Base_Query.php';
   try {
-    $fields = Solr_Base_Query::get_fields_in_index();
+    $solr = apachesolr_get_solr();
+    $fields = $solr->getFields();
   } catch (Exception $e) {
     watchdog('apachesolr',$e->getMessage());
     drupal_set_message($e->getMessage(),"warning");
@@ -234,7 +234,7 @@ function apachesolr_delete_index_form_submit($form, &$form_state) {
   if ($form_state['values']['delete_index']) {
     try {
       // Instantiate a new Solr object.
-      $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
+      $solr =& apachesolr_get_solr();
       // TODO: Add site so that you can only delete your site's content.
       $solr->deleteByQuery('*:*');
       $solr->commit();
@@ -306,7 +306,7 @@ class ApacheSolrUpdate {
     $solr = FALSE;
     try {
       // Get the $solr object
-      $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
+      $solr =& apachesolr_get_solr();
       // If there is no $solr object, there is no server available, so don't continue.
       if (!$solr->ping()) {
         throw new Exception(t('No Solr instance available during indexing'));
@@ -481,7 +481,7 @@ function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   switch ($op) {
     case 'delete':
       try {
-        $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
+        $solr =& apachesolr_get_solr();
         $solr->deleteById($node->nid);
         $solr->commit();
       }
@@ -514,11 +514,11 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
         if (empty($response)) {
           return;
         }
+        
         $query =& apachesolr_drupal_query();
         
         // Get information needed by the rest of the blocks about limits.
         $facet_display_limits = variable_get('apachesolr_facet_query_limits', array());
-
         switch ($delta) {
           case 'sort':
             $sorts = array(
@@ -727,15 +727,16 @@ function apachesolr_has_searched($searched = NULL) {
  * Get an instance like this:
  *   $solr =& apachesolr_get_solr();
  */
-function &apachesolr_get_solr($host = 'localhost', $port = 8983, $path = '/solr') {
+function apachesolr_get_solr($host = null, $port = null, $path = null) {
   static $solr_cache;
 
+  list ($host,$port,$path) = array(variable_get('apachesolr_host','localhost'), variable_get('apachesolr_port','8983'), variable_get('apachesolr_path','/solr'));
+  
   if (empty($solr_cache[$host][$port][$path])) {
     $include_path = get_include_path();
-    list($module, $filepath, $class) = variable_get('apachesolr_service_class', array('apachesolr', 'Apache/Solr/Service.php', 'Apache_Solr_Service'));
-    set_include_path('./'. drupal_get_path('module', $module) .'/SolrPhpClient/');
-    include_once($filepath);
-    set_include_path($include_path);
+    list($module, $filepath, $class) = variable_get('apachesolr_service_class', array('apachesolr', 'Drupal_Apache_Solr_Service.php', 'Drupal_Apache_Solr_Service'));
+    include_once(drupal_get_path('module', $module) . '/SolrPhpClient/' . $filepath);
+    //set_include_path($include_path);
     $solr_cache[$host][$port][$path] = new $class($host, $port, $path);
   }
   return $solr_cache[$host][$port][$path];
@@ -771,10 +772,13 @@ function &apachesolr_drupal_query($keys = NULL, $reset = FALSE) {
   if (empty($keys)) {
     $keys = search_get_keys();
   }
+  
   if (empty($_queries) || empty($_queries[$keys])) {
     list($module, $class) = variable_get('apachesolr_query_class', array('apachesolr', 'Solr_Base_Query'));
     include_once drupal_get_path('module', $module) .'/'. $class .'.php';
-    $_queries[$keys] = new $class($keys);
+    
+    $solr = apachesolr_get_solr();
+    $_queries[$keys] = new $class($solr, $keys);
   }
   return $_queries[$keys];
 }

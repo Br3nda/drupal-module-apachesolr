@@ -1,5 +1,5 @@
 <?php
-// $Id: Service.php,v 1.1.2.1.2.9 2008/10/26 15:09:40 robertDouglass Exp $
+// $Id: Service.php,v 1.1.2.1.2.10 2008/11/18 16:40:12 jacobsingh Exp $
 /**
  * @copyright Copyright 2007 Conduit Internet Technologies, Inc. (http://conduit-it.com)
  * @license Apache Licence, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
@@ -21,8 +21,8 @@
  * @author Donovan Jimenez <djimenez@conduit-it.com>
  */
 
-require_once('Apache/Solr/Document.php');
-require_once('Apache/Solr/Response.php');
+require_once(dirname(__FILE__) . '/Document.php');
+require_once(dirname(__FILE__) . '/Response.php');
 
 /**
  * Starting point for the Solr API. Represents a Solr server resource and has
