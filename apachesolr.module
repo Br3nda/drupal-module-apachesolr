@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.52 2008/11/19 00:52:10 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.53 2008/11/19 01:06:22 pwolanin Exp $
 
 /**
  * @file
@@ -844,7 +844,7 @@ function apachesolr_cck_fields() {
 
       while ($row = db_fetch_object($result)) {
         // Only deal with fields that have options widgets (facets don't make sense otherwise), or fields that have specific mappings.
-        if (($row->type == 'text' && in_array($row->widget_type, array('options_select', 'options_buttons'))) || in_array($row->type, array_keys($mappings))) {
+        if (($row->type == 'text' && in_array($row->widget_type, array('optionwidgets_select', 'optionwidgets_buttons'))) || in_array($row->type, array_keys($mappings))) {
           $_fields[$row->field_name] = array(
             'name' => $row->field_name,
             'multiple' => $row->multiple ? TRUE : FALSE,
