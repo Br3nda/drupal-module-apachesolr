@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.26 2008/11/18 16:37:34 jacobsingh Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.27 2008/11/19 00:22:46 pwolanin Exp $
 
 /**
  * @file
@@ -39,9 +39,9 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
     case 'search':
       global $pager_total;
       // This is the object that does the communication with the solr server.
-      $solr =& apachesolr_get_solr();
+      $solr = apachesolr_get_solr();
       // This is the object that knows about the query coming from the user.
-      $query =& apachesolr_drupal_query($keys);
+      $query = apachesolr_drupal_query($keys);
       $results = array();
 
       try {

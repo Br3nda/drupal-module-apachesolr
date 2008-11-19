@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.50 2008/11/18 16:37:34 jacobsingh Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.51 2008/11/19 00:22:46 pwolanin Exp $
 
 /**
  * @file
@@ -733,11 +733,15 @@ function apachesolr_get_solr($host = null, $port = null, $path = null) {
   list ($host,$port,$path) = array(variable_get('apachesolr_host','localhost'), variable_get('apachesolr_port','8983'), variable_get('apachesolr_path','/solr'));
   
   if (empty($solr_cache[$host][$port][$path])) {
-    $include_path = get_include_path();
     list($module, $filepath, $class) = variable_get('apachesolr_service_class', array('apachesolr', 'Drupal_Apache_Solr_Service.php', 'Drupal_Apache_Solr_Service'));
-    include_once(drupal_get_path('module', $module) . '/SolrPhpClient/' . $filepath);
-    //set_include_path($include_path);
-    $solr_cache[$host][$port][$path] = new $class($host, $port, $path);
+    include_once(drupal_get_path('module', $module) .'/'. $filepath);
+    try {
+      $solr_cache[$host][$port][$path] = new $class($host, $port, $path);
+    }
+    catch (Exception $e) {
+      watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
+      return;
+    }
   }
   return $solr_cache[$host][$port][$path];
 }
@@ -746,11 +750,11 @@ function apachesolr_get_solr($host = null, $port = null, $path = null) {
  * It is important to hold on to the Solr response object for the duration of the
  * page request so that we can use it for things like building facet blocks.
  */
-function &apachesolr_static_response_cache($response = NULL) {
+function apachesolr_static_response_cache($response = NULL) {
   static $_response;
 
   if (!empty($response)) {
-    $_response = drupal_clone($response);
+    $_response = clone $response;
   }
   return $_response;
 }
@@ -762,7 +766,7 @@ function &apachesolr_static_response_cache($response = NULL) {
  * programmatically you can pass in different keys. If you don't pass in
  * any keys, search_get_keys() is used instead.
  */
-function &apachesolr_drupal_query($keys = NULL, $reset = FALSE) {
+function apachesolr_drupal_query($keys = NULL, $reset = FALSE) {
   static $_queries;
 
   if ($reset) {
@@ -778,7 +782,13 @@ function &apachesolr_drupal_query($keys = NULL, $reset = FALSE) {
     include_once drupal_get_path('module', $module) .'/'. $class .'.php';
     
     $solr = apachesolr_get_solr();
-    $_queries[$keys] = new $class($solr, $keys);
+    try {
+      $_queries[$keys] = new $class($solr, $keys);
+    }
+    catch (Exception $e) {
+      watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
+      return;
+    }
   }
   return $_queries[$keys];
 }
