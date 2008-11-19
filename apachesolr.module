@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.51 2008/11/19 00:22:46 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.52 2008/11/19 00:52:10 pwolanin Exp $
 
 /**
  * @file
@@ -150,7 +150,7 @@ function apachesolr_requirements($phase) {
     $path = variable_get('apachesolr_path', '/solr');
     $ping = FALSE;
     try {
-      $solr =& apachesolr_get_solr();
+      $solr = apachesolr_get_solr();
       $ping = @$solr->ping();
       // If there is no $solr object, there is no server available, so don't continue.
       if (!$ping) {
@@ -234,7 +234,7 @@ function apachesolr_delete_index_form_submit($form, &$form_state) {
   if ($form_state['values']['delete_index']) {
     try {
       // Instantiate a new Solr object.
-      $solr =& apachesolr_get_solr();
+      $solr = apachesolr_get_solr();
       // TODO: Add site so that you can only delete your site's content.
       $solr->deleteByQuery('*:*');
       $solr->commit();
@@ -306,7 +306,7 @@ class ApacheSolrUpdate {
     $solr = FALSE;
     try {
       // Get the $solr object
-      $solr =& apachesolr_get_solr();
+      $solr = apachesolr_get_solr();
       // If there is no $solr object, there is no server available, so don't continue.
       if (!$solr->ping()) {
         throw new Exception(t('No Solr instance available during indexing'));
@@ -481,7 +481,7 @@ function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   switch ($op) {
     case 'delete':
       try {
-        $solr =& apachesolr_get_solr();
+        $solr = apachesolr_get_solr();
         $solr->deleteById($node->nid);
         $solr->commit();
       }
@@ -510,12 +510,12 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
     case 'view':
       if (apachesolr_has_searched()) {
         // Get the query and response. Without these no blocks make sense.
-        $response =& apachesolr_static_response_cache();
+        $response = apachesolr_static_response_cache();
         if (empty($response)) {
           return;
         }
         
-        $query =& apachesolr_drupal_query();
+        $query = apachesolr_drupal_query();
         
         // Get information needed by the rest of the blocks about limits.
         $facet_display_limits = variable_get('apachesolr_facet_query_limits', array());
@@ -629,7 +629,7 @@ function apachesolr_form_block_admin_configure_alter(&$form, $form_state) {
   }
 }
 
-/*
+/**
  * Validates a facet query limit input. Must be a positive integer or -1.
  */
 function apachesolr_facet_query_limit_validate($form, &$form_state) {
@@ -665,7 +665,7 @@ function apachesolr_form_alter(&$form, $form_state, $form_id) {
       }
 
       // The $query is the true source for search key information
-      if ($query =& apachesolr_drupal_query()) {
+      if ($query = apachesolr_drupal_query()) {
         $form['basic']['inline']['keys']['#default_value'] = $query->get_query_basic();
       }
     }
@@ -725,7 +725,7 @@ function apachesolr_has_searched($searched = NULL) {
  * Factory method for solr singleton object. Structure allows for an arbitrary
  * number of solr objects to be used based on the host, port, path combination.
  * Get an instance like this:
- *   $solr =& apachesolr_get_solr();
+ *   $solr = apachesolr_get_solr();
  */
 function apachesolr_get_solr($host = null, $port = null, $path = null) {
   static $solr_cache;
@@ -791,10 +791,6 @@ function apachesolr_drupal_query($keys = NULL, $reset = FALSE) {
     }
   }
   return $_queries[$keys];
-}
-
-function apachesolr_base_url() {
-  return "http://" . variable_get('apachesolr_host', 'localhost') .':'. variable_get('apachesolr_port', '8983') . variable_get('apachesolr_path', '/solr');
 }
 
 /**

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.27 2008/11/19 00:22:46 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.28 2008/11/19 00:52:10 pwolanin Exp $
 
 /**
  * @file
@@ -197,11 +197,11 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
     case 'view':
       if (arg(1) == 'apachesolr_search' && apachesolr_has_searched()) {
         // Get the query and response. Without these no blocks make sense.
-        $response =& apachesolr_static_response_cache();
+        $response = apachesolr_static_response_cache();
         if (empty($response)) {
           return;
         }
-        $query =& apachesolr_drupal_query();
+        $query = apachesolr_drupal_query();
 
         // Get information needed by the rest of the blocks about limits.
         $facet_display_limits = variable_get('apachesolr_facet_query_limits', array());
