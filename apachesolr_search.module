@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.29 2008/11/19 01:06:22 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.30 2008/11/19 02:28:33 pwolanin Exp $
 
 /**
  * @file
@@ -263,9 +263,9 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
             foreach ($fields as $name => $field) {
               $index_key = apachesolr_index_key($field);
               if ($index_key == $delta) {
-                if (is_array($response->facets->$index_key)) {
+                if (!empty($response->facet_counts->facet_fields->$index_key)) {
                   $contains_active = FALSE;
-                  foreach ($response->facets->$index_key as $facet => $count) {
+                  foreach ($response->facet_counts->facet_fields->$index_key as $facet => $count) {
                     $unclick_link = '';
                     unset($active);
                     $new_query = clone $query;
@@ -288,12 +288,12 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
                       $facets[$active ? $countsort . $facet : 1 + $countsort . $facet] = theme('apachesolr_facet_item', $facet, $count, $path, $active, $unclick_link, $response->numFound);
                     }
                   }
-                  if (is_array($facets)) {
+                  if (!empty($facets)) {
                     ksort($facets);
                     $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
                     $facets = array_slice($facets, 0, ($facet_display_limit == -1 ? NULL : $facet_display_limit));
                     $output = theme('apachesolr_facet_list', $facets);
-                    $label = db_result(db_query("SELECT label FROM {node_field_instance} WHERE field_name = '%s'", $name));
+                    $label = db_result(db_query("SELECT label FROM {content_node_field_instance} WHERE field_name = '%s'", $name));
                     return array('subject' => t('Filter by @field', array('@field' => $label)),
                                  'content' => $output);
                   }
