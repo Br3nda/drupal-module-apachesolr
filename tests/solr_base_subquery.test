@@ -1,5 +1,5 @@
 <?php
-// $Id: solr_base_subquery.test,v 1.1.2.2 2008/11/18 16:40:13 jacobsingh Exp $
+// $Id: solr_base_subquery.test,v 1.1.2.3 2008/11/21 21:23:36 pwolanin Exp $
 
 /***
  *  JacobSingh: These are totally broken due to $hash var in apachesolr_search.module
@@ -18,8 +18,8 @@ class DrupalSolrSubQueryTests extends DrupalWebTestCase {
   }
 
   function testSubQueries() {
-    $query1 =& apachesolr_drupal_query("foo");
-    $query2 =& apachesolr_drupal_query("bar");
+    $query1 = apachesolr_drupal_query("foo");
+    $query2 = apachesolr_drupal_query("bar");
     $query1->add_subquery($query2);
     $this->assertEqual($query1->get_query(), 'foo AND (bar)', 'foo AND (bar)');
     $query1->remove_subquery($query2);
@@ -31,13 +31,13 @@ class DrupalSolrSubQueryTests extends DrupalWebTestCase {
     $query1->remove_subquery($query2);
     $query1->add_subquery($query2, 'OR');
     $this->assertEqual($query1->get_query(), 'foo OR (bar)', 'foo OR (bar)');
-    $query3 =& apachesolr_drupal_query("uid:1 tid:5");
+    $query3 = apachesolr_drupal_query("uid:1 tid:5");
     $query2->add_subquery($query3);
     $this->assertEqual($query1->get_query(), 'foo OR (bar AND (uid:1 tid:5))', t('Sub-sub query'));
     // Test getting a query from the apachesolr_drupal_query factory
-    $query4 =& apachesolr_drupal_query('foo');
+    $query4 = apachesolr_drupal_query('foo');
     $this->assertEqual($query4->get_query(), 'foo OR (bar AND (uid:1 tid:5))', t('Sub-sub query'));
-    $query5 =& apachesolr_drupal_query('bar');
+    $query5 = apachesolr_drupal_query('bar');
     $query4->remove_subquery($query5);
     $this->assertEqual($query4->get_query(), 'foo', t('Remove bar query'));
   }

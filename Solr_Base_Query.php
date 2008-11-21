@@ -1,9 +1,9 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.10 2008/11/18 16:37:34 jacobsingh Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.11 2008/11/21 21:23:36 pwolanin Exp $
 
 class Solr_Base_Query {
 
-    /**
+  /**
    * This is copied from search module. The search module implementation doesn't
    * handle quoted terms correctly (bug) and this function is copied here until
    * I have the bugfix perfected, at which point a patch will be submitted to search
@@ -222,7 +222,7 @@ class Solr_Base_Query {
     return $breadcrumb;
   }
 
-  private function parse_query() {
+  protected function parse_query() {
     $this->_fields = array();
     $_keys = $this->_query;
 
@@ -263,7 +263,7 @@ class Solr_Base_Query {
     ksort($this->_fields);
   }
 
-  private function rebuild_query() {
+  protected function rebuild_query() {
     $fields = array();
     foreach ($this->_fields as $pos => $values) {
       $fields[] = Solr_Base_Query::make_field($values);
