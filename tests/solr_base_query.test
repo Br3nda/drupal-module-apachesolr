@@ -1,5 +1,5 @@
 <?php
-// $Id: solr_base_query.test,v 1.1.4.7 2008/11/18 16:40:13 jacobsingh Exp $
+// $Id: solr_base_query.test,v 1.1.4.8 2008/11/21 15:23:30 pwolanin Exp $
 
 
 /***
@@ -87,7 +87,7 @@ class DrupalSolrQueryTests extends DrupalWebTestCase {
     else {
       foreach ($components as $s) {
         if (strpos($q, $s) === FALSE) {
-          $pass = false;
+          $pass = FALSE;
           break;
         }
       }

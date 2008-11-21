@@ -1,5 +1,5 @@
 <?php
-// $Id: solr_index_and_search.test,v 1.1.2.1 2008/10/29 09:14:25 jacobsingh Exp $
+// $Id: solr_index_and_search.test,v 1.1.2.2 2008/11/21 15:23:30 pwolanin Exp $
 
 class DrupalSolrMatchTestCase extends DrupalWebTestCase {
   /**
@@ -17,10 +17,10 @@ class DrupalSolrMatchTestCase extends DrupalWebTestCase {
    * Implementation setUp().
    */
   function setUp() {
-    
+
     //We run this pre-setup in case the user wants to use a different solr location for testing than the default
-    $this->solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));    
-    parent::setUp('apachesolr','apachesolr_search');    
+    $this->solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
+    parent::setUp('apachesolr', 'apachesolr_search');
   }
 
   /**
@@ -36,37 +36,38 @@ class DrupalSolrMatchTestCase extends DrupalWebTestCase {
    */
   function _setup() {
     $ping = $this->solr->ping(10);
-    $this->assertNotEqual(False,$ping,"The Server could be Pinged");
+    $this->assertNotEqual(FALSE, $ping, "The Server could be Pinged");
     $response = $this->solr->search("*:*");
-    $response = $response->response;    
+    $response = $response->response;
     $total = $response->numFound;
-    
-    $this->assertEqual($total,0,"There should not be any documents in the index");
-    
-    variable_set('minimum_word_size', 3);    
-    for ($i = 1; $i <= 7; ++$i) {        
-      $documents[] = $this->_solr_build_document($i, $this->getText($i),array('nid' => $i));
+
+    $this->assertEqual($total, 0, "There should not be any documents in the index");
+
+    variable_set('minimum_word_size', 3);
+    for ($i = 1; $i <= 7; ++$i) {
+      $documents[] = $this->_solr_build_document($i, $this->getText($i), array('nid' => $i));
     }
-    
+
     $this->_solr_index($documents);
   }
-  
+
   function _solr_index($documents) {
     $batch = 0;
-    $batches = (count($documents) / 20);    
+    $batches = (count($documents) / 20);
     while ($batch < $batches) {
         $batch++;
-        $docs = array_splice($documents,0,20);
+        $docs = array_splice($documents, 0, 20);
         try {
-        $this->solr->addDocuments($docs);
-        $this->solr->commit();
-        } catch (Exception $e) {
-            dpr($e->getMessage());
+          $this->solr->addDocuments($docs);
+          $this->solr->commit();
+        }
+        catch (Exception $e) {
+          drupal_set_message($e->getMessage());
         }
     }
   }
-  
-  function _solr_build_document($id,$body,$values=array()) {
+
+  function _solr_build_document($id, $body, $values=array()) {
     $document = new Apache_Solr_Document();
     if (!$fields['body']) {
         $field['body'] = $body;
@@ -77,7 +78,7 @@ class DrupalSolrMatchTestCase extends DrupalWebTestCase {
         $document->$key = $value;
       }
     }
-      
+
     $document->text = $field['body'];
     return $document;
   }
@@ -111,7 +112,7 @@ class DrupalSolrMatchTestCase extends DrupalWebTestCase {
       e.g. dolore OR ut = (dolore) OR (ut) -> bad
 
       This is a design limitation to avoid full table scans.
-      
+
       APACHESOLR NOTE: These are not all in lucene syntax... @TODO.  Still works for text searching
     */
     $queries = array(
@@ -153,7 +154,7 @@ class DrupalSolrMatchTestCase extends DrupalWebTestCase {
       'xx "minim am veniam es" OR dolore' => array()
     );
     foreach ($queries as $query => $results) {
-      $response = $this->solr->search($query);      
+      $response = $this->solr->search($query);
       $this->_testQueryMatching($query, $response->response->docs, $results);
       //@TODO: We might get to this later
       #$this->_testQueryScores($query, $response->responses->docs, $results);
@@ -168,7 +169,7 @@ class DrupalSolrMatchTestCase extends DrupalWebTestCase {
   function _testQueryMatching($query, $set, $results) {
     // Get result IDs.
     $found = array();
-    foreach ($set as $item) {        
+    foreach ($set as $item) {
       $found[] = $item->nid;
     }
     // Compare $results and $found.
@@ -197,14 +198,15 @@ class DrupalSolrMatchTestCase extends DrupalWebTestCase {
     // Check range.
     $this->assertEqual(!count($scores) || (min($scores) > 0.0 && max($scores) <= 1.0001), TRUE, "Query scoring '$query'");
   }
-  
+
   function tearDown() {
-     try {
-        $this->solr->deleteByQuery('*:*');
-        $this->solr->optimize();
-    } catch(Exception $e) {
-        //I know this is wrong, but I don't feel like learning how to throw my own failure right now
-        $this->assertEqual(1,0,$e->getMessage());
+    try {
+      $this->solr->deleteByQuery('*:*');
+      $this->solr->optimize();
+    }
+    catch (Exception $e) {
+      //I know this is wrong, but I don't feel like learning how to throw my own failure right now
+      $this->assertTrue(1, 0, $e->getMessage());
     }
     parent::tearDown();
   }
