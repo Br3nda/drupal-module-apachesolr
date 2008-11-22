@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.4 2008/11/22 10:41:10 robertDouglass Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.5 2008/11/22 10:48:48 robertDouglass Exp $
 
 /**
  * Implementation of hook_menu()
@@ -108,7 +108,7 @@ function theme_apachesolr_mlt_recommendation_block($links) {
 
 /**
  * function apachesolr_mlt_settings()
- * returns the settings page.
+ * Returns the settings page.
  */
 function apachesolr_mlt_settings() {
   $query = "SELECT * FROM {apachesolr_mlt}";
@@ -119,7 +119,7 @@ function apachesolr_mlt_settings() {
     $rows[] = array(
       $block->id,
       $block->data['name'],
-      l('Edit', 'admin/settings/apachesolr_mlt/configure_block/' . check_plain($block->id)) .' | ' . l('Delete', 'admin/settings/apachesolr_mlt/delete_block/'.check_plain($block->id)),
+      l('Edit', 'admin/settings/apachesolr_mlt/configure_block/' . check_plain($block->id)) .' | ' . l('Delete', 'admin/settings/apachesolr_mlt/delete_block/' . check_plain($block->id)),
     );
   }
   $header = array('Id', 'name', 'options');
@@ -135,7 +135,7 @@ function apachesolr_mlt_settings() {
  *
  * @return array The form used for editing.
  * TODO:
- *   Add term boost settings
+ *   Add term boost settings.
  *   Enable the user to specify a query, rather then forcing suggestions based
  *     on the node id.
  *
@@ -232,7 +232,7 @@ function apachesolr_mlt_block_form(&$form_state, $block_id = NULL) {
 /**
  * function apachesolr_mlt_block_validate()
  *
- * Perform basic form field validation on the morelikethis fields
+ * Perform basic form field validation on the morelikethis fields.
  *
  * @param string $form_id the form ID
  * @param array $form_values an array of from values
@@ -283,9 +283,9 @@ function apachesolr_mlt_get_fields() {
 
 /**
  * function apachesolr_mlt_load_block()
- * A loader function for the apachesolr more like this module.  If the function
+ * A loader function for the apachesolr more like this module. If the function
  * is passed a proper block id, the function will return the settings for the
- * moreLikeThis request.  If the block id is invalid the function returns an
+ * moreLikeThis request. If the block id is invalid the function returns an
  * empty array.
  *
  * @param int $block_id the id of the block you wish to load
@@ -308,7 +308,7 @@ function apachesolr_mlt_load_block($block_id = 0) {
 /**
  * function apachesolr_mlt_save_block()
  * A helper function save the block data to the database.  If passed a valid
- * block id, the function will update block settings in the database.  If it is
+ * block id, the function will update block settings in the database. If it is
  * not passed a block id, the function will create a new block.
  *
  * @param array $block_settings An array containing the settings required to form
@@ -327,7 +327,7 @@ function apachesolr_mlt_save_block($block_settings = array(), $block_id = 0) {
 
 /**
  * function apachesolr_mlt_list_blocks()
- * returns a list of blocks.  used by hook_block
+ * Returns a list of blocks. Used by hook_block
  */
 function apachesolr_mlt_list_blocks() {
   $block_results = db_query("SELECT * FROM {apachesolr_mlt}");
