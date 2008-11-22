@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.6 2008/11/22 11:07:26 robertDouglass Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.7 2008/11/22 11:36:33 robertDouglass Exp $
 
 /**
  * Implementation of hook_menu()
@@ -142,8 +142,8 @@ function apachesolr_mlt_settings() {
  */
 function apachesolr_mlt_block_form(&$form_state, $block_id = NULL) {
   $block = array();
-  //if editing, load the current settings for the block.
-  if($block_id && is_numeric($block_id)) {
+  // If editing, load the current settings for the block.
+  if ($block_id && is_numeric($block_id)) {
     $block = apachesolr_mlt_load_block($block_id);
     $form['block_id'] = array(
       '#type' => 'value',
@@ -258,7 +258,7 @@ function apachesolr_mlt_block_form_validate($form, &$form_state) {
 function apachesolr_mlt_block_form_submit($form, &$form_state) {
   if ($form_state['values']['form_id'] == 'apachesolr_mlt_block_form') {
     $form_state['values']['mlt_fl'] = array_diff($form_state['values']['mlt_fl'], array(0));
-    apachesolr_mlt_save_block($form_state['values'], isset($form_state['values']['block_id']) ?$form_state['values']['block_id'] : NULL);
+    apachesolr_mlt_save_block($form_state['values'], isset($form_state['values']['block_id']) ? $form_state['values']['block_id'] : NULL);
   }
 }
 
