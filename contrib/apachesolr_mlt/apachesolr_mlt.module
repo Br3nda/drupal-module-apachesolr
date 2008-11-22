@@ -1,31 +1,11 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.3 2008/10/26 15:09:40 robertDouglass Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.4 2008/11/22 10:41:10 robertDouglass Exp $
 
 /**
  * Implementation of hook_menu()
  */
 function apachesolr_mlt_menu() {
   $items = array();
-/* TODO
-   Non menu code that was placed in hook_menu under the '!$may_cache' block
-   so that it could be run during initialization, should now be moved to hook_init.
-   Previously we called hook_init twice, once early in the bootstrap process, second
-   just after the bootstrap has finished. The first instance is now called boot
-   instead of init.
-   
-   In Drupal 6, there are now two hooks that can be used by modules to execute code
-   at the beginning of a page request. hook_boot() replaces hook_boot() in Drupal 5
-   and runs on each page request, even for cached pages. hook_boot() now only runs
-   for non-cached pages and thus can be used for code that was previously placed in
-   hook_menu() with $may_cache = FALSE:
-   
-   Dynamic menu items under a '!$may_cache' block can often be simplified
-   to remove references to arg(n) and use of '%<function-name>' to check
-   conditions. See http://drupal.org/node/103114.
-   
-   The title and description arguments should not have strings wrapped in t(),
-   because translation of these happen in a later stage in the menu system.
-*/
 
   $items['admin/settings/apachesolr_mlt'] = array(
     'title' => 'Apache Solr More Like This',
@@ -67,7 +47,7 @@ function apachesolr_mlt_block ($op = 'list', $delta = 0, $edit = array()) {
  * function apachesolr_mlt_suggestions()
  * This function loads a the parameters for each moreLikeThis query, performs
  * the query, and returns a list of linked node titles.
- * 
+ *
  * @param int $block_id A block ID for loading the suggestions
  *
  * @return array An array to be returned to hook_block
@@ -76,7 +56,7 @@ function apachesolr_mlt_suggestions($block_id) {
   if (arg(0) == 'node' && is_numeric(arg(1))) {
     $nid = check_plain(arg(1));
     $solr = &apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
-    
+
     try {
       $fields = array('mlt.mintf', 'mlt.mindf', 'mlt.minwl', 'mlt.maxwl', 'mlt.maxqt', 'mlt.boost', 'mlt.qf');
       $block = apachesolr_mlt_load_block($block_id);
@@ -184,7 +164,7 @@ function apachesolr_mlt_block_form(&$form_state, $block_id = NULL) {
     '#default_value' => isset($block['mlt_count']) ? $block['mlt_count'] : 5,
     '#weight' => -1,
     );
- 
+
   $form['comparison'] = array(
     '#type' => 'fieldset',
     '#title' => t('Comparison settings'),
@@ -253,7 +233,7 @@ function apachesolr_mlt_block_form(&$form_state, $block_id = NULL) {
  * function apachesolr_mlt_block_validate()
  *
  * Perform basic form field validation on the morelikethis fields
- * 
+ *
  * @param string $form_id the form ID
  * @param array $form_values an array of from values
  */
