@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.8 2008/11/22 11:40:36 robertDouglass Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.9 2008/11/22 11:42:22 robertDouglass Exp $
 
 /**
  * Implementation of hook_menu()
@@ -123,7 +123,7 @@ function apachesolr_mlt_settings() {
     );
   }
   $header = array(t('Id'), t('Name'), t('Options'));
-  $output = l('Add block', 'admin/settings/apachesolr_mlt/configure_block');
+  $output = l(t('Add block'), 'admin/settings/apachesolr_mlt/configure_block');
   $output .= theme('table', $header, $rows);
   return $output;
 }
