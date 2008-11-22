@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.30 2008/11/19 02:28:33 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.31 2008/11/22 20:37:12 pwolanin Exp $
 
 /**
  * @file
@@ -113,14 +113,11 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
           return array();
         }
 
-        $hash = md5(url(NULL, array('absolute' => TRUE)));
-        $query->add_field('hash', $hash);
         $response = $solr->search($query->get_query(), $params['start'], $params['rows'], $params);
         // The response is cached so that it is accessible to the blocks and anything
         // else that needs it beyond the initial search.
         apachesolr_static_response_cache($response);
         apachesolr_has_searched(TRUE);
-        $query->remove_field('hash', $hash);
         $total = $response->response->numFound;
         pager_query("SELECT %d", $params['rows'], 0, NULL, $total);
         if ($total > 0) {
