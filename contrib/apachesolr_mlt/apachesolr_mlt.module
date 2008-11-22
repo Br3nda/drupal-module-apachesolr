@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.5 2008/11/22 10:48:48 robertDouglass Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.6 2008/11/22 11:07:26 robertDouglass Exp $
 
 /**
  * Implementation of hook_menu()
@@ -154,7 +154,7 @@ function apachesolr_mlt_block_form(&$form_state, $block_id = NULL) {
   $form['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Block Name'),
-    '#description' => t('Please enter then block name.  This will only be seen by the administratior'),
+    '#description' => t('Please enter the block name. This will only be seen by the administratior'),
     '#default_value' => isset($block['name']) ? check_plain($block['name']) : '',
     '#weight' => '-2',
   );
