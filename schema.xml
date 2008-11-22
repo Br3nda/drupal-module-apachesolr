@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- $Id: schema.xml,v 1.1.2.1.2.10 2008/11/10 22:12:28 jacobsingh Exp $ -->
+<!-- $Id: schema.xml,v 1.1.2.1.2.11 2008/11/22 23:27:34 pwolanin Exp $ -->
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
  contributor license agreements.  See the NOTICE file distributed with
@@ -240,6 +240,11 @@
        fields or fields that need an index-time boost need norms.
    -->
 
+<!-- The document id is derived from a site-spcific key (hash) and the node ID like: 
+     $document->id = $hash . '/node/' . $node->nid; -->
+
+   <field name="id" type="string" indexed="true" stored="true" required="true" />
+
 <!-- These are the fields that correspond to a Drupal node. The beauty of having
      Lucene store title, body, type, etc., is that we retrieve them with the search
      result set and don't need to go to the database with a node_load. -->
@@ -306,7 +311,7 @@
  <!-- Field to use to determine and enforce document uniqueness.
       Unless this field is marked with required="false", it will be a required field
    -->
- <uniqueKey>url</uniqueKey>
+ <uniqueKey>id</uniqueKey>
 
  <!-- field for the QueryParser to use when an explicit fieldname is absent -->
  <defaultSearchField>text</defaultSearchField>

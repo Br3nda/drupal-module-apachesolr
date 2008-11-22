@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.56 2008/11/22 01:02:41 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.57 2008/11/22 23:27:34 pwolanin Exp $
 
 /**
  * @file
@@ -225,9 +225,6 @@ function apachesolr_delete_index_form_validate($form, &$form_state) {
   if (!$form_state['values']['delete_index']) {
     form_set_error('delete_index', t('If you want to delete the Solr index, you must check the confirmation box.'));
   }
-  if (!user_access('administer site configuration')) {
-    drupal_access_denied();
-  }
 }
 
 function apachesolr_delete_index_form_submit($form, &$form_state) {
@@ -235,8 +232,12 @@ function apachesolr_delete_index_form_submit($form, &$form_state) {
     try {
       // Instantiate a new Solr object.
       $solr = apachesolr_get_solr();
-      // TODO: Add site so that you can only delete your site's content.
-      $solr->deleteByQuery('*:*');
+      $query = '*:*';
+      // Allow other modules to modify the delete query.
+      // For example, use the site hash so that you only delete this site's
+      // content:  $query = 'hash:' . apachesolr_site_hash()
+      drupal_alter('apachesolr_delete_index', $query);
+      $solr->deleteByQuery($query);
       $solr->commit();
       variable_del('apachesolr_last_change');
       variable_del('apachesolr_last_id');
@@ -248,6 +249,22 @@ function apachesolr_delete_index_form_submit($form, &$form_state) {
       watchdog('Apache Solr', $e->getMessage(), array(), WATCHDOG_ERROR);
     }
   }
+}
+
+/**
+ * Like $site_key in _update_refresh() - returns a site-specific hash.
+ */
+function apachesolr_site_hash() {
+  if (!($hash = variable_get('apachesolr_site_hash', FALSE))) {
+    global $base_url;
+    $hash = md5($base_url . drupal_get_private_key() . 'apachesolr');
+    variable_set('apachesolr_site_hash', $hash);
+  }
+  return $hash;
+}
+
+function apachesolr_document_id($id, $type = 'node') {
+  return apachesolr_site_hash() . "/$type/" . $id;
 }
 
 
@@ -322,7 +339,9 @@ class ApacheSolrUpdate {
     $result = self::getNodesToIndex($namespace);
     $count = 0;
     $documents = array();
-
+    $site = url(NULL, array('absolute' => TRUE));
+    $hash = apachesolr_site_hash();
+    
     while ($row = db_fetch_object($result)) {
 
       // Variables to track the last item changed.
@@ -334,6 +353,7 @@ class ApacheSolrUpdate {
 
       if ($node->nid) {
         // Build the node body.
+        $node->build_mode = NODE_BUILD_SEARCH_INDEX;
         $node = node_build_content($node, FALSE, FALSE);
         $node->body = drupal_render($node->content);
 
@@ -341,103 +361,94 @@ class ApacheSolrUpdate {
 
         // Fetch extra data normally not visible
         $extra = node_invoke_nodeapi($node, 'update index');
-        foreach ($extra as $t) {
-          $text .= $t;
+        $text .= implode(' ', $extra);
+
+        $document = new Apache_Solr_Document();
+        $document->id = apachesolr_document_id($node->nid);
+        $document->site = $site;
+        $document->hash = $hash;
+        $document->url = url('node/' . $node->nid, array('absolute' => TRUE));
+
+        $document->nid = $node->nid;
+        $document->uid = $node->uid;
+        $document->title = $node->title;
+        $document->body  = $node->body;
+        $document->type  = $node->type;
+        $document->changed = $node->changed;
+        $document->comment_count = $node->comment_count;
+        $document->name = $node->name;
+        $document->language = $node->language;
+
+        // Path aliases can have important information about the content.
+        // Add them to the index as well.
+        if (function_exists('drupal_get_path_alias')) {
+          // Add any path alias to the index, looking first for language specific
+          // aliases but using language neutral aliases otherwise.
+          $language = empty($node->language) ? '' : $node->language;
+          $path = 'node/' . $node->nid;
+          $output = drupal_get_path_alias($path, $language);
+          if ($output && $output != $path) {
+            $document->path = $output;
+            $text .= ' ' . $output;
+          }
         }
 
-        // Update solr index.
-        try {
-          $document = new Apache_Solr_Document();
-          $site = url(NULL, array('absolute' => TRUE));
-          $hash = md5($site);
-          $document->site = $site;
-          $document->hash = $hash;
-          $document->url = url('node/' . $node->nid, array('absolute' => TRUE));
-
-          $document->nid = $node->nid;
-          $document->uid = $node->uid;
-          $document->title = $node->title;
-          $document->body  = $node->body;
-          $document->type  = $node->type;
-          $document->changed = $node->changed;
-          $document->comment_count = $node->comment_count;
-          $document->name = $node->name;
-          $document->language = $node->language;
-
-          // Path aliases can have important information about the content.
-          // Add them to the index as well.
-          if (function_exists('drupal_get_path_alias')) {
-            // Add any path alias to the index, looking first for language specific
-            // aliases but using language neutral aliases otherwise.
-            $language = empty($node->language) ? '' : $node->language;
-            $path = 'node/' . $node->nid;
-            $output = drupal_get_path_alias($path, $language);
-            if ($output && $output != $path) {
-              $document->path = $output;
-              $text .= $output;
+        foreach ($cck_fields as $key => $cck_info) {
+          if (isset($node->$key)) {
+            // Got a CCK field. See if it is to be indexed.
+            $function = $cck_info['callback'];
+            if ($cck_info['callback'] && function_exists($function)) {
+              $field = call_user_func_array($function, array($node, $key));
             }
-          }
-
-          foreach ($cck_fields as $key => $cck_info) {
-            if (isset($node->$key)) {
-              // Got a CCK field. See if it is to be indexed.
-              $function = $cck_info['callback'];
-              if ($cck_info['callback'] && function_exists($function)) {
-                $field = call_user_func_array($function, array($node, $key));
-              }
-              else {
-                $field = $node->$key;
-              }
-              $index_key = apachesolr_index_key($cck_info);
-              foreach ($field as $value) {
-                // Don't index NULLs or empty strings
-                if (isset($value['safe']) && strlen($value['safe'])) {
-                  if ($cck_info['multiple']) {
-                    $document->setMultiValue($index_key, $value['safe']);
-                  }
-                  else {
-                    $document->$index_key = $value['safe'];
-                  }
+            else {
+              $field = $node->$key;
+            }
+            $index_key = apachesolr_index_key($cck_info);
+            foreach ($field as $value) {
+              // Don't index NULLs or empty strings
+              if (isset($value['safe']) && strlen($value['safe'])) {
+                if ($cck_info['multiple']) {
+                  $document->setMultiValue($index_key, $value['safe']);
+                }
+                else {
+                  $document->$index_key = $value['safe'];
                 }
               }
             }
           }
+        }
 
-          // This is the string value of the title. Used for sorting.
-          $document->stitle = $node->title;
+        // This is the string value of the title. Used for sorting.
+        $document->stitle = $node->title;
 
-          if (is_array($node->taxonomy)) {
-            foreach ($node->taxonomy as $term) {
-              // Double indexing of tids lets us do effecient searches (on tid)
-              // and do accurate per-vocabulary faceting.
+        if (is_array($node->taxonomy)) {
+          foreach ($node->taxonomy as $term) {
+            // Double indexing of tids lets us do effecient searches (on tid)
+            // and do accurate per-vocabulary faceting.
 
-              // By including the ancestors to a term in the index we make
-              // sure that searches for general categories match specific
-              // categories, e.g. Fruit -> apple, a search for fruit will find
-              // content categorized with apple.
-              $ancestors = taxonomy_get_parents_all($term->tid);
-              foreach ($ancestors as $ancestor) {
-                $document->setMultiValue('tid', $ancestor->tid);
-                $document->setMultiValue('imfield_vid'. $ancestor->vid, $ancestor->tid);
-                $document->setMultiValue('vid', $ancestor->vid);
-                $document->setMultiValue('taxonomy_name', $ancestor->name);
-                $text .= ' ' . $ancestor->name;
-              }
+            // By including the ancestors to a term in the index we make
+            // sure that searches for general categories match specific
+            // categories, e.g. Fruit -> apple, a search for fruit will find
+            // content categorized with apple.
+            $ancestors = taxonomy_get_parents_all($term->tid);
+            foreach ($ancestors as $ancestor) {
+              $document->setMultiValue('tid', $ancestor->tid);
+              $document->setMultiValue('imfield_vid'. $ancestor->vid, $ancestor->tid);
+              $document->setMultiValue('vid', $ancestor->vid);
+              $document->setMultiValue('taxonomy_name', $ancestor->name);
+              $text .= ' ' . $ancestor->name;
             }
           }
-          $document->text = $text;
-
-          // Let modules add to the document
-          foreach (module_implements('apachesolr_update_index') as $module) {
-            $function = $module .'_apachesolr_update_index';
-            $function($document, $node);
-          }
-
-          $documents[] = $document;
         }
-        catch (Exception $e) {
-          watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
+        $document->text = $text;
+
+        // Let modules add to the document
+        foreach (module_implements('apachesolr_update_index') as $module) {
+          $function = $module .'_apachesolr_update_index';
+          $function($document, $node);
         }
+
+        $documents[] = $document;
       }
       self::success('apachesolr', $solr_last_change, $solr_last_id);
     }
@@ -480,7 +491,7 @@ function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
     case 'delete':
       try {
         $solr = apachesolr_get_solr();
-        $solr->deleteById(url('node/' . $node->nid, array('absolute' => TRUE)));
+        $solr->deleteById(apachesolr_document_id($node->nid));
         $solr->commit();
       }
       catch (Exception $e) {
@@ -587,6 +598,7 @@ function apachesolr_facet_block($response, $query, $delta, $filter_by, $facet_ca
       if ($active = $query->has_field($delta, $facet)) {
         $contains_active = TRUE;
         $new_query->remove_field($delta, $facet);
+        // TODO: don't assume 'search' - find the real path.
         $path = 'search/'. arg(1) .'/'. $new_query->get_query();
         $unclick_link = theme('apachesolr_unclick_link', $path);
       }
@@ -729,13 +741,13 @@ function apachesolr_get_solr($host = NULL, $port = NULL, $path = NULL) {
   static $solr_cache;
 
   if (empty($host)) {
-    $host = variable_get('apachesolr_host','localhost');
+    $host = variable_get('apachesolr_host', 'localhost');
   }
   if (empty($port)) {
-    $port = variable_get('apachesolr_port','8983');
+    $port = variable_get('apachesolr_port', '8983');
   }
   if (empty($path)) {
-    $path = variable_get('apachesolr_path','/solr');
+    $path = variable_get('apachesolr_path', '/solr');
   }
 
   if (empty($solr_cache[$host][$port][$path])) {
