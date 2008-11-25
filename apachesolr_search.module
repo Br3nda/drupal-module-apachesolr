@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.32 2008/11/24 18:29:21 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.33 2008/11/25 21:05:08 pwolanin Exp $
 
 /**
  * @file
@@ -81,13 +81,16 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
 
     case 'search':
       global $pager_total;
-      // This is the object that does the communication with the solr server.
-      $solr = apachesolr_get_solr();
-      // This is the object that knows about the query coming from the user.
-      $query = apachesolr_drupal_query($keys);
-      $results = array();
 
       try {
+        // This is the object that knows about the query coming from the user.
+        $query = apachesolr_drupal_query($keys);
+        if (is_null($query)) {
+          throw new Exception(t('Could not construct a Solr query in function apachesolr_search_search()'));
+        }
+
+        $results = array();
+
         $params = array(
           //'qt' => 'standard',
           'fl' => '*,score',
@@ -155,7 +158,8 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         if (!$query) {
           return array();
         }
-
+        // This is the object that does the communication with the solr server.
+        $solr = apachesolr_get_solr();
         $response = $solr->search($query->get_query(), $params['start'], $params['rows'], $params);
         // The response is cached so that it is accessible to the blocks and anything
         // else that needs it beyond the initial search.
@@ -196,10 +200,9 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       } // try
       catch (Exception $e) {
         watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
-        apachesolr_failure(t('Search'), $query->get_query());
+        apachesolr_failure(t('Search'), is_null($query) ? $keys : $query->get_query());
       }
       break;
-
   } // switch
 }
 
