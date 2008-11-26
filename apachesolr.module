@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.58 2008/11/24 18:29:21 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.59 2008/11/26 13:35:27 pwolanin Exp $
 
 /**
  * @file
@@ -154,19 +154,34 @@ function apachesolr_index_page() {
   // Gets information about the fields already in solr index.
   try {
     $solr = apachesolr_get_solr();
-    $fields = $solr->getFields();
-  } catch (Exception $e) {
+    $data = $solr->getLuke(1);
+  } 
+  catch (Exception $e) {
     watchdog('apachesolr', $e->getMessage());
     drupal_set_message($e->getMessage(), "warning");
-    $fields = array();
+    $data->fields = array();
   }
-  $rows = array();
-  foreach ($fields as $name => $field) {
-    $rows[] = array($name, $field->type);
-  }
+
   $output  = '';
-  // Display the table of Field names and Field Index Types.
-  $output .= theme('table', array(t('Field name'), t('Field index type')), $rows);
+  if (isset($data->index->numDocs)) {
+    $output .= '<p>' . t('Number of documents in index: @num', array('@num' => $data->index->numDocs)) . "</p>\n";
+    $output .= '<p>' . t('Number of terms in index: @num', array('@num' => $data->index->numTerms)) . "</p>\n";
+  }
+
+  $fields = (array)$data->fields;
+  if ($fields) {
+    $output .= '<p>' . t('Number of fields in index: @num', array('@num' => count($fields))) . "</p>\n";
+    $rows = array();
+    foreach ($fields as $name => $field) {
+      $rows[] = array($name, $field->type, isset($field->index) ? $field->distinct : t('Not indexed'));
+    }
+    // Display the table of Field names, Index Types, and term counts.
+    $output .= theme('table', array(t('Field name'), t('Index type'), t('Distinct terms')), $rows);
+  }
+  else {
+    $output .= '<p>' . t('No data on indexed fields.') . "</p>\n";
+  }
+
   // Display the Delete Index form.
   $output .= drupal_get_form('apachesolr_delete_index_form');
 
