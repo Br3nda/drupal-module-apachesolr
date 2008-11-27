@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.2.7 2008/10/28 10:08:09 robertDouglass Exp $
+// $Id: Solr_Base_Query.php,v 1.1.2.8 2008/11/27 18:47:58 pwolanin Exp $
 
 class Solr_Base_Query {
 
@@ -242,7 +242,7 @@ class Solr_Base_Query {
         if (count($values) > 0) {
           foreach ($values as $value) {
             $found = Solr_Base_Query::make_field(array('#name' => $name, '#value' => $value));
-            $pos = strpos($_keys, $found);
+            $pos = strpos($this->_query, $found);
             // $solr_keys and $solr_crumbs are keyed on $pos so that query order
             // is maintained. This is important for breadcrumbs.
             $this->_fields[$pos] = array('#name' => $name, '#value' => trim($value));
