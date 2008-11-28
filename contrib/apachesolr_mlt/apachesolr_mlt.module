@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.2.3 2008/10/26 15:13:07 robertDouglass Exp $
+// $Id: apachesolr_mlt.module,v 1.1.2.4 2008/11/28 18:08:38 mikejoconnor Exp $
 
 /**
  * Implementation of hook_menu()
@@ -83,9 +83,11 @@ function apachesolr_mlt_suggestions($block_id) {
       //TODO: Figure out why this works
       $links = array();
       
-      foreach ($r['docs'] as $doc) {
-        $links[] = l($doc->title, 'node/' . $doc->nid);
-      }
+      if (is_array($r['docs'])) {
+        foreach ($r['docs'] as $doc) {
+          $links[] = l($doc->title, 'node/' . $doc->nid);
+        }
+       }
 
       $suggestions = array();
       if (count($links) > 0) {
