@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.34 2008/11/25 21:56:52 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.35 2008/11/28 23:48:15 pwolanin Exp $
 
 /**
  * @file
@@ -13,10 +13,9 @@
 function apachesolr_search_help($section) {
   switch ($section) {
     case 'admin/settings/apachesolr/index':
-      // Collect some stats (from search.module)
       $remaining = 0;
       $total = 0;
-
+      // Collect the stats
       $status = module_invoke('apachesolr_search', 'search', 'status');
       $remaining += $status['remaining'];
       $total += $status['total'];
@@ -37,7 +36,8 @@ function apachesolr_search_update_index() {
   $last_nid = variable_get('apachesolr_search_last_nid', 0);
   // TODO - should probably have a separate variable.
   $cron_limit = variable_get('search_cron_limit', 100);
-  $return = apachesolr_index_nodes($last_change, $last_nid, $cron_limit);
+  $result = apachesolr_get_nodes_to_index($last_change, $last_nid, $cron_limit);
+  $return = apachesolr_index_nodes($result);
   if ($return) {
     variable_set('apachesolr_search_last_change', $return['last_change']);
     variable_set('apachesolr_search_last_nid', $return['last_nid']);

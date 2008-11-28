@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.59 2008/11/26 13:35:27 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.60 2008/11/28 23:48:15 pwolanin Exp $
 
 /**
  * @file
@@ -314,16 +314,23 @@ function apachesolr_node_type($op, $info) {
 }
 
 /**
+ * Returns a resource from a query for nid and changed values.
+ */
+function apachesolr_get_nodes_to_index($last_change, $last_nid, $limit) {
+  return  db_query_range("SELECT nid, changed FROM {apachesolr_search_node} WHERE (changed > %d OR (changed = %d AND nid > %d)) AND status = 1 ORDER BY changed ASC, nid ASC", $last_change, $last_change, $last_nid, 0, $limit);
+}
+
+/**
  * Function to handle the indexing of nodes.
  *
  * The calling function must track/store the timestamp and nid returned.
+ * Returns FALSE if no nodes were indexed (none found or error).
  */
-function apachesolr_index_nodes($last_change, $last_nid, $limit) {
-  $solr = FALSE;
+function apachesolr_index_nodes($result) {
   try {
     // Get the $solr object
     $solr = apachesolr_get_solr();
-    // If there is no $solr object, there is no server available, so don't continue.
+    // If there is no server available, don't continue.
     if (!$solr->ping()) {
       throw new Exception(t('No Solr instance available during indexing'));
     }
@@ -333,13 +340,11 @@ function apachesolr_index_nodes($last_change, $last_nid, $limit) {
     return FALSE;
   }
 
-  $result = db_query_range("SELECT nid, changed FROM {apachesolr_search_node} WHERE (changed > %d OR (changed = %d AND nid > %d)) AND status = 1 ORDER BY changed ASC, nid ASC", $last_change, $last_change, $last_nid, 0, $limit);
   $documents = array();
-  $solr_last_change = $last_change;
-  $solr_last_id = $last_nid;
+  $solr_last_change = 0;
+  $solr_last_id = 0;
 
   while ($row = db_fetch_object($result)) {
-
     // Variables to track the last item changed.
     $solr_last_change = $row->changed;
     $solr_last_id = $row->nid;
@@ -347,7 +352,6 @@ function apachesolr_index_nodes($last_change, $last_nid, $limit) {
     if ($document = apachesolr_node_to_document($row->nid)) {
       $documents[] = $document;
     }
-
   }
   if (is_object($solr) && count($documents)) {
     try {
@@ -359,15 +363,14 @@ function apachesolr_index_nodes($last_change, $last_nid, $limit) {
       }
       $solr->commit();
       $solr->optimize(FALSE, FALSE);
+      return array('last_change' => $solr_last_change, 'last_nid' => $solr_last_id);
     }
     catch (Exception $e) {
       watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
-      return FALSE;
     }
   }
-  return array('last_change' => $solr_last_change, 'last_nid' => $solr_last_id);
+  return FALSE;
 }
-
 
 /**
  * Given a node ID, return a document representing that node.
