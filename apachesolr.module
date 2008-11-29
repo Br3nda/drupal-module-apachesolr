@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.60 2008/11/28 23:48:15 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.61 2008/11/29 00:11:36 pwolanin Exp $
 
 /**
  * @file
@@ -326,7 +326,7 @@ function apachesolr_get_nodes_to_index($last_change, $last_nid, $limit) {
  * The calling function must track/store the timestamp and nid returned.
  * Returns FALSE if no nodes were indexed (none found or error).
  */
-function apachesolr_index_nodes($result) {
+function apachesolr_index_nodes($result, $callback = 'apachesolr_node_to_document') {
   try {
     // Get the $solr object
     $solr = apachesolr_get_solr();
@@ -349,7 +349,7 @@ function apachesolr_index_nodes($result) {
     $solr_last_change = $row->changed;
     $solr_last_id = $row->nid;
 
-    if ($document = apachesolr_node_to_document($row->nid)) {
+    if ($document = $callback($row->nid)) {
       $documents[] = $document;
     }
   }
