@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.35 2008/11/28 23:48:15 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.36 2008/11/29 00:52:45 pwolanin Exp $
 
 /**
  * @file
@@ -37,10 +37,10 @@ function apachesolr_search_update_index() {
   // TODO - should probably have a separate variable.
   $cron_limit = variable_get('search_cron_limit', 100);
   $result = apachesolr_get_nodes_to_index($last_change, $last_nid, $cron_limit);
-  $return = apachesolr_index_nodes($result);
-  if ($return) {
-    variable_set('apachesolr_search_last_change', $return['last_change']);
-    variable_set('apachesolr_search_last_nid', $return['last_nid']);
+  $success = apachesolr_index_nodes($result);
+  if ($success) {
+    variable_set('apachesolr_search_last_change', $success['last_change']);
+    variable_set('apachesolr_search_last_nid', $success['last_nid']);
   }
 }
 
@@ -73,11 +73,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       return;
 
     case 'status':
-      $last_change = variable_get('apachesolr_search_last_change', 0);
-      $last_nid = variable_get('apachesolr_search_last_nid', 0);
-      $total = db_result(db_query('SELECT COUNT(*) FROM {node} WHERE status = 1'));
-      $remaining = db_result(db_query('SELECT COUNT(*) FROM {apachesolr_search_node} WHERE (changed > %d OR (changed = %d AND nid > %d)) AND status = 1', $last_change, $last_change, $last_nid));
-      return array('remaining' => $remaining, 'total' => $total);
+      return apachesolr_index_status(variable_get('apachesolr_search_last_change', 0), variable_get('apachesolr_search_last_nid', 0));
 
     case 'search':
       global $pager_total;

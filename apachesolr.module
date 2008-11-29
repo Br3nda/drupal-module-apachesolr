@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.61 2008/11/29 00:11:36 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.62 2008/11/29 00:52:45 pwolanin Exp $
 
 /**
  * @file
@@ -314,6 +314,15 @@ function apachesolr_node_type($op, $info) {
 }
 
 /**
+ * Helper function for modules implmenting hook_search's 'status' op.
+ */
+function apachesolr_index_status($last_change, $last_nid) {
+  $total = db_result(db_query('SELECT COUNT(*) FROM {node} WHERE status = 1'));
+  $remaining = db_result(db_query('SELECT COUNT(*) FROM {apachesolr_search_node} WHERE (changed > %d OR (changed = %d AND nid > %d)) AND status = 1', $last_change, $last_change, $last_nid));
+  return array('remaining' => $remaining, 'total' => $total);
+}
+
+/**
  * Returns a resource from a query for nid and changed values.
  */
 function apachesolr_get_nodes_to_index($last_change, $last_nid, $limit) {
@@ -326,7 +335,7 @@ function apachesolr_get_nodes_to_index($last_change, $last_nid, $limit) {
  * The calling function must track/store the timestamp and nid returned.
  * Returns FALSE if no nodes were indexed (none found or error).
  */
-function apachesolr_index_nodes($result, $callback = 'apachesolr_node_to_document') {
+function apachesolr_index_nodes($result, $callback = 'apachesolr_add_node_document') {
   try {
     // Get the $solr object
     $solr = apachesolr_get_solr();
@@ -348,10 +357,7 @@ function apachesolr_index_nodes($result, $callback = 'apachesolr_node_to_documen
     // Variables to track the last item changed.
     $solr_last_change = $row->changed;
     $solr_last_id = $row->nid;
-
-    if ($document = $callback($row->nid)) {
-      $documents[] = $document;
-    }
+    $callback($documents, $row->nid);
   }
   if (is_object($solr) && count($documents)) {
     try {
@@ -370,6 +376,15 @@ function apachesolr_index_nodes($result, $callback = 'apachesolr_node_to_documen
     }
   }
   return FALSE;
+}
+
+/**
+ * Add a document to the $documents array based on a node ID.
+ */
+function apachesolr_add_node_document(&$documents, $nid) {
+  if ($document = apachesolr_node_to_document($nid)) {
+    $documents[] = $document;
+  }
 }
 
 /**
