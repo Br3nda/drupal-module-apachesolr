@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.62 2008/11/29 00:52:45 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.63 2008/11/30 15:54:59 pwolanin Exp $
 
 /**
  * @file
@@ -683,33 +683,27 @@ function apachesolr_facet_query_limit_validate($form, &$form_state) {
 }
 
 /**
- * Implementation of hook_form_alter().
+ * Implementation of hook_form_[form_id]_alter().
  */
-function apachesolr_form_alter(&$form, $form_state, $form_id) {
-  $arg = arg(1);
-  $alias = drupal_lookup_path('alias', "search/{$arg}");
-  // Ok, this really sucks. I want a way to know whether the action of the form
-  // is supposed to be handled by an ApacheSolr module or not. I manually
-  // exclude node and user here, but there are many other hook_search implementations
-  // in the wild and this code will potentially interfere with them. It also
-  // creates a Solr instance wasting resources.
-  if ($alias && $arg != 'node' && $arg != 'user' && (
-    preg_match("&/search/{$arg}&", $form['#action']) ||
-    preg_match("&/{$alias}&", $form['#action'])  ||
-    strpos($form['#action'], $alias))) {
-    if (!isset($_POST['form_id'])) {
-      // Set up our validation function
-      $form['#validate']['apachesolr_search_validate'] = array();
+function apachesolr_form_search_form_alter(&$form, $form_state) {
+  // We want a way to know whether the action of the form is
+  // supposed to be handled by an ApacheSolr module or not. Instead of
+  // manually excluding just 'node' and 'user' here, we look for 'solr' in
+  // the module name.  This is still potentially error-prone, however.
+  // This function also creates a Solr instance wasting resources.
+  // We don't need to do anything on form submission (POST is populted),
+  // only when building the default values from the URL.
+  if (empty($form_state['post']) && stripos($form['module']['#value'], 'solr')) {
+    // TODO: Set up our validation function for advanced search
+    //$form['#validate'][] = 'apachesolr_search_validate';
+    // If no keys, there's nothing to do.
+    if (empty($form['basic']['inline']['keys']['#default_value'])) {
+      return;
+    }
 
-      // if no keys, there's nothing to do.
-      if (empty($form['basic']['inline']['keys']['#default_value'])) {
-        return;
-      }
-
-      // The $query is the true source for search key information
-      if ($query = apachesolr_drupal_query()) {
-        $form['basic']['inline']['keys']['#default_value'] = $query->get_query_basic();
-      }
+    // The $query is the true source for search key information
+    if ($query = apachesolr_drupal_query()) {
+      $form['basic']['inline']['keys']['#default_value'] = $query->get_query_basic();
     }
   }
 }
