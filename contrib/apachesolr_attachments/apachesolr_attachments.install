@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_attachments.install,v 1.1.2.1 2008/08/14 03:25:40 febbraro Exp $
+// $Id: apachesolr_attachments.install,v 1.1.2.2 2008/12/01 18:23:46 febbraro Exp $
 
 /**
  * Implementation of hook_install().
@@ -16,4 +16,7 @@ function apachesolr_attachments_install() {
 function apachesolr_attachments_uninstall() {
   variable_del('apachesolr_attachment_pdf_path');
   variable_del('apachesolr_attachment_txt_path');
+  variable_del('apachesolr_attachment_doc_path');
+  variable_del('apachesolr_attachment_last_change');
+  variable_del('apachesolr_attachment_last_nid');  
 } 
