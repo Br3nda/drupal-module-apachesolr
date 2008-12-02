@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.37 2008/12/02 01:53:17 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.38 2008/12/02 23:44:00 pwolanin Exp $
 
 /**
  * @file
@@ -32,31 +32,10 @@ function apachesolr_search_help($section) {
  * Implementation of hook_update_index().
  */
 function apachesolr_search_update_index() {
-  $last_change = variable_get('apachesolr_search_last_change', 0);
-  $last_nid = variable_get('apachesolr_search_last_nid', 0);
   // TODO - should probably have a separate variable.
   $cron_limit = variable_get('search_cron_limit', 100);
-  $result = apachesolr_get_nodes_to_index($last_change, $last_nid, $cron_limit);
-  $success = apachesolr_index_nodes($result);
-  if ($success) {
-    variable_set('apachesolr_search_last_change', $success['last_change']);
-    variable_set('apachesolr_search_last_nid', $success['last_nid']);
-  }
-}
-
-/**
- * Implementation of hook_form_[form_id]_alter().
- */
-function apachesolr_search_form_apachesolr_delete_index_form_alter(&$form, &$form_state) {
-  $form['#submit'][] = 'apachesolr_search_reindex';
-}
-
-/**
- * Resets indexing variables so all nodes are indexed.
- */
-function apachesolr_search_reindex() {
-  variable_del('apachesolr_search_last_change');
-  variable_del('apachesolr_search_last_nid');
+  $result = apachesolr_get_nodes_to_index('apachesolr_search', $cron_limit);
+  apachesolr_index_nodes($result, 'apachesolr_search');
 }
 
 /**
@@ -69,11 +48,11 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       return t('Search');
 
     case 'reset':
-      apachesolr_search_reindex();
+      apachesolr_clear_last_index('apachesolr_search');
       return;
 
     case 'status':
-      return apachesolr_index_status(variable_get('apachesolr_search_last_change', 0), variable_get('apachesolr_search_last_nid', 0));
+      return apachesolr_index_status('apachesolr_search');
 
     case 'search':
       global $pager_total;

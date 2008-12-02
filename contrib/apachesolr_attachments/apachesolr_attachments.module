@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_attachments.module,v 1.1.2.5 2008/12/01 18:24:42 febbraro Exp $
+// $Id: apachesolr_attachments.module,v 1.1.2.6 2008/12/02 23:44:00 pwolanin Exp $
 
 /**
  * @file
@@ -72,12 +72,11 @@ function apachesolr_attachments_search($op = 'search', $keys = NULL) {
     case 'name':
       return ''; // We dont want a tab
     case 'reset':
-      variable_del('apachesolr_attachment_last_change');
-      variable_del('apachesolr_attachment_last_nid');
+      apachesolr_clear_last_index('apachesolr_attachments');
       return;
     case 'status':
       // TODO: Figure out a way to know how many actual files are left to update.
-      return apachesolr_index_status(variable_get('apachesolr_attachment_last_change', 0), variable_get('apachesolr_attachment_last_nid', 0));
+      return apachesolr_index_status('apachesolr_attachments');
     case 'search':
       return apachesolr_search_search($op, $keys);
   }
@@ -90,18 +89,10 @@ function apachesolr_attachments_search($op = 'search', $keys = NULL) {
  * attachments.
  */
 function apachesolr_attachments_update_index() {
-
-  $last_change = variable_get('apachesolr_attachment_last_change', 0);
-  $last_nid = variable_get('apachesolr_attachment_last_nid', 0);
   // TODO - should probably have a separate variable.
   $cron_limit = variable_get('search_cron_limit', 100);
-  
-  $result = apachesolr_get_nodes_to_index($last_change, $last_nid, $cron_limit);
-  $success = apachesolr_index_nodes($result, 'apachesolr_attachment_add_documents');
-  if ($success) {
-    variable_set('apachesolr_attachment_last_change', $success['last_change']);
-    variable_set('apachesolr_attachment_last_nid',  $success['last_nid']);
-  }
+  $result = apachesolr_get_nodes_to_index('apachesolr_attachments', $cron_limit);
+  apachesolr_index_nodes($result,  'apachesolr_attachments', 'apachesolr_attachments_add_documents');
 }
 
 /**
@@ -109,7 +100,7 @@ function apachesolr_attachments_update_index() {
  *
  * Adds a document for each indexable file attachment for the given node ID.
  */
-function apachesolr_attachment_add_documents(&$documents, $nid) {
+function apachesolr_attachments_add_documents(&$documents, $nid) {
   $node = node_load($nid, NULL, TRUE);
   if (!empty($node->nid)) {
     

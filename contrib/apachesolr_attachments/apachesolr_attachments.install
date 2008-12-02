@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_attachments.install,v 1.1.2.2 2008/12/01 18:23:46 febbraro Exp $
+// $Id: apachesolr_attachments.install,v 1.1.2.3 2008/12/02 23:44:00 pwolanin Exp $
 
 /**
  * Implementation of hook_install().
@@ -16,7 +16,29 @@ function apachesolr_attachments_install() {
 function apachesolr_attachments_uninstall() {
   variable_del('apachesolr_attachment_pdf_path');
   variable_del('apachesolr_attachment_txt_path');
-  variable_del('apachesolr_attachment_doc_path');
+  variable_del('apachesolr_attachment_doc_path');  
+}
+
+/**
+ * Implementation of hook_uninstall().
+ * Update to namespace tracking.
+ */
+function apachesolr_attachments_uninstall() {
+  apachesolr_clear_last_index('apachesolr_attachments');
+}
+
+/**
+ * Update to namespace tracking.
+ */
+function apachesolr_attachments_update_6000() {
+  $change = variable_get('apachesolr_attachments_last_change', 0);
+  $nid = variable_get('apachesolr_attachments_last_nid', 0);
+  if ($change || $nid) {
+    $stored = variable_get('apachesolr_index_last', array());
+    $stored['apachesolr_attachments'] = array('last_change' => $change, 'last_nid' => $nid);
+    variable_set('apachesolr_index_last', $stored);
+  }
   variable_del('apachesolr_attachment_last_change');
-  variable_del('apachesolr_attachment_last_nid');  
-} 
+  variable_del('apachesolr_attachment_last_nid');
+  return array();
+}

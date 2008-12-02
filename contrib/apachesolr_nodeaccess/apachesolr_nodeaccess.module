@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.1.2.1 2008/11/22 10:28:17 robertDouglass Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.1.2.2 2008/12/02 23:44:01 pwolanin Exp $
 
 /**
  * Implementation of apachesolr_update_index
@@ -107,5 +107,5 @@ function apachesolr_nodeaccess_form_alter(&$form, $form_state, $form_id) {
 function apachesolr_nodeaccess_rebuild_nodeaccess(&$form, $form_state) {
   drupal_set_message(t('Solr search index will be rebuilt.'));
   node_access_needs_rebuild(TRUE);
-  ApacheSolrUpdate::reset('apachesolr');
+  apachesolr_clear_last_index();
 }

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.64 2008/12/02 01:53:17 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.65 2008/12/02 23:44:00 pwolanin Exp $
 
 /**
  * @file
@@ -150,8 +150,10 @@ function apachesolr_requirements($phase) {
   }
 }
 
+/**
+ * Gets information about the fields already in solr index.
+ */
 function apachesolr_index_page() {
-  // Gets information about the fields already in solr index.
   try {
     $solr = apachesolr_get_solr();
     $data = $solr->getLuke(1);
@@ -229,6 +231,7 @@ function apachesolr_delete_index_form_submit($form, &$form_state) {
       drupal_alter('apachesolr_delete_index', $query);
       $solr->deleteByQuery($query);
       $solr->commit();
+      apachesolr_clear_last_index();
       // This form can't be seen by anyone without 'administer site configuration'
       // permission, so no need to check perms before displaying a run-cron link.
       drupal_set_message(t('The Solr content index has been erased. You must now !run_cron until your entire site has been re-indexed.', array('!run_cron' => l(t('run cron'), 'admin/reports/status/run-cron', array('query' => array('destination' => 'admin/settings/apachesolr/index'))))));
@@ -254,7 +257,6 @@ function apachesolr_site_hash() {
 function apachesolr_document_id($id, $type = 'node') {
   return apachesolr_site_hash() . "/$type/" . $id;
 }
-
 
 /**
  * Implementation of hook_user().
@@ -316,26 +318,50 @@ function apachesolr_node_type($op, $info) {
 /**
  * Helper function for modules implmenting hook_search's 'status' op.
  */
-function apachesolr_index_status($last_change, $last_nid) {
+function apachesolr_index_status($namespace) {
+  extract(apachesolr_get_last_index($namespace));
   $total = db_result(db_query('SELECT COUNT(*) FROM {node} WHERE status = 1'));
   $remaining = db_result(db_query('SELECT COUNT(*) FROM {apachesolr_search_node} WHERE (changed > %d OR (changed = %d AND nid > %d)) AND status = 1', $last_change, $last_change, $last_nid));
   return array('remaining' => $remaining, 'total' => $total);
 }
 
 /**
- * Returns a resource from a query for nid and changed values.
+ * Returns last changed and last nid for an indexing namespace.
  */
-function apachesolr_get_nodes_to_index($last_change, $last_nid, $limit) {
+function apachesolr_get_last_index($namespace) {
+  $stored = variable_get('apachesolr_index_last', array());
+  return isset($stored[$namespace]) ? $stored[$namespace] : array('last_change' => 0, 'last_nid' => 0);
+}
+
+/**
+ * Clear a specific namespace's last changed and nid, or clear all.
+ */
+function apachesolr_clear_last_index($namespace = '') {
+  if ($namespace) {
+    $stored = variable_get('apachesolr_index_last', array());
+    unset($stored[$namespace]);
+    variable_set('apachesolr_index_last', $stored);
+  }
+  else {
+    variable_del('apachesolr_index_last');
+  }
+}
+/**
+ * Returns a resource from a query based on an indexing namespace.
+ */
+function apachesolr_get_nodes_to_index($namespace, $limit) {
+  extract(apachesolr_get_last_index($namespace));
   return  db_query_range("SELECT nid, changed FROM {apachesolr_search_node} WHERE (changed > %d OR (changed = %d AND nid > %d)) AND status = 1 ORDER BY changed ASC, nid ASC", $last_change, $last_change, $last_nid, 0, $limit);
 }
 
 /**
  * Function to handle the indexing of nodes.
  *
- * The calling function must track/store the timestamp and nid returned.
+ * The calling function must supply a name space or track/store
+ * the timestamp and nid returned.
  * Returns FALSE if no nodes were indexed (none found or error).
  */
-function apachesolr_index_nodes($result, $callback = 'apachesolr_add_node_document') {
+function apachesolr_index_nodes($result, $namespace = '', $callback = 'apachesolr_add_node_document') {
   try {
     // Get the $solr object
     $solr = apachesolr_get_solr();
@@ -369,7 +395,13 @@ function apachesolr_index_nodes($result, $callback = 'apachesolr_add_node_docume
       }
       $solr->commit();
       $solr->optimize(FALSE, FALSE);
-      return array('last_change' => $solr_last_change, 'last_nid' => $solr_last_id);
+      $last = array('last_change' => $solr_last_change, 'last_nid' => $solr_last_id);
+      if ($namespace) {
+        $stored = variable_get('apachesolr_index_last', array());
+        $stored[$namespace] = $last;
+        variable_set('apachesolr_index_last', $stored);
+      }
+      return $last;
     }
     catch (Exception $e) {
       watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);

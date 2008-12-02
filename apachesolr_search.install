@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.install,v 1.1.2.1 2008/11/24 18:29:21 pwolanin Exp $
+// $Id: apachesolr_search.install,v 1.1.2.2 2008/12/02 23:44:00 pwolanin Exp $
 
 /**
  * @file
@@ -8,9 +8,24 @@
 
 /**
  * Implementation of hook_uninstall().
+ * Update to namespace tracking.
  */
 function apachesolr_search_uninstall() {
-  variable_del('apachesolr_search_last_change');
-  variable_del('apachesolr_search_last_nid');
+  apachesolr_clear_last_index('apachesolr_search');
 }
 
+/**
+ * Update to namespace tracking.
+ */
+function apachesolr_search_update_6000() {
+  $change = variable_get('apachesolr_search_last_change', 0);
+  $nid = variable_get('apachesolr_search_last_nid', 0);
+  if ($change || $nid) {
+    $stored = variable_get('apachesolr_index_last', array());
+    $stored['apachesolr_search'] = array('last_change' => $change, 'last_nid' => $nid);
+    variable_set('apachesolr_index_last', $stored);
+  }
+  variable_del('apachesolr_search_last_change');
+  variable_del('apachesolr_search_last_nid');
+  return array();
+}
