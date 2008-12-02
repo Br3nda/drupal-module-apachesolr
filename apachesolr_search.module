@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.36 2008/11/29 00:52:45 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.37 2008/12/02 01:53:17 pwolanin Exp $
 
 /**
  * @file
@@ -226,9 +226,8 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
       if ($fields = apachesolr_cck_fields()) {
         foreach ($fields as $name => $field) {
           $index_key = apachesolr_index_key($field);
-          $label = db_result(db_query("SELECT label FROM {content_node_field_instance} WHERE field_name = '%s'", $name));
           // TODO: $index_key must be wrong here.
-          $blocks[$index_key] = array('info' => t('ApacheSolr Search: Filter by @field', array('@field' => $label)));
+          $blocks[$index_key] = array('info' => t('ApacheSolr Search: Filter by @field', array('@field' => $field['label'])));
         }
       }
       return $blocks;
@@ -332,8 +331,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
                     $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
                     $facets = array_slice($facets, 0, ($facet_display_limit == -1 ? NULL : $facet_display_limit));
                     $output = theme('apachesolr_facet_list', $facets);
-                    $label = db_result(db_query("SELECT label FROM {content_node_field_instance} WHERE field_name = '%s'", $name));
-                    return array('subject' => t('Filter by @field', array('@field' => $label)),
+                    return array('subject' => t('Filter by @field', array('@field' => $field['label'])),
                                  'content' => $output);
                   }
                 }

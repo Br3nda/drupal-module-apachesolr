@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.63 2008/11/30 15:54:59 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.64 2008/12/02 01:53:17 pwolanin Exp $
 
 /**
  * @file
@@ -854,7 +854,10 @@ function apachesolr_index_key($field) {
     case 'integer':
       $type_prefix = 'i';
       break;
-    case 'double':
+    case 'sint':
+      $type_prefix = 'si';
+      break;
+   case 'double':
       $type_prefix = 'p'; // reserve d for date
       break;
     case 'boolean':
@@ -869,7 +872,7 @@ function apachesolr_index_key($field) {
     default:
       $type_prefix = 's';
   }
-  $sm = $field['multiple'] ? 'm' : 's';
+  $sm = $field['multiple'] ? 'mfield_' : 'sfield_';
   return $type_prefix . $sm . $field['name'];
 }
 
@@ -878,32 +881,28 @@ function apachesolr_index_key($field) {
  * CCK fields.
  */
 function apachesolr_cck_fields() {
-  static $_fields;
-  // If CCK isn't enabled, do nothing.
-  if (module_exists('content')) {
-    $mappings = module_invoke_all('apachesolr_cck_field_mappings');
-    if (is_null($_fields)) {
-      $_fields = array();
-      $result = db_query("SELECT i.field_name, f.multiple, f.type, i.widget_type FROM {content_node_field_instance} i INNER JOIN {content_node_field} f ON i.field_name = f.field_name;");
+  static $fields;
 
+  if (is_null($fields)) {
+    $fields = array();
+    // If CCK isn't enabled, do nothing.
+    if (module_exists('content')) {
+      // A single default mapping for text fields.
+      $mappings['text'] = array('callback' => '', 'index_type' => 'string', 'widget_types' => array('optionwidgets_select' => 1, 'optionwidgets_buttons' => 1));
+      $mappings = module_invoke_all('apachesolr_cck_field_mappings') + $mappings;
+      $result = db_query("SELECT CONCAT('cck_', i.field_name) AS name, f.multiple, f.type AS field_type, i.widget_type, i.label FROM {content_node_field_instance} i INNER JOIN {content_node_field} f ON i.field_name = f.field_name;");
       while ($row = db_fetch_object($result)) {
         // Only deal with fields that have options widgets (facets don't make sense otherwise), or fields that have specific mappings.
-        if (($row->type == 'text' && in_array($row->widget_type, array('optionwidgets_select', 'optionwidgets_buttons'))) || in_array($row->type, array_keys($mappings))) {
-          $_fields[$row->field_name] = array(
-            'name' => $row->field_name,
-            'multiple' => $row->multiple ? TRUE : FALSE,
-            'field_type' => $row->type,
-            'index_type' => empty($mappings) ? 'string' : $mappings[$row->type]['index_type'],
-            'callback' => empty($mappings[$row->type]['callback']) ? NULL : $mappings[$row->type]['callback'],
-          );
+        if (isset($mappings[$row->field_type]) && !empty($mappings[$row->field_type]['widget_types'][$row->widget_type])) {
+          $row->index_type = $mappings[$row->field_type]['index_type'];
+          $row->callback = $mappings[$row->field_type]['callback'];
+          $row->multiple = (bool) $row->multiple;
+          $fields[$row->name] = (array) $row;
         }
       }
     }
-    return $_fields;
   }
-  else {
-    return array();
-  }
+  return $fields;
 }
 
 /**
