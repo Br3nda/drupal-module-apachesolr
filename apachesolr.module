@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.49 2008/11/11 15:37:22 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.50 2008/12/03 18:49:28 pwolanin Exp $
 
 /**
  * @file
@@ -837,7 +837,7 @@ function theme_apachesolr_facet_item($name, $count, $path, $active = FALSE, $unc
     $attributes['class'] = 'active';
   }
   if ($unclick_link) {
-    return $unclick_link . " $name";
+    return $unclick_link . ' '. check_plain($name);
   }
   else {
     return l($name ." ($count)",  $path, $attributes, isset($_GET['solrsort']) ? "solrsort=" . check_plain($_GET['solrsort']) : FALSE);
