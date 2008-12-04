@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.67 2008/12/04 13:54:12 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.68 2008/12/04 17:10:11 pwolanin Exp $
 
 /**
  * @file
@@ -420,6 +420,22 @@ function apachesolr_add_node_document(&$documents, $nid) {
 }
 
 /**
+ * Strip control characters that cause Jetty/Solr to fail.
+ */
+function apachesolr_strip_ctl_chars($text) {
+  // See:  http://w3.org/International/questions/qa-forms-utf-8.html 
+  // Printable utf-8 does not include any of these chars below x7F
+  return preg_replace('@[\x00-\x08\x0B\x0C\x0E-\x1F]@', '', $text);
+}
+
+/**
+ * Strip html tags and also control characters that cause Jetty/Solr to fail.
+ */
+function apachesolr_clean_text($text) {
+  return strip_tags(preg_replace('@[\x00-\x08\x0B\x0C\x0E-\x1F]@', '', $text));
+}
+
+/**
  * Given a node ID, return a document representing that node.
  */
 function apachesolr_node_to_document($nid) {
@@ -434,6 +450,7 @@ function apachesolr_node_to_document($nid) {
     $node->build_mode = NODE_BUILD_SEARCH_INDEX;
     $node = node_build_content($node, FALSE, FALSE);
     $node->body = drupal_render($node->content);
+    $node->title = apachesolr_clean_text($node->title);
 
     $text = check_plain($node->title) . ' ' . $node->body;
 
@@ -451,11 +468,11 @@ function apachesolr_node_to_document($nid) {
     $document->status = $node->status;
     $document->uid = $node->uid;
     $document->title = $node->title;
-    $document->body  = $node->body;
+    $document->body  = apachesolr_clean_text($node->body);
     $document->type  = $node->type;
     $document->changed = $node->changed;
     $document->comment_count = $node->comment_count;
-    $document->name = $node->name;
+    $document->name = apachesolr_strip_ctl_chars($node->name);
     $document->language = $node->language;
 
     // Path aliases can have important information about the content.
@@ -487,10 +504,10 @@ function apachesolr_node_to_document($nid) {
           // Don't index NULLs or empty strings
           if (isset($value['safe']) && strlen($value['safe'])) {
             if ($cck_info['multiple']) {
-              $document->setMultiValue($index_key, $value['safe']);
+              $document->setMultiValue($index_key, apachesolr_strip_ctl_chars($value['safe']));
             }
             else {
-              $document->$index_key = $value['safe'];
+              $document->$index_key = apachesolr_strip_ctl_chars($value['safe']);
             }
           }
         }
@@ -498,6 +515,7 @@ function apachesolr_node_to_document($nid) {
     }
 
     // This is the string value of the title. Used for sorting.
+    // TODO  - use Solr copyfield directive.
     $document->stitle = $node->title;
 
     if (is_array($node->taxonomy)) {
@@ -514,12 +532,12 @@ function apachesolr_node_to_document($nid) {
           $document->setMultiValue('tid', $ancestor->tid);
           $document->setMultiValue('imfield_vid'. $ancestor->vid, $ancestor->tid);
           $document->setMultiValue('vid', $ancestor->vid);
-          $document->setMultiValue('taxonomy_name', $ancestor->name);
+          $document->setMultiValue('taxonomy_name', apachesolr_strip_ctl_chars($ancestor->name));
           $text .= ' ' . $ancestor->name;
         }
       }
     }
-    $document->text = $text;
+    $document->text = apachesolr_clean_text($text);
 
     // Let modules add to the document
     foreach (module_implements('apachesolr_update_index') as $module) {
