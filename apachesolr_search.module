@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.38 2008/12/02 23:44:00 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.39 2008/12/04 17:04:43 pwolanin Exp $
 
 /**
  * @file
@@ -192,6 +192,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
   switch ($op) {
     case 'list':
       $blocks['uid'] = array('info' => t('ApacheSolr Search: Filter by author'));
+      $blocks['currentsearch'] = array('info' => t('ApacheSolr Search: Current search'));
 
       // Get taxonomy vocabulary facets.
       if (module_exists('taxonomy')) {
@@ -271,6 +272,29 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
         }
 
         switch ($delta) {
+          case 'currentsearch':
+            $block_title = t('Current search');
+            $links = array();
+            $fields = $query->get_fields();
+            foreach($fields as $field) {
+              $new_query = clone $query;
+              if ($field['#name']) {
+                $new_query->remove_field($field['#name'], $field['#value']);
+                $path = 'search/'. arg(1) .'/'. $new_query->get_query();
+              } else {
+                $query_without_keywords = preg_replace('/(^| )([a-z0-9][^:]+)($| )/i', ' ', $query->get_query());
+                $path = 'search/'. arg(1) .'/'. $query_without_keywords;
+              }             
+              $unclick_link = theme('apachesolr_unclick_link', $path);
+              if (! $fielddisplay = theme("apachesolr_breadcrumb_". $field['#name'], $field['#value'])) {
+                $fielddisplay = $field['#value'];
+              }
+              $links[] = theme('apachesolr_facet_item', $fielddisplay, $count, $path, $active, $unclick_link, $response->numFound);
+            }
+            $content = theme('apachesolr_currentsearch', $response->response->numFound, $links);
+            return array('subject' => $block_title,
+                         'content' => $content);
+
           case 'uid':
             $filter_by = t('Filter by author');
             return apachesolr_facet_block($response, $query, $delta, $filter_by, 'apachesolr_search_get_username');
@@ -356,6 +380,9 @@ function apachesolr_search_theme() {
     'apachesolr_breadcrumb_tid' => array(
       'arguments' => array('tid' => NULL),
     ),
+    'apachesolr_currentsearch' => array(
+      'arguments' => array('total_found' => NULL, 'links' => NULL),
+    ),
   );
 }
 
@@ -372,4 +399,12 @@ function theme_apachesolr_breadcrumb_uid($uid) {
 function theme_apachesolr_breadcrumb_tid($tid) {
   $term = taxonomy_get_term($tid);
   return $term->name;
+}
+
+
+/**
+ * Return current search block contents
+ */
+function theme_apachesolr_currentsearch($total_found, $links) {
+  return theme_item_list($links, t('Search found @count items', array('@count' => $total_found)));
 }

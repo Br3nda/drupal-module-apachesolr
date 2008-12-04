@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.12 2008/11/27 18:47:04 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.13 2008/12/04 17:04:43 pwolanin Exp $
 
 class Solr_Base_Query {
 
@@ -115,7 +115,7 @@ class Solr_Base_Query {
     $this->rebuild_query();
   }
 
-  function get_fields() {
+  public function get_fields() {
     return $this->_fields;
   }
 
