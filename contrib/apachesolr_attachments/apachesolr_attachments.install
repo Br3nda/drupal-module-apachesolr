@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_attachments.install,v 1.1.2.3 2008/12/02 23:44:00 pwolanin Exp $
+// $Id: apachesolr_attachments.install,v 1.1.2.4 2008/12/04 22:02:42 pwolanin Exp $
 
 /**
  * Implementation of hook_install().
@@ -12,18 +12,13 @@ function apachesolr_attachments_install() {
   db_query("UPDATE {system} SET weight = 10 WHERE name = 'apachesolr_attachments'");
 } 
 
-
+/**
+ * Implementation of hook_uninstall().
+ */
 function apachesolr_attachments_uninstall() {
   variable_del('apachesolr_attachment_pdf_path');
   variable_del('apachesolr_attachment_txt_path');
   variable_del('apachesolr_attachment_doc_path');  
-}
-
-/**
- * Implementation of hook_uninstall().
- * Update to namespace tracking.
- */
-function apachesolr_attachments_uninstall() {
   apachesolr_clear_last_index('apachesolr_attachments');
 }
 
