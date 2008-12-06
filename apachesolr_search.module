@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.39 2008/12/04 17:04:43 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.40 2008/12/06 01:23:50 pwolanin Exp $
 
 /**
  * @file
@@ -192,13 +192,13 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
   switch ($op) {
     case 'list':
       $blocks['uid'] = array('info' => t('ApacheSolr Search: Filter by author'));
-      $blocks['currentsearch'] = array('info' => t('ApacheSolr Search: Current search'));
+      $blocks['currentsearch'] = array('info' => t('ApacheSolr Search: Current search'), 'cache' => BLOCK_CACHE_PER_PAGE);
 
       // Get taxonomy vocabulary facets.
       if (module_exists('taxonomy')) {
         $vocabs = taxonomy_get_vocabularies();
         foreach ($vocabs as $vid => $vocab) {
-          $blocks['imfield_vid' . $vid] = array('info' => t('ApacheSolr Search: Filter by @name', array('@name' => $vocab->name)));
+          $blocks['imfield_vid' . $vid] = array('info' => t('ApacheSolr Search: Filter by @name', array('@name' => $vocab->name)), 'cache' => BLOCK_CACHE_PER_PAGE);
         }
       }
 
@@ -207,7 +207,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
         foreach ($fields as $name => $field) {
           $index_key = apachesolr_index_key($field);
           // TODO: $index_key must be wrong here.
-          $blocks[$index_key] = array('info' => t('ApacheSolr Search: Filter by @field', array('@field' => $field['label'])));
+          $blocks[$index_key] = array('info' => t('ApacheSolr Search: Filter by @field', array('@field' => $field['label'])), 'cache' => BLOCK_CACHE_PER_PAGE);
         }
       }
       return $blocks;

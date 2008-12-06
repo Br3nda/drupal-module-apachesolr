@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.1.4.9 2008/11/25 00:31:42 pwolanin Exp $
+// $Id: apachesolr.install,v 1.1.4.10 2008/12/06 01:23:50 pwolanin Exp $
 
 /**
  * @file
@@ -115,3 +115,16 @@ function apachesolr_update_6000() {
   return $ret;
 }
 
+/**
+ * Fix block caching settings.
+ *
+ * Work-around for core bug: http://drupal.org/node/235673
+ */
+function apachesolr_update_6001() {
+  $ret = array();
+
+  $ret[] = update_sql("UPDATE {blocks} set cache = " . BLOCK_CACHE_PER_PAGE . " WHERE module LIKE 'apachesolr%'");
+
+  return $ret;
+  
+}

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.11 2008/11/28 17:43:07 mikejoconnor Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.12 2008/12/06 01:23:50 pwolanin Exp $
 
 /**
  * Implementation of hook_menu()
@@ -337,7 +337,7 @@ function apachesolr_mlt_list_blocks() {
   $blocks = array();
   while ($block = db_fetch_object($block_results)) {
     $block->data = unserialize($block->data);
-    $blocks[$block->id] = array('info' => t('ApacheSolr recommendations: ') . $block->data['name']);
+    $blocks[$block->id] = array('info' => t('ApacheSolr recommendations: ') . $block->data['name'], 'cache' => BLOCK_CACHE_PER_PAGE);
   }
   return $blocks;
 }

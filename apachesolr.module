@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.68 2008/12/04 17:10:11 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.69 2008/12/06 01:23:50 pwolanin Exp $
 
 /**
  * @file
@@ -594,8 +594,8 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
   switch ($op) {
     case 'list':
       // Sorting block
-      $blocks['sort'] = array('info' => t('ApacheSolr Core: Sorting'));
-      $blocks['type'] = array('info' => t('ApacheSolr Core: Filter by type'));
+      $blocks['sort'] = array('info' => t('ApacheSolr Core: Sorting'), 'cache' => BLOCK_CACHE_PER_PAGE);
+      $blocks['type'] = array('info' => t('ApacheSolr Core: Filter by type'), 'cache' => BLOCK_CACHE_PER_PAGE);
       return $blocks;
 
     case 'view':
