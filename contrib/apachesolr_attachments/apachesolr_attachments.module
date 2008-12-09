@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_attachments.module,v 1.1.2.7 2008/12/04 17:10:11 pwolanin Exp $
+// $Id: apachesolr_attachments.module,v 1.1.2.8 2008/12/09 19:21:28 febbraro Exp $
 
 /**
  * @file
@@ -136,6 +136,8 @@ function apachesolr_attachments_add_documents(&$documents, $nid) {
           $document->bsfield_isfile = TRUE;
           _as_configure_taxonomy($document, $node);
           
+          drupal_alter('apachesolr_attachment', $document, $node, $file);
+           
           $documents[] = $document;
         }
       }
