@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.1.2.2 2008/12/02 23:44:01 pwolanin Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.1.2.3 2008/12/09 01:01:29 pwolanin Exp $
 
 /**
  * Implementation of apachesolr_update_index
@@ -23,9 +23,8 @@ function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node) {
 function _apachesolr_nodeaccess_build_subquery($account) {
   if (!user_access('administer nodes', $account) && count(module_implements('node_grants'))) {
     // Get node access perms
-    $node_access_query = "";
-    $node_access_query = apachesolr_drupal_query();
-    $node_access_query->set_field_operator("OR");
+    $query = apachesolr_drupal_query();
+    $node_access_query = clone $query;
 
     $grants = node_access_grants('view', $account);
     if (empty($grants)) {
@@ -58,7 +57,7 @@ function apachesolr_nodeaccess_apachesolr_modify_query(&$query, &$params) {
   }
 
   if (!empty($subquery)) {
-    $query->add_subquery($subquery, 'AND');
+    $query->add_subquery($subquery, 'OR');
   }
 }
 

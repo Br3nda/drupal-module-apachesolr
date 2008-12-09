@@ -357,7 +357,7 @@
      If no qt is defined, the requestHandler that declares default="true"
      will be used.
   -->
-  <requestHandler name="standard" class="solr.SearchHandler" default="true">
+  <requestHandler name="standard" class="solr.SearchHandler">
     <!-- default values for query parameters -->
      <lst name="defaults">
        <str name="echoParams">explicit</str>
@@ -380,38 +380,41 @@
     <lst name="defaults">
      <str name="defType">dismax</str>
      <str name="echoParams">explicit</str>
-     <float name="tie">0.01</float>
-     <str name="qf">
-        text^0.5 features^1.0 name^1.2 sku^1.5 id^10.0 manu^1.1 cat^1.4
-     </str>
-     <str name="pf">
-        text^0.2 features^1.1 name^1.5 manu^1.4 manu_exact^1.9
-     </str>
-     <str name="bf">
-        ord(popularity)^0.5 recip(rord(price),1,1000,1000)^0.3
-     </str>
-     <str name="fl">
-        id,name,price,score
-     </str>
-     <str name="mm">
-        2&lt;-1 5&lt;-2 6&lt;90%
-     </str>
-     <int name="ps">100</int>
-     <str name="q.alt">*:*</str>
-     <!-- example highlighter config, enable per-query with hl=true -->     
-     <str name="hl.fl">text features name</str>
-     <!-- for this field, we want no fragmenting, just highlighting -->
-     <str name="f.name.hl.fragsize">0</str>
-     <!-- instructs Solr to return the field itself if no query terms are
-          found -->
-     <str name="f.name.hl.alternateField">name</str>
-     <str name="f.text.hl.fragmenter">regex</str> <!-- defined below -->
     </lst>
   </requestHandler>
 
   <!-- Note how you can register the same handler multiple times with
        different names (and different init parameters)
     -->
+  <requestHandler name="drupal" class="solr.SearchHandler" default="true">
+    <lst name="defaults">
+     <str name="defType">dismax</str>
+     <str name="echoParams">all</str>
+     <float name="tie">0.01</float>
+     <str name="qf">
+        body^0.5 title^13.0 name^5.0 taxonomy_names^2.0 tags_h1^21.0 tags_h2_h3^13.0 tags_h4_h5_h6^5.0 tags_inline^2.0 tags_a^2.0
+     </str>
+     <str name="pf">
+        body^2.0 title^8.0
+     </str>
+     <int name="ps">100</int>
+     <str name="mm">
+        2&lt;-35%
+     </str>
+
+   <!-- example highlighter config, enable per-query with hl=true -->     
+     <str name="hl">true</str>
+     <str name="hl.fl">body</str>
+     <int name="hl.snippets">3</int>
+     <str name="hl.mergeContiguous">true</str>
+   <!-- instructs Solr to return the field itself if no query terms are
+        found -->
+     <str name="f.body.hl.alternateField">body</str>
+     <str name="f.body.hl.maxAlternateFieldLength">256</str>
+     <str name="f.body.hl.fragmenter">regex</str> <!-- defined below -->
+    </lst>
+  </requestHandler>
+
   <requestHandler name="partitioned" class="solr.SearchHandler" >
     <lst name="defaults">
      <str name="defType">dismax</str>
@@ -643,8 +646,8 @@
    <!-- Configure the standard formatter -->
    <formatter name="html" class="org.apache.solr.highlight.HtmlFormatter" default="true">
     <lst name="defaults">
-     <str name="hl.simple.pre"><![CDATA[<em>]]></str>
-     <str name="hl.simple.post"><![CDATA[</em>]]></str>
+     <str name="hl.simple.pre"><![CDATA[<strong>]]></str>
+     <str name="hl.simple.post"><![CDATA[</strong>]]></str>
     </lst>
    </formatter>
   </highlighting>
