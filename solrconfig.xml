@@ -389,7 +389,7 @@
   <requestHandler name="drupal" class="solr.SearchHandler" default="true">
     <lst name="defaults">
      <str name="defType">dismax</str>
-     <str name="echoParams">all</str>
+     <str name="echoParams">explicit</str>
      <float name="tie">0.01</float>
      <str name="qf">
         body^0.5 title^13.0 name^5.0 taxonomy_names^2.0 tags_h1^21.0 tags_h2_h3^13.0 tags_h4_h5_h6^5.0 tags_inline^2.0 tags_a^2.0

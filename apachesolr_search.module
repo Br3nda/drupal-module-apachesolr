@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.41 2008/12/09 01:01:29 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.42 2008/12/09 03:43:20 pwolanin Exp $
 
 /**
  * @file
@@ -142,6 +142,21 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
             }
           }
         }
+        // Note: we use 2 since 1 fails on Ubuntu Hardy.
+        $data = $solr->getLuke(2);
+        if (isset($data->index->numDocs)) {
+          $total = $data->index->numDocs;
+        }
+        else {
+          $total = db_result(db_query("SELECT COUNT(nid) FROM {node}"));
+        }
+        $steepness = variable_get('apacehsolr_search_date_steepness', '4');
+        $date_boost = variable_get('apacehsolr_search_date_boost', '2.0');
+        // Default date-biasing function, as suggested (but steeper) at
+        // http://wiki.apache.org/solr/DisMaxRequestHandler
+        // rord() returns 1 for the newset doc, and the number in the index for
+        // the oldest doc.  The function is thus: $total/(rord()*$steepness + $total).  
+        $params['bf'][] = "recip(rord(changed),$steepness,$total,$total)^$date_boost";
 
         /**
          * This hook allows modules to modify the query are params objects.

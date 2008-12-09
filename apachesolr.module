@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.70 2008/12/09 01:01:29 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.71 2008/12/09 03:43:20 pwolanin Exp $
 
 /**
  * @file
@@ -156,7 +156,8 @@ function apachesolr_requirements($phase) {
 function apachesolr_index_page() {
   try {
     $solr = apachesolr_get_solr();
-    $data = $solr->getLuke(1);
+     // Note: we use 2 since 1 fails on Ubuntu Hardy.
+    $data = $solr->getLuke(2);
   } 
   catch (Exception $e) {
     watchdog('apachesolr', $e->getMessage());
