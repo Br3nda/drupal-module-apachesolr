@@ -1,13 +1,11 @@
 <?php
-// $Id: apachesolr_attachments.module,v 1.1.4.3 2008/09/04 23:10:32 janusman Exp $
+// $Id: apachesolr_attachments.module,v 1.1.4.4 2008/12/09 19:19:19 febbraro Exp $
 
 /**
  * @file
  *   Provides a file attachment search implementation for use with the Apache Solr module
  */
 
-define('SOLR_ATTACHMENT_TYPE', 'Attachment');
-define('SOLR_ATTACHMENT_ID_DELIM', '--');
 define('SOLR_ATTACHMENT_NS', 'apachesolr_attachment');
 define('SOLR_ATTACHMENT_WD', 'Solr Attachments');
 
@@ -108,7 +106,6 @@ function apachesolr_attachments_update_index() {
 
     $node = node_load($row->nid);
     if ($node->nid) {
- 
       // Since there is no notification for an attachment being unassociated with a 
       // node (but that action will trigger it to be indexed again), lets remove 
       // all indexed attachments then add all attached (if any)
@@ -129,16 +126,27 @@ function apachesolr_attachments_update_index() {
             if (!empty($text)) {
               $document = new Apache_Solr_Document();
 
-              // Dont use :, that is a solr delimeter
-              $id = $node->nid . SOLR_ATTACHMENT_ID_DELIM . $file->fid;
-              $document->nid = $id;
+              $site = url(NULL, NULL, NULL, TRUE);
+              $hash = md5($site);
+              $document->site = $site;
+              $document->hash = $hash;
+              $document->url = file_create_url($file->filepath);
+              $document->id = $file->fid;
+              $document->nid = $node->nid;
               $document->title = $file->filename; 
               $document->changed = $node->changed;
               $document->uid = $node->uid;
               $document->body = $text;
-              $document->text = "$file->filename $text";
-              $document->type = SOLR_ATTACHMENT_TYPE;
+              $document->text = "{$file->description} {$file->filename} $text";
+              $document->type = $node->type;
+              $document->bsfield_isfile = TRUE;
               _as_configure_taxonomy($document, $node);
+
+              // Let modules add to the document
+              foreach (module_implements('apachesolr_attachments_update_index') as $module) {
+                $function = $module .'_apachesolr_attachments_update_index';
+                $function($document, $node, $file);
+              }
 
               $documents[] = $document;
             }
@@ -151,7 +159,7 @@ function apachesolr_attachments_update_index() {
       ApacheSolrUpdate::success(SOLR_ATTACHMENT_NS, $solr_last_change, $solr_last_id);
     }
   }
-  
+
   _as_index_documents($documents);
 }
 
@@ -164,12 +172,6 @@ function apachesolr_attachments_update_index() {
 function apachesolr_attachments_nodeapi($node, $op) {
 
   switch ($op) {
-    case 'search result':
-      if ($node->type == SOLR_ATTACHMENT_TYPE) {
-        list($nid, $fid) = split(SOLR_ATTACHMENT_ID_DELIM, $node->nid);
-        return array('nid' => $nid, 'fid' => $fid);
-      }
-      break;
     case 'delete':
       _asa_remove_attachments_from_index($node->nid);
       break;
@@ -183,15 +185,13 @@ function apachesolr_attachments_nodeapi($node, $op) {
  * the link and type wont be configured correctly if it is a file attachement, so override 
  * those values here if needed. 
  */
-function apachesolr_attachments_apachesolr_process_results($results) {
-  
+function apachesolr_attachments_apachesolr_process_results($results) {  
   if (is_array($results)) {
     foreach ($results as &$item) {
-      if ($item['node']->type == SOLR_ATTACHMENT_TYPE) {
-        $item['type'] = SOLR_ATTACHMENT_TYPE;
-        $file_url = _asa_get_file_url($item['extra']['fid']);
-        $url = empty($file_url) ? 'node/'.$item['extra']['nid'] : $file_url;
-        $item['link'] = url($url, NULL, NULL, TRUE);
+      if (isset($item['node']->bsfield_isfile) && $item['node']->bsfield_isfile === TRUE) {
+        $nid = $item['node']->nid;
+        $node_title = db_result(db_query("SELECT title FROM {node} WHERE nid = %d", $nid));
+        $item['snippet'] = l($node_title, "node/$nid") . ': ' . $item['snippet'];
       }
     }
   }
@@ -255,6 +255,10 @@ function _asa_get_attachment_text($file) {
   // Wierd control characters make things behave wierd, especially in XML
   $cleaned_text = iconv("utf-8", "utf-8//IGNORE", $text);
   
+  // As per robertDouglass - http://drupal.org/node/335871
+  // Bad control character. Do we need to make a hook for text cleanup?
+  $cleaned_text = preg_replace('/\x0C/', '', $cleaned_text);
+  
   return $cleaned_text;
 }
 
@@ -264,7 +268,7 @@ function _asa_get_attachment_text($file) {
 function _asa_remove_attachments_from_index($nid) {
   try {
     $solr = _get_solr_instance();
-    $solr->deleteByQuery("nid:$nid" . SOLR_ATTACHMENT_ID_DELIM . "*");
+    $solr->deleteByQuery("nid:{$nid} AND bsfield_isfile:true");
     $solr->commit();
   }
   catch (Exception $e) {
