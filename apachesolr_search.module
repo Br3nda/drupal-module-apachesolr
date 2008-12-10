@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.42 2008/12/09 03:43:20 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.43 2008/12/10 16:12:14 pwolanin Exp $
 
 /**
  * @file
@@ -150,14 +150,24 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         else {
           $total = db_result(db_query("SELECT COUNT(nid) FROM {node}"));
         }
-        $steepness = variable_get('apacehsolr_search_date_steepness', '4');
-        $date_boost = variable_get('apacehsolr_search_date_boost', '2.0');
+        $date_settings = variable_get('apacehsolr_search_date_boost', '4:3.0');
+        list($date_steepness, $date_boost) = explode(':', $date_settings);
         // Default date-biasing function, as suggested (but steeper) at
         // http://wiki.apache.org/solr/DisMaxRequestHandler
         // rord() returns 1 for the newset doc, and the number in the index for
-        // the oldest doc.  The function is thus: $total/(rord()*$steepness + $total).  
-        $params['bf'][] = "recip(rord(changed),$steepness,$total,$total)^$date_boost";
-
+        // the oldest doc.  The function is thus: $total/(rord()*$steepness + $total).
+        if ($date_boost) {
+          $params['bf'][] = "recip(rord(changed),$date_steepness,$total,$total)^$date_boost";
+        }
+        $comment_settings = variable_get('apacehsolr_search_comment_boost', '4:3.0');
+        list($comment_steepness, $comment_boost) = explode(':', $comment_settings);
+        // Default date-biasing function, as suggested (but steeper) at
+        // http://wiki.apache.org/solr/DisMaxRequestHandler
+        // rord() returns 1 for the newset doc, and the number in the index for
+        // the oldest doc.  The function is thus: $total/(rord()*$steepness + $total).
+        if ($comment_boost) {
+          $params['bf'][] = "recip(rord(comment_count),$comment_steepness,$total,$total)^$comment_boost";
+        }
         /**
          * This hook allows modules to modify the query are params objects.
          *

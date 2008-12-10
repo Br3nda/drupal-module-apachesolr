@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.1 2008/12/09 01:01:29 pwolanin Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.2 2008/12/10 16:12:14 pwolanin Exp $
 
 /**
  * @file
@@ -10,13 +10,60 @@
  * Menu callback - the settings form.
  */
 function apachesolr_search_settings_page() {
-  return drupal_get_form('apachesolr_search_settings_form');
+  $output = drupal_get_form('apachesolr_search_bias_form');
+  // try to fetch the schema fields
+  try {
+    $solr = apachesolr_get_solr();
+    $fields = $solr->getFields();
+    $output .= drupal_get_form('apachesolr_search_settings_form', $fields);
+  }
+  catch (Exception $e) {
+    watchdog('apachesolr', $e->getMessage());
+    drupal_set_message($e->getMessage(), "warning");
+    $output .= t('Cannot get information about the fields in the index at this time.');
+  }
+
+  return $output;
+}
+
+/**
+ * Form builder function to set date bias.
+ */
+function apachesolr_search_bias_form($fields) {
+
+  $date_settings = variable_get('apacehsolr_search_date_boost', '4:3.0');
+  $comment_settings = variable_get('apacehsolr_search_comment_boost', '4:3.0');
+  
+  $options = array('0:0' => t('Omit'), '1:1.0' => t('Minimal'), '2:2.0' => t('Low'), '4:3.0' => t('Moderate'), '4:8.0' => t('High'), '10:13.0' => t('Higher'));
+    $form['biasing'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Result biasing'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#description' => t('Specify here biasing for different node properties when ordering the search results. Choose <em>Omit</em> to ignore this property.'),
+    );
+  $form['biasing']['apacehsolr_search_date_boost'] = array(
+    '#type' => 'select',
+    '#options' => $options,
+    '#title' => t("More recent change bias"),
+    '#default_value' => $date_settings,
+    '#description' => t('This setting will change the scoring so that more recent results may appear before those with higher keyword matching.'),
+  );
+  $form['biasing']['apacehsolr_search_comment_boost'] = array(
+    '#type' => 'select',
+    '#options' => $options,
+    '#title' => t("More comments bias"),
+    '#default_value' => $comment_settings,
+    '#description' => t('This setting will change the scoring so that nodes with more comments may appear before those with higher keyword matching.'),
+  );
+
+  return system_settings_form($form);
 }
 
 /**
  * Form builder function to set query field weights.
  */
-function apachesolr_search_settings_form() {
+function apachesolr_search_settings_form($fields) {
   $form = array();
 
   // get the current weights
@@ -27,7 +74,7 @@ function apachesolr_search_settings_form() {
   // Note - we have default values set in solrconfig.xml, which will operate when 
   // none are set.
   $defaults = array(
-    'body' => '0.5',
+    'body' => '1.0',
     'title' => '13.0',
     'name' => '5.0',
     'taxonomy_names' => '2.0',
@@ -40,9 +87,6 @@ function apachesolr_search_settings_form() {
   if (!$qf) {
     $qf = $defaults;
   }
-  // try to fetch the schema fields
-  $solr = apachesolr_get_solr();
-  $fields = $solr->getFields();
   if ($fields) {
 
     $form['apachesolr_search_query_fields'] = array(
