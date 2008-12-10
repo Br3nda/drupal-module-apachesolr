@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.12 2008/12/06 01:23:50 pwolanin Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.13 2008/12/10 17:36:05 robertDouglass Exp $
 
 /**
  * Implementation of hook_menu()
@@ -55,12 +55,13 @@ function apachesolr_mlt_block ($op = 'list', $delta = 0, $edit = array()) {
 function apachesolr_mlt_suggestions($block_id) {
   if (arg(0) == 'node' && is_numeric(arg(1))) {
     $nid = check_plain(arg(1));
-    $solr = &apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
+    $solr = &apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr/select'));
 
     try {
       $fields = array('mlt.mintf', 'mlt.mindf', 'mlt.minwl', 'mlt.maxwl', 'mlt.maxqt', 'mlt.boost', 'mlt.qf');
       $block = apachesolr_mlt_load_block($block_id);
       $params = array(
+          'qt' => 'standard',
           'mlt' => 'true',
           'fl' => 'nid,title',
           'mlt.fl' => check_plain(implode(',', $block['mlt_fl'])),
