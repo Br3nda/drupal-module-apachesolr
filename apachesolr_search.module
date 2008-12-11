@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.44 2008/12/11 08:55:00 jacobsingh Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.45 2008/12/11 20:57:47 pwolanin Exp $
 
 /**
  * @file
@@ -83,8 +83,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         $results = array();
 
         $params = array(
-          //'qt' => 'standard',
-          'fl' => 'id,title,comment_count,type,changed,score,url,uid,name',
+          'fl' => 'id,nid,title,comment_count,type,changed,score,url,uid,name',
           'rows' => variable_get('apachesolr_rows', 10),
           'facet' => 'true',
           'facet.mincount' => 1,
@@ -98,12 +97,14 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
          * If you wish to override them, you can via settings.php
          */
 
-        $params['hl']= variable_get('apachesolr_hl_active', null);
-        $params['hl.fragsize']= variable_get('apachesolr_hl_textsnippetlength', null);
-        $params['hl.simple.pre'] = variable_get('apachesolr_hl_pretag', null);
-        $params['hl.simple.post'] = variable_get('apachesolr_hl_posttag', null);
-        $params['hl.snippets'] = variable_get('apachesolr_hl_numsnippets', null);
-        $params['hl.fl'] = variable_get('apachesolr_hl_fieldtohightlight',null);
+        $params['hl'] = variable_get('apachesolr_hl_active', NULL);
+        $params['hl.fragsize']= variable_get('apachesolr_hl_textsnippetlength', NULL);
+        $params['hl.simple.pre'] = variable_get('apachesolr_hl_pretag', NULL);
+        $params['hl.simple.post'] = variable_get('apachesolr_hl_posttag', NULL);
+        $params['hl.snippets'] = variable_get('apachesolr_hl_numsnippets', NULL);
+        $params['hl.fl'] = variable_get('apachesolr_hl_fieldtohightlight', NULL);
+        // We default to getting snippets from the body.
+        $hl_fl = is_null($params['hl.fl']) ? 'body' : $params['hl.fl'];
 
 
         // TODO: This adds all of the possible facets to the query. Not all
@@ -217,17 +218,23 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         if ($total > 0) {
           $extra = array();
           foreach ($response->response->docs as $doc) {
+            $snippet = theme('apachesolr_snippets', $node, $response->highlighting->{$doc->id}->$hl_fl);
+            if (!isset($doc->body)) {
+              $doc->body = $snippet;
+            }
             $extra += node_invoke_nodeapi($doc, 'search result');
             $extra['score'] = $doc->score;
-            $results[] = array('link' => $doc->url,
-                               'type' => node_get_types('name', $doc),
-                               'title' => $doc->title,
-                               'user' => theme('username', $doc),
-                               'date' => $doc->changed,
-                               'node' => $doc,
-                               'extra' => $extra,
-                               'score' => $doc->score,
-                               'snippet' => theme('apachesolr_snippets',$node,$response->highlighting->{$doc->id}->{variable_get('apachesolr_hl_fieldtohightlight','body')}));
+            $results[] = array(
+              'link' => $doc->url,
+              'type' => node_get_types('name', $doc),
+              'title' => $doc->title,
+              'user' => theme('username', $doc),
+              'date' => $doc->changed,
+              'node' => $doc,
+              'extra' => $extra,
+              'score' => $doc->score,
+              'snippet' => $snippet,
+            );
           }
 
           // Hook to allow modifications of the retrieved results
