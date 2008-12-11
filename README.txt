@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.7 2008/11/26 13:35:27 pwolanin Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.8 2008/12/11 07:21:54 jacobsingh Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -47,16 +47,6 @@ Enable blocks for facets at Administer > Site building > Blocks.
 
 Troubleshooting
 --------------
-Problem:
-Your Solr instance is running and you can test it in the Solr 
-admin interface (comes with the Java application). Yet your 
-Drupal ApacheSolr module cannot connect to it to do a search.
-
-Solution:
-To be able to use file_get_contents() in PHP, the "allow_url_fopen" 
-directive must be enabled. In php.ini set the following value:
-allow_url_fopen = On
-
 Problem:
 Links to nodes appear in the search results with a different host name or
 subdomain than is preferred.  e.g. sometimes at http://example.com
