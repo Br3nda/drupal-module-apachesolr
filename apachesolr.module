@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.72 2008/12/11 16:15:06 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.73 2008/12/11 21:23:18 pwolanin Exp $
 
 /**
  * @file
@@ -176,8 +176,10 @@ function apachesolr_index_page() {
     $output .= '<p>' . t('Number of fields in index: @num', array('@num' => count($fields))) . "</p>\n";
     $rows = array();
     foreach ($fields as $name => $field) {
-      $rows[] = array($name, $field->type, isset($field->index) ? $field->distinct : t('Not indexed'));
+      // TODO: try to map the name to something more meaningful.
+      $rows[$name] = array($name, $field->type, isset($field->index) ? $field->distinct : t('Not indexed'));
     }
+    ksort($rows);
     // Display the table of Field names, Index Types, and term counts.
     $output .= theme('table', array(t('Field name'), t('Index type'), t('Distinct terms')), $rows);
   }

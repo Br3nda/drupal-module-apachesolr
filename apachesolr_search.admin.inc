@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.3 2008/12/11 16:15:06 pwolanin Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.4 2008/12/11 21:23:18 pwolanin Exp $
 
 /**
  * @file
@@ -29,7 +29,7 @@ function apachesolr_search_settings_page() {
 /**
  * Form builder function to set date bias.
  */
-function apachesolr_search_bias_form($fields) {
+function apachesolr_search_bias_form($form_state) {
 
   $date_settings = variable_get('apacehsolr_search_date_boost', '4:3.0');
   $comment_settings = variable_get('apacehsolr_search_comment_boost', '4:3.0');
@@ -63,7 +63,7 @@ function apachesolr_search_bias_form($fields) {
 /**
  * Form builder function to set query field weights.
  */
-function apachesolr_search_settings_form($fields) {
+function apachesolr_search_settings_form($form_state, $fields) {
   $form = array();
 
   // get the current weights
