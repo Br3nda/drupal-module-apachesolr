@@ -107,14 +107,14 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     return $response;
   }
 
-  protected function _makeHttpRequest($url, $method = 'GET', $headers = array(), $content = '', $timeout = null) {
-    // set a response timeout
-    if ($timeout != null) {
+  protected function _makeHttpRequest($url, $method = 'GET', $headers = array(), $content = '', $timeout = FALSE) {
+    // Set a response timeout
+    if ($timeout) {
       $default_socket_timeout = ini_set('default_socket_timeout', $timeout);
     }
     $result = drupal_http_request($url, $headers, $method, $content);
-    // rollback a response timeout
-    if ($timeout != null) {
+    // Restore the response timeout
+    if ($timeout) {
       ini_set('default_socket_timeout', $default_socket_timeout);
     }
 
@@ -128,10 +128,10 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     );
 
     if (!isset($responses[$code])) {
-    $code = floor($code / 100) * 100;
+      $code = floor($code / 100) * 100;
     }
 
-    $protocol = "HTTP/1.1";
+    $protocol = "HTTP/1.0";
     $headers[] = "{$protocol} {$result->code} {$responses[$code]}";
 
     foreach ($result->headers as $name => $value) {
