@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.2 2008/12/10 16:12:14 pwolanin Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.3 2008/12/11 16:15:06 pwolanin Exp $
 
 /**
  * @file
@@ -82,7 +82,7 @@ function apachesolr_search_settings_form($fields) {
     'tags_h2_h3' => '13.0',
     'tags_h4_h5_h6' => '5.0',
     'tags_inline' => '2.0',
-    'tags_a' => '2.0',
+    'tags_a' => '0',
   );
   if (!$qf) {
     $qf = $defaults;
