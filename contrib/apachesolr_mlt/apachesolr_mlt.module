@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.13 2008/12/10 17:36:05 robertDouglass Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.14 2008/12/11 19:53:32 pwolanin Exp $
 
 /**
  * Implementation of hook_menu()
@@ -31,7 +31,7 @@ function apachesolr_mlt_menu() {
 /**
  * Implementation of hook_block
  */
-function apachesolr_mlt_block ($op = 'list', $delta = 0, $edit = array()) {
+function apachesolr_mlt_block($op = 'list', $delta = 0, $edit = array()) {
   if ($op == 'list') {
     //return all of the moreLikeThis blocks that the user has created
     $blocks = apachesolr_mlt_list_blocks();
@@ -54,34 +54,33 @@ function apachesolr_mlt_block ($op = 'list', $delta = 0, $edit = array()) {
  */
 function apachesolr_mlt_suggestions($block_id) {
   if (arg(0) == 'node' && is_numeric(arg(1))) {
-    $nid = check_plain(arg(1));
-    $solr = &apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr/select'));
+    $nid = (int)arg(1);
 
     try {
+      $solr = apachesolr_get_solr();
       $fields = array('mlt.mintf', 'mlt.mindf', 'mlt.minwl', 'mlt.maxwl', 'mlt.maxqt', 'mlt.boost', 'mlt.qf');
       $block = apachesolr_mlt_load_block($block_id);
+
       $params = array(
-          'qt' => 'standard',
-          'mlt' => 'true',
-          'fl' => 'nid,title',
-          'mlt.fl' => check_plain(implode(',', $block['mlt_fl'])),
+          'qt' => 'mlt',
+          'fl' => 'nid,title,url',
+          'mlt.fl' => implode(',', $block['mlt_fl']),
       );
-      unset($block['mlt_fl']);
+
       foreach ($fields as $field) {
         $drupal_fieldname = str_replace('.', '_', $field);
         if (!empty($block[$drupal_fieldname])) {
           $params[$field] = check_plain($block[$drupal_fieldname]);
         }
       }
-      $response = $solr->search('nid:' . $nid, 0, 10, $params);
+      $response = $solr->search('id:' . apachesolr_document_id($nid), 0, $block['num_results'], $params);
 
-      $r = (array) end($response->moreLikeThis);
-      //TODO: Figure out why this works
+      $r = (array) end($response->response);
       $links = array();
 
-      if (is_array($r['docs'])) {
-        foreach ($r['docs'] as $doc) {
-          $links[] = l($doc->title, 'node/' . $doc->nid);
+      if (is_array($r)) {
+        foreach ($r as $result) {
+          $links[] = l($result->title, $result->url);
         }
       }
 
@@ -157,14 +156,14 @@ function apachesolr_mlt_block_form(&$form_state, $block_id = NULL) {
   $form['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Block Name'),
-    '#description' => t('Please enter the block name. This will only be seen by the administratior'),
+    '#description' => t('Please enter the block name. This will be displayed to site users'),
     '#default_value' => isset($block['name']) ? check_plain($block['name']) : '',
     '#weight' => '-2',
   );
-  $form['mlt.count'] = array(
+  $form['num_results'] = array(
     '#type' => 'textfield',
     '#title' => t('Maximum number of results'),
-    '#default_value' => isset($block['mlt_count']) ? $block['mlt_count'] : 5,
+    '#default_value' => isset($block['num_results']) ? $block['num_results'] : 5,
     '#weight' => -1,
     );
 
@@ -180,7 +179,7 @@ function apachesolr_mlt_block_form(&$form_state, $block_id = NULL) {
     '#title' => t('Fields for comparison'),
     '#description' => t('The fields to be used in caclulating similarity.'),
     '#options' => apachesolr_mlt_get_fields(),
-    '#default_value' => isset($block['mlt_fl']) ? $block['mlt_fl'] : array('title', 'taxonomy_name'),
+    '#default_value' => isset($block['mlt_fl']) ? $block['mlt_fl'] : array('title', 'taxonomy_names'),
   );
 
   $form['advanced'] = array(
@@ -188,7 +187,7 @@ function apachesolr_mlt_block_form(&$form_state, $block_id = NULL) {
     '#title' => t('Advanced Configuration'),
     '#weight' => '1',
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
+    '#collapsed' => TRUE,
   );
   $form['advanced']['mlt_mintf'] = array(
     '#type' => 'textfield',

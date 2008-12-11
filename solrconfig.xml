@@ -418,6 +418,18 @@
      <!--<str name="f.body.hl.fragmenter">regex</str>--> <!-- defined below -->
      </lst>
   </requestHandler>
+  <!-- The more like this handler offers many advantages over the standard handler,
+    when performing moreLikeThis requests.-->
+  <requestHandler name="mlt" class="solr.MoreLikeThisHandler">
+    <lst name="defaults">
+      <str name="mlt.mintf">1</str>
+      <str name="mlt.mindf">1</str>
+      <str name="mlt.minwl">3</str>
+      <str name="mlt.maxwl">15</str>
+      <str name="mlt.maxqt">30</str>
+      <str name="mlt.match.include">false</str>
+   </lst>
+  </requestHandler>
 
   <requestHandler name="partitioned" class="solr.SearchHandler" >
     <lst name="defaults">
@@ -641,7 +653,7 @@
       <!-- slightly smaller fragsizes work better because of slop -->
       <int name="hl.fragsize">70</int>
       <!-- allow 50% slop on fragment sizes -->
-      <float name="hl.regex.slop">.5</float>
+      <float name="hl.regex.slop">0.5</float>
       <!-- a basic sentence pattern -->
       <str name="hl.regex.pattern">[-\w ,/\n\"']{20,200}</str>
     </lst>
