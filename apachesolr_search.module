@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.43 2008/12/10 16:12:14 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.44 2008/12/11 08:55:00 jacobsingh Exp $
 
 /**
  * @file
@@ -84,12 +84,27 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
 
         $params = array(
           //'qt' => 'standard',
-          'fl' => '*,score',
+          'fl' => 'id,title,comment_count,type,changed,score,url,uid,name',
           'rows' => variable_get('apachesolr_rows', 10),
           'facet' => 'true',
           'facet.mincount' => 1,
           'facet.sort' => 'true'
         );
+
+        /**
+         * Highlighting settings
+         * These settings are set in solrconfig.xml.
+         * See the defaults there.
+         * If you wish to override them, you can via settings.php
+         */
+
+        $params['hl']= variable_get('apachesolr_hl_active', null);
+        $params['hl.fragsize']= variable_get('apachesolr_hl_textsnippetlength', null);
+        $params['hl.simple.pre'] = variable_get('apachesolr_hl_pretag', null);
+        $params['hl.simple.post'] = variable_get('apachesolr_hl_posttag', null);
+        $params['hl.snippets'] = variable_get('apachesolr_hl_numsnippets', null);
+        $params['hl.fl'] = variable_get('apachesolr_hl_fieldtohightlight',null);
+
 
         // TODO: This adds all of the possible facets to the query. Not all
         // of these facets have their blocks enabled, so the list should be
@@ -131,7 +146,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         // This is the object that does the communication with the solr server.
         $solr = apachesolr_get_solr();
 
-        // Note - we have query fields set in solrconfig.xml, which will operate when 
+        // Note - we have query fields set in solrconfig.xml, which will operate when
         // none are set.
         $qf = variable_get('apachesolr_search_query_fields', array());
         $fields = $solr->getFields();
@@ -204,10 +219,6 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
           foreach ($response->response->docs as $doc) {
             $extra += node_invoke_nodeapi($doc, 'search result');
             $extra['score'] = $doc->score;
-            $snippet = search_excerpt($keys, $doc->body);
-            if (trim($snippet) == '...') {
-              $snippet = '';
-            }
             $results[] = array('link' => $doc->url,
                                'type' => node_get_types('name', $doc),
                                'title' => $doc->title,
@@ -216,7 +227,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
                                'node' => $doc,
                                'extra' => $extra,
                                'score' => $doc->score,
-                               'snippet' => $snippet);
+                               'snippet' => theme('apachesolr_snippets',$node,$response->highlighting->{$doc->id}->{variable_get('apachesolr_hl_fieldtohightlight','body')}));
           }
 
           // Hook to allow modifications of the retrieved results
@@ -350,7 +361,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
                   $fielddisplay = $field['#value'];
                 }
                 $links[] = theme('apachesolr_facet_item', $fielddisplay, NULL, $path, $querystring, $active, $unclick_link, $response->numFound);
-              }            
+              }
             }
             $content = theme('apachesolr_currentsearch', $response->response->numFound, $links);
             return array('subject' => t('Current search'),
@@ -446,6 +457,9 @@ function apachesolr_search_theme() {
     'apachesolr_currentsearch' => array(
       'arguments' => array('total_found' => NULL, 'links' => NULL),
     ),
+      'apachesolr_snippets' => array(
+      'arguments' => array('node' => NULL, 'snippets' => NULL),
+    ),
   );
 }
 
@@ -469,4 +483,14 @@ function theme_apachesolr_breadcrumb_tid($tid) {
  */
 function theme_apachesolr_currentsearch($total_found, $links) {
   return theme_item_list($links, t('Search found @count items', array('@count' => $total_found)));
+}
+
+/**
+ * Returns the snipit text for a search entry
+ * @param object $node
+ * @param array $snippits
+ *
+ */
+function theme_apachesolr_snippets(&$node,$snippets) {
+  return implode(' ... ', $snippets);
 }
