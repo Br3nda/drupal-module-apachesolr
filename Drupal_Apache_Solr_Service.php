@@ -131,7 +131,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       $code = floor($code / 100) * 100;
     }
 
-    $protocol = "HTTP/1.0";
+    $protocol = "HTTP/1.1";
     $headers[] = "{$protocol} {$result->code} {$responses[$code]}";
 
     foreach ($result->headers as $name => $value) {
