@@ -76,4 +76,67 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       $this->luke = $cache->data;
     }
   }
+
+  /**
+   * Central method for making a get operation against this Solr Server
+   *
+   * @see Apache_Solr_Service::_sendRawGet()
+   */
+  protected function _sendRawGet($url, $timeout = FALSE) {
+    list ($data, $headers) = $this->_makeHttpRequest($url, 'GET', array(), '', $timeout);
+    $response = new Apache_Solr_Response($data, $headers, $this->_createDocuments, $this->_collapseSingleValueArrays);
+    if ($response->getHttpStatus() != 200) {
+      throw new Exception('"' . $response->getHttpStatus() . '" Status: ' . $response->getHttpStatusMessage(), $response->getHttpStatus());
+    }
+    return $response;
+  }
+
+  /**
+   * Central method for making a post operation against this Solr Server
+   *
+   * @see Apache_Solr_Service::_sendRawGet()
+   */
+  protected function _sendRawPost($url, $rawPost, $timeout = FALSE, $contentType = 'text/xml; charset=UTF-8')
+  {
+    $request_headers = array('Content-Type' => $contentType);
+    list ($data, $headers) = $this->_makeHttpRequest($url, 'POST', $request_headers, $rawPost, $timeout);
+    $response = new Apache_Solr_Response($data, $headers, $this->_createDocuments, $this->_collapseSingleValueArrays);
+    if ($response->getHttpStatus() != 200) {
+      throw new Exception('"' . $response->getHttpStatus() . '" Status: ' . $response->getHttpStatusMessage(), $response->getHttpStatus());
+    }
+    return $response;
+  }
+
+  protected function _makeHttpRequest($url, $method = 'GET', $headers = array(), $content = '', $timeout = null) {
+    // set a response timeout
+    if ($timeout != null) {
+      $default_socket_timeout = ini_set('default_socket_timeout', $timeout);
+    }
+    $result = drupal_http_request($url, $headers, $method, $content);
+    // rollback a response timeout
+    if ($timeout != null) {
+      ini_set('default_socket_timeout', $default_socket_timeout);
+    }
+
+    // This will no longer be needed after http://drupal.org/node/345591 is committed
+    $responses = array(
+      100 => 'Continue', 101 => 'Switching Protocols',
+      200 => 'OK', 201 => 'Created', 202 => 'Accepted', 203 => 'Non-Authoritative Information', 204 => 'No Content', 205 => 'Reset Content', 206 => 'Partial Content',
+      300 => 'Multiple Choices', 301 => 'Moved Permanently', 302 => 'Found', 303 => 'See Other', 304 => 'Not Modified', 305 => 'Use Proxy', 307 => 'Temporary Redirect',
+      400 => 'Bad Request', 401 => 'Unauthorized', 402 => 'Payment Required', 403 => 'Forbidden', 404 => 'Not Found', 405 => 'Method Not Allowed', 406 => 'Not Acceptable', 407 => 'Proxy Authentication Required', 408 => 'Request Time-out', 409 => 'Conflict', 410 => 'Gone', 411 => 'Length Required', 412 => 'Precondition Failed', 413 => 'Request Entity Too Large', 414 => 'Request-URI Too Large', 415 => 'Unsupported Media Type', 416 => 'Requested range not satisfiable', 417 => 'Expectation Failed',
+      500 => 'Internal Server Error', 501 => 'Not Implemented', 502 => 'Bad Gateway', 503 => 'Service Unavailable', 504 => 'Gateway Time-out', 505 => 'HTTP Version not supported'
+    );
+
+    if (!isset($responses[$code])) {
+    $code = floor($code / 100) * 100;
+    }
+
+    $protocol = "HTTP/1.1";
+    $headers[] = "{$protocol} {$result->code} {$responses[$code]}";
+
+    foreach ($result->headers as $name => $value) {
+      $headers[] = "$name: $value";
+    }
+    return array($result->data, $headers);
+  }
 }
