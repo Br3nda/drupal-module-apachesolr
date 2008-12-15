@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.45 2008/12/11 20:57:47 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.46 2008/12/15 19:47:00 pwolanin Exp $
 
 /**
  * @file
@@ -218,7 +218,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         if ($total > 0) {
           $extra = array();
           foreach ($response->response->docs as $doc) {
-            $snippet = theme('apachesolr_snippets', $node, $response->highlighting->{$doc->id}->$hl_fl);
+            $snippet = theme('apachesolr_snippets', $doc, $response->highlighting->{$doc->id}->$hl_fl);
             if (!isset($doc->body)) {
               $doc->body = $snippet;
             }
@@ -465,7 +465,7 @@ function apachesolr_search_theme() {
       'arguments' => array('total_found' => NULL, 'links' => NULL),
     ),
       'apachesolr_snippets' => array(
-      'arguments' => array('node' => NULL, 'snippets' => NULL),
+      'arguments' => array('doc' => NULL, 'snippets' => NULL),
     ),
   );
 }
@@ -494,10 +494,10 @@ function theme_apachesolr_currentsearch($total_found, $links) {
 
 /**
  * Returns the snipit text for a search entry
- * @param object $node
+ * @param object $doc
  * @param array $snippits
  *
  */
-function theme_apachesolr_snippets(&$node,$snippets) {
+function theme_apachesolr_snippets(&$doc, $snippets) {
   return implode(' ... ', $snippets);
 }
