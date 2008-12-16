@@ -392,12 +392,12 @@
      <str name="echoParams">explicit</str>
      <float name="tie">0.01</float>
      <str name="qf">
-        body^1.0 title^13.0 name^5.0 taxonomy_names^2.0 tags_h1^21.0 tags_h2_h3^13.0 tags_h4_h5_h6^5.0 tags_inline^2.0
+        body^1.0 title^5.0 name^3.0 taxonomy_names^2.0 tags_h1^5.0 tags_h2_h3^3.0 tags_h4_h5_h6^2.0 tags_inline^1.0
      </str>
      <str name="pf">
-        body^2.0 title^8.0
+        body^2.0
      </str>
-     <int name="ps">100</int>
+     <int name="ps">15</int>
      <str name="mm">
         2&lt;-35%
      </str>

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.46 2008/12/15 19:47:00 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.47 2008/12/16 05:33:10 pwolanin Exp $
 
 /**
  * @file
@@ -218,7 +218,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         if ($total > 0) {
           $extra = array();
           foreach ($response->response->docs as $doc) {
-            $snippet = theme('apachesolr_snippets', $doc, $response->highlighting->{$doc->id}->$hl_fl);
+            $snippet = isset($response->highlighting->{$doc->id}->$hl_fl) ? theme('apachesolr_snippets', $doc, $response->highlighting->{$doc->id}->$hl_fl) : '';
             if (!isset($doc->body)) {
               $doc->body = $snippet;
             }
@@ -273,7 +273,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
       if (module_exists('taxonomy')) {
         $vocabs = taxonomy_get_vocabularies();
         foreach ($vocabs as $vid => $vocab) {
-          $blocks['imfield_vid' . $vid] = array('info' => t('ApacheSolr Search: Filter by @name', array('@name' => $vocab->name)), 'cache' => BLOCK_CACHE_PER_PAGE);
+          $blocks['imfield_vid_' . $vid] = array('info' => t('ApacheSolr Search: Filter by @name', array('@name' => $vocab->name)), 'cache' => BLOCK_CACHE_PER_PAGE);
         }
       }
 
@@ -300,7 +300,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
         $facet_display_limits = variable_get('apachesolr_facet_query_limits', array());
 
         // Handle taxonomy vocabulary facets
-        if ((strpos($delta, 'imfield_vid') === 0) && module_exists('taxonomy')) {
+        if ((strpos($delta, 'imfield_vid_') === 0) && module_exists('taxonomy')) {
 
           if (is_object($response->facet_counts->facet_fields->$delta)) {
             $contains_active = FALSE;
@@ -333,7 +333,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
               }
             }
           }
-          $vid = substr($delta, 11);
+          $vid = substr($delta, 12);
           $vocab = taxonomy_vocabulary_load($vid);
           if (is_numeric($vid) && is_array($terms) && isset($terms[$vid]) && is_array($terms[$vid])) {
             ksort($terms[$vid]);

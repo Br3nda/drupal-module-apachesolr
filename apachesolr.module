@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.73 2008/12/11 21:23:18 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.74 2008/12/16 05:33:10 pwolanin Exp $
 
 /**
  * @file
@@ -428,14 +428,14 @@ function apachesolr_add_node_document(&$documents, $nid) {
 function apachesolr_strip_ctl_chars($text) {
   // See:  http://w3.org/International/questions/qa-forms-utf-8.html 
   // Printable utf-8 does not include any of these chars below x7F
-  return preg_replace('@[\x00-\x08\x0B\x0C\x0E-\x1F]@', '', $text);
+  return preg_replace('@[\x00-\x08\x0B\x0C\x0E-\x1F]@', ' ', $text);
 }
 
 /**
  * Strip html tags and also control characters that cause Jetty/Solr to fail.
  */
 function apachesolr_clean_text($text) {
-  return strip_tags(preg_replace('@[\x00-\x08\x0B\x0C\x0E-\x1F]@', '', $text));
+  return strip_tags(preg_replace('@[\x00-\x08\x0B\x0C\x0E-\x1F]@', ' ', $text));
 }
 
 /**
@@ -473,6 +473,7 @@ function apachesolr_node_to_document($nid) {
     $document->title = $node->title;
     $document->body = strip_tags($text);
     $document->type  = $node->type;
+    $document->type_name = node_get_types('name', $node);
     $document->changed = $node->changed;
     $document->comment_count = $node->comment_count;
     $document->name = apachesolr_strip_ctl_chars($node->name);
@@ -543,18 +544,30 @@ function apachesolr_add_taxonomy_to_document(&$document, $node) {
       $ancestors = taxonomy_get_parents_all($term->tid);
       foreach ($ancestors as $ancestor) {
         $document->setMultiValue('tid', $ancestor->tid);
-        $document->setMultiValue('imfield_vid'. $ancestor->vid, $ancestor->tid);
+        $document->setMultiValue('imfield_vid_'. $ancestor->vid, $ancestor->tid);
         $name = apachesolr_clean_text($ancestor->name);
-        $document->{'tsfield_vid'. $ancestor->vid .'_names'} .= $name;
-        // We index each name as a string for faceting.
-        // TODO - consider using the vocab name rather than vid in field
-        // construction for cross-site searching.
-        $document->setMultiValue('smfield_vid'. $ancestor->vid .'_name', $name);
         $document->setMultiValue('vid', $ancestor->vid);
-        $document->taxonomy_names .= ' '. $name;
-       }
+        $document->{'tsfield_vid_'. $ancestor->vid .'_names'} .= ' '. $name;
+        // We index each name as a string for cross-site faceting
+        // using the vocab name rather than vid in field construction .
+        $document->setMultiValue('smfield_vid_'. apachesolr_vocab_name($ancestor->vid), $name);
+      }
     }
   }
+}
+
+/**
+ * Helper function - return a safe, lowercase vocabulary name.
+ */
+function apachesolr_vocab_name($vid) {
+  static $names = array();
+  
+  if (!isset($names[$vid])) {
+    $vocab_name = db_result(db_query('SELECT v.name FROM {vocabulary} v WHERE v.vid = %d', $vid));
+    //  \p{xx} is a unicode character with the xx property:  L	Letter..
+    $names[$vid] = drupal_strtolower(preg_replace('/[^\p{L}0-9]/u', '_', apachesolr_clean_text($vocab_name)));
+  }
+  return $names[$vid];
 }
 
 /**
@@ -790,32 +803,6 @@ function apachesolr_facet_query_limit_validate($form, &$form_state) {
   if ($value < 1 && $value != -1) {
     form_set_error('apachesolr_facet_limit', t('Please enter a number greater than 1 or -1 for the facet query limit.'));
     return FALSE;
-  }
-}
-
-/**
- * Implementation of hook_form_[form_id]_alter().
- */
-function apachesolr_form_search_form_alter(&$form, $form_state) {
-  // We want a way to know whether the action of the form is
-  // supposed to be handled by an ApacheSolr module or not. Instead of
-  // manually excluding just 'node' and 'user' here, we look for 'solr' in
-  // the module name.  This is still potentially error-prone, however.
-  // This function also creates a Solr instance wasting resources.
-  // We don't need to do anything on form submission (POST is populted),
-  // only when building the default values from the URL.
-  if (empty($form_state['post']) && stripos($form['module']['#value'], 'solr')) {
-    // TODO: Set up our validation function for advanced search
-    //$form['#validate'][] = 'apachesolr_search_validate';
-    // If no keys, there's nothing to do.
-    if (empty($form['basic']['inline']['keys']['#default_value'])) {
-      return;
-    }
-
-    // The $query is the true source for search key information
-    if ($query = apachesolr_drupal_query()) {
-      $form['basic']['inline']['keys']['#default_value'] = $query->get_query_basic();
-    }
   }
 }
 
