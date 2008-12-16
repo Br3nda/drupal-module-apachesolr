@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.75 2008/12/16 09:25:09 jacobsingh Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.76 2008/12/16 13:53:55 pwolanin Exp $
 
 /**
  * @file
@@ -268,8 +268,10 @@ function apachesolr_document_id($id, $type = 'node') {
  */
 function apachesolr_user($op, &$edit, &$account) {
   switch ($op) {
-    case 'after_update':
-      db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {node} WHERE uid = %d)", time(), $account->uid);
+    case 'update':
+      if (isset($edit['name']) && $account->name != $edit['name']) {
+        db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {node} WHERE uid = %d)", time(), $account->uid);
+      }
       break;
   }
 }
