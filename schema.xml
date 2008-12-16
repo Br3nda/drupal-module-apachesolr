@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- $Id: schema.xml,v 1.1.2.1.2.15 2008/12/16 05:33:10 pwolanin Exp $ -->
+<!-- $Id: schema.xml,v 1.1.2.1.2.16 2008/12/16 09:25:09 jacobsingh Exp $ -->
 
 <!--
  This is the Solr schema file. This file should be named "schema.xml" and
@@ -221,7 +221,7 @@
        fields or fields that need an index-time boost need norms.
    -->
 
-<!-- The document id is derived from a site-spcific key (hash) and the node ID like: 
+<!-- The document id is derived from a site-spcific key (hash) and the node ID like:
      $document->id = $hash . '/node/' . $node->nid; -->
 
    <field name="id" type="string" indexed="true" stored="true" required="true" />
@@ -263,7 +263,7 @@
    <!-- Inline tags are typically u, b, i, em, strong -->
    <field name="tags_inline" type="text" indexed="true" stored="false" omitNorms="true"/>
 
-   <!-- Here, default is used to create a "timestamp" field indicating 
+   <!-- Here, default is used to create a "timestamp" field indicating
         when each document was indexed.-->
    <field name="timestamp" type="date" indexed="true" stored="true" default="NOW" multiValued="false"/>
 

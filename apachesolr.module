@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.74 2008/12/16 05:33:10 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.75 2008/12/16 09:25:09 jacobsingh Exp $
 
 /**
  * @file
@@ -158,7 +158,7 @@ function apachesolr_index_page() {
     $solr = apachesolr_get_solr();
      // Note: we use 2 since 1 fails on Ubuntu Hardy.
     $data = $solr->getLuke(2);
-  } 
+  }
   catch (Exception $e) {
     watchdog('apachesolr', $e->getMessage());
     drupal_set_message($e->getMessage(), "warning");
@@ -426,7 +426,7 @@ function apachesolr_add_node_document(&$documents, $nid) {
  * Strip control characters that cause Jetty/Solr to fail.
  */
 function apachesolr_strip_ctl_chars($text) {
-  // See:  http://w3.org/International/questions/qa-forms-utf-8.html 
+  // See:  http://w3.org/International/questions/qa-forms-utf-8.html
   // Printable utf-8 does not include any of these chars below x7F
   return preg_replace('@[\x00-\x08\x0B\x0C\x0E-\x1F]@', ' ', $text);
 }
@@ -561,10 +561,10 @@ function apachesolr_add_taxonomy_to_document(&$document, $node) {
  */
 function apachesolr_vocab_name($vid) {
   static $names = array();
-  
+
   if (!isset($names[$vid])) {
     $vocab_name = db_result(db_query('SELECT v.name FROM {vocabulary} v WHERE v.vid = %d', $vid));
-    //  \p{xx} is a unicode character with the xx property:  L	Letter..
+    //  \p{xx} is a unicode character with the xx property:  L	Letter.
     $names[$vid] = drupal_strtolower(preg_replace('/[^\p{L}0-9]/u', '_', apachesolr_clean_text($vocab_name)));
   }
   return $names[$vid];
@@ -919,7 +919,7 @@ function apachesolr_drupal_query($keys = '', $filters = '', $solrsort = '', $res
     $keys = search_get_keys();
   }
   if (empty($filters) && !empty($_GET['filters'])) {
-    $filters = check_plain($_GET['filters']); 
+    $filters = check_plain($_GET['filters']);
   }
   if (empty($solrsort) && !empty($_GET['solrsort'])) {
     $solrsort = check_plain($_GET['solrsort']);
