@@ -29,8 +29,9 @@
   <!-- Used to specify an alternate directory to hold all index data
        other than the default ./data under the Solr home.
        If replication is in use, this should match the replication configuration. -->
+<!--
   <dataDir>${solr.data.dir:./solr/data}</dataDir>
-
+-->
 
   <indexDefaults>
    <!-- Values here affect all index writers and act as a default unless overridden. -->
@@ -416,8 +417,20 @@
      snippets and don't feel like deubgging anymore.  Without the regex is
      faster too -->
      <!--<str name="f.body.hl.fragmenter">regex</str>--> <!-- defined below -->
-     </lst>
+
+    <!-- By default, don't spell check -->
+      <str name="spellcheck">false</str>
+    <!-- Defaults for the spell checker when used -->
+      <str name="spellcheck.onlyMorePopular">false</str>
+      <str name="spellcheck.extendedResults">false</str>
+      <!--  The number of suggestions to return -->
+      <str name="spellcheck.count">1</str>
+    </lst>
+    <arr name="last-components">
+      <str>spellcheck</str>
+    </arr>
   </requestHandler>
+
   <!-- The more like this handler offers many advantages over the standard handler,
     when performing moreLikeThis requests.-->
   <requestHandler name="mlt" class="solr.MoreLikeThisHandler">
@@ -430,58 +443,6 @@
       <str name="mlt.match.include">false</str>
    </lst>
   </requestHandler>
-
-  <requestHandler name="partitioned" class="solr.SearchHandler" >
-    <lst name="defaults">
-     <str name="defType">dismax</str>
-     <str name="echoParams">explicit</str>
-     <str name="qf">text^0.5 features^1.0 name^1.2 sku^1.5 id^10.0</str>
-     <str name="mm">2&lt;-1 5&lt;-2 6&lt;90%</str>
-     <!-- This is an example of using Date Math to specify a constantly
-          moving date range in a config...
-       -->
-     <str name="bq">incubationdate_dt:[* TO NOW/DAY-1MONTH]^2.2</str>
-    </lst>
-    <!-- In addition to defaults, "appends" params can be specified
-         to identify values which should be appended to the list of
-         multi-val params from the query (or the existing "defaults").
-
-         In this example, the param "fq=instock:true" will be appended to
-         any query time fq params the user may specify, as a mechanism for
-         partitioning the index, independent of any user selected filtering
-         that may also be desired (perhaps as a result of faceted searching).
-
-         NOTE: there is *absolutely* nothing a client can do to prevent these
-         "appends" values from being used, so don't use this mechanism
-         unless you are sure you always want it.
-      -->
-    <lst name="appends">
-      <str name="fq">inStock:true</str>
-    </lst>
-    <!-- "invariants" are a way of letting the Solr maintainer lock down
-         the options available to Solr clients.  Any params values
-         specified here are used regardless of what values may be specified
-         in either the query, the "defaults", or the "appends" params.
-
-         In this example, the facet.field and facet.query params are fixed,
-         limiting the facets clients can use.  Faceting is not turned on by
-         default - but if the client does specify facet=true in the request,
-         these are the only facets they will be able to see counts for;
-         regardless of what other facet.field or facet.query params they
-         may specify.
-
-         NOTE: there is *absolutely* nothing a client can do to prevent these
-         "invariants" values from being used, so don't use this mechanism
-         unless you are sure you always want it.
-      -->
-    <lst name="invariants">
-      <str name="facet.field">cat</str>
-      <str name="facet.field">manu_exact</str>
-      <str name="facet.query">price:[* TO 500]</str>
-      <str name="facet.query">price:[500 TO *]</str>
-    </lst>
-  </requestHandler>
-
 
   <!--
    Search components are registered to SolrCore and used by Search Handlers
@@ -525,7 +486,7 @@
       <str name="name">default</str>
       <str name="field">spell</str>
       <str name="spellcheckIndexDir">./spellchecker1</str>
-
+      <str name="buildOnCommit">true</str>
     </lst>
     <lst name="spellchecker">
       <str name="name">jarowinkler</str>
@@ -533,32 +494,10 @@
       <!-- Use a different Distance Measure -->
       <str name="distanceMeasure">org.apache.lucene.search.spell.JaroWinklerDistance</str>
       <str name="spellcheckIndexDir">./spellchecker2</str>
-
+      <str name="buildOnCommit">true</str>
     </lst>
 
-    <lst name="spellchecker">
-      <str name="classname">solr.FileBasedSpellChecker</str>
-      <str name="name">file</str>
-      <str name="sourceLocation">spellings.txt</str>
-      <str name="characterEncoding">UTF-8</str>
-      <str name="spellcheckIndexDir">./spellcheckerFile</str>
-    </lst>
   </searchComponent>
-
-  <!-- a request handler utilizing the spellcheck component -->
-  <requestHandler name="/spellCheckCompRH" class="solr.SearchHandler">
-    <lst name="defaults">
-      <!-- omp = Only More Popular -->
-      <str name="spellcheck.onlyMorePopular">false</str>
-      <!-- exr = Extended Results -->
-      <str name="spellcheck.extendedResults">false</str>
-      <!--  The number of suggestions to return -->
-      <str name="spellcheck.count">1</str>
-    </lst>
-    <arr name="last-components">
-      <str>spellcheck</str>
-    </arr>
-  </requestHandler>
 
   <!-- a search component that enables you to configure the top results for
        a given query regardless of the normal lucene scoring.-->

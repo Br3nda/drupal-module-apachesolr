@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.5 2008/12/16 05:33:10 pwolanin Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.6 2008/12/16 15:52:41 pwolanin Exp $
 
 /**
  * @file
@@ -27,7 +27,7 @@ function apachesolr_search_settings_page() {
 }
 
 /**
- * Form builder function to set date bias.
+ * Form builder function to set date, comment, etc biases.
  */
 function apachesolr_search_bias_form($form_state) {
 
