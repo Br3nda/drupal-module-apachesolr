@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.15 2008/12/16 16:20:02 pwolanin Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.16 2008/12/17 17:18:01 pwolanin Exp $
 
 /**
  * Implementation of hook_menu()
@@ -32,14 +32,26 @@ function apachesolr_mlt_menu() {
  * Implementation of hook_block
  */
 function apachesolr_mlt_block($op = 'list', $delta = 0, $edit = array()) {
+  static $access;
+
   if ($op == 'list') {
     //return all of the moreLikeThis blocks that the user has created
     $blocks = apachesolr_mlt_list_blocks();
     return $blocks;
   }
-  else if ($op == 'view' && !empty($delta)) {
+  else if ($op == 'view' && !empty($delta) && (arg(0) == 'node')) {
     //return the content of the block, based on the delta
-    return apachesolr_mlt_suggestions($delta);
+    $nid = arg(1);
+    if (is_numeric($nid) && (!arg(2) || arg(2) == 'view')) {
+      // Determine whether the user can view the current node.
+      if (!isset($access)) {
+        $node = node_load($nid);
+        $access = $node && node_access('view', $node);
+      }
+      if ($access) {
+        return apachesolr_mlt_suggestions($delta, $nid);
+      }
+    }
   }
 }
 
@@ -52,48 +64,45 @@ function apachesolr_mlt_block($op = 'list', $delta = 0, $edit = array()) {
  *
  * @return array An array to be returned to hook_block
  */
-function apachesolr_mlt_suggestions($block_id) {
-  if (arg(0) == 'node' && is_numeric(arg(1))) {
-    $nid = (int)arg(1);
+function apachesolr_mlt_suggestions($block_id, $nid) {
 
-    try {
-      $solr = apachesolr_get_solr();
-      $fields = array('mlt.mintf', 'mlt.mindf', 'mlt.minwl', 'mlt.maxwl', 'mlt.maxqt', 'mlt.boost', 'mlt.qf');
-      $block = apachesolr_mlt_load_block($block_id);
+  try {
+    $solr = apachesolr_get_solr();
+    $fields = array('mlt.mintf', 'mlt.mindf', 'mlt.minwl', 'mlt.maxwl', 'mlt.maxqt', 'mlt.boost', 'mlt.qf');
+    $block = apachesolr_mlt_load_block($block_id);
 
-      $params = array(
-          'qt' => 'mlt',
-          'fl' => 'nid,title,url',
-          'mlt.fl' => implode(',', $block['mlt_fl']),
-      );
+    $params = array(
+        'qt' => 'mlt',
+        'fl' => 'nid,title,url',
+        'mlt.fl' => implode(',', $block['mlt_fl']),
+    );
 
-      foreach ($fields as $field) {
-        $drupal_fieldname = str_replace('.', '_', $field);
-        if (!empty($block[$drupal_fieldname])) {
-          $params[$field] = check_plain($block[$drupal_fieldname]);
-        }
+    foreach ($fields as $field) {
+      $drupal_fieldname = str_replace('.', '_', $field);
+      if (!empty($block[$drupal_fieldname])) {
+        $params[$field] = check_plain($block[$drupal_fieldname]);
       }
-      $response = $solr->search('id:' . apachesolr_document_id($nid), 0, $block['num_results'], $params);
-      $suggestions = array();
-      if ($response->response) {
-        $r = (array) end($response->response);
-        $links = array();
-  
-        if (is_array($r)) {
-          foreach ($r as $result) {
-            $links[] = l($result->title, $result->url);
-          }
-        }
-  
-        if (count($links) > 0) {
-          $suggestions['subject'] = $block['name'];
-          $suggestions['content'] = theme('apachesolr_mlt_recommendation_block', $links);
-        }
-      }
-      return $suggestions;
-    } catch ( Exception $e ) {
-        watchdog ( 'Apache Solr', $e->getMessage (), WATCHDOG_ERROR );
     }
+    $response = $solr->search('id:' . apachesolr_document_id($nid), 0, $block['num_results'], $params);
+    $suggestions = array();
+    if ($response->response) {
+      $r = (array) end($response->response);
+      $links = array();
+
+      if (is_array($r)) {
+        foreach ($r as $result) {
+          $links[] = l($result->title, $result->url);
+        }
+      }
+
+      if (count($links) > 0) {
+        $suggestions['subject'] = $block['name'];
+        $suggestions['content'] = theme('apachesolr_mlt_recommendation_block', $links);
+      }
+    }
+    return $suggestions;
+  } catch ( Exception $e ) {
+      watchdog ( 'Apache Solr', $e->getMessage (), WATCHDOG_ERROR );
   }
 }
 
