@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.48 2008/12/16 15:52:41 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.49 2008/12/17 18:35:04 pwolanin Exp $
 
 /**
  * @file
@@ -75,7 +75,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
 
       try {
         // This is the object that knows about the query coming from the user.
-        $query = apachesolr_drupal_query($keys);
+        $query = apachesolr_current_query($keys);
         if (is_null($query)) {
           throw new Exception(t('Could not construct a Solr query in function apachesolr_search_search()'));
         }
@@ -211,7 +211,10 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
           return array();
         }
         // An arry of fq parameters.
-        $params['fq'] = $query->get_fq();
+        $fq = $query->get_fq();
+        if ($fq) {
+          $params['fq'] = $fq;
+        }
 
         $response = $solr->search($query->get_query_basic(), $params['start'], $params['rows'], $params);
         // The response is cached so that it is accessible to the blocks and anything
@@ -299,7 +302,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
         if (empty($response)) {
           return;
         }
-        $query = apachesolr_drupal_query();
+        $query = apachesolr_current_query();
 
         // Get information needed by the rest of the blocks about limits.
         $facet_display_limits = variable_get('apachesolr_facet_query_limits', array());
@@ -459,7 +462,7 @@ function apachesolr_search_form_search_form_alter(&$form, $form_state) {
 
     if ($suggestions) {
       //Get the original query and replace words.
-      $query = apachesolr_drupal_query();
+      $query = apachesolr_current_query();
 
       foreach($suggestions as $word => $value) {
         $replacements[$word] = $value->suggestion[0];

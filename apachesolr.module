@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.76 2008/12/16 13:53:55 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.77 2008/12/17 18:35:04 pwolanin Exp $
 
 /**
  * @file
@@ -676,7 +676,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
           return;
         }
 
-        $query = apachesolr_drupal_query();
+        $query = apachesolr_current_query();
 
         // Get information needed by the rest of the blocks about limits.
         $facet_display_limits = variable_get('apachesolr_facet_query_limits', array());
@@ -906,15 +906,34 @@ function apachesolr_static_response_cache($response = NULL) {
 /**
  * Factory function for query objects.
  *
- * The query object is built from the keys. If you want to build queries
- * programmatically you can pass in different keys. If you don't pass in
- * any keys, search_get_keys() is used instead.
+ * The query object is built from the keys, filters, and sort.
  */
-function apachesolr_drupal_query($keys = '', $filters = '', $solrsort = '', $reset = FALSE) {
-  static $_queries;
+function apachesolr_drupal_query($keys = '', $filters = '', $solrsort = '') {
+
+  list($module, $class) = variable_get('apachesolr_query_class', array('apachesolr', 'Solr_Base_Query'));
+  include_once drupal_get_path('module', $module) .'/'. $class .'.php';
+
+  try {
+    $query = new $class(apachesolr_get_solr(), $keys, $filters, $solrsort);
+  }
+  catch (Exception $e) {
+    watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
+    $query = NULL;
+  }
+  return $query;
+}
+
+/**
+ * Factory function for query objects representing the current search URL.
+ *
+ * The query object is built from the keys in the URL, but these may be
+ * overridden by passing in parameters.
+ */
+function apachesolr_current_query($keys = '', $filters = '', $solrsort = '', $reset = FALSE) {
+  static $_queries = array();
 
   if ($reset) {
-    unset($_queries);
+    $_queries = array();
   }
 
   if (empty($keys)) {
@@ -928,19 +947,10 @@ function apachesolr_drupal_query($keys = '', $filters = '', $solrsort = '', $res
   }
   $index = $keys . '&filters=' . $filters;
 
-  if (empty($_queries) || empty($_queries[$index])) {
-    list($module, $class) = variable_get('apachesolr_query_class', array('apachesolr', 'Solr_Base_Query'));
-    include_once drupal_get_path('module', $module) .'/'. $class .'.php';
-
-    try {
-      $_queries[$index] = new $class(apachesolr_get_solr(), $keys, $filters, $solrsort);
-    }
-    catch (Exception $e) {
-      watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
-      return;
-    }
+  if (empty($_queries) || !array_key_exists($index, $_queries)) {
+    $_queries[$index] = apachesolr_drupal_query($keys, $filters, $solrsort);
   }
-  return $_queries[$index];
+  return is_object($_queries[$index]) ? clone $_queries[$index] : $_queries[$index];
 }
 
 /**

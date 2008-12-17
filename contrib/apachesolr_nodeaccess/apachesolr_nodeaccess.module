@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.1.2.3 2008/12/09 01:01:29 pwolanin Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.1.2.4 2008/12/17 18:35:04 pwolanin Exp $
 
 /**
  * Implementation of apachesolr_update_index
@@ -22,17 +22,14 @@ function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node) {
  */
 function _apachesolr_nodeaccess_build_subquery($account) {
   if (!user_access('administer nodes', $account) && count(module_implements('node_grants'))) {
-    // Get node access perms
-    $query = apachesolr_drupal_query();
-    $node_access_query = clone $query;
-
+    // Get node access perms 
     $grants = node_access_grants('view', $account);
     if (empty($grants)) {
       // If they can't see any content, we might as well not bother searching.
       // Catch the exception to null out the query.
       throw new Exception("This user cannot access any content!");
     }
-
+    $node_access_query = apachesolr_drupal_query();
     foreach ($grants as $realm => $gids) {
       foreach ($gids as $gid) {
         $node_access_query->add_field('nodeaccess_' . $realm, $gid);

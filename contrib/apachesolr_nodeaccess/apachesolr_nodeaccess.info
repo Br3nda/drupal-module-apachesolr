@@ -1,7 +1,6 @@
-; $Id: apachesolr_nodeaccess.info,v 1.1.2.1 2008/11/22 10:28:17 robertDouglass Exp $
+; $Id: apachesolr_nodeaccess.info,v 1.1.2.2 2008/12/04 22:02:43 pwolanin Exp $
 name = ApacheSolr Node Access
 description = Integrates Node Access and ApacheSolr
 dependencies[] = apachesolr
 package = ApacheSolr
-;don't use until it's fixed for new APIs 
-;core = "6.x"
+core = "6.x"

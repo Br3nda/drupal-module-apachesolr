@@ -1,6 +1,6 @@
 <?php
 
-// $Id: apachesolr_lang.module,v 1.1.2.1 2008/11/04 14:37:49 robertDouglass Exp $
+// $Id: apachesolr_lang.module,v 1.1.2.2 2008/12/17 18:35:04 pwolanin Exp $
 
 /**
  * Implementation of hook_block().
@@ -15,11 +15,11 @@ function apachesolr_lang_block($op = 'list', $delta = 0, $edit = array()) {
     case 'view':
       if (apachesolr_has_searched()) {
         // Get the query and response. Without these no blocks make sense.
-        $response =& apachesolr_static_response_cache();
+        $response = apachesolr_static_response_cache();
         if (empty($response)) {
           return;
         }
-        $query =& apachesolr_drupal_query();
+        $query = apachesolr_current_query();
         
         switch ($delta) {
           case 'language':
