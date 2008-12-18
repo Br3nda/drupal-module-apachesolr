@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.78 2008/12/18 10:41:16 jacobsingh Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.79 2008/12/18 14:11:54 pwolanin Exp $
 
 /**
  * @file
@@ -575,15 +575,19 @@ function apachesolr_add_taxonomy_to_document(&$document, $node) {
 }
 
 /**
- * Helper function - return a safe, lowercase vocabulary name.
+ * Helper function - return a safe (PHP identifier) vocabulary name.
  */
 function apachesolr_vocab_name($vid) {
   static $names = array();
 
   if (!isset($names[$vid])) {
     $vocab_name = db_result(db_query('SELECT v.name FROM {vocabulary} v WHERE v.vid = %d', $vid));
-    //  \p{xx} is a unicode character with the xx property:  L	Letter.
-    $names[$vid] = drupal_strtolower(preg_replace('/[^\p{L}0-9]/u', '_', apachesolr_clean_text($vocab_name)));
+    $names[$vid] = preg_replace('/[^a-zA-Z0-9_\x7f-\xff]/', '_', $vocab_name);
+    // Fallback for names ending up all as '_'.
+    $check = rtrim($names[$vid], '_');
+    if (!$check) {
+      $names[$vid] = '_' . $vid . '_';
+    }
   }
   return $names[$vid];
 }
