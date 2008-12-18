@@ -127,12 +127,12 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       500 => 'Internal Server Error', 501 => 'Not Implemented', 502 => 'Bad Gateway', 503 => 'Service Unavailable', 504 => 'Gateway Time-out', 505 => 'HTTP Version not supported'
     );
 
-    if (!isset($responses[$code])) {
+    if (!isset($responses[$result->code])) {
       $code = floor($code / 100) * 100;
     }
 
     $protocol = "HTTP/1.1";
-    $headers[] = "{$protocol} {$result->code} {$responses[$code]}";
+    $headers[] = "{$protocol} {$result->code} {$responses[$result->code]}";
 
     foreach ($result->headers as $name => $value) {
       $headers[] = "$name: $value";
