@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_language.block.inc,v 1.1.2.1 2008/12/18 09:29:43 jacobsingh Exp $
+// $Id: apachesolr_language.block.inc,v 1.1.2.2 2008/12/18 10:19:07 jacobsingh Exp $
 
 function apachesolr_language_block_view() {
   $title = t('ApacheSolr: Filter by language');
@@ -36,9 +36,8 @@ function apachesolr_language_block_view() {
         }
         else {
           $languages[] = theme('apachesolr_facet_item', locale_language_name($language), $count, $path, $querystring, $active, $unclick_link);
-        }`
+        }
       }
-
       if (count($languages) > 0) {
         $facet_display_limits = variable_get('apachesolr_facet_query_limits', array());
         $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
