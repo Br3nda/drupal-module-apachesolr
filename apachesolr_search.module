@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.49 2008/12/17 18:35:04 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.50 2008/12/18 09:41:49 jacobsingh Exp $
 
 /**
  * @file
@@ -272,11 +272,12 @@ function apachesolr_search_apachesolr_facets() {
  * Implementation of hook_block().
  */
 function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
+
   switch ($op) {
     case 'list':
       $blocks['uid'] = array('info' => t('ApacheSolr Search: Filter by author'));
       $blocks['currentsearch'] = array('info' => t('ApacheSolr Search: Current search'), 'cache' => BLOCK_CACHE_PER_PAGE);
-
+      $blocks['language'] = array('info' => t('ApacheSolr Search: Filter by language'));
       // Get taxonomy vocabulary facets.
       if (module_exists('taxonomy')) {
         $vocabs = taxonomy_get_vocabularies();
@@ -293,9 +294,20 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
           $blocks[$index_key] = array('info' => t('ApacheSolr Search: Filter by @field', array('@field' => $field['label'])), 'cache' => BLOCK_CACHE_PER_PAGE);
         }
       }
+
       return $blocks;
 
     case 'view':
+      $file_name = "blocks/apachesolr_{$delta}.block.inc";
+      if (is_file(dirname(__FILE__) . '/' . $file_name)) {
+        require_once($file_name);
+        $function_name = "apachesolr_{$delta}_block_view";
+
+        if (function_exists($function_name)) {
+          return call_user_func($function_name);
+        }
+      }
+
       if (arg(1) == 'apachesolr_search' && apachesolr_has_searched()) {
         // Get the query and response. Without these no blocks make sense.
         $response = apachesolr_static_response_cache();
