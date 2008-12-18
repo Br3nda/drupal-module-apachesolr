@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.77 2008/12/17 18:35:04 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.78 2008/12/18 10:41:16 jacobsingh Exp $
 
 /**
  * @file
@@ -476,7 +476,7 @@ function apachesolr_node_to_document($nid) {
     $document->body = strip_tags($text);
     $document->type  = $node->type;
     $document->type_name = node_get_types('name', $node);
-    $document->changed = $node->changed;
+    $document->changed = apachesolr_date_iso($node->changed + rand(1000,10000));
     $document->comment_count = $node->comment_count;
     $document->name = apachesolr_strip_ctl_chars($node->name);
     $document->language = $node->language;
@@ -529,6 +529,22 @@ function apachesolr_node_to_document($nid) {
   }
   return $document;
 }
+
+/**
+ * Convert date from timestamp into ISO 8601 format.
+ * http://lucene.apache.org/solr/api/org/apache/solr/schema/DateField.html
+ */
+function apachesolr_date_iso($date_timestamp) {
+  return date('Y-m-d\TH:i:s\Z', $date_timestamp);
+}
+
+/**
+ * Convert date from ISO 8601 format into timestamp.
+ */
+function apachesolr_date_timestamp($date_iso) {
+  return strtotime($date_iso);
+}
+
 
 /**
  * Extract taxonomy from $node and add to dynamic fields.

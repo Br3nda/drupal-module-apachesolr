@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_attachments.module,v 1.1.2.8 2008/12/09 19:21:28 febbraro Exp $
+// $Id: apachesolr_attachments.module,v 1.1.2.9 2008/12/18 10:41:16 jacobsingh Exp $
 
 /**
  * @file
@@ -127,7 +127,7 @@ function apachesolr_attachments_add_documents(&$documents, $nid) {
           $document->hash = $hash;
           $document->nid = $node->nid;
           $document->title = $file->filename; 
-          $document->changed = $node->changed;
+          $document->changed = apachesolr_date_iso($node->changed);
           $document->uid = $node->uid;
           $document->name = $node->name;
           $document->body = $text;
