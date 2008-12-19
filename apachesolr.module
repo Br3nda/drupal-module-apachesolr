@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.80 2008/12/19 01:23:09 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.81 2008/12/19 04:14:06 jacobsingh Exp $
 
 /**
  * @file
@@ -869,11 +869,15 @@ function apachesolr_facetcount_save($delta, $edit) {
  *
  * }
  */
-function apachesolr_modify_query(&$query, &$params, $invoked_by = '', $handler = 'default') {
+function apachesolr_modify_query(&$query, &$params) {
 
   foreach (module_implements('apachesolr_modify_query') as $module) {
     $function_name = "{$module}_apachesolr_modify_query";
-    $function_name($query, $params, $invoked_by, $handler);
+    $function_name($query, $params);
+  }
+  // Add array of fq parameters.
+  if ($query && ($fq = $query->get_fq())) {
+    $params['fq'] = $fq;
   }
 }
 

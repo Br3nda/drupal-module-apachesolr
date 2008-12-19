@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.16 2008/12/17 17:18:01 pwolanin Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.17 2008/12/19 04:14:06 jacobsingh Exp $
 
 /**
  * Implementation of hook_menu()
@@ -83,7 +83,11 @@ function apachesolr_mlt_suggestions($block_id, $nid) {
         $params[$field] = check_plain($block[$drupal_fieldname]);
       }
     }
-    $response = $solr->search('id:' . apachesolr_document_id($nid), 0, $block['num_results'], $params);
+    $query = apachesolr_drupal_query('id:' . apachesolr_document_id($nid));
+    // This hook allows modules to modify the query and params objects.
+    apachesolr_modify_query($query, $params);
+
+    $response = $solr->search($query->get_query_basic(), 0, $block['num_results'], $params);
     $suggestions = array();
     if ($response->response) {
       $r = (array) end($response->response);

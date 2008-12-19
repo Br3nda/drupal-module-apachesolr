@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.53 2008/12/19 02:31:19 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.54 2008/12/19 04:14:06 jacobsingh Exp $
 
 /**
  * @file
@@ -196,11 +196,6 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         apachesolr_modify_query($query, $params, 'apachesolr_search');
         if (!$query) {
           return array();
-        }
-        // An arry of fq parameters.
-        $fq = $query->get_fq();
-        if ($fq) {
-          $params['fq'] = $fq;
         }
 
         $response = $solr->search($query->get_query_basic(), $params['start'], $params['rows'], $params);
