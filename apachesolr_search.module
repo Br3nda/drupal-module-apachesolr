@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.52 2008/12/19 01:23:09 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.53 2008/12/19 02:31:19 pwolanin Exp $
 
 /**
  * @file
@@ -285,23 +285,18 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
       return $blocks;
 
     case 'view':
-      $file_name = "blocks/apachesolr_{$delta}.block.inc";
-      if (is_file(dirname(__FILE__) . '/' . $file_name)) {
-        require_once($file_name);
-        $function_name = "apachesolr_{$delta}_block_view";
-
-        if (function_exists($function_name)) {
-          return call_user_func($function_name);
-        }
-      }
-
-      if (arg(1) == 'apachesolr_search' && apachesolr_has_searched()) {
+      if (apachesolr_has_searched()) {
         // Get the query and response. Without these no blocks make sense.
         $response = apachesolr_static_response_cache();
         if (empty($response)) {
           return;
         }
         $query = apachesolr_current_query();
+
+        if ($delta == 'language') {
+          include_once(drupal_get_path('module', 'apachesolr') . "/blocks/apachesolr_language.block.inc");
+          return apachesolr_language_block_view($response, $query);
+        }
 
         // Get information needed by the rest of the blocks about limits.
         $facet_display_limits = variable_get('apachesolr_facet_query_limits', array());
