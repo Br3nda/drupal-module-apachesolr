@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.51 2008/12/18 10:41:16 jacobsingh Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.52 2008/12/19 01:23:09 pwolanin Exp $
 
 /**
  * @file
@@ -71,7 +71,6 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       return apachesolr_index_status('apachesolr_search');
 
     case 'search':
-      global $pager_total;
 
       try {
         // This is the object that knows about the query coming from the user.
@@ -159,6 +158,10 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         if ($qf && $fields) {
           foreach ($fields as $field_name => $field) {
             if (!empty($qf[$field_name])) {
+              if ($field_name == 'body') {
+                // Body is the only normed field.
+                $qf[$field_name] *= 40.0;
+              }
               $params['qf'][] = $field_name . '^'. $qf[$field_name];
             }
           }
@@ -171,7 +174,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         else {
           $total = db_result(db_query("SELECT COUNT(nid) FROM {node}"));
         }
-        $date_settings = variable_get('apacehsolr_search_date_boost', '4:3.0');
+        $date_settings = variable_get('apacehsolr_search_date_boost', '4:200.0');
         list($date_steepness, $date_boost) = explode(':', $date_settings);
         // Default date-biasing function, as suggested (but steeper) at
         // http://wiki.apache.org/solr/DisMaxRequestHandler
@@ -180,7 +183,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         if ($date_boost) {
           $params['bf'][] = "recip(rord(changed),$date_steepness,$total,$total)^$date_boost";
         }
-        $comment_settings = variable_get('apacehsolr_search_comment_boost', '4:3.0');
+        $comment_settings = variable_get('apacehsolr_search_comment_boost', '4:200.0');
         list($comment_steepness, $comment_boost) = explode(':', $comment_settings);
         // Default date-biasing function, as suggested (but steeper) at
         // http://wiki.apache.org/solr/DisMaxRequestHandler
@@ -189,24 +192,8 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         if ($comment_boost) {
           $params['bf'][] = "recip(rord(comment_count),$comment_steepness,$total,$total)^$comment_boost";
         }
-        /**
-         * This hook allows modules to modify the query are params objects.
-         *
-         * Example:
-         *
-         *<code>
-         * function my_module_apachesolr_modify_query(&$query, &$params) {
-         *   // I only want to see articles by the admin!
-         *   $query->add_field("uid", 1);
-         *
-         * }
-         * </code>
-         */
-        // TODO - convert to drupal_alter().
-        foreach (module_implements('apachesolr_modify_query') as $module) {
-          $function_name = "{$module}_apachesolr_modify_query";
-          $function_name($query, $params);
-        }
+        // This hook allows modules to modify the query and params objects.
+        apachesolr_modify_query($query, $params, 'apachesolr_search');
         if (!$query) {
           return array();
         }
@@ -224,8 +211,8 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         apachesolr_has_searched(TRUE);
         pager_query("SELECT %d", $params['rows'], 0, NULL, $total);
         if ($total > 0) {
-          $extra = array();
           foreach ($response->response->docs as $doc) {
+            $extra = array();
             $snippet = isset($response->highlighting->{$doc->id}->$hl_fl) ? theme('apachesolr_snippets', $doc, $response->highlighting->{$doc->id}->$hl_fl) : '';
             if (!isset($doc->body)) {
               $doc->body = $snippet;

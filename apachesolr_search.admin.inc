@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.6 2008/12/16 15:52:41 pwolanin Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.7 2008/12/19 01:23:09 pwolanin Exp $
 
 /**
  * @file
@@ -31,21 +31,21 @@ function apachesolr_search_settings_page() {
  */
 function apachesolr_search_bias_form($form_state) {
 
-  $date_settings = variable_get('apacehsolr_search_date_boost', '4:3.0');
-  $comment_settings = variable_get('apacehsolr_search_comment_boost', '4:3.0');
+  $date_settings = variable_get('apacehsolr_search_date_boost', '4:200.0');
+  $comment_settings = variable_get('apacehsolr_search_comment_boost', '4:200.0');
   
   $options = array(
     '0:0' => t('Omit'),
-    '1:1.0' => '1',
-    '2:1.0' => '2',
-    '2:2.0' => '3',
-    '4:2.0' => '4',
-    '4:3.0' => '5',
-    '4:5.0' => '6',
-    '8:8.0' => '7',
-    '8:13.0' => '8',
-    '8:34.0' => '9',
-    '10:100.0' => '10'
+    '1:100.0' => '1',
+    '2:100.0' => '2',
+    '2:150.0' => '3',
+    '4:150.0' => '4',
+    '4:200.0' => '5',
+    '4:300.0' => '6',
+    '8:500.0' => '7',
+    '8:700.0' => '8',
+    '8:1000.0' => '9',
+    '10:2000.0' => '10'
   );
 
   $form['biasing'] = array(
