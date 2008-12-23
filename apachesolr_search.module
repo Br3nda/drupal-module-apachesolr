@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.54 2008/12/19 04:14:06 jacobsingh Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.55 2008/12/23 02:19:41 pwolanin Exp $
 
 /**
  * @file
@@ -82,7 +82,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         $results = array();
 
         $params = array(
-          'fl' => 'id,nid,title,comment_count,type,changed,score,url,uid,name',
+          'fl' => 'id,nid,title,comment_count,type,created,changed,score,url,uid,name',
           'rows' => variable_get('apachesolr_rows', 10),
           'facet' => 'true',
           'facet.mincount' => 1,
@@ -181,7 +181,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         // rord() returns 1 for the newset doc, and the number in the index for
         // the oldest doc.  The function is thus: $total/(rord()*$steepness + $total).
         if ($date_boost) {
-          $params['bf'][] = "recip(rord(changed),$date_steepness,$total,$total)^$date_boost";
+          $params['bf'][] = "recip(rord(created),$date_steepness,$total,$total)^$date_boost";
         }
         $comment_settings = variable_get('apacehsolr_search_comment_boost', '4:200.0');
         list($comment_steepness, $comment_boost) = explode(':', $comment_settings);
@@ -212,6 +212,8 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
             if (!isset($doc->body)) {
               $doc->body = $snippet;
             }
+            $doc->created = strtotime($doc->created);
+            $doc->changed = strtotime($doc->changed);
             $extra += node_invoke_nodeapi($doc, 'search result');
             $extra['score'] = $doc->score;
             $results[] = array(
@@ -219,7 +221,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
               'type' => node_get_types('name', $doc),
               'title' => $doc->title,
               'user' => theme('username', $doc),
-              'date' => apachesolr_date_timestamp($doc->changed),
+              'date' => $doc->created,
               'node' => $doc,
               'extra' => $extra,
               'score' => $doc->score,

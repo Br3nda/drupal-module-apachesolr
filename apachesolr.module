@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.81 2008/12/19 04:14:06 jacobsingh Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.82 2008/12/23 02:19:41 pwolanin Exp $
 
 /**
  * @file
@@ -475,9 +475,12 @@ function apachesolr_node_to_document($nid) {
     $document->title = $node->title;
     $document->body = strip_tags($text);
     $document->type  = $node->type;
-    $document->type_name = node_get_types('name', $node);
-    $document->changed = apachesolr_date_iso($node->changed + rand(1000,10000));
-    $document->comment_count = $node->comment_count;
+    $document->type_name = apachesolr_strip_ctl_chars(node_get_types('name', $node));
+    $document->created = apachesolr_date_iso($node->created);
+    $document->changed = apachesolr_date_iso($node->changed);
+    $last_change = (isset($node->last_comment_timestamp) && $node->last_comment_timestamp > $node->changed) ? $node->last_comment_timestamp : $node->changed;
+    $document->last_comment_or_change = apachesolr_date_iso($last_change);
+    $document->comment_count = isset($node->comment_count) ? $node->comment_count : 0;
     $document->name = apachesolr_strip_ctl_chars($node->name);
     $document->language = $node->language;
 
@@ -537,14 +540,6 @@ function apachesolr_node_to_document($nid) {
 function apachesolr_date_iso($date_timestamp) {
   return date('Y-m-d\TH:i:s\Z', $date_timestamp);
 }
-
-/**
- * Convert date from ISO 8601 format into timestamp.
- */
-function apachesolr_date_timestamp($date_iso) {
-  return strtotime($date_iso);
-}
-
 
 /**
  * Extract taxonomy from $node and add to dynamic fields.
@@ -663,7 +658,7 @@ function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
       db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed) VALUES  (%d, %d, GREATEST(%d, %d))", $node->nid, $node->status, $node->created, $node->changed);
       break;
     case 'update':
-      // Check if th enode has gone from published to unpublished.
+      // Check if the node has gone from published to unpublished.
       If (!$node->status && db_result(db_query("SELECT status FROM {apachesolr_search_node} WHERE nid = %d", $node->nid))) {
         apachesolr_delete_node_from_index($node);
       }
@@ -707,7 +702,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
               'stitle' => array('name' => t('Title'), 'default' => 'asc'),
               'type' => array('name' => t('Type'), 'default' => 'asc'),
               'name' => array('name' => t('Author'), 'default' => 'asc'),
-              'changed' => array('name' => t('Date'), 'default' => 'desc'),
+              'created' => array('name' => t('Date'), 'default' => 'desc'),
             );
 
             $solrsorts = array();
