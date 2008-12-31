@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_language.block.inc,v 1.1.2.3 2008/12/19 02:31:19 pwolanin Exp $
+// $Id: apachesolr_language.block.inc,v 1.1.2.4 2008/12/31 19:14:40 jacobsingh Exp $
 
 function apachesolr_language_block_view($response, $query) {
   $title = t('Filter by language');
@@ -37,7 +37,7 @@ function apachesolr_language_block_view($response, $query) {
     }
     if (count($languages) > 0) {
       $facet_display_limits = variable_get('apachesolr_facet_query_limits', array());
-      $facet_display_limit = isset($facet_display_limits['language']) ? $facet_display_limits['language'] : 10;
+      $facet_display_limit = isset($facet_display_limits['language']) ? $facet_display_limits['language'] : variable_get('apachesolr_facet_query_limit_default', 10);
       $languages = array_slice($languages, 0, $facet_display_limit);
       $output = theme('apachesolr_facet_list', $languages);
       return array('subject' => $title, 'content' => $output);

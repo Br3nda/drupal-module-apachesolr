@@ -243,7 +243,7 @@ function apachesolr_multisitesearch_block($op = 'list', $delta = 0, $edit = arra
               }
               if (count($hashes) > 0) {
                 ksort($hashes);
-                $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
+                $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : variable_get('apachesolr_facet_query_limit_default', 10);
                 $hashes = array_slice($hashes, 0, ($facet_display_limit == -1 ? NULL : $facet_display_limit));
                 $output = theme('apachesolr_facet_list', $hashes);
                 return array('subject' => t('Filter by site'), 'content' => $output);

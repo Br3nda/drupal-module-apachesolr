@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.82 2008/12/23 02:19:41 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.83 2008/12/31 19:14:40 jacobsingh Exp $
 
 /**
  * @file
@@ -790,7 +790,7 @@ function apachesolr_facet_block($response, $query, $delta, $filter_by, $facet_ca
     }
     if (count($items) > 0) {
       ksort($items);
-      $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
+      $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : variable_get('apachesolr_facet_query_limit_default', 10);
       $items = array_slice($items, 0, ($facet_display_limit == -1 ? NULL : $facet_display_limit));
       $output = theme('apachesolr_facet_list', $items);
       return array('subject' => t('@filter_by', array('@filter_by' => $filter_by)), 'content' => $output);
@@ -829,6 +829,7 @@ function apachesolr_facet_query_limit_validate($form, &$form_state) {
  */
 function apachesolr_facetcount_form($delta) {
   $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
+  $facet_query_limit_default = variable_get('apachesolr_facet_query_limit_default', 10);
 
   // If the block is not 'sort' (and therefore is a facet block),
   // display facet limit option.
