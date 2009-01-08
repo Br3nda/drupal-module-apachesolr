@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.83 2008/12/31 19:14:40 jacobsingh Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.84 2009/01/08 22:32:13 pwolanin Exp $
 
 /**
  * @file
@@ -233,7 +233,6 @@ function apachesolr_delete_index_form_submit($form, &$form_state) {
       // content:  $query = 'hash:' . apachesolr_site_hash()
       drupal_alter('apachesolr_delete_index', $query);
       $solr->deleteByQuery($query);
-      $solr->commit();
       apachesolr_clear_last_index();
       // This form can't be seen by anyone without 'administer site configuration'
       // permission, so no need to check perms before displaying a run-cron link.
@@ -398,8 +397,6 @@ function apachesolr_index_nodes($result, $namespace = '', $callback = 'apachesol
       foreach ($docs_chunk as $docs) {
         $solr->addDocuments($docs);
       }
-      $solr->commit();
-      $solr->optimize(FALSE, FALSE);
       $last = array('last_change' => $solr_last_change, 'last_nid' => $solr_last_id);
       if ($namespace) {
         $stored = variable_get('apachesolr_index_last', array());
@@ -624,7 +621,6 @@ function apachesolr_delete_node_from_index($node) {
   try {
     $solr = apachesolr_get_solr();
     $solr->deleteById(apachesolr_document_id($node->nid));
-    $solr->commit();
   }
   catch (Exception $e) {
     watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
@@ -638,6 +634,13 @@ function apachesolr_cron() {
   try {
     $solr = apachesolr_get_solr();
     $solr->clearCache();
+    $last = variable_get('apachesolr_last_optimize', 0);
+    $time = time();
+    // Make sure to omtimize once per day.
+    if ($time - $last > 60*60*24) {
+      $solr->optimize(FALSE, FALSE);
+      variable_set('apachesolr_last_optimize', $time);
+    }
   }
   catch (Exception $e) {
     watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
