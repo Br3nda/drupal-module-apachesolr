@@ -1,3 +1,33 @@
+2008-11-24 18:14  djimenez
+
+	* Pieter Berkel requested the ability to set field and document
+	  boost values when adding documents to Solr: 
+	  
+	  https://issues.apache.org/jira/browse/SOLR-341?focusedCommentId=12650095#action_12650095
+	  
+	  Added the ability to do so in the Apache_Solr_Document class and
+	  updated the XML fragment generation code in Apache_Solr_Service to
+	  include the new boost values when available.
+
+2008-11-14 22:08  djimenez
+
+	* Apache/Solr/Document.php: Rich Robinson raised an issue on the
+	  Solr issue tracker where he found that documents with values =
+	  false were creating prematurely exiting foreach loops. I tracked
+	  it down to the valid() implementation of the Iterator iterface,
+	  and after fussing with it decided to just implement
+	  IteratorAggregator and use the pre-existing SPL ArrayIterator
+	  class. Simplifies the code and now all document values are looped
+	  even when some are false.
+
+2008-09-02 14:33  djimenez
+
+	* Apache/Solr/Document.php, Apache/Solr/Response.php,
+	  Apache/Solr/Service.php, Apache/Solr/Service/Balancer.php: At the
+	  request of several people using these classes I've changed the
+	  members and functions that were private to protected so that they
+	  can be overridden / used in subclasses
+
 2008-08-26 14:50  dwolfe
 
 	* Apache/Solr/Service/Balancer.php: Changed default value for
@@ -18,11 +48,6 @@
 	  there is a connection problem - then and ONLY then do we ping it
 	  to decide if we should retry the call. If the ping timesout then
 	  we select another read service (if one is available) and continue
-
-2008-04-11 20:46  djimenez
-
-	* Apache/Solr/Service/Balancer.php: doubled timeouts on balancer so
-	  I'll see less exceptions during high load
 
 2008-01-26 01:03  djimenez
 
@@ -50,6 +75,12 @@
 	  build is not compiled with this options and we never would have
 	  found it ourselves.
 
+2008-01-23 02:53  djimenez
+
+	* Apache/Solr/Service.php, ChangeLog: 5 seconds seemed like too
+	  long a default timeout, set to 2. Added a Changelog that I'm
+	  packaging with the distribution.
+
 2008-01-14 19:12  djimenez
 
 	* Apache/Solr/Response.php, Apache/Solr/Service.php, Solr.clss:
@@ -75,11 +106,6 @@
 	  a little time when you don't need them). Also, updated the
 	  balancer so that it will try other services during a
 	  communication error on a call.
-
-2007-10-02 16:54  djimenez
-
-	* Apache/Solr/Response.php: Missed changing the package /
-	  subpackage pair. refs #29
 
 2007-10-02 02:52  djimenez
 
