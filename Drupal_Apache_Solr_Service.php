@@ -86,7 +86,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     list ($data, $headers) = $this->_makeHttpRequest($url, 'GET', array(), '', $timeout);
     $response = new Apache_Solr_Response($data, $headers, $this->_createDocuments, $this->_collapseSingleValueArrays);
     if ($response->getHttpStatus() != 200) {
-      throw new Exception('"' . $response->getHttpStatus() . '" Status: ' . $response->getHttpStatusMessage(), $response->getHttpStatus());
+      throw new Exception('"' . $response->getHttpStatus() . '" Status: ' . $response->getHttpStatusMessage());
     }
     return $response;
   }
@@ -96,13 +96,12 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
    *
    * @see Apache_Solr_Service::_sendRawGet()
    */
-  protected function _sendRawPost($url, $rawPost, $timeout = FALSE, $contentType = 'text/xml; charset=UTF-8')
-  {
+  protected function _sendRawPost($url, $rawPost, $timeout = FALSE, $contentType = 'text/xml; charset=UTF-8') {
     $request_headers = array('Content-Type' => $contentType);
     list ($data, $headers) = $this->_makeHttpRequest($url, 'POST', $request_headers, $rawPost, $timeout);
     $response = new Apache_Solr_Response($data, $headers, $this->_createDocuments, $this->_collapseSingleValueArrays);
     if ($response->getHttpStatus() != 200) {
-      throw new Exception('"' . $response->getHttpStatus() . '" Status: ' . $response->getHttpStatusMessage(), $response->getHttpStatus());
+      throw new Exception('"' . $response->getHttpStatus() . '" Status: ' . $response->getHttpStatusMessage());
     }
     return $response;
   }
@@ -120,6 +119,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
 
     // This will no longer be needed after http://drupal.org/node/345591 is committed
     $responses = array(
+      0 => 'Request failed',
       100 => 'Continue', 101 => 'Switching Protocols',
       200 => 'OK', 201 => 'Created', 202 => 'Accepted', 203 => 'Non-Authoritative Information', 204 => 'No Content', 205 => 'Reset Content', 206 => 'Partial Content',
       300 => 'Multiple Choices', 301 => 'Moved Permanently', 302 => 'Found', 303 => 'See Other', 304 => 'Not Modified', 305 => 'Use Proxy', 307 => 'Temporary Redirect',
@@ -127,15 +127,24 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       500 => 'Internal Server Error', 501 => 'Not Implemented', 502 => 'Bad Gateway', 503 => 'Service Unavailable', 504 => 'Gateway Time-out', 505 => 'HTTP Version not supported'
     );
 
+    if (!isset($result->code) || $result->code < 0) {
+      $result->code = 0;
+    }
+
+    if (!isset($result->data)) {
+      $result->data = '';
+    }
+
     if (!isset($responses[$result->code])) {
-      $code = floor($code / 100) * 100;
+      $result->code = floor($result->code / 100) * 100;
     }
 
     $protocol = "HTTP/1.1";
     $headers[] = "{$protocol} {$result->code} {$responses[$result->code]}";
-
-    foreach ($result->headers as $name => $value) {
-      $headers[] = "$name: $value";
+    if (isset($result->headers)) {
+      foreach ($result->headers as $name => $value) {
+        $headers[] = "$name: $value";
+      }
     }
     return array($result->data, $headers);
   }
