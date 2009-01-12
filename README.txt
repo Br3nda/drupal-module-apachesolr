@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.8 2008/12/11 07:21:54 jacobsingh Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.9 2009/01/12 22:20:56 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -6,8 +6,8 @@ features and better performance. Among the extra features is the ability to have
 faceted search on facets ranging from content author to taxonomy to arbitrary
 CCK fields.
 
-The module comes with a schema.xml file which should be used in your Solr
-installation.
+The module comes with a schema.xml and solrconfig.xml file which should be used
+in your Solr installation.
 
 This module depends on the search framework in core. However, you may not want
 the core searches and only want Solr search. If that is the case, you want to
@@ -19,29 +19,40 @@ Installation
 
 Install and enable the ApacheSolr Drupal module as you would any Drupal module.
 
-Prerequisite: Java 5 or higher.  PHP 5.2 or higher.
+Prerequisite: Java 5 or higher (a.k.a. 1.5.x).  PHP 5.2.0 or higher.
 
-Download Solr 1.3.x from a mirror site:
+Download Solr trunk (candidate 1.4.x build) from a nightly build or build it
+from svn.  http://people.apache.org/builds/lucene/solr/nightly/
+
+Once Solr 1.4 is released, you will be able to download from:
 http://www.apache.org/dyn/closer.cgi/lucene/solr/
 
 Unpack the tarball somewhere not visible to the web (not in your apache docroot
 and not inside of your drupal directory).
 
 The Solr download comes with an example application that you can use for
-testing, development, and even for smaller production sites. This application is
-found at apache-solr-1.3.x/example.
+testing, development, and even for smaller production sites. This
+application is found at apache-solr-nightly/example.
 
-Move apache-solr-1.3.x/example/solr/conf/schema.xml and rename it to something
-like schema.bak. Then move the schema.xml that comes with the ApacheSolr Drupal
-module to take its place.
+Move apache-solr-nightly/example/solr/conf/schema.xml and rename it to
+something like schema.bak. Then move the schema.xml that comes with the
+ApacheSolr Drupal module to take its place.
+
+Similarly, move apache-solr-nightly/example/solr/conf/solrconfig.xml and rename
+it like solrconfig.bak. Then move the solrconfig.xml that comes with the
+ApacheSolr Drupal module to take its place.
 
 Now start the solr application by opening a shell, changing directory to
-apache-solr-1.3.x/example, and executing the command java -jar start.jar
+apache-solr-nightly/example, and executing the command java -jar start.jar
 
 Test that your solr server is now available by visiting
 http://localhost:8983/solr/admin/
 
 Now run cron on your Drupal site until your content is indexed.
+
+The solrconfig.xml that comes with this modules defines auto-commit, so
+it may take a few minutes between running cron and when the new content
+is visible in search.
 
 Enable blocks for facets at Administer > Site building > Blocks.   
 
