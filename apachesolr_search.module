@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.56 2008/12/31 19:14:40 jacobsingh Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.57 2009/01/12 18:57:39 pwolanin Exp $
 
 /**
  * @file
@@ -273,9 +273,9 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
       // Get CCK field facets.
       if ($fields = apachesolr_cck_fields()) {
         foreach ($fields as $name => $field) {
-          $index_key = apachesolr_index_key($field);
-          // TODO: $index_key must be wrong here.
-          $blocks[$index_key] = array('info' => t('ApacheSolr Search: Filter by @field', array('@field' => $field['label'])), 'cache' => BLOCK_CACHE_PER_PAGE);
+          // $delta can only be 32 chars, and the CCK field name may be this
+          // long also, so we cannot add anything to it.
+          $blocks[$field['field_name']] = array('info' => t('ApacheSolr Search: Filter by @field', array('@field' => $field['label'])), 'cache' => BLOCK_CACHE_PER_PAGE);
         }
       }
 
@@ -380,8 +380,8 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
           default:
            if ($fields = apachesolr_cck_fields()) {
             foreach ($fields as $name => $field) {
-              $index_key = apachesolr_index_key($field);
-              if ($index_key == $delta) {
+              if ($field['field_name'] == $delta) {
+                $index_key = apachesolr_index_key($field);
                 if (!empty($response->facet_counts->facet_fields->$index_key)) {
                   $contains_active = FALSE;
                   foreach ($response->facet_counts->facet_fields->$index_key as $facet => $count) {
