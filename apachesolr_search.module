@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.57 2009/01/12 18:57:39 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.58 2009/01/14 15:22:28 jacobsingh Exp $
 
 /**
  * @file
@@ -297,6 +297,8 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
 
         // Get information needed by the rest of the blocks about limits.
         $facet_display_limits = variable_get('apachesolr_facet_query_limits', array());
+        $facet_display_initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
+        
 
         // Handle taxonomy vocabulary facets
         if ((strpos($delta, 'imfield_vid_') === 0) && module_exists('taxonomy')) {
@@ -336,10 +338,11 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
           $vocab = taxonomy_vocabulary_load($vid);
           if (is_numeric($vid) && is_array($terms) && isset($terms[$vid]) && is_array($terms[$vid])) {
             ksort($terms[$vid]);
-            $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : variable_get('apachesolr_facet_query_limit_default', 10);
+            $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : variable_get('apachesolr_facet_query_limit_default', 20);
+            $facet_display_initial_limit = isset($facet_display_initial_limits[$delta]) ? $facet_display_initial_limits[$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
             $terms[$vid] = array_slice($terms[$vid], 0, ($facet_display_limit == -1 ? NULL : $facet_display_limit));
             return array('subject' => t('Filter by @name', array('@name' => $vocab->name)),
-                         'content' => theme('apachesolr_facet_list', $terms[$vid]));
+                         'content' => theme('apachesolr_facet_list', $terms[$vid], $facet_display_initial_limit));
           }
           else {
             return;
@@ -411,9 +414,10 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
                   }
                   if (!empty($facets)) {
                     ksort($facets);
-                    $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 10;
+                    $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : 20;
+                    $facet_display_initial_limit = isset($facet_display_initial_limits[$delta]) ? $facet_display_initial_limits[$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
                     $facets = array_slice($facets, 0, ($facet_display_limit == -1 ? NULL : $facet_display_limit));
-                    $output = theme('apachesolr_facet_list', $facets);
+                    $output = theme('apachesolr_facet_list', $facets, $facet_display_initial_limit);
                     return array('subject' => t('Filter by @field', array('@field' => $field['label'])),
                                  'content' => $output);
                   }
