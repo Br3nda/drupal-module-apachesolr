@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.86 2009/01/14 15:22:28 jacobsingh Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.87 2009/01/16 18:42:02 pwolanin Exp $
 
 /**
  * @file
@@ -236,6 +236,7 @@ function apachesolr_delete_index_form_submit($form, &$form_state) {
       // content:  $query = 'hash:' . apachesolr_site_hash()
       drupal_alter('apachesolr_delete_index', $query);
       $solr->deleteByQuery($query);
+      $solr->commit();
       apachesolr_clear_last_index();
       // This form can't be seen by anyone without 'administer site configuration'
       // permission, so no need to check perms before displaying a run-cron link.
