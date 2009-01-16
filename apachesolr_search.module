@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.58 2009/01/14 15:22:28 jacobsingh Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.59 2009/01/16 20:03:40 pwolanin Exp $
 
 /**
  * @file
@@ -48,8 +48,7 @@ function apachesolr_search_menu() {
  * Implementation of hook_update_index().
  */
 function apachesolr_search_update_index() {
-  // TODO - should probably have a separate variable.
-  $cron_limit = variable_get('search_cron_limit', 100);
+  $cron_limit = variable_get('apachesolr_cron_limit', 50);
   $result = apachesolr_get_nodes_to_index('apachesolr_search', $cron_limit);
   apachesolr_index_nodes($result, 'apachesolr_search');
 }

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.87 2009/01/16 18:42:02 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.88 2009/01/16 20:03:40 pwolanin Exp $
 
 /**
  * @file
@@ -50,23 +50,30 @@ function apachesolr_settings() {
     '#title' => t('Solr host name'),
     '#default_value' => variable_get('apachesolr_host', 'localhost'),
     '#description' => t('Host name of your Solr server, e.g. <code>localhost</code> or <code>example.com</code>.'),
-    );
+  );
   $form['apachesolr_port'] = array(
     '#type' => 'textfield',
     '#title' => t('Solr port'),
     '#default_value' => variable_get('apachesolr_port', '8983'),
     '#description' => t('Port on which the Solr server listens. Tomcat is 8080 by default.'),
-    );
+  );
   $form['apachesolr_path'] = array(
     '#type' => 'textfield',
     '#title' => t('Solr path'),
     '#default_value' => variable_get('apachesolr_path', '/solr'),
     '#description' => t('Path that identifies the Solr request handler to be used. Leave this as /solr for now.'),
-    );
-  $options = array();
-  foreach (array(5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100) as $option) {
-    $options[$option] = $option;
-  }
+  );
+
+  $numbers = drupal_map_assoc(array(10, 20, 50, 100));
+  $form['apachesolr_cron_limit'] = array(
+    '#type' => 'select',
+    '#title' => t('Number of items to index per cron run'),
+    '#default_value' => variable_get('apachesolr_cron_limit', 50),
+    '#options' => $numbers,
+    '#description' => t('The maximum number of items indexed in each pass of a <a href="@cron">cron maintenance task</a>. If necessary, reduce the number of items to prevent timeouts and memory errors while indexing.', array('@cron' => url('admin/reports/status')))
+  );
+
+  $options = drupal_map_assoc(array(5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100));
   $form['apachesolr_rows'] = array(
     '#type' => 'select',
     '#title' => t('Results per page'),
