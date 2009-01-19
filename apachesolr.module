@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.88 2009/01/16 20:03:40 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.89 2009/01/19 15:16:37 pwolanin Exp $
 
 /**
  * @file
@@ -1155,24 +1155,19 @@ function theme_apachesolr_sort_link($text, $path, $querystring = '', $active = F
 }
 
 function theme_apachesolr_facet_list($items, $display_limit = 0) {
-  // If there is no limit or facet count less than the limit do standard way.
-  if ($display_limit == 0 || (count($items) <= $display_limit)) {
-    return theme('item_list', $items);
-  }
-
-  // show/hide extra facets
-  drupal_add_js(drupal_get_path('module', 'apachesolr') . '/apachesolr.js');
-  
-  $output = '';
-  // split items array into displayed and hidden
-  if (count($items) > $display_limit) {
+  // theme('item_list') expects a numerically indexed array.
+  $items = array_values($items);
+  // If there is a limit and the facet count is over the limit, hide the rest.
+  if (($display_limit > 0) && (count($items) > $display_limit)) {
+    // Show/hide extra facets.
+    drupal_add_js(drupal_get_path('module', 'apachesolr') . '/apachesolr.js');
+    // Split items array into displayed and hidden.
     $hidden_items = array_splice($items, $display_limit);
-    foreach ($hidden_items as $hidden_item) {
-      $items[] = array('data' => $hidden_item, 'class' => 'apachesolr-hidden-facet');
+    foreach ($hidden_items as $link) {
+      $items[] = array('data' => $link, 'class' => 'apachesolr-hidden-facet');
     }
-    $output .= theme('item_list', $items);
   }
-  return $output;
+  return theme('item_list', $items);
 }
 
 function theme_apachesolr_sort_list($items) {
