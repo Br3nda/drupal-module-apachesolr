@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.89 2009/01/19 15:16:37 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.90 2009/01/22 01:33:35 pwolanin Exp $
 
 /**
  * @file
@@ -501,7 +501,7 @@ function apachesolr_node_to_document($nid) {
       $path = 'node/' . $node->nid;
       $output = drupal_get_path_alias($path, $language);
       if ($output && $output != $path) {
-        $document->path = $output;
+        $document->path = apachesolr_strip_ctl_chars($output);
       }
     }
 
