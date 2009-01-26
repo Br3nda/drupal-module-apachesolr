@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.91 2009/01/24 00:34:55 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.92 2009/01/26 14:19:28 pwolanin Exp $
 
 /**
  * @file
@@ -573,7 +573,7 @@ function apachesolr_node_to_document($nid) {
  * http://lucene.apache.org/solr/api/org/apache/solr/schema/DateField.html
  */
 function apachesolr_date_iso($date_timestamp) {
-  return date('Y-m-d\TH:i:s\Z', $date_timestamp);
+  return gmdate('Y-m-d\TH:i:s\Z', $date_timestamp);
 }
 
 /**
