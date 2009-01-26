@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.7 2008/12/19 01:23:09 pwolanin Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.8 2009/01/26 14:48:43 pwolanin Exp $
 
 /**
  * @file
@@ -35,17 +35,17 @@ function apachesolr_search_bias_form($form_state) {
   $comment_settings = variable_get('apacehsolr_search_comment_boost', '4:200.0');
   
   $options = array(
-    '0:0' => t('Omit'),
-    '1:100.0' => '1',
-    '2:100.0' => '2',
-    '2:150.0' => '3',
-    '4:150.0' => '4',
-    '4:200.0' => '5',
-    '4:300.0' => '6',
-    '8:500.0' => '7',
-    '8:700.0' => '8',
+    '10:2000.0' => '10',
     '8:1000.0' => '9',
-    '10:2000.0' => '10'
+    '8:700.0' => '8',
+    '8:500.0' => '7',
+    '4:300.0' => '6',
+    '4:200.0' => '5',
+    '4:150.0' => '4',
+    '2:150.0' => '3',
+    '2:100.0' => '2',
+    '1:100.0' => '1',
+    '0:0' => t('Omit'),
   );
 
   $form['biasing'] = array(
@@ -81,9 +81,8 @@ function apachesolr_search_settings_form($form_state, $fields) {
 
   // get the current weights
   $qf = variable_get('apachesolr_search_query_fields', array());
-  $weights = array();
+  $weights = drupal_map_assoc(array('21.0', '13.0', '8.0', '5.0', '3.0', '2.0', '1.0', '0.8', '0.5', '0.3', '0.2', '0.1'));
   $weights['0'] = t('Omit');
-  $weights += drupal_map_assoc(array('0.1', '0.2', '0.3', '0.5', '0.8', '1.0', '2.0', '3.0', '5.0', '8.0', '13.0', '21.0'));
   // Note - we have default values set in solrconfig.xml, which will operate when 
   // none are set.
   $defaults = array(
