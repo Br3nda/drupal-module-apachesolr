@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.92 2009/01/26 14:19:28 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.93 2009/01/26 23:22:05 pwolanin Exp $
 
 /**
  * @file
@@ -18,13 +18,25 @@ function apachesolr_menu() {
     'page arguments'     => array('apachesolr_settings'),
     'access callback'    => 'user_access',
     'access arguments'   => array('administer site configuration'),
+    'file'               => 'apachesolr.admin.inc',
   );
   $items['admin/settings/apachesolr/settings'] = array(
     'title'              => 'Settings',
     'weight'             => -10,
     'access callback'    => 'user_access',
     'access arguments'   => array('administer site configuration'),
+    'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['admin/settings/apachesolr/enabled-filters'] = array(
+    'title' => 'Enabled filters',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('apachesolr_enabled_facets_form'),
+    'weight' => -7,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'file'               => 'apachesolr.admin.inc',
+    'type' => MENU_LOCAL_TASK,
   );
   $items['admin/settings/apachesolr/index'] = array(
     'title'              => 'Search index',
@@ -32,66 +44,10 @@ function apachesolr_menu() {
     'access callback'    => 'user_access',
     'access arguments'   => array('administer site configuration'),
     'weight'             => -8,
+    'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_LOCAL_TASK,
   );
   return $items;
-}
-
-function apachesolr_settings() {
-  $form = array();
-
-  //perform a check to ensure the server is there
-  $requirements = apachesolr_requirements('runtime');
-  $status = $requirements['apachesolr']['severity'] == 2 ? 'error' : 'status';
-  drupal_set_message($requirements['apachesolr']['value'], $status);
-
-  $form['apachesolr_host'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Solr host name'),
-    '#default_value' => variable_get('apachesolr_host', 'localhost'),
-    '#description' => t('Host name of your Solr server, e.g. <code>localhost</code> or <code>example.com</code>.'),
-  );
-  $form['apachesolr_port'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Solr port'),
-    '#default_value' => variable_get('apachesolr_port', '8983'),
-    '#description' => t('Port on which the Solr server listens. Tomcat is 8080 by default.'),
-  );
-  $form['apachesolr_path'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Solr path'),
-    '#default_value' => variable_get('apachesolr_path', '/solr'),
-    '#description' => t('Path that identifies the Solr request handler to be used. Leave this as /solr for now.'),
-  );
-
-  $numbers = drupal_map_assoc(array(10, 20, 50, 100));
-  $form['apachesolr_cron_limit'] = array(
-    '#type' => 'select',
-    '#title' => t('Number of items to index per cron run'),
-    '#default_value' => variable_get('apachesolr_cron_limit', 50),
-    '#options' => $numbers,
-    '#description' => t('The maximum number of items indexed in each pass of a <a href="@cron">cron maintenance task</a>. If necessary, reduce the number of items to prevent timeouts and memory errors while indexing.', array('@cron' => url('admin/reports/status')))
-  );
-
-  $options = drupal_map_assoc(array(5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100));
-  $form['apachesolr_rows'] = array(
-    '#type' => 'select',
-    '#title' => t('Results per page'),
-    '#default_value' => variable_get('apachesolr_rows', 10),
-    '#options' => $options,
-    '#description' => t('The number of results that will be shown per page.'),
-  );
-  $form['apachesolr_failure'] = array(
-    '#type' => 'select',
-    '#title' => t('On failure'),
-    '#options' => array('show_error' => t('Show error'),
-      'show_drupal_results' => t('Show core Drupal results'),
-      'show_no_results' => t('Show no results')
-    ),
-    '#default_value' => variable_get('apachesolr_failure', 'show_error'),
-    '#description' => t('What to display if ApacheSolr search is not available.'),
-  );
-  return system_settings_form($form);
 }
 
 /**
@@ -154,131 +110,6 @@ function apachesolr_requirements($phase) {
       'severity' => $severity,
     );
     return $requirements;
-  }
-}
-
-/**
- * Gets information about the fields already in solr index.
- */
-function apachesolr_index_page() {
-  try {
-    $solr = apachesolr_get_solr();
-    // TODO: only clear this every page view if we are running
-    // multi-site.
-    $solr->clearCache();
-    // Note: we use 2 since 1 fails on Ubuntu Hardy.
-    $data = $solr->getLuke(2);
-  }
-  catch (Exception $e) {
-    watchdog('apachesolr', $e->getMessage());
-    drupal_set_message($e->getMessage(), "warning");
-    $data->fields = array();
-  }
-
-  $output  = '';
-  if (isset($data->index->numDocs)) {
-    $output .= '<p>' . t('Number of documents in index: @num', array('@num' => $data->index->numDocs)) . "</p>\n";
-    $output .= '<p>' . t('Number of terms in index: @num', array('@num' => $data->index->numTerms)) . "</p>\n";
-  }
-
-  $fields = (array)$data->fields;
-  if ($fields) {
-    $output .= '<p>' . t('Number of fields in index: @num', array('@num' => count($fields))) . "</p>\n";
-    $rows = array();
-    foreach ($fields as $name => $field) {
-      // TODO: try to map the name to something more meaningful.
-      $rows[$name] = array($name, $field->type, isset($field->index) ? $field->distinct : t('Not indexed'));
-    }
-    ksort($rows);
-    // Display the table of Field names, Index Types, and term counts.
-    $output .= theme('table', array(t('Field name'), t('Index type'), t('Distinct terms')), $rows);
-  }
-  else {
-    $output .= '<p>' . t('No data on indexed fields.') . "</p>\n";
-  }
-
-  // Display the Delete Index form.
-  $output .= drupal_get_form('apachesolr_delete_index_form');
-
-  return $output;
-}
-
-/**
- * Create a form for deleting the contents of the Solr index.
- */
-function apachesolr_delete_index_form() {
-  $form = array();
-  $form['markup'] = array(
-    '#type' => 'markup',
-    '#value' => '<h3>Solr Index</h3>',
-  );
-  $form['reindex'] = array(
-    '#type' => 'submit',
-    '#value' => t('Re-index all content'),
-    '#submit' => array('apachesolr_clear_index'),
-  );
-  $form['reindex-desc'] = array(
-    '#type' => 'item',
-    '#description' => t('Re-indexing will add all content to the index again (overwriting the index), but existing content in the index will remain searchable.'),
-  );
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Delete the index'),
-    '#validate' => array('apachesolr_delete_index_validate'),
-    '#submit' => array('apachesolr_delete_index'),
-  );
-  $form['delete_index'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Confirm index deletion'),
-    '#description' => t('Deletes all of the documents in the Solr index. This is rarely necessary unless your index is corrupt or you have installed a new schema.xml.'),
-    '#default_value' => NULL,
-  );
-  return $form;
-}
-
-/**
- * Submit function for the 'Re-index all content' button.
- *
- * @see apachesolr_delete_index_form()
- */
-function apachesolr_clear_index($form, &$form_state) {
-  apachesolr_clear_last_index();
-}
-
-/**
- * Validate function for the 'Delete the index' button.
- *
- * @see apachesolr_delete_index_form()
- */
-function apachesolr_delete_index_validate($form, &$form_state) {
-  if (!$form_state['values']['delete_index']) {
-    form_set_error('delete_index', t('If you want to delete the Solr index, you must check the confirmation box.'));
-  }
-}
-
-/**
- * Submit function for the 'Delete the index' button.
- *
- * @see apachesolr_delete_index_form()
- */
-function apachesolr_delete_index() {
-  try {
-    // Instantiate a new Solr object.
-    $solr = apachesolr_get_solr();
-    $query = '*:*';
-    // Allow other modules to modify the delete query.
-    // For example, use the site hash so that you only delete this site's
-    // content:  $query = 'hash:' . apachesolr_site_hash()
-    drupal_alter('apachesolr_delete_index', $query);
-    $solr->deleteByQuery($query);
-    $solr->commit();
-    apachesolr_clear_last_index();
-    // This form can't be seen by anyone without 'administer site configuration'
-    // permission, so no need to check perms before displaying a run-cron link.
-    drupal_set_message(t('The Solr content index has been erased. You must now !run_cron until your entire site has been re-indexed.', array('!run_cron' => l(t('run cron'), 'admin/reports/status/run-cron', array('query' => array('destination' => 'admin/settings/apachesolr/index'))))));
-  }
-  catch (Exception $e) {
-    watchdog('Apache Solr', $e->getMessage(), array(), WATCHDOG_ERROR);
   }
 }
 
@@ -709,8 +540,21 @@ function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   }
 }
 
-function apachesolr_apachesolr_facets() {
-  return array('type');
+/**
+ * Return the enabled facets from the specified block array.
+ *
+ * @param $module
+ *   The module (optional).
+ * @return
+ *   An array consisting info for facets that have been enabled
+ *   for the specified module, or all enabled facets.
+ */
+function apachesolr_get_enabled_facets($module = NULL) {
+  $enabled = variable_get('apachesolr_enabled_facets', array());
+  if (isset($module)) {
+    return isset($enabled[$module]) ? $enabled[$module] : array();
+  }
+  return $enabled;
 }
 
 /**
@@ -719,9 +563,11 @@ function apachesolr_apachesolr_facets() {
 function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
   switch ($op) {
     case 'list':
-      // Sorting block
-      $blocks['sort'] = array('info' => t('ApacheSolr Core: Sorting'), 'cache' => BLOCK_CACHE_PER_PAGE);
-      $blocks['type'] = array('info' => t('ApacheSolr Core: Filter by type'), 'cache' => BLOCK_CACHE_PER_PAGE);
+      // Add the blocks
+      $blocks['sort'] = array(
+        'info' => t('ApacheSolr Core: Sorting'),
+        'cache' => BLOCK_CACHE_PER_PAGE,
+      );
       return $blocks;
 
     case 'view':
@@ -765,37 +611,27 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
             }
             return array('subject' => t('Sort by'),
                          'content' => theme('apachesolr_sort_list', $sort_links));
-
-          case 'type':
-            $filter_by = t('Filter by type');
-            return apachesolr_facet_block($response, $query, $delta, $filter_by, 'apachesolr_get_type');
-
           default:
             break;
         }
-        break;
-      }
-      break;
 
-    case 'configure':
-      if ($delta != 'sort') {
-        return apachesolr_facetcount_form($delta);
-      }
-      break;
-
-    case 'save':
-      if ($delta != 'sort') {
-        apachesolr_facetcount_save($delta, $edit);
       }
       break;
   }
 }
 
-function apachesolr_facet_block($response, $query, $delta, $filter_by, $facet_callback = FALSE) {
-  if (!empty($response->facet_counts->facet_fields->$delta)) {
+/**
+ * Helper function for displaying a facet block.
+ */
+function apachesolr_facet_block($response, $query, $module, $delta, $facet_field, $filter_by, $facet_callback = FALSE) {
+  if (!empty($response->facet_counts->facet_fields->$facet_field)) {
     $contains_active = FALSE;
     $items = array();
-    foreach ($response->facet_counts->facet_fields->$delta as $facet => $count) {
+    foreach ($response->facet_counts->facet_fields->$facet_field as $facet => $count) {
+      // Solr sends this back if it's empty.
+      if ($facet == '_empty_') {
+        continue;
+      }
       $unclick_link = '';
       unset($active);
       if ($facet_callback && function_exists($facet_callback)) {
@@ -805,16 +641,16 @@ function apachesolr_facet_block($response, $query, $delta, $filter_by, $facet_ca
         $facet_text = $facet;
       }
       $new_query = clone $query;
-      if ($active = $query->has_field($delta, $facet)) {
+      if ($active = $query->has_field($facet_field, $facet)) {
         $contains_active = TRUE;
-        $new_query->remove_field($delta, $facet);
+        $new_query->remove_field($facet_field, $facet);
         // TODO: don't assume 'search' - find the real path.
         $path = 'search/'. arg(1) .'/'. $new_query->get_query_basic();
         $querystring = $new_query->get_url_querystring();
         $unclick_link = theme('apachesolr_unclick_link', $path, $querystring);
       }
       else {
-        $new_query->add_field($delta, $facet);
+        $new_query->add_field($facet_field, $facet);
         $path = 'search/'. arg(1) .'/'. $new_query->get_query_basic();
         $querystring = $new_query->get_url_querystring();
       }
@@ -830,68 +666,41 @@ function apachesolr_facet_block($response, $query, $delta, $filter_by, $facet_ca
     if (count($items) > 0) {
       ksort($items);
       // Get information needed by the rest of the blocks about limits.
-      $facet_display_limits = variable_get('apachesolr_facet_query_limits', array());
-      $facet_display_initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
-      $facet_display_limit = isset($facet_display_limits[$delta]) ? $facet_display_limits[$delta] : variable_get('apachesolr_facet_query_limit_default', 20);
-      $facet_display_initial_limit = isset($facet_display_initial_limits[$delta]) ? $facet_display_initial_limits[$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
-      $items = array_slice($items, 0, ($facet_display_limit == -1 ? NULL : $facet_display_limit));
-      $output = theme('apachesolr_facet_list', $items, $facet_display_initial_limit);
-      return array('subject' => t('@filter_by', array('@filter_by' => $filter_by)), 'content' => $output);
+      $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
+      $limit = isset($initial_limits[$module][$delta]) ? $initial_limits[$module][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
+      $output = theme('apachesolr_facet_list', $items, $limit);
+      return array('subject' => $filter_by, 'content' => $output);
     }
   }
   return NULL;
 }
 
 /**
- * Callback function for the 'Filter by type' facet block.
- */
-function apachesolr_get_type($facet) {
-  return node_get_types('name', $facet);
-}
-
-function apachesolr_form_block_admin_configure_alter(&$form, $form_state) {
-  if (isset($form['block_settings']) && isset($form['block_settings']['apachesolr_facet_query_limit'])) {
-    $form['#validate'][] = 'apachesolr_facet_query_limit_validate';
-  }
-}
-
-/**
- * Validates a facet query limit input. Must be a positive integer or -1.
- */
-function apachesolr_facet_query_limit_validate($form, &$form_state) {
-  $value = intval($form_state['values']['apachesolr_facet_query_limit']);
-  if ($value < 1 && $value != -1) {
-    form_set_error('apachesolr_facet_limit', t('Please enter a number greater than 1 or -1 for the facet query limit.'));
-    return FALSE;
-  }
-}
-
-/**
  * Used by the 'configure' $op of hook_block so that modules can generically set
  * facet limits on their blocks.
  */
-function apachesolr_facetcount_form($delta) {
-  $facet_query_initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
-  $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
-  
-  // If the block is not 'sort' (and therefore is a facet block),
-  // display facet limit option.
+function apachesolr_facetcount_form($module, $delta) {
+  $initial = variable_get('apachesolr_facet_query_initial_limits', array());
+  $limits = variable_get('apachesolr_facet_query_limits', array());
+
+  $limit = drupal_map_assoc(array(50, 40, 30, 20, 15, 10, 5, 3));
+
   $form['apachesolr_facet_query_initial_limit'] = array(
-    '#type' => 'textfield',
+    '#type' => 'select',
     '#title' => t('Initial filter terms to show'),
-    '#required' => TRUE,
-    '#description' => t('The initial number of filter links to show in this block. Set to -1 for unlimited. Default is 10.'),
-    '#default_value' => isset($facet_query_initial_limits[$delta]) ? $facet_query_initial_limits[$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10),
+    '#options' => $limit,
+    '#description' => t('The initial number of filter links to show in this block.'),
+    '#default_value' => isset($initial[$module][$delta]) ? $initial[$module][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10),
   );
-  
+  $limit = drupal_map_assoc(array(100, 75, 50, 40, 30, 20, 15, 10, 5, 3));
   $form['apachesolr_facet_query_limit'] = array(
-    '#type' => 'textfield',
+    '#type' => 'select',
     '#title' => t('Maximum filter terms to show'),
-    '#required' => TRUE,
-    '#description' => t('The maximum number of filter links to show in this block. Set to -1 for unlimited. Default is 20.'),
-    '#default_value' => isset($facet_query_limits[$delta]) ? $facet_query_limits[$delta] : variable_get('apachesolr_facet_query_limit_default', 20),
+    '#options' => $limit,
+    '#description' => t('The maximum number of filter links to show in this block.'),
+    '#default_value' => isset($limits[$module][$delta]) ? $limits[$module][$delta] : variable_get('apachesolr_facet_query_limit_default', 20),
   );
-  
+
   return $form;
 }
 
@@ -899,14 +708,16 @@ function apachesolr_facetcount_form($delta) {
  * Used by the 'save' $op of hook_block so that modules can generically set
  * facet limits on their blocks.
  */
-function apachesolr_facetcount_save($delta, $edit) {
+function apachesolr_facetcount_save($edit) {
   // Save query limits
-  $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
-  $facet_query_limits[$delta] = intval($edit['apachesolr_facet_query_limit']);
-  variable_set('apachesolr_facet_query_limits', $facet_query_limits);
-  $facet_query_initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
-  $facet_query_initial_limits[$delta] = intval($edit['apachesolr_facet_query_initial_limit']);
-  variable_set('apachesolr_facet_query_initial_limits', $facet_query_initial_limits);
+  $module = $edit['module'];
+  $delta = $edit['delta'];
+  $limits = variable_get('apachesolr_facet_query_limits', array());
+  $limits[$module][$delta] = (int)$edit['apachesolr_facet_query_limit'];
+  variable_set('apachesolr_facet_query_limits', $limits);
+  $initial = variable_get('apachesolr_facet_query_initial_limits', array());
+  $initial[$module][$delta] = (int)$edit['apachesolr_facet_query_initial_limit'];
+  variable_set('apachesolr_facet_query_initial_limits', $initial);
 }
 
 /**
@@ -1136,9 +947,6 @@ function apachesolr_theme() {
     'apachesolr_sort_link' => array(
       'arguments' => array('text' => NULL, 'path' => NULL, 'querystring' => '', 'active' => FALSE, 'direction' => ''),
     ),
-    'apachesolr_breadcrumb_type' => array(
-      'arguments' => array('type' => NULL),
-    ),
   );
 }
 
@@ -1194,16 +1002,14 @@ function theme_apachesolr_facet_list($items, $display_limit = 0) {
       $items[] = array('data' => $link, 'class' => 'apachesolr-hidden-facet');
     }
   }
-  return theme('item_list', $items);
+  $admin_link = '';
+  if (user_access('administer site configuration')) {
+    $admin_link = l(t('Configure enabled filters'), 'admin/settings/apachesolr/enabled-filters');
+  }
+  return theme('item_list', $items) . $admin_link;
 }
 
 function theme_apachesolr_sort_list($items) {
   return theme('item_list', $items);
 }
 
-/**
- * Return the human readable text for a content type.
- */
-function theme_apachesolr_breadcrumb_type($type) {
-  return node_get_types('name', $type);
-}
