@@ -1,9 +1,9 @@
-; $Id: apachesolr_multisitesearch.info,v 1.1.4.3 2008/12/04 22:02:43 pwolanin Exp $
-name = ApacheSolr multisite search
+; $Id: apachesolr_multisitesearch.info,v 1.1.4.4 2009/01/27 21:32:35 pwolanin Exp $
+name = Apache Solr multisite search
 description = Search multiple Drupal sites with Solr
 dependencies[] = search
 dependencies[] = apachesolr
-package = ApacheSolr
+package = Apache Solr
 ;don't use until it's fixed for new APIs 
 ;core = "6.x"
 php = 5.2

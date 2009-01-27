@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.19 2009/01/27 20:12:52 pwolanin Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.20 2009/01/27 21:32:35 pwolanin Exp $
 
 /**
  * Implementation of hook_menu()
@@ -9,7 +9,7 @@ function apachesolr_mlt_menu() {
 
   $items['admin/settings/apachesolr_mlt'] = array(
     'title' => 'Apache Solr - More Like This',
-    'description' => 'Configure content recommendation blocks using the ApacheSolr "More Like This" handler.',
+    'description' => 'Configure content recommendation blocks using the Apache Solr "More Like This" handler.',
     'page callback' => 'apachesolr_mlt_settings',
     'access arguments' => array('administer search'),
   );
@@ -355,7 +355,7 @@ function apachesolr_mlt_list_blocks() {
   $blocks = array();
   while ($block = db_fetch_object($block_results)) {
     $block->data = unserialize($block->data);
-    $blocks[$block->id] = array('info' => t('ApacheSolr recommendations: ') . $block->data['name'], 'cache' => BLOCK_CACHE_PER_PAGE);
+    $blocks[$block->id] = array('info' => t('Apache Solr recommendations: ') . $block->data['name'], 'cache' => BLOCK_CACHE_PER_PAGE);
   }
   return $blocks;
 }
@@ -369,7 +369,7 @@ function apachesolr_mlt_delete_block_form(&$form_values, $block_id = NULL) {
     );
     $form['#redirect'] = 'admin/settings/apachesolr_mlt';
     return confirm_form($form,
-      t('Are you sure you want to delete the ApacheSolr content recommendation block %name?', array('%name' => $block['name'])),
+      t('Are you sure you want to delete the Apache Solr content recommendation block %name?', array('%name' => $block['name'])),
       'admin/settings/apachesolr_mlt',
       t('The block will be deleted. This action cannot be undone.'),
       t('Delete'), t('Cancel'));

@@ -1,7 +1,7 @@
 ; $Id$
-name = ApacheSolr image module integration
-description = Integrates the ApacheSolr and Image modules
+name = Apache Solr image module integration
+description = Integrates the Apache Solr and Image modules
 dependencies[] = image
 dependencies[] = apachesolr
-package = ApacheSolr
+package = Apache Solr
 core = "6.x"

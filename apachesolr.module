@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.96 2009/01/27 20:12:51 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.97 2009/01/27 21:32:34 pwolanin Exp $
 
 /**
  * @file
@@ -51,7 +51,7 @@ function apachesolr_menu() {
 }
 
 /**
- * Determines ApacheSolr's behavior when searching causes an exception (e.g. Solr isn't available.)
+ * Determines Apache Solr's behavior when searching causes an exception (e.g. Solr isn't available.)
  * Depending on the admin settings, possibly redirect to Drupal's core search.
  *
  * @param $search_name
@@ -104,7 +104,7 @@ function apachesolr_requirements($phase) {
                         $t('Port: %port', array('%port' => $port)),
                         $t('Path: %path', array('%path' => $path))));
     $requirements['apachesolr'] = array(
-      'title' => $t('ApacheSolr'),
+      'title' => $t('Apache Solr'),
       'value' => $value,
       'description' => $description,
       'severity' => $severity,
@@ -565,7 +565,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
     case 'list':
       // Add the blocks
       $blocks['sort'] = array(
-        'info' => t('ApacheSolr Core: Sorting'),
+        'info' => t('Apache Solr Core: Sorting'),
         'cache' => BLOCK_CACHE_PER_PAGE,
       );
       return $blocks;

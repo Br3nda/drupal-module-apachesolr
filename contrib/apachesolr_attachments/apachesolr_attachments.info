@@ -1,5 +1,5 @@
-name = ApacheSolr for attachments
+name = Apache Solr for attachments
 description = Searching file attachments with Solr
 dependencies[] = apachesolr
-package = ApacheSolr
+package = Apache Solr
 core = "6.x"

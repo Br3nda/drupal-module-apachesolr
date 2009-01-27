@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_image.module,v 1.1.2.1.2.2 2009/01/26 15:55:19 pwolanin Exp $
+// $Id: apachesolr_image.module,v 1.1.2.1.2.3 2009/01/27 21:32:35 pwolanin Exp $
 
 /**
  * Implementation of hook_apachesolr_update_index().
@@ -64,5 +64,5 @@ function apachesolr_image_theme() {
  * Implementation of hook_enable().
  */
 function apachesolr_image_enable() {
-  drupal_set_message(t('The ApacheSolr Image integration module will not have any apparent effect until Image type nodes are indexed or re-indexed.'));
+  drupal_set_message(t('The Apache Solr image integration module will not have any apparent effect until Image type nodes are indexed or re-indexed.'));
 }

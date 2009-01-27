@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.3 2009/01/27 20:12:51 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.4 2009/01/27 21:32:34 pwolanin Exp $
 
 /**
  * @file
@@ -58,7 +58,7 @@ function apachesolr_settings() {
       'show_no_results' => t('Show no results')
     ),
     '#default_value' => variable_get('apachesolr_failure', 'show_error'),
-    '#description' => t('What to display if ApacheSolr search is not available.'),
+    '#description' => t('What to display if Apache Solr search is not available.'),
   );
   return system_settings_form($form);
 }
@@ -137,7 +137,7 @@ function apachesolr_enabled_facets_form_submit($form, &$form_state) {
     $enabled[$module] = array_filter($facets);
   }
   variable_set('apachesolr_enabled_facets', $enabled);
-  drupal_set_message('For each filter block you chose to create, you should see a block below prefixed with "ApacheSolr". Drag these blocks into the region where you would like them to show up on the search page.');
+  drupal_set_message('For each filter block you chose to create, you should see a block below prefixed with "Apache Solr". Drag these blocks into the region where you would like them to show up on the search page.');
 }
 
 /**
@@ -160,7 +160,7 @@ function apachesolr_enabled_facets_form() {
   $form = array();
   $form['apachesolr_enabled_facets']['help'] = array (
     '#type' => 'item',
-    '#value' => t('You can use this screen to select which ApacheSolr filter blocks should be created by enabling the corresponding Apache Solr filters. For performance reasons, you should only enable filters that you intend to have available to users on the search page.  After selecting which filter blocks to create, you will be sent to the blocks page where you can choose which of those blocks should be enabled when your users search by placing each block in a region.'),
+    '#value' => t('You can use this screen to select which Apache Solr filter blocks should be created by enabling the corresponding Apache Solr filters. For performance reasons, you should only enable filters that you intend to have available to users on the search page.  After selecting which filter blocks to create, you will be sent to the blocks page where you can choose which of those blocks should be enabled when your users search by placing each block in a region.'),
   );
   if ($module_list) {
     $placeholders = implode(', ', array_fill(0, count($module_list), "'%s'"));

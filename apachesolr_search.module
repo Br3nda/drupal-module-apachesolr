@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.62 2009/01/27 20:12:51 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.63 2009/01/27 21:32:34 pwolanin Exp $
 
 /**
  * @file
@@ -246,15 +246,15 @@ function apachesolr_search_apachesolr_facets() {
   $facets = array();
 
   $facets['type'] = array(
-    'info' => t('ApacheSolr Search: Filter by content type'),
+    'info' => t('Apache Solr Search: Filter by content type'),
     'facet_field' => 'type',
   );
   $facets['uid'] = array(
-    'info' => t('ApacheSolr Search: Filter by author'),
+    'info' => t('Apache Solr Search: Filter by author'),
     'facet_field' => 'uid',
   );
   $facets['language'] = array(
-    'info' => t('ApacheSolr Search: Filter by language'),
+    'info' => t('Apache Solr Search: Filter by language'),
     'facet_field' => 'language',
   );
 
@@ -265,7 +265,7 @@ function apachesolr_search_apachesolr_facets() {
       // In this case the delta and facet field are the same.
       $delta = 'imfield_vid_' . $vid;
       $facets[$delta] = array(
-        'info' => t('ApacheSolr Search: Filter by @name', array('@name' => $vocab->name)),
+        'info' => t('Apache Solr Search: Filter by @name', array('@name' => $vocab->name)),
         'facet_field' => $delta,
       );
     }
@@ -278,7 +278,7 @@ function apachesolr_search_apachesolr_facets() {
       // $delta can only be 32 chars, and the CCK field name may be this
       // long also, so we cannot add anything to it.
       $facets[$field['field_name']] = array(
-        'info' => t('ApacheSolr Search: Filter by @field', array('@field' => $field['label'])),
+        'info' => t('Apache Solr Search: Filter by @field', array('@field' => $field['label'])),
         'facet_field' => apachesolr_index_key($field),
       );
     }
@@ -301,7 +301,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
         $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE,);
       }
       $blocks['currentsearch'] = array(
-        'info' => t('ApacheSolr Search: Current search'),
+        'info' => t('Apache Solr Search: Current search'),
         'cache' => BLOCK_CACHE_PER_PAGE,
       );
       return $blocks;
