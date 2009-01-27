@@ -1,6 +1,6 @@
-; $Id: apachesolr_nodeaccess.info,v 1.1.2.2 2008/12/04 22:02:43 pwolanin Exp $
-name = ApacheSolr Node Access
-description = Integrates Node Access and ApacheSolr
+; $Id: apachesolr_nodeaccess.info,v 1.1.2.3 2008/12/17 18:35:04 pwolanin Exp $
+name = ApacheSolr node access
+description = Integrates the node access system with Apache Solr search
 dependencies[] = apachesolr
 package = ApacheSolr
 core = "6.x"

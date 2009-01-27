@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.18 2009/01/27 16:19:15 pwolanin Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.19 2009/01/27 20:12:52 pwolanin Exp $
 
 /**
  * Implementation of hook_menu()
@@ -8,7 +8,7 @@ function apachesolr_mlt_menu() {
   $items = array();
 
   $items['admin/settings/apachesolr_mlt'] = array(
-    'title' => 'Apache Solr More Like This',
+    'title' => 'Apache Solr - More Like This',
     'description' => 'Configure content recommendation blocks using the ApacheSolr "More Like This" handler.',
     'page callback' => 'apachesolr_mlt_settings',
     'access arguments' => array('administer search'),
@@ -174,7 +174,7 @@ function apachesolr_mlt_block_form(&$form_state, $block_id = NULL) {
   $form['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Block Name'),
-    '#description' => t('Please enter the block name. This will be displayed to site users'),
+    '#description' => t('The block name displayed to site users.'),
     '#default_value' => isset($block['name']) ? check_plain($block['name']) : '',
     '#weight' => '-2',
   );
@@ -187,7 +187,7 @@ function apachesolr_mlt_block_form(&$form_state, $block_id = NULL) {
 
   $form['comparison'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Comparison settings'),
+    '#title' => t('Comparison fields'),
     '#weight' => 0,
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
@@ -195,7 +195,7 @@ function apachesolr_mlt_block_form(&$form_state, $block_id = NULL) {
   $form['comparison']['mlt_fl'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Fields for comparison'),
-    '#description' => t('The fields to be used in caclulating similarity.'),
+    '#description' => t('Select fields to be used in calculating similarity. The default combination of "taxonomy_names" and "title" will provide relevant results for typical sites.'),
     '#options' => apachesolr_mlt_get_fields(),
     '#default_value' => isset($block['mlt_fl']) ? $block['mlt_fl'] : array('title', 'taxonomy_names'),
   );
@@ -210,31 +210,31 @@ function apachesolr_mlt_block_form(&$form_state, $block_id = NULL) {
   $form['advanced']['mlt_mintf'] = array(
     '#type' => 'textfield',
     '#title' => t('Minimum Term Frequency'),
-    '#description' => t('The frequency below which terms will be ignored in the source document.'),
+    '#description' => t('A word must appear this many times in any given document before the document is considered relevant for comparison.'),
     '#default_value' => isset($block['mlt_mintf']) ? (int) $block['mlt_mintf'] : 1,
   );
   $form['advanced']['mlt_mindf'] = array(
     '#type' => 'textfield',
     '#title' => t('Minimum Document Frequency'),
-    '#description' => t('The frequency at which words will be ignored which do not occur in at least this many documents.'),
+    '#description' => t('A word must occur in at least this many documents before it will be used for similarity comparison.'),
     '#default_value' => isset($block['mlt_mindf']) ? (int) $block['mlt_mindf'] : 1,
   );
   $form['advanced']['mlt_minwl'] = array(
     '#type' => 'textfield',
     '#title' => t('Minimum Word Length'),
-    '#description' => 'Words must be at least this long or they will be ignored.',
+    '#description' => 'You can use this to eliminate short words such as "the" and "it" from similarity comparisons. Words must be at least this number of characters or they will be ignored.',
     '#default_value' => isset($block['mlt_minwl']) ? (int) $block['mlt_minwl'] : 3,
   );
   $form['advanced']['mlt_maxwl'] = array(
     '#type' => 'textfield',
     '#title' => t('Maximum World Length'),
-    '#description' => t('Words above this length will be ignored.'),
+    '#description' => t('You can use this to eliminate very long words from similarity comparisons. Words of more than this number of characters will be ignored.'),
     '#default_value' => isset($block['mlt_maxwl']) ? (int) $block['mlt_maxwl'] : 15,
   );
   $form['advanced']['mlt_maxqt'] = array(
     '#type' => 'textfield',
     '#title' => t('Maximum number of query terms'),
-    '#description' => t('The maximum number of query terms that will be included in any generated query. Lower numbers will result in fewer recommendations but perform better.'),
+    '#description' => t('The maximum number of query terms that will be included in any query. Lower numbers will result in fewer recommendations but will get results faster. If a content recommendation is not returning any recommendations, you can either check more "Comparison fields" checkboxes or increase the maximum number of query terms here.'),
     '#default_value' => isset($block['mlt_maxqt']) ? (int) $block['mlt_maxqt'] : 30,
   );
 

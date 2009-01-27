@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.95 2009/01/27 16:19:14 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.96 2009/01/27 20:12:51 pwolanin Exp $
 
 /**
  * @file
@@ -98,7 +98,7 @@ function apachesolr_requirements($phase) {
     catch (Exception $e) {
       watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
     }
-    $value =  $ping ? $t('Solr can be pinged.') : $t('No Solr instance is available.');
+    $value =  $ping ? $t('Your site has contacted the Apache Solr server.') : $t('Your site was unable to contact the Apache Solr server.');
     $severity = $ping ? 0: 2;
     $description = theme('item_list', array($t('Host: %host', array('%host' => $host)),
                         $t('Port: %port', array('%port' => $port)),
@@ -687,7 +687,7 @@ function apachesolr_facetcount_form($module, $delta) {
 
   $form['apachesolr_facet_query_initial_limit'] = array(
     '#type' => 'select',
-    '#title' => t('Initial filter terms to show'),
+    '#title' => t('Initial filter links'),
     '#options' => $limit,
     '#description' => t('The initial number of filter links to show in this block.'),
     '#default_value' => isset($initial[$module][$delta]) ? $initial[$module][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10),
@@ -695,7 +695,7 @@ function apachesolr_facetcount_form($module, $delta) {
   $limit = drupal_map_assoc(array(100, 75, 50, 40, 30, 20, 15, 10, 5, 3));
   $form['apachesolr_facet_query_limit'] = array(
     '#type' => 'select',
-    '#title' => t('Maximum filter terms to show'),
+    '#title' => t('Maximum filter links'),
     '#options' => $limit,
     '#description' => t('The maximum number of filter links to show in this block.'),
     '#default_value' => isset($limits[$module][$delta]) ? $limits[$module][$delta] : variable_get('apachesolr_facet_query_limit_default', 20),

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.9 2009/01/27 13:41:21 pwolanin Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.10 2009/01/27 20:12:51 pwolanin Exp $
 
 /**
  * @file
@@ -53,21 +53,21 @@ function apachesolr_search_bias_form($form_state) {
     '#title' => t('Result biasing'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
-    '#description' => t('Specify here biasing for different node properties when ordering the search results. Choose <em>Omit</em> to ignore this property.'),
+    '#description' => t('Give bias to certain properties when ordering the search results. Choose <em>Omit</em> to ignore this for any given property.'),
   );
   $form['biasing']['apachesolr_search_date_boost'] = array(
     '#type' => 'select',
     '#options' => $options,
-    '#title' => t("More recent change bias"),
+    '#title' => t("'More recent change' bias"),
     '#default_value' => $date_settings,
-    '#description' => t('This setting will change the scoring so that more recent results may appear before those with higher keyword matching.'),
+    '#description' => t('This setting will change the result scoring so that results changed more recently may appear before those with higher keyword matching.'),
   );
   $form['biasing']['apachesolr_search_comment_boost'] = array(
     '#type' => 'select',
     '#options' => $options,
-    '#title' => t("More comments bias"),
+    '#title' => t("'More comments' bias"),
     '#default_value' => $comment_settings,
-    '#description' => t('This setting will change the scoring so that nodes with more comments may appear before those with higher keyword matching.'),
+    '#description' => t('This setting will change the result scoring so that nodes with more comments may appear before those with higher keyword matching.'),
   );
 
   return system_settings_form($form);
@@ -107,7 +107,7 @@ function apachesolr_search_settings_form($form_state, $fields) {
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
       '#tree' => TRUE,
-      '#description' => t('Specify here which fields are more important when searching. Give a field a bigger numeric value to make it more important.  If you omit a field, it will not be searched for keywords.'),
+      '#description' => t('Specify here which fields are more important when searching. Give a field a greater numeric value to make it more important. If you omit a field, it will not be searched.'),
     );
     foreach ($fields as $field_name => $field) {
       $form['apachesolr_search_query_fields'][$field_name] = array(

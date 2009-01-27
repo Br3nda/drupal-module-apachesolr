@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.2 2009/01/27 18:29:17 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.3 2009/01/27 20:12:51 pwolanin Exp $
 
 /**
  * @file
@@ -53,7 +53,7 @@ function apachesolr_settings() {
   $form['apachesolr_failure'] = array(
     '#type' => 'select',
     '#title' => t('On failure'),
-    '#options' => array('show_error' => t('Show error'),
+    '#options' => array('show_error' => t('Show error message'),
       'show_drupal_results' => t('Show core Drupal results'),
       'show_no_results' => t('Show no results')
     ),

@@ -1,5 +1,5 @@
 ; $Id$
-name = ApacheSolr Image integration
+name = ApacheSolr image module integration
 description = Integrates the ApacheSolr and Image modules
 dependencies[] = image
 dependencies[] = apachesolr
