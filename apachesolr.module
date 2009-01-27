@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.93 2009/01/26 23:22:05 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.94 2009/01/27 13:48:52 pwolanin Exp $
 
 /**
  * @file
@@ -845,10 +845,10 @@ function apachesolr_current_query($keys = '', $filters = '', $solrsort = '', $re
     $keys = search_get_keys();
   }
   if (empty($filters) && !empty($_GET['filters'])) {
-    $filters = check_plain($_GET['filters']);
+    $filters = $_GET['filters'];
   }
   if (empty($solrsort) && !empty($_GET['solrsort'])) {
-    $solrsort = check_plain($_GET['solrsort']);
+    $solrsort = $_GET['solrsort'];
   }
   $index = $keys . '&filters=' . $filters;
 

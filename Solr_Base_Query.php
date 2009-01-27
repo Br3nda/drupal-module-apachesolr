@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.16 2008/12/18 08:48:44 jacobsingh Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.17 2009/01/27 13:48:52 pwolanin Exp $
 
 class Solr_Base_Query {
 
@@ -12,33 +12,14 @@ class Solr_Base_Query {
    * Extract a module-specific search option from a search query. e.g. 'type:book'
    */
   static function query_extract($filters, $option) {
-    $pattern = '/(^| )'. $option .':(\"([^\"]*)\")/i';
-    preg_match_all($pattern, $filters, $matches);
-    if (!empty($matches[2])) {
-      // The preg_replace removes beginning and trailing quotations.
-      return preg_replace('/^"|"$/', '', $matches[2]);
+    $pattern = '/(^| )'. $option .':"([^"]*)"/i';
+    if (preg_match_all($pattern, $filters, $matches)) {
+      return array('matches' => $matches[0], 'values' => $matches[2]);
     }
     $pattern = '/(^| )'. $option .':([^ ]*)/i';
     if (preg_match_all($pattern, $filters, $matches)) {
-      if (!empty($matches[2])) {
-        return $matches[2];
-      }
+      return array('matches' => $matches[0], 'values' => $matches[2]);
     }
-  }
-
-  /**
-   * Replaces all occurances of $option in $filters.
-   */
-  static function query_replace($filters, $option) {
-    $matches = self::query_extract($filters, $option);
-    if (count($matches) > 0) {
-      foreach ($matches as $match) {
-        // TODO: Make some sort of name->value container object.
-        $found = self::make_field(array('#name' => $option, '#value' => $match));
-        $filters = str_replace($found, '', $filters);
-      }
-    }
-    return $filters;
   }
 
   /**
@@ -50,11 +31,11 @@ class Solr_Base_Query {
       return implode(' ', array_filter(explode(' ', $values['#value']), 'trim'));
     }
     else {
-      // if the field value has spaces, or : in it, wrap it in double quotes.
+      // If the field value has spaces, or : in it, wrap it in double quotes.
       if (preg_match('/[ :]/', $values['#value'])) {
         $values['#value'] = '"'. $values['#value']. '"';
       }
-      return $values['#name']. ':'. $values['#value'];
+      return $values['#name'] . ':' . $values['#value'];
     }
   }
 
@@ -108,7 +89,7 @@ class Solr_Base_Query {
   function __construct($solr, $querypath, $filterstring, $sortstring) {
     $this->solr = $solr;
     $this->querypath = trim($querypath);
-    $this->filters = trim($filterstring);
+    $this->filters = trim($filterstring); 
     $this->solrsort = trim($sortstring);
     $this->id = ++self::$idCount;
     $this->parse_query();
@@ -260,9 +241,9 @@ class Solr_Base_Query {
         // of the do loop
         $a = (int)strlen($filters);
         // Get the values for $name
-        $values = Solr_Base_Query::query_extract($filters, $name);
-        if (count($values) > 0) {
-          foreach ($values as $value) {
+        $extracted = Solr_Base_Query::query_extract($filters, $name);
+        if (count($extracted['values'])) {
+          foreach ($extracted['values'] as $value) {
             $found = Solr_Base_Query::make_field(array('#name' => $name, '#value' => $value));
             $pos = strpos($this->filters, $found);
             // $solr_keys and $solr_crumbs are keyed on $pos so that query order
@@ -270,7 +251,7 @@ class Solr_Base_Query {
             $this->fields[$pos] = array('#name' => $name, '#value' => trim($value));
           }
           // Update the local copy of $filters by removing the key that was just found.
-          $filters = trim(Solr_Base_Query::query_replace($filters, $name));
+          $filters = trim(str_replace($extracted['matches'], '', $filters));
         }
         // Take new strlen to compare with $a.
         $b = (int)strlen($filters);
