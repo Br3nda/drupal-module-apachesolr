@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.1 2009/01/26 23:22:05 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.2 2009/01/27 18:29:17 pwolanin Exp $
 
 /**
  * @file
@@ -149,9 +149,11 @@ function apachesolr_enabled_facets_form_submit($form, &$form_state) {
  */
 function apachesolr_enabled_facets_form() {
   $facets = array();
+  $module_list = array();
   foreach (module_implements('apachesolr_facets') as $module) {
     $module_facets[$module] = module_invoke($module, 'apachesolr_facets');
     uasort($module_facets[$module], '_apachesolr_sort_facets');
+    $module_list[$module] = $module;
   }
 
   $enabled_facets = apachesolr_get_enabled_facets();
@@ -160,12 +162,17 @@ function apachesolr_enabled_facets_form() {
     '#type' => 'item',
     '#value' => t('You can use this screen to select which ApacheSolr filter blocks should be created by enabling the corresponding Apache Solr filters. For performance reasons, you should only enable filters that you intend to have available to users on the search page.  After selecting which filter blocks to create, you will be sent to the blocks page where you can choose which of those blocks should be enabled when your users search by placing each block in a region.'),
   );
-
+  if ($module_list) {
+    $placeholders = implode(', ', array_fill(0, count($module_list), "'%s'"));
+    $result = db_query("SELECT name, info FROM {system} WHERE name IN (". $placeholders .") AND type = 'module'", $module_list);
+    while ($item = db_fetch_array($result)) {
+      $module_list[$item['name']] = unserialize($item['info']);
+    }
+  }
   foreach($module_facets as $module => $facets) {
     $form['apachesolr_enabled_facets'][$module] = array(
       '#type' => 'fieldset',
-      // TODO: wrong.
-      '#title' => $module,
+      '#title' => check_plain($module_list[$module]['name']),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
     );
