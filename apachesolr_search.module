@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.60 2009/01/26 23:22:05 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.61 2009/01/27 13:41:22 pwolanin Exp $
 
 /**
  * @file
@@ -163,7 +163,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         else {
           $total = db_result(db_query("SELECT COUNT(nid) FROM {node}"));
         }
-        $date_settings = variable_get('apacehsolr_search_date_boost', '4:200.0');
+        $date_settings = variable_get('apachesolr_search_date_boost', '4:200.0');
         list($date_steepness, $date_boost) = explode(':', $date_settings);
         // Default date-biasing function, as suggested (but steeper) at
         // http://wiki.apache.org/solr/DisMaxRequestHandler
@@ -172,7 +172,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         if ($date_boost) {
           $params['bf'][] = "recip(rord(created),$date_steepness,$total,$total)^$date_boost";
         }
-        $comment_settings = variable_get('apacehsolr_search_comment_boost', '4:200.0');
+        $comment_settings = variable_get('apachesolr_search_comment_boost', '4:200.0');
         list($comment_steepness, $comment_boost) = explode(':', $comment_settings);
         // Default date-biasing function, as suggested (but steeper) at
         // http://wiki.apache.org/solr/DisMaxRequestHandler

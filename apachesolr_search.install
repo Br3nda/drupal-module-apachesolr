@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.install,v 1.1.2.3 2009/01/12 18:57:39 pwolanin Exp $
+// $Id: apachesolr_search.install,v 1.1.2.4 2009/01/27 13:41:22 pwolanin Exp $
 
 /**
  * @file
@@ -43,5 +43,23 @@ function apachesolr_search_update_6001() {
        $ret[] = update_sql("UPDATE {blocks_roles} SET delta = '". $new_delta ."' WHERE module = 'apachesolr_search' AND delta = '". $index_key ."'");
      }
   }
+  return $ret;
+}
+
+/**
+ * Update mis-named variables.
+ */
+function apachesolr_search_update_6002() {
+  $ret = array();
+  $date_settings = variable_get('apacehsolr_search_date_boost', '');
+  $comment_settings = variable_get('apacehsolr_search_comment_boost', '');
+  if ($date_settings) {
+    variable_set('apachesolr_search_date_boost', $date_settings);
+  }
+  if ($comment_settings) {
+    variable_set('apachesolr_search_comment_boost', $comment_settings);
+  }
+  variable_del('apacehsolr_search_date_boost');
+  variable_del('apacehsolr_search_comment_boost');
   return $ret;
 }
