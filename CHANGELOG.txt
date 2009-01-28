@@ -1,0 +1,45 @@
+// $Id: CHANGELOG.txt,v 1.1.2.2 2009/01/28 21:01:47 pwolanin Exp $
+
+Apache Solr integration x.x-x.x, xxxx-xx-xx
+------------------------------
+
+
+Apache Solr integration 6.x-1.x, xxxx-xx-xx
+------------------------------
+
+
+Apache Solr integration 6.x-1.1-beta1, 2009-01-28 (changes since 6.x-1.0-alpha6 2009-Jan-08)
+------------------------------
+#365684 Get PHP library from new svn home by pwolanin
+#365620 clear stale data on hook_enable by pwolanin
+#365312 don't redirect after enabling filters by pwolanin
+#365245 invalid foreach when no facets available reported by Damien Tournoud
+#        don't let attachements be enabled since it seems be broken by pwolanin
+#363972 fix ApacheSolr to Apache Solr
+#363972 Text improvements for UI by horncologne and pwolanin
+#365063 fix module name in admin screen by pwolanin
+#365022 fatal error in MLT when no Solr server by pwolanin
+#364446 fix space problem and clean up query class by pwolanin
+#355525 fix mis-named variables, patch by pwolanin,  bug reported by flexer
+#339467 centralize/register facets blocks by paul.lovvik, JacobSingh and
+        pwolanin
+#362389 make the _image module work by pwolanin
+#364140 fix mlt schema bug, thanks to webrascal
+#364384 reorder selects to have bigger numbers at the top by pwolanin, suggested
+        by horncologne
+#350330 make sure to index dates as GMT, thanks to webrascal
+#363416 reindex without blowing away either the solr index or the core search index by pwolanin
+#360227 strip ctl chars() also on path, reported by flexer
+#348215 cleanup - simplify branching, numerically index array by pwolanin
+#348215 add missing js file with minor text chenges (js file by vladimir.dolgopolov)
+#359923 separate cron limit for apachesolr by pwolanin
+#       remove lang module - code was already added to apachesolr_search
+#292662 commit after we delete the index by pwolanin
+#356696 by pwolanin: copies the author's name to a string field for use in
+        multisite search or sorting by author.  Also snuck in non-compression on
+        the body for performance.
+#348215 by vladimir.dolgopolov: More link for additional facets.
+#292662 update README by pwolanin
+#344249 obey 32 char limit for block deltas by pwolanin
+#355479 fix PHP warning when request fails by pwolanin
+#355544 Add a ->clearCache(); in apachesolr_index_page(), by flexer and pwolanin
