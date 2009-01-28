@@ -1,14 +1,11 @@
 <?php
-// $Id: apachesolr_attachments.module,v 1.2 2008/08/28 11:05:48 drunkenmonkey Exp $
+// $Id: apachesolr_attachments.module,v 1.3 2009/01/28 20:06:37 pwolanin Exp $
 
 /**
  * @file
  *   Provides a file attachment search implementation for use with the Apache Solr module
  */
 
-define('SOLR_ATTACHMENT_TYPE', 'Attachment');
-define('SOLR_ATTACHMENT_ID_DELIM', '--');
-define('SOLR_ATTACHMENT_NS', 'apachesolr_attachment');
 define('SOLR_ATTACHMENT_WD', 'Solr Attachments');
 
 /**
@@ -72,19 +69,14 @@ function apachesolr_attachments_settings() {
 function apachesolr_attachments_search($op = 'search', $keys = NULL) {
 
   switch ($op) {
-  
     case 'name':
-      // We dont want a tab
-      return '';
-
+      return ''; // We dont want a tab
     case 'reset':
-      ApacheSolrUpdate::reset(SOLR_ATTACHMENT_NS);
+      apachesolr_clear_last_index('apachesolr_attachments');
       return;
-      
     case 'status':
-      // Figure out a way to know how many are left to update, or expose it as part of the apachesolr module
-      return;
-      
+      // TODO: Figure out a way to know how many actual files are left to update.
+      return apachesolr_index_status('apachesolr_attachments');
     case 'search':
       return apachesolr_search_search($op, $keys);
   }
@@ -97,78 +89,70 @@ function apachesolr_attachments_search($op = 'search', $keys = NULL) {
  * attachments.
  */
 function apachesolr_attachments_update_index() {
+  // TODO - should probably have a separate variable.
+  $cron_limit = variable_get('search_cron_limit', 100);
+  $result = apachesolr_get_nodes_to_index('apachesolr_attachments', $cron_limit);
+  apachesolr_index_nodes($result,  'apachesolr_attachments', 'apachesolr_attachments_add_documents');
+}
 
-  $result = ApacheSolrUpdate::getNodesToIndex(SOLR_ATTACHMENT_NS);
-  while ($row = db_fetch_object($result)) {
-    // Variables to track the last item changed.
-    $solr_last_change = $row->last_change;
-    $solr_last_id = $row->nid;
+/**
+ * Callback for apachesolr_index_nodes().
+ *
+ * Adds a document for each indexable file attachment for the given node ID.
+ */
+function apachesolr_attachments_add_documents(&$documents, $nid) {
+  $node = node_load($nid, NULL, TRUE);
+  if (!empty($node->nid)) {
+    
+    $hash = apachesolr_site_hash();
 
-    $node = node_load($row->nid);
-    if ($node->nid) {
- 
-      // Since there is no notification for an attachment being unassociated with a 
-      // node (but that action will trigger it to be indexed again), lets remove 
-      // all indexed attachments then add all attached (if any)
-      _asa_remove_attachments_from_index($node->nid);
-      watchdog('NODE', '<pre>' . print_r($node, true) . '</pre>');
- 
-      $files = _asa_get_indexable_files($node);
-      if(!empty($files)) {
-        // Update solr index.
-        try {
+    // Since there is no notification for an attachment being unassociated with a 
+    // node (but that action will trigger it to be indexed again), lets remove 
+    // all indexed attachments then add all attached (if any)
+    _asa_remove_attachments_from_index($node->nid);
 
-          foreach ($files as $file) {
-            // Some are arrays others are objects, treat them all as objects
-            $file = (object) $file;
+    $files = _asa_get_indexable_files($node);
+    if(!empty($files)) {
+      foreach ($files as $file) {
+        // Some are arrays others are objects, treat them all as objects
+        $file = (object) $file;
 
-            $text = _asa_get_attachment_text($file);
-            $text = trim($text);
+        $text = _asa_get_attachment_text($file);
+        $text = trim($text);
 
-            if (!empty($text)) {
-              $document = new Apache_Solr_Document();
-
-              // Dont use :, that is a solr delimeter
-              $id = $node->nid . SOLR_ATTACHMENT_ID_DELIM . $file->fid;
-              $document->nid = $id;
-              $document->title = $file->filename; 
-              $document->changed = $node->changed;
-              $document->uid = $node->uid;
-              $document->body = $text;
-              $document->text = "$file->filename $text";
-              $document->type = SOLR_ATTACHMENT_TYPE;
-              _as_configure_taxonomy($document, $node);
-
-              $documents[] = $document;
-            }
-          }
-        }
-        catch (Exception $e) {
-          watchdog(SOLR_ATTACHMENT_WD, $e->getMessage(), WATCHDOG_ERROR);
+        if ($text) {
+          $document = new Apache_Solr_Document();
+          $document->id = apachesolr_document_id($file->fid, 'file');
+          $document->url = file_create_url($file->filepath);
+          $document->hash = $hash;
+          $document->nid = $node->nid;
+          $document->title = $file->filename; 
+          $document->changed = apachesolr_date_iso($node->changed);
+          $document->uid = $node->uid;
+          $document->name = $node->name;
+          $document->body = $text;
+          $document->text = "{$file->description} {$file->filename} $text";
+          $document->type = $node->type;
+          $document->bsfield_isfile = TRUE;
+          _as_configure_taxonomy($document, $node);
+          
+          drupal_alter('apachesolr_attachment', $document, $node, $file);
+           
+          $documents[] = $document;
         }
       }
-      ApacheSolrUpdate::success(SOLR_ATTACHMENT_NS, $solr_last_change, $solr_last_id);
     }
   }
-  
-  _as_index_documents($documents);
 }
 
 /**
  * Implementation of hook_nodeapi().
  *
- * For a search result: Parse the nid and fid for a search result for potential use later.
  * For a delete: Remove all associated attachments from the Solr store.
  */
 function apachesolr_attachments_nodeapi($node, $op) {
 
   switch ($op) {
-    case 'search result':
-      if ($node->type == SOLR_ATTACHMENT_TYPE) {
-        list($nid, $fid) = split(SOLR_ATTACHMENT_ID_DELIM, $node->nid);
-        return array('nid' => $nid, 'fid' => $fid);
-      }
-      break;
     case 'delete':
       _asa_remove_attachments_from_index($node->nid);
       break;
@@ -183,14 +167,13 @@ function apachesolr_attachments_nodeapi($node, $op) {
  * those values here if needed. 
  */
 function apachesolr_attachments_apachesolr_process_results($results) {
-  
+
   if (is_array($results)) {
     foreach ($results as &$item) {
-      if ($item['node']->type == SOLR_ATTACHMENT_TYPE) {
-        $item['type'] = SOLR_ATTACHMENT_TYPE;
-        $file_url = _asa_get_file_url($item['extra']['fid']);
-        $url = empty($file_url) ? 'node/'.$item['extra']['nid'] : $file_url;
-        $item['link'] = url($url, array('absolute' => TRUE));
+      if (isset($item['node']->bsfield_isfile) && $item['node']->bsfield_isfile === TRUE) {
+        $nid = $item['node']->nid;
+        $node_title = db_result(db_query("SELECT title FROM {node} WHERE nid = %d", $nid));
+        $item['snippet'] = l($node_title, "node/$nid") . ': ' . $item['snippet'];
       }
     }
   }
@@ -201,11 +184,11 @@ function apachesolr_attachments_apachesolr_process_results($results) {
  */
 function _asa_get_indexable_files($node) {
   $files = array();
-  
+
   if(!empty($node->files)) {
     $files = array_merge($files, $node->files);
   }
-  
+
   $fields = _asa_get_cck_file_fields();
   foreach ($fields as $field) {
     if(!empty($node->$field)) {
@@ -253,6 +236,10 @@ function _asa_get_attachment_text($file) {
   // Strip anything that might make the Solr integration barf.
   // Wierd control characters make things behave wierd, especially in XML
   $cleaned_text = iconv("utf-8", "utf-8//IGNORE", $text);
+
+  // As per robertDouglass - http://drupal.org/node/335871
+  // Strip bad control characters. Do we need to make a hook for text cleanup?
+  $cleaned_text = apachesolr_strip_ctl_chars($cleaned_text);
   
   return $cleaned_text;
 }
@@ -262,23 +249,12 @@ function _asa_get_attachment_text($file) {
  */
 function _asa_remove_attachments_from_index($nid) {
   try {
-    $solr = _get_solr_instance();
-    $solr->deleteByQuery("nid:$nid" . SOLR_ATTACHMENT_ID_DELIM . "*");
+    $solr = apachesolr_get_solr();
+    $solr->deleteByQuery("nid:{$nid} AND bsfield_isfile:true");
     $solr->commit();
   }
   catch (Exception $e) {
     watchdog(SOLR_ATTACHMENT_WD, $e->getMessage(), WATCHDOG_ERROR);
-  }
-}
-
-/**
- * For a provided fid, get the file path.
- */
-function _asa_get_file_url($fid) {
-  if (!empty($fid) && is_numeric($fid)) {
-    $result = db_query('SELECT * FROM {files} WHERE fid = %d', $fid);
-    $file = db_fetch_array($result);
-    return $file['filepath'];
   }
 }
 
@@ -304,80 +280,34 @@ function _asa_get_file_helper_command($type) {
   return $cmd;
 }
 
-/**
- * Get a reference to the Solr service.
- */
-function _asa_get_solr_instance() {
-  try {
-    return _get_solr_instance(); 
-  }
-  catch (Exception $e) {
-    watchdog(SOLR_ATTACHMENT_WD, $e->getMessage(), WATCHDOG_ERROR);
-  }
-  
-  return FALSE;
-}
-
-
-
 /***************************************************************************************/
 /** The following functions should become part of the Apache Solr module API          **/
 /***************************************************************************************/
 
 /**
- * Get a reference to the Solr service. This consolidates cal to varaible_get, etc.
- */
-function _get_solr_instance() {
-  $host = variable_get('apachesolr_host', 'localhost');
-  $port = variable_get('apachesolr_port', 8983);
-  $path = variable_get('apachesolr_path', '/solr');
-  $solr =& apachesolr_get_solr($host, $port, $path);
-  if (!$solr->ping()) {
-    throw new Exception(t('No Solr instance available'));
-  }
-  
-  return $solr; 
-}
-
-
-/**
  * Add taxonomy from the node to the solr document for the attachment.
+ *
+ * This is a direct copy from the apachesolr.module, we should refactor to 
+ * make it reusable
  */
-function _as_configure_taxonomy($document, $node) {
+function _as_configure_taxonomy(&$document, $node) {
+  
   if (is_array($node->taxonomy)) {
     foreach ($node->taxonomy as $term) {
-      $document->setMultiValue('tid', $term->tid);
-
       // Double indexing of tids lets us do effecient searches (on tid)
       // and do accurate per-vocabulary faceting.
-      $document->setMultiValue('imfield_vid' . $term->vid, $term->tid);
-      
-      $document->setMultiValue('vid', $term->vid);
-      $document->setMultiValue('taxonomy_name', $term->name);
-    }
-  }
-}
 
-/**
- * Take the full list of Docs to submit to Solr and add them in batches.
- */
-function _as_index_documents($documents) {
-
-  $solr = _asa_get_solr_instance();
-
-  if (is_object($solr) && count($documents) > 0) {
-    watchdog(SOLR_ATTACHMENT_WD, t("Adding @count documents to Solr", array('@count' => count($documents))));
-    try {
-      // Chunk the adds by 50s
-      $docs_chunk = array_chunk($documents, 50);
-      foreach ($docs_chunk as $docs) {
-        $solr->addDocuments($docs);
+      // By including the ancestors to a term in the index we make 
+      // sure that searches for general categories match specific
+      // categories, e.g. Fruit -> apple, a search for fruit will find
+      // content categorized with apple.
+      $ancestors = taxonomy_get_parents_all($term->tid);
+      foreach ($ancestors as $ancestor) {
+        $document->setMultiValue('tid', $ancestor->tid);
+        $document->setMultiValue('imfield_vid'. $ancestor->vid, $ancestor->tid);
+        $document->setMultiValue('vid', $ancestor->vid);
+        $document->setMultiValue('taxonomy_name', $ancestor->name);
       }
-      $solr->commit();
-      $solr->optimize(FALSE, FALSE);
-    }
-    catch (Exception $e) {
-      watchdog(SOLR_ATTACHMENT_WD, $e->getMessage(), WATCHDOG_ERROR);
     }
   }
 }

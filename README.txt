@@ -1,10 +1,17 @@
-/* $Id: README.txt,v 1.4 2008/07/28 07:09:40 robertDouglass Exp $ */
+/* $Id: README.txt,v 1.5 2009/01/28 20:06:36 pwolanin Exp $ */
 
-This module integrates Drupal with the Apache Solr search platform. Solr search can be used as a replacement for core content search and boasts both extra features and better performance. Among the extra features is the ability to have faceted search on facets ranging from content author to taxonomy to arbitrary CCK fields.
+This module integrates Drupal with the Apache Solr search platform. Solr search
+can be used as a replacement for core content search and boasts both extra
+features and better performance. Among the extra features is the ability to have
+faceted search on facets ranging from content author to taxonomy to arbitrary
+CCK fields.
 
-The module comes with a schema.xml file which should be used in your Solr installation.
+The module comes with a schema.xml and solrconfig.xml file which should be used
+in your Solr installation.
 
-This module depends on the search framework in core. However, you may not want the core searches and only want Solr search. If that is the case, you want to use the Core Searches module in tandem with this module.
+This module depends on the search framework in core. However, you may not want
+the core searches and only want Solr search. If that is the case, you want to
+use the Core Searches module in tandem with this module.
 
 
 Installation
@@ -12,40 +19,67 @@ Installation
 
 Install and enable the ApacheSolr Drupal module as you would any Drupal module.
 
-Prerequisite: Java 5 or higher.
+Prerequisite: Java 5 or higher (a.k.a. 1.5.x).  PHP 5.2.0 or higher.
 
-Download Solr 1.2 or higher from a mirror site:
+Download Solr trunk (candidate 1.4.x build) from a nightly build or build it
+from svn.  http://people.apache.org/builds/lucene/solr/nightly/
+
+Once Solr 1.4 is released, you will be able to download from:
 http://www.apache.org/dyn/closer.cgi/lucene/solr/
 
-Unpack the tarball somewhere not visible to the web (not in your apache docroot and not inside of your drupal directory).
+Unpack the tarball somewhere not visible to the web (not in your apache docroot
+and not inside of your drupal directory).
 
-The Solr download comes with an example application that you can use for testing, development, and even for smaller production sites. This application is found at apache-solr-1.2.x/example.
+The Solr download comes with an example application that you can use for
+testing, development, and even for smaller production sites. This
+application is found at apache-solr-nightly/example.
 
-Move apache-solr-1.2.x/example/solr/conf/schema.xml and rename it to something like schema.bak. Then move the schema.xml that comes with the ApacheSolr Drupal module to take its place.
+Move apache-solr-nightly/example/solr/conf/schema.xml and rename it to
+something like schema.bak. Then move the schema.xml that comes with the
+ApacheSolr Drupal module to take its place.
 
-Now start the solr application by opening a shell, changing directory to apache-solr-1.2.x/example, and executing the command java -jar start.jar
+Similarly, move apache-solr-nightly/example/solr/conf/solrconfig.xml and rename
+it like solrconfig.bak. Then move the solrconfig.xml that comes with the
+ApacheSolr Drupal module to take its place.
 
-Test that your solr server is now available by visiting http://localhost:8983/solr/admin/
+Now start the solr application by opening a shell, changing directory to
+apache-solr-nightly/example, and executing the command java -jar start.jar
+
+Test that your solr server is now available by visiting
+http://localhost:8983/solr/admin/
 
 Now run cron on your Drupal site until your content is indexed.
 
-Enable blocks for facets at Administer > Site building > Blocks.
+The solrconfig.xml that comes with this modules defines auto-commit, so
+it may take a few minutes between running cron and when the new content
+is visible in search.
+
+Enable blocks for facets at Administer > Site building > Blocks.   
 
 Troubleshooting
 --------------
 Problem:
-Your Solr instance is running and you can test it in the Solr 
-admin interface (comes with the Java application). Yet your 
-Drupal ApacheSolr module cannot connect to it to do a search.
+Links to nodes appear in the search results with a different host name or
+subdomain than is preferred.  e.g. sometimes at http://example.com
+and sometimes at http://www.example.com
 
 Solution:
-To be able to use file_get_contents() in PHP, the "allow_url_fopen" 
-directive must be enabled. In php.ini set the following value:
-allow_url_fopen = On
+Set $base_url in settings.php to insure that an identical absolute url is
+generated at all times when nodes are indexed.  Alternately, set up a re-direct
+in .htaccess to prevent site visitors from accessing the site via more than one
+site address.
 
-Views integration
------------------
 
-At the current state of the Views integration for the module, there is a view that uses an apachesolr argument to search the site with Apache Solr. It's located at /solrsearch, just enable the corresponding menu item and you are ready to go.
+Developers
+--------------
 
-There is also a block named "ApacheSolr: Search results" which will display the results of the current ApacheSolr search, if there was one. You can use this one to display a view containing the results in addtion to the normal display, disabling the default display is currently not possible.
+Exposed Hooks:
+
+@param &$document Apache_Solr_Document
+@param $node StdClass
+hook_apachesolr_update_index(&$document, $node)
+
+This hook is called just before indexing the document.
+It allows you to add fields to the $document object which is sent to Solr.
+For reference on the $document object, see:
+SolrPhpClient/Apache/Solr/Document.php

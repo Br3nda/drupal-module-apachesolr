@@ -1,7 +1,0 @@
-; $Id$
-name = Apache Solr Views Integration
-description = Lets the user display Apache Solr search results within a view.
-dependencies [] = apachesolr
-dependencies [] = view
-package = ApacheSolr
-core = "6.x"

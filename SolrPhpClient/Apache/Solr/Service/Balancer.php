@@ -1,437 +1,763 @@
 <?php
 /**
- * @copyright Copyright 2007 Conduit Internet Technologies, Inc. (http://conduit-it.com)
- * @license Apache Licence, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
+ * Copyright (c) 2007-2009, Conduit Internet Technologies, Inc.
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *  - Neither the name of Conduit Internet Technologies, Inc. nor the names of
+ *    its contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @copyright Copyright 2007-2009 Conduit Internet Technologies, Inc. (http://conduit-it.com)
+ * @license New BSD (http://solr-php-client.googlecode.com/svn/trunk/COPYING)
  *
  * @package Apache
  * @subpackage Solr
- * @author Donovan Jimenez <djimenez@conduit-it.com>
+ * @author Donovan Jimenez <djimenez@conduit-it.com>, Dan Wolfe
  */
 
-require_once('Apache/Solr/Service.php');
+// See Issue #1 (http://code.google.com/p/solr-php-client/issues/detail?id=1)
+// Doesn't follow typical include path conventions, but is more convenient for users
+require_once(dirname(dirname(__FILE__)) . '/Service.php');
 
 /**
  * Reference Implementation for using multiple Solr services in a distribution. Functionality
  * includes:
- *  routing of read / write operations
- *  failover (on selection) for multiple read servers
+ * 	routing of read / write operations
+ * 	failover (on selection) for multiple read servers
  */
 class Apache_Solr_Service_Balancer
 {
-  protected $_readableServices = array();
-  protected $_writeableServices = array();
+	protected $_createDocuments = true;
 
-  protected $_currentReadService = null;
-  protected $_currentWriteService = null;
+	protected $_readableServices = array();
+	protected $_writeableServices = array();
 
-  protected $_readPingTimeout = 0.01;
-  protected $_writePingTimeout = 1;
+	protected $_currentReadService = null;
+	protected $_currentWriteService = null;
 
-  /**
-   * Constructor. Takes arrays of read and write service instances or descriptions
-   *
-   * @param array $readableServices
-   * @param array $writeableServices
-   */
-  public function __construct($readableServices = array(), $writeableServices = array())
-  {
-    //setup readable services
-    foreach ($readableServices as $service)
-    {
-      $this->addReadService($service);
-    }
+	protected $_readPingTimeout = 2;
+	protected $_writePingTimeout = 4;
 
-    //setup writeable services
-    foreach ($writeableServices as $service)
-    {
-      $this->addWriteService($service);
-    }
-  }
+	// Configuration for server selection backoff intervals
+	protected $_useBackoff = false;		// Set to true to use more resillient write server selection
+	protected $_backoffLimit = 600;		// 10 minute default maximum
+	protected $_backoffEscalation = 2.0; 	// Rate at which to increase backoff period
+	protected $_defaultBackoff = 2.0;		// Default backoff interval
 
-  public function setReadPingTimeout($timeout)
-  {
-    $this->_readPingTimeout = $timeout;
-  }
+	/**
+	 * Escape a value for special query characters such as ':', '(', ')', '*', '?', etc.
+	 *
+	 * NOTE: inside a phrase fewer characters need escaped, use {@link Apache_Solr_Service::escapePhrase()} instead
+	 *
+	 * @param string $value
+	 * @return string
+	 */
+	static public function escape($value)
+	{
+		return Apache_Solr_Service::escape($value);
+	}
 
-  public function setWritePingTimetou($timeout)
-  {
-    $this->_writePingTimeout = $timeout;
-  }
+	/**
+	 * Escape a value meant to be contained in a phrase for special query characters
+	 *
+	 * @param string $value
+	 * @return string
+	 */
+	static public function escapePhrase($value)
+	{
+		return Apache_Solr_Service::escapePhrase($value);
+	}
 
-  /**
-   * Generates a service ID
-   *
-   * @param string $host
-   * @param integer $port
-   * @param string $path
-   * @return string
-   */
-  private function _getServiceId($host, $port, $path)
-  {
-    return $host . ':' . $port . $path;
-  }
+	/**
+	 * Convenience function for creating phrase syntax from a value
+	 *
+	 * @param string $value
+	 * @return string
+	 */
+	static public function phrase($value)
+	{
+		return Apache_Solr_Service::phrase($value);
+	}
 
-  /**
-   * Adds a service instance or service descriptor (if it is already
-   * not added)
-   *
-   * @param mixed $service
-   *
-   * @throws Exception If service descriptor is not valid
-   */
-  public function addReadService($service)
-  {
-    if ($service instanceof Apache_Solr_Service)
-    {
-      $id = $this->_getServiceId($service->getHost(), $service->getPort(), $service->getPath());
+	/**
+	 * Constructor. Takes arrays of read and write service instances or descriptions
+	 *
+	 * @param array $readableServices
+	 * @param array $writeableServices
+	 */
+	public function __construct($readableServices = array(), $writeableServices = array())
+	{
+		//setup readable services
+		foreach ($readableServices as $service)
+		{
+			$this->addReadService($service);
+		}
 
-      $this->_readableServices[$id] = $service;
-    }
-    else if (is_array($service))
-    {
-      if (isset($service['host']) && isset($service['port']) && isset($service['path']))
-      {
-        $id = $this->_getServiceId((string)$service['host'], (int)$service['port'], (string)$service['path']);
+		//setup writeable services
+		foreach ($writeableServices as $service)
+		{
+			$this->addWriteService($service);
+		}
+	}
 
-        $this->_readableServices[$id] = $service;
-      }
-      else
-      {
-        throw new Exception('A Readable Service description array does not have all required elements of host, port, and path');
-      }
-    }
-  }
+	public function setReadPingTimeout($timeout)
+	{
+		$this->_readPingTimeout = $timeout;
+	}
 
-  /**
-   * Removes a service instance or descriptor from the available services
-   *
-   * @param mixed $service
-   *
-   * @throws Exception If service descriptor is not valid
-   */
-  public function removeReadService($service)
-  {
-    $id = '';
+	public function setWritePingTimeout($timeout)
+	{
+		$this->_writePingTimeout = $timeout;
+	}
 
-    if ($service instanceof Apache_Solr_Service)
-    {
-      $id = $this->_getServiceId($service->getHost(), $service->getPort(), $service->getPath());
-    }
-    else if (is_array($service))
-    {
-      if (isset($service['host']) && isset($service['port']) && isset($service['path']))
-      {
-        $id = $this->_getServiceId((string)$service['host'], (int)$service['port'], (string)$service['path']);
-      }
-      else
-      {
-        throw new Exception('A Readable Service description array does not have all required elements of host, port, and path');
-      }
-    }
+	public function setUseBackoff($enable)
+	{
+		$this->_useBackoff = $enable;
+	}
 
-    if ($id)
-    {
-      unset($this->_readableServices[$id]);
-    }
-  }
+	/**
+	 * Generates a service ID
+	 *
+	 * @param string $host
+	 * @param integer $port
+	 * @param string $path
+	 * @return string
+	 */
+	protected function _getServiceId($host, $port, $path)
+	{
+		return $host . ':' . $port . $path;
+	}
 
-  /**
-   * Adds a service instance or service descriptor (if it is already
-   * not added)
-   *
-   * @param mixed $service
-   *
-   * @throws Exception If service descriptor is not valid
-   */
-  public function addWriteService($service)
-  {
-    if ($service instanceof Apache_Solr_Service)
-    {
-      $id = $this->_getServiceId($service->getHost(), $service->getPort(), $service->getPath());
+	/**
+	 * Adds a service instance or service descriptor (if it is already
+	 * not added)
+	 *
+	 * @param mixed $service
+	 *
+	 * @throws Exception If service descriptor is not valid
+	 */
+	public function addReadService($service)
+	{
+		if ($service instanceof Apache_Solr_Service)
+		{
+			$id = $this->_getServiceId($service->getHost(), $service->getPort(), $service->getPath());
 
-      $this->_writeableServices[$id] = $service;
-    }
-    else if (is_array($service))
-    {
-      if (isset($service['host']) && isset($service['port']) && isset($service['path']))
-      {
-        $id = $this->_getServiceId((string)$service['host'], (int)$service['port'], (string)$service['path']);
+			$this->_readableServices[$id] = $service;
+		}
+		else if (is_array($service))
+		{
+			if (isset($service['host']) && isset($service['port']) && isset($service['path']))
+			{
+				$id = $this->_getServiceId((string)$service['host'], (int)$service['port'], (string)$service['path']);
 
-        $this->_writeableServices[$id] = $service;
-      }
-      else
-      {
-        throw new Exception('A Writeable Service description array does not have all required elements of host, port, and path');
-      }
-    }
-  }
+				$this->_readableServices[$id] = $service;
+			}
+			else
+			{
+				throw new Exception('A Readable Service description array does not have all required elements of host, port, and path');
+			}
+		}
+	}
 
-  /**
-   * Removes a service instance or descriptor from the available services
-   *
-   * @param mixed $service
-   *
-   * @throws Exception If service descriptor is not valid
-   */
-  public function removeWriteService($service)
-  {
-    $id = '';
+	/**
+	 * Removes a service instance or descriptor from the available services
+	 *
+	 * @param mixed $service
+	 *
+	 * @throws Exception If service descriptor is not valid
+	 */
+	public function removeReadService($service)
+	{
+		$id = '';
 
-    if ($service instanceof Apache_Solr_Service)
-    {
-      $id = $this->_getServiceId($service->getHost(), $service->getPort(), $service->getPath());
-    }
-    else if (is_array($service))
-    {
-      if (isset($service['host']) && isset($service['port']) && isset($service['path']))
-      {
-        $id = $this->_getServiceId((string)$service['host'], (int)$service['port'], (string)$service['path']);
-      }
-      else
-      {
-        throw new Exception('A Readable Service description array does not have all required elements of host, port, and path');
-      }
-    }
+		if ($service instanceof Apache_Solr_Service)
+		{
+			$id = $this->_getServiceId($service->getHost(), $service->getPort(), $service->getPath());
+		}
+		else if (is_array($service))
+		{
+			if (isset($service['host']) && isset($service['port']) && isset($service['path']))
+			{
+				$id = $this->_getServiceId((string)$service['host'], (int)$service['port'], (string)$service['path']);
+			}
+			else
+			{
+				throw new Exception('A Readable Service description array does not have all required elements of host, port, and path');
+			}
+		}
+		else if (is_string($service))
+		{
+			$id = $service;
+		}
 
-    if ($id)
-    {
-      unset($this->_writeableServices[$id]);
-    }
-  }
+		if ($id && isset($this->_readableServices[$id]))
+		{
+			unset($this->_readableServices[$id]);
+		}
+	}
 
-  /**
-   * Iterate through available read services and select the first with a ping
-   * that satisfies configured timeout restrictions (or the default)
-   *
-   * @return Apache_Solr_Service
-   *
-   * @throws Exception If there are no read services that meet requirements
-   */
-  private function _selectReadService()
-  {
-    if (!$this->_currentReadService || !isset($this->_readableServices[$this->_currentReadService]))
-    {
-      foreach ($this->_readableServices as $id => $service)
-      {
-        if (is_array($service))
-        {
-          //convert the array definition to a client object
-          $service = new Apache_Solr_Service($service['host'], $service['port'], $service['path']);
-          $this->_readableServices[$id] = $service;
-        }
+	/**
+	 * Adds a service instance or service descriptor (if it is already
+	 * not added)
+	 *
+	 * @param mixed $service
+	 *
+	 * @throws Exception If service descriptor is not valid
+	 */
+	public function addWriteService($service)
+	{
+		if ($service instanceof Apache_Solr_Service)
+		{
+			$id = $this->_getServiceId($service->getHost(), $service->getPort(), $service->getPath());
 
-        //check the service (make sure it pings quickly)
-        if ($service->ping($this->_readPingTimeout) !== false)
-        {
-          $this->_currentReadService = $id;
-          return $this->_readableServices[$this->_currentReadService];
-        }
-      }
+			$this->_writeableServices[$id] = $service;
+		}
+		else if (is_array($service))
+		{
+			if (isset($service['host']) && isset($service['port']) && isset($service['path']))
+			{
+				$id = $this->_getServiceId((string)$service['host'], (int)$service['port'], (string)$service['path']);
 
-      throw new Exception('No read services were available');
-    }
+				$this->_writeableServices[$id] = $service;
+			}
+			else
+			{
+				throw new Exception('A Writeable Service description array does not have all required elements of host, port, and path');
+			}
+		}
+	}
 
-    return $this->_readableServices[$this->_currentReadService];
-  }
+	/**
+	 * Removes a service instance or descriptor from the available services
+	 *
+	 * @param mixed $service
+	 *
+	 * @throws Exception If service descriptor is not valid
+	 */
+	public function removeWriteService($service)
+	{
+		$id = '';
 
-  /**
-   * Iterate through available write services and select the first with a ping
-   * that satisfies configured timeout restrictions (or the default)
-   *
-   * @return Apache_Solr_Service
-   *
-   * @throws Exception If there are no write services that meet requirements
-   */
-  private function _selectWriteService()
-  {
-    if (!$this->_currentWriteService || !isset($this->_writeableServices[$this->_currentWriteService]))
-    {
-      foreach ($this->_writeableServices as $id => $service)
-      {
-        if (is_array($service))
-        {
-          //convert the array definition to a client object
-          $service = new Apache_Solr_Service($service['host'], $service['port'], $service['path']);
-          $this->_writeableServices[$id] = $service;
-        }
+		if ($service instanceof Apache_Solr_Service)
+		{
+			$id = $this->_getServiceId($service->getHost(), $service->getPort(), $service->getPath());
+		}
+		else if (is_array($service))
+		{
+			if (isset($service['host']) && isset($service['port']) && isset($service['path']))
+			{
+				$id = $this->_getServiceId((string)$service['host'], (int)$service['port'], (string)$service['path']);
+			}
+			else
+			{
+				throw new Exception('A Readable Service description array does not have all required elements of host, port, and path');
+			}
+		}
+		else if (is_string($service))
+		{
+			$id = $service;
+		}
 
-        //check the service
-        if ($service->ping($this->_writePingTimeout) !== false)
-        {
-          $this->_currentWriteService = $id;
-          return $this->_writeableServices[$this->_currentWriteService];
-        }
-      }
+		if ($id && isset($this->_writeableServices[$id]))
+		{
+			unset($this->_writeableServices[$id]);
+		}
+	}
 
-      throw new Exception('No write services were available');
-    }
+	/**
+	 * Iterate through available read services and select the first with a ping
+	 * that satisfies configured timeout restrictions (or the default)
+	 *
+	 * @return Apache_Solr_Service
+	 *
+	 * @throws Exception If there are no read services that meet requirements
+	 */
+	protected function _selectReadService($forceSelect = false)
+	{
+		if (!$this->_currentReadService || !isset($this->_readableServices[$this->_currentReadService]) || $forceSelect)
+		{
+			if ($this->_currentReadService && isset($this->_readableServices[$this->_currentReadService]) && $forceSelect)
+			{
+				// we probably had a communication error, ping the current read service, remove it if it times out
+				if ($this->_readableServices[$this->_currentReadService]->ping($this->_readPingTimeout) === false)
+				{
+					$this->removeReadService($this->_currentReadService);
+				}
+			}
 
-    return $this->_writeableServices[$this->_currentWriteService];
-  }
+			if (count($this->_readableServices))
+			{
+				// select one of the read services at random
+				$ids = array_keys($this->_readableServices);
 
-  /**
-   * Raw Add Method. Takes a raw post body and sends it to the update service.  Post body
-   * should be a complete and well formed "add" xml document.
-   *
-   * @param string $rawPost
-   * @return Apache_Solr_Response
-   *
-   * @throws Exception If an error occurs during the service call
-   */
-  public function add($rawPost)
-  {
-    $service = $this->_selectWriteService();
+				$id = $ids[rand(0, count($ids) - 1)];
+				$service = $this->_readableServices[$id];
 
-    return $service->add($rawPost);
-  }
+				if (is_array($service))
+				{
+					//convert the array definition to a client object
+					$service = new Apache_Solr_Service($service['host'], $service['port'], $service['path']);
+					$this->_readableServices[$id] = $service;
+				}
 
-  /**
-   * Add a Solr Document to the index
-   *
-   * @param Apache_Solr_Document $document
-   * @param boolean $allowDups
-   * @param boolean $overwritePending
-   * @param boolean $overwriteCommitted
-   * @return Apache_Solr_Response
-   *
-   * @throws Exception If an error occurs during the service call
-   */
-  public function addDocument(Apache_Solr_Document $document, $allowDups = false, $overwritePending = true, $overwriteCommitted = true)
-  {
-    $service = $this->_selectWriteService();
+				$service->setCreateDocuments($this->_createDocuments);
+				$this->_currentReadService = $id;
+			}
+			else
+			{
+				throw new Exception('No read services were available');
+			}
+		}
 
-    return $service->addDocument($document, $allowDups, $overwritePending, $overwriteCommitted);
-  }
+		return $this->_readableServices[$this->_currentReadService];
+	}
 
-  /**
-   * Add an array of Solr Documents to the index all at once
-   *
-   * @param array $documents Should be an array of Apache_Solr_Document instances
-   * @param boolean $allowDups
-   * @param boolean $overwritePending
-   * @param boolean $overwriteCommitted
-   * @return Apache_Solr_Response
-   *
-   * @throws Exception If an error occurs during the service call
-   */
-  public function addDocuments($documents, $allowDups = false, $overwritePending = true, $overwriteCommitted = true)
-  {
-    $service = $this->_selectWriteService();
+	/**
+	 * Iterate through available write services and select the first with a ping
+	 * that satisfies configured timeout restrictions (or the default)
+	 *
+	 * @return Apache_Solr_Service
+	 *
+	 * @throws Exception If there are no write services that meet requirements
+	 */
+	protected function _selectWriteService($forceSelect = false)
+	{
+		if($this->_useBackoff)
+		{
+			return $this->_selectWriteServiceSafe($forceSelect);
+		}
 
-    return $service->addDocuments($documents, $allowDups, $overwritePending, $overwriteCommitted);
-  }
+		if (!$this->_currentWriteService || !isset($this->_writeableServices[$this->_currentWriteService]) || $forceSelect)
+		{
+			if ($this->_currentWriteService && isset($this->_writeableServices[$this->_currentWriteService]) && $forceSelect)
+			{
+				// we probably had a communication error, ping the current read service, remove it if it times out
+				if ($this->_writeableServices[$this->_currentWriteService]->ping($this->_writePingTimeout) === false)
+				{
+					$this->removeWriteService($this->_currentWriteService);
+				}
+			}
 
-  /**
-   * Send a commit command.  Will be synchronous unless both wait parameters are set
-   * to false.
-   *
-   * @param boolean $waitFlush
-   * @param boolean $waitSearcher
-   * @return Apache_Solr_Response
-   *
-   * @throws Exception If an error occurs during the service call
-   */
-  public function commit($waitFlush = true, $waitSearcher = true)
-  {
-    $service = $this->_selectWriteService();
+			if (count($this->_writeableServices))
+			{
+				// select one of the read services at random
+				$ids = array_keys($this->_writeableServices);
 
-    return $service->commit($waitFlush, $waitSearcher);
-  }
+				$id = $ids[rand(0, count($ids) - 1)];
+				$service = $this->_writeableServices[$id];
 
-  /**
-   * Raw Delete Method. Takes a raw post body and sends it to the update service. Body should be
-   * a complete and well formed "delete" xml document
-   *
-   * @param string $rawPost
-   * @return Apache_Solr_Response
-   *
-   * @throws Exception If an error occurs during the service call
-   */
-  public function delete($rawPost)
-  {
-    $service = $this->_selectWriteService();
+				if (is_array($service))
+				{
+					//convert the array definition to a client object
+					$service = new Apache_Solr_Service($service['host'], $service['port'], $service['path']);
+					$this->_writeableServices[$id] = $service;
+				}
 
-    return $service->delete($rawPost);
-  }
+				$this->_currentWriteService = $id;
+			}
+			else
+			{
+				throw new Exception('No write services were available');
+			}
+		}
 
-  /**
-   * Create a delete document based on document ID
-   *
-   * @param string $id
-   * @param boolean $fromPending
-   * @param boolean $fromCommitted
-   * @return Apache_Solr_Response
-   *
-   * @throws Exception If an error occurs during the service call
-   */
-  public function deleteById($id, $fromPending = true, $fromCommitted = true)
-  {
-    $service = $this->_selectWriteService();
+		return $this->_writeableServices[$this->_currentWriteService];
+	}
 
-    return $service->deleteById($id, $fromPending, $fromCommitted);
-  }
+	/**
+	 * Iterate through available write services and select the first with a ping
+	 * that satisfies configured timeout restrictions (or the default).  The
+	 * timeout period will increase until a connection is made or the limit is
+	 * reached.   This will allow for increased reliability with heavily loaded
+	 * server(s).
+	 *
+	 * @return Apache_Solr_Service
+	 *
+	 * @throws Exception If there are no write services that meet requirements
+	 */
 
-  /**
-   * Create a delete document based on a query and submit it
-   *
-   * @param string $rawQuery
-   * @param boolean $fromPending
-   * @param boolean $fromCommitted
-   * @return Apache_Solr_Response
-   *
-   * @throws Exception If an error occurs during the service call
-   */
-  public function deleteByQuery($rawQuery, $fromPending = true, $fromCommitted = true)
-  {
-    $service = $this->_selectWriteService();
+	protected function _selectWriteServiceSafe($forceSelect = false)
+	{
+		if (!$this->_currentWriteService || !isset($this->_writeableServices[$this->_currentWriteService]) || $forceSelect)
+		{
+			if (count($this->_writeableServices))
+			{
+				$backoff = $this->_defaultBackoff;
 
-    return $service->deleteByQuery($rawQuery, $fromPending, $fromCommitted);
-  }
+				do {
+					// select one of the read services at random
+					$ids = array_keys($this->_writeableServices);
 
-  /**
-   * Send an optimize command.  Will be synchronous unless both wait parameters are set
-   * to false.
-   *
-   * @param boolean $waitFlush
-   * @param boolean $waitSearcher
-   * @return Apache_Solr_Response
-   *
-   * @throws Exception If an error occurs during the service call
-   */
-  public function optimize($waitFlush = true, $waitSearcher = true)
-  {
-    $service = $this->_selectWriteService();
+					$id = $ids[rand(0, count($ids) - 1)];
+					$service = $this->_writeableServices[$id];
 
-    return $service->optimize($waitFlush, $waitSearcher);
-  }
+					if (is_array($service))
+					{
+						//convert the array definition to a client object
+						$service = new Apache_Solr_Service($service['host'], $service['port'], $service['path']);
+						$this->_writeableServices[$id] = $service;
+					}
 
-  /**
-   * Simple Search interface
-   *
-   * @param string $query The raw query string
-   * @param int $offset The starting offset for result documents
-   * @param int $limit The maximum number of result documents to return
-   * @param array $params key / value pairs for query parameters, use arrays for multivalued parameters
-   * @return Apache_Solr_Response
-   *
-   * @throws Exception If an error occurs during the service call
-   */
-  public function search($query, $offset = 0, $limit = 10, $params = array())
-  {
-    $service = $this->_selectReadService();
+					$this->_currentWriteService = $id;
 
-    return $service->search($query, $offset, $limit, $params);
-  }
+					$backoff *= $this->_backoffEscalation;
+
+					if($backoff > $this->_backoffLimit)
+					{
+						throw new Exception('No write services were available.  All timeouts exceeded.');
+					}
+
+				} while($this->_writeableServices[$this->_currentWriteService]->ping($backoff) === false);
+			}
+			else
+			{
+				throw new Exception('No write services were available');
+			}
+		}
+
+		return $this->_writeableServices[$this->_currentWriteService];
+	}
+
+	public function setCreateDocuments($createDocuments)
+	{
+		$this->_createDocuments = (bool) $createDocuments;
+
+		if ($this->_currentReadService)
+		{
+			$service = $this->_selectReadService();
+			$service->setCreateDocuments($createDocuments);
+		}
+	}
+
+	public function getCreateDocuments()
+	{
+		return $this->_createDocuments;
+	}
+
+	/**
+	 * Raw Add Method. Takes a raw post body and sends it to the update service.  Post body
+	 * should be a complete and well formed "add" xml document.
+	 *
+	 * @param string $rawPost
+	 * @return Apache_Solr_Response
+	 *
+	 * @throws Exception If an error occurs during the service call
+	 */
+	public function add($rawPost)
+	{
+		$service = $this->_selectWriteService();
+
+		do
+		{
+			try
+			{
+				return $service->add($rawPost);
+			}
+			catch (Exception $e)
+			{
+				if ($e->getCode() != 0) //IF NOT COMMUNICATION ERROR
+				{
+					throw $e;
+				}
+			}
+
+			$service = $this->_selectWriteService(true);
+		} while ($service);
+
+		return false;
+	}
+
+	/**
+	 * Add a Solr Document to the index
+	 *
+	 * @param Apache_Solr_Document $document
+	 * @param boolean $allowDups
+	 * @param boolean $overwritePending
+	 * @param boolean $overwriteCommitted
+	 * @return Apache_Solr_Response
+	 *
+	 * @throws Exception If an error occurs during the service call
+	 */
+	public function addDocument(Apache_Solr_Document $document, $allowDups = false, $overwritePending = true, $overwriteCommitted = true)
+	{
+		$service = $this->_selectWriteService();
+
+		do
+		{
+			try
+			{
+				return $service->addDocument($document, $allowDups, $overwritePending, $overwriteCommitted);
+			}
+			catch (Exception $e)
+			{
+				if ($e->getCode() != 0) //IF NOT COMMUNICATION ERROR
+				{
+					throw $e;
+				}
+			}
+
+			$service = $this->_selectWriteService(true);
+		} while ($service);
+
+		return false;
+	}
+
+	/**
+	 * Add an array of Solr Documents to the index all at once
+	 *
+	 * @param array $documents Should be an array of Apache_Solr_Document instances
+	 * @param boolean $allowDups
+	 * @param boolean $overwritePending
+	 * @param boolean $overwriteCommitted
+	 * @return Apache_Solr_Response
+	 *
+	 * @throws Exception If an error occurs during the service call
+	 */
+	public function addDocuments($documents, $allowDups = false, $overwritePending = true, $overwriteCommitted = true)
+	{
+		$service = $this->_selectWriteService();
+
+		do
+		{
+			try
+			{
+				return $service->addDocuments($documents, $allowDups, $overwritePending, $overwriteCommitted);
+			}
+			catch (Exception $e)
+			{
+				if ($e->getCode() != 0) //IF NOT COMMUNICATION ERROR
+				{
+					throw $e;
+				}
+			}
+
+			$service = $this->_selectWriteService(true);
+		} while ($service);
+
+		return false;
+	}
+
+	/**
+	 * Send a commit command.  Will be synchronous unless both wait parameters are set
+	 * to false.
+	 *
+	 * @param boolean $waitFlush
+	 * @param boolean $waitSearcher
+	 * @return Apache_Solr_Response
+	 *
+	 * @throws Exception If an error occurs during the service call
+	 */
+	public function commit($optimize = true, $waitFlush = true, $waitSearcher = true, $timeout = 3600)
+	{
+		$service = $this->_selectWriteService();
+
+		do
+		{
+			try
+			{
+				return $service->commit($optimize, $waitFlush, $waitSearcher, $timeout);
+			}
+			catch (Exception $e)
+			{
+				if ($e->getCode() != 0) //IF NOT COMMUNICATION ERROR
+				{
+					throw $e;
+				}
+			}
+
+			$service = $this->_selectWriteService(true);
+		} while ($service);
+
+		return false;
+	}
+
+	/**
+	 * Raw Delete Method. Takes a raw post body and sends it to the update service. Body should be
+	 * a complete and well formed "delete" xml document
+	 *
+	 * @param string $rawPost
+	 * @return Apache_Solr_Response
+	 *
+	 * @throws Exception If an error occurs during the service call
+	 */
+	public function delete($rawPost)
+	{
+		$service = $this->_selectWriteService();
+
+		do
+		{
+			try
+			{
+				return $service->delete($rawPost);
+			}
+			catch (Exception $e)
+			{
+				if ($e->getCode() != 0) //IF NOT COMMUNICATION ERROR
+				{
+					throw $e;
+				}
+			}
+
+			$service = $this->_selectWriteService(true);
+		} while ($service);
+
+		return false;
+	}
+
+	/**
+	 * Create a delete document based on document ID
+	 *
+	 * @param string $id
+	 * @param boolean $fromPending
+	 * @param boolean $fromCommitted
+	 * @return Apache_Solr_Response
+	 *
+	 * @throws Exception If an error occurs during the service call
+	 */
+	public function deleteById($id, $fromPending = true, $fromCommitted = true)
+	{
+		$service = $this->_selectWriteService();
+
+		do
+		{
+			try
+			{
+				return $service->deleteById($id, $fromPending, $fromCommitted);
+			}
+			catch (Exception $e)
+			{
+				if ($e->getCode() != 0) //IF NOT COMMUNICATION ERROR
+				{
+					throw $e;
+				}
+			}
+
+			$service = $this->_selectWriteService(true);
+		} while ($service);
+
+		return false;
+	}
+
+	/**
+	 * Create a delete document based on a query and submit it
+	 *
+	 * @param string $rawQuery
+	 * @param boolean $fromPending
+	 * @param boolean $fromCommitted
+	 * @return Apache_Solr_Response
+	 *
+	 * @throws Exception If an error occurs during the service call
+	 */
+	public function deleteByQuery($rawQuery, $fromPending = true, $fromCommitted = true)
+	{
+		$service = $this->_selectWriteService();
+
+		do
+		{
+			try
+			{
+				return $service->deleteByQuery($rawQuery, $fromPending, $fromCommitted);
+			}
+			catch (Exception $e)
+			{
+				if ($e->getCode() != 0) //IF NOT COMMUNICATION ERROR
+				{
+					throw $e;
+				}
+			}
+
+			$service = $this->_selectWriteService(true);
+		} while ($service);
+
+		return false;
+	}
+
+	/**
+	 * Send an optimize command.  Will be synchronous unless both wait parameters are set
+	 * to false.
+	 *
+	 * @param boolean $waitFlush
+	 * @param boolean $waitSearcher
+	 * @return Apache_Solr_Response
+	 *
+	 * @throws Exception If an error occurs during the service call
+	 */
+	public function optimize($waitFlush = true, $waitSearcher = true)
+	{
+		$service = $this->_selectWriteService();
+
+		do
+		{
+			try
+			{
+				return $service->optimize($waitFlush, $waitSearcher);
+			}
+			catch (Exception $e)
+			{
+				if ($e->getCode() != 0) //IF NOT COMMUNICATION ERROR
+				{
+					throw $e;
+				}
+			}
+
+			$service = $this->_selectWriteService(true);
+		} while ($service);
+
+		return false;
+	}
+
+	/**
+	 * Simple Search interface
+	 *
+	 * @param string $query The raw query string
+	 * @param int $offset The starting offset for result documents
+	 * @param int $limit The maximum number of result documents to return
+	 * @param array $params key / value pairs for query parameters, use arrays for multivalued parameters
+	 * @return Apache_Solr_Response
+	 *
+	 * @throws Exception If an error occurs during the service call
+	 */
+	public function search($query, $offset = 0, $limit = 10, $params = array())
+	{
+		$service = $this->_selectReadService();
+
+		do
+		{
+			try
+			{
+				return $service->search($query, $offset, $limit, $params);
+			}
+			catch (Exception $e)
+			{
+				if ($e->getCode() != 0) //IF NOT COMMUNICATION ERROR
+				{
+					throw $e;
+				}
+			}
+
+			$service = $this->_selectReadService(true);
+		} while ($service);
+
+		return false;
+	}
 }

@@ -1,5 +1,6 @@
-name = Apache Solr for Attachments
-description = Searching file attachments with solr
+name = Apache Solr for attachments
+description = Searching file attachments with Solr
 dependencies[] = apachesolr
-package = ApacheSolr
-core = "6.x"
+package = Apache Solr
+; This module seems to be broken
+;core = "6.x"

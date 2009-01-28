@@ -1,11 +1,25 @@
 <?php
-// $Id: solr_base_query.test,v 1.2 2008/06/30 17:46:45 drunkenmonkey Exp $
+// $Id: solr_base_query.test,v 1.3 2009/01/28 20:06:37 pwolanin Exp $
 
-class DrupalSolrQueryTests extends DrupalTestCase {
-  function get_info() {
-    return array('name' => 'Solr/query handling',
-      'desc' => 'Throw various queries at the query object and make sure they all parse correctly.',
-      'group' => 'Apache Solr tests');
+
+/***
+ * JacobSingh: Warning! This test is totally broken because of the addition of the "hash" in apachesolr_search.module.
+ * Needs to be moved out.
+ *
+ */
+
+
+class DrupalSolrQueryTests extends DrupalWebTestCase {
+  function getInfo() {
+    return array(
+      'name' => 'Query handling',
+      'description' => 'Throw various queries at the query object and make sure they all parse correctly.',
+      'group' => 'ApacheSolr'
+    );
+  }
+
+  function setUp() {
+    parent::setUp('search', 'apachesolr');
   }
 
   private $queries = array(
@@ -24,67 +38,47 @@ class DrupalSolrQueryTests extends DrupalTestCase {
   );
 
   function testParseSimple() {
-    $result = TRUE;
     foreach ($this->queries as $string) {
-      $query =& apachesolr_drupal_query($string, TRUE);
+      $query = apachesolr_drupal_query($string, TRUE);
       // force the query to be rebuilt without removing any fields.
       $query->remove_field('fake-field-name');
-      if (!$this->assertEqual($string, $query->get_query())) {
-        $result =  FALSE;
-      }
+      $this->assertEqual($string, $query->get_query());
     }
-    return $result;
   }
 
   function testAddTerm() {
-    $result = TRUE;
     foreach ($this->queries as $string) {
-      $query =& apachesolr_drupal_query($string, TRUE);
+      $query = apachesolr_drupal_query($string, TRUE);
       $query->add_field('wham', '1');
-      if (!$this->assertEqual($string .' wham:1', $query->get_query())) {
-        $result =  FALSE;
-      }
+      $this->assertEqual($string . ' wham:1', $query->get_query());
     }
-    return $result;
   }
 
   function testRemoveTerm() {
-    $result = TRUE;
     $string = 'foo';
-    $query =& apachesolr_drupal_query($string, TRUE);
+    $query = apachesolr_drupal_query($string, TRUE);
     $query->remove_field('', 'foo');
-    if (!$this->assertEqual('foo', $query->get_query())) {
-      $result = FALSE;
-    }
+    $this->assertEqual('foo', $query->get_query());
 
     $string = 'foo bar';
-    $query =& apachesolr_drupal_query($string, TRUE);
+    $query = apachesolr_drupal_query($string, TRUE);
     $query->remove_field('', 'foo');
-    if (!$this->assertEqual('foo bar', $query->get_query())) {
-      $result = FALSE;
-    }
+    $this->assertEqual('foo bar', $query->get_query());
 
     $string = 'foo uid:1 bar';
-    $query =& apachesolr_drupal_query($string, TRUE);
+    $query = apachesolr_drupal_query($string, TRUE);
     $query->remove_field('uid', '1');
-    if (!$this->assertEqual('foo bar', $query->get_query())) {
-      $result = FALSE;
-    }
+    $this->assertEqual('foo bar', $query->get_query());
 
     $string = 'foo uid:1 bar';
-    $query =& apachesolr_drupal_query($string, TRUE);
+    $query = apachesolr_drupal_query($string, TRUE);
     $query->remove_field('uid');
-    if (!$this->assertEqual('foo bar', $query->get_query())) {
-      $result = FALSE;
-    }
+    $this->assertEqual('foo bar', $query->get_query());
 
     $string = 'foo uid:1 bar uid:2 tid:3';
-    $query =& apachesolr_drupal_query($string, TRUE);
+    $query = apachesolr_drupal_query($string, TRUE);
     $query->remove_field('uid', '1');
-    /*// May not work because query doesn't necessarily get rebuilt in same order
-    if (!$this->assertEqual('foo bar uid:2 tid:3', $query->get_query())) {
-      $result = FALSE;
-    }*/
+
     // Not very beautiful, but probably best way there is:
     $pass = TRUE;
     $components = array('foo', 'bar', 'uid:2', 'tid:3');
@@ -95,7 +89,7 @@ class DrupalSolrQueryTests extends DrupalTestCase {
     else {
       foreach ($components as $s) {
         if (strpos($q, $s) === FALSE) {
-          $pass = false;
+          $pass = FALSE;
           break;
         }
       }
@@ -105,17 +99,11 @@ class DrupalSolrQueryTests extends DrupalTestCase {
     }
     else {
       $this->assertEqual('foo bar tid:3 uid:2', $q);
-      $result = FALSE;
     }
-    
 
     $string = 'foo uid:1 bar uid:2 tid:3';
-    $query =& apachesolr_drupal_query($string, TRUE);
+    $query = apachesolr_drupal_query($string, TRUE);
     $query->remove_field('uid');
-    if (!$this->assertEqual('foo bar tid:3', $query->get_query())) {
-      $result = FALSE;
-    }
-
-    return $result;
+    $this->assertEqual('foo bar tid:3', $query->get_query());
   }
 }
