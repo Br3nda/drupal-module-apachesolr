@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.5 2009/01/27 23:34:35 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.6 2009/01/28 13:53:03 pwolanin Exp $
 
 /**
  * @file
@@ -137,7 +137,7 @@ function apachesolr_enabled_facets_form_submit($form, &$form_state) {
     $enabled[$module] = array_filter($facets);
   }
   variable_set('apachesolr_enabled_facets', $enabled);
-  drupal_set_message('For each filter block you chose to create, you should see a block below prefixed with "Apache Solr". Drag these blocks into the region where you would like them to show up on the search page.');
+  drupal_set_message($form_state['values']['submit_message']);
 }
 
 /**
@@ -204,7 +204,10 @@ function apachesolr_enabled_facets_form() {
   );
 
   $form['#tree'] = TRUE;
-  $form['#redirect'] = '/admin/build/block';
+  $form['submit_message'] = array(
+    '#type' => 'value',
+    '#value' => t('The Apache Solr filters settings were changed.  To arrange the blocks for your enabled filters, visit the <a href="@url">blocks administration page</a>.', array('@url' => url('admin/build/block'))),
+  );
 
   return $form;
 }
