@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.98 2009/01/27 23:45:48 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.99 2009/01/28 13:49:46 pwolanin Exp $
 
 /**
  * @file
@@ -68,9 +68,7 @@ function apachesolr_failure($search_name, $querystring) {
       drupal_set_message(t('The Apache Solr search engine is not available. Please contact your site administrator.'), 'error');
       break;
     case 'show_drupal_results':
-      if (user_access('administer site configuration')) {
-        drupal_set_message(t('%search_name is not available. Searches on this site are being redirected. (More information is available on the <a href="@search_settings_url">settings page</a>.)', array('%search_name' => $search_name, '@search_settings_url' => url('admin/settings/apachesolr'))), 'warning');
-      }
+      drupal_set_message(t("%search_name is not available. Your search is being redirected.", array('%search_name' => $search_name)));
       drupal_goto('search/node/' . drupal_urlencode($querystring));
       break;
     case 'show_no_results':
