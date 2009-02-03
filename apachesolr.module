@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.50 2008/12/03 18:49:28 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.51 2009/02/03 15:38:38 pwolanin Exp $
 
 /**
  * @file
@@ -449,7 +449,6 @@ class ApacheSolrUpdate {
         foreach ($docs_chunk as $docs) {
           $solr->addDocuments($docs);
         }
-        $solr->addDocuments($documents);
         $solr->commit();
         $solr->optimize(FALSE, FALSE); 
       }
