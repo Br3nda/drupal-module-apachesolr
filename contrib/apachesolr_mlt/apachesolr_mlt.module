@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.20 2009/01/27 21:32:35 pwolanin Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.21 2009/02/03 14:35:03 pwolanin Exp $
 
 /**
  * Implementation of hook_menu()
@@ -49,7 +49,10 @@ function apachesolr_mlt_block($op = 'list', $delta = 0, $edit = array()) {
         $access = $node && node_access('view', $node);
       }
       if ($access) {
-        return apachesolr_mlt_suggestions($delta, $nid);
+        $block = apachesolr_mlt_suggestions($delta, $nid);
+        $configure_link = user_access('administer search') ? l(t('Configure this block'),'admin/settings/apachesolr_mlt/configure_block/' . $delta) : '';
+        $block['content'] .= $configure_link;
+        return $block;
       }
     }
   }
