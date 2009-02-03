@@ -1,14 +1,16 @@
-// $Id: CHANGELOG.txt,v 1.1.2.2 2009/01/28 21:01:47 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.3 2009/02/03 14:04:51 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
-
 Apache Solr integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
 
+Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
+------------------------------
+#365901 Add a bias on node type (and node-type exclusion) by Damien Tournoud and pwolanin
 
-Apache Solr integration 6.x-1.1-beta1, 2009-01-28 (changes since 6.x-1.0-alpha6 2009-Jan-08)
+Apache Solr integration 6.x-1.0-beta2, 2009-01-28 (changes since 6.x-1.0-alpha6 2009-Jan-08)
 ------------------------------
 #365684 Get PHP library from new svn home by pwolanin
 #365620 clear stale data on hook_enable by pwolanin

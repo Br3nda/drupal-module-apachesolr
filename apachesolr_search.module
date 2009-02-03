@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.63 2009/01/27 21:32:34 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.64 2009/02/03 14:04:51 pwolanin Exp $
 
 /**
  * @file
@@ -40,6 +40,15 @@ function apachesolr_search_menu() {
     'type'             => MENU_LOCAL_TASK,
     'file'             => 'apachesolr_search.admin.inc',
   );
+  $items['admin/settings/apachesolr/node-types'] = array(
+    'title'            => 'Content type settings',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('apachesolr_search_type_boost_form'),
+    'access arguments' => array('administer site configuration'),
+    'weight'           => 1,
+    'type'             => MENU_LOCAL_TASK,
+    'file'             => 'apachesolr_search.admin.inc',
+  );
 
   return $items;
 }
@@ -51,6 +60,17 @@ function apachesolr_search_update_index() {
   $cron_limit = variable_get('apachesolr_cron_limit', 50);
   $result = apachesolr_get_nodes_to_index('apachesolr_search', $cron_limit);
   apachesolr_index_nodes($result, 'apachesolr_search');
+}
+
+/**
+ * Implementations of hook_apachesolr_update_index.
+ */
+function apachesolr_search_apachesolr_update_index(&$document, $node) {
+  // Remove from processing node types we don't want.
+  $excluded_types = variable_get('apachesolr_search_excluded_types', array());
+  if (!empty($excluded_types[$node->type])) {
+    $document = FALSE;
+  }
 }
 
 /**
@@ -181,6 +201,15 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         if ($comment_boost) {
           $params['bf'][] = "recip(rord(comment_count),$comment_steepness,$total,$total)^$comment_boost";
         }
+
+        // Modify the weight of results according to the node types.
+        $type_boosts = variable_get('apachesolr_search_type_boosts', array());
+        if (!empty($type_boosts)) {
+          foreach ($type_boosts as $type => $boost) {
+            $params['bq'][] = "type:$type^$boost";
+          }
+        }
+
         // This hook allows modules to modify the query and params objects.
         apachesolr_modify_query($query, $params, 'apachesolr_search');
         if (!$query) {
