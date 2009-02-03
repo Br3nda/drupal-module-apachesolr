@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.64 2009/02/03 14:04:51 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.65 2009/02/03 14:52:43 pwolanin Exp $
 
 /**
  * @file
@@ -236,7 +236,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
             $extra['score'] = $doc->score;
             $results[] = array(
               'link' => $doc->url,
-              'type' => node_get_types('name', $doc),
+              'type' => apachesolr_search_get_type($doc->type),
               'title' => $doc->title,
               'user' => theme('username', $doc),
               'date' => $doc->created,
@@ -477,7 +477,9 @@ function apachesolr_search_get_username($facet) {
  * Callback function for the 'Filter by type' facet block.
  */
 function apachesolr_search_get_type($facet) {
-  return node_get_types('name', $facet);
+  $type = node_get_types('name', $facet);
+  // A disabled or missing node type returns FALSE.
+  return ($type === FALSE) ? $facet : $type;
 }
 
 /**
