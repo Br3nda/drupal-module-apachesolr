@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.5 2009/02/03 14:52:43 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.6 2009/02/04 13:34:16 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,8 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#365901 Fix bug where indexing might hang & improved API by adding a separate
+        hook for modules to indicate that a node is excluded, by pwolanin.
 #367361 Use the machine-readable name for disabled node types by pwolanin
 #366957 Add a "configure" link to the more like this block by JacobSingh
 #365901 Add a bias on node type (and node-type exclusion) by Damien Tournoud and pwolanin
