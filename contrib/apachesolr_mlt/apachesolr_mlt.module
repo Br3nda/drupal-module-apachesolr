@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.21 2009/02/03 14:35:03 pwolanin Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.22 2009/02/05 17:28:20 robertDouglass Exp $
 
 /**
  * Implementation of hook_menu()
@@ -113,7 +113,7 @@ function apachesolr_mlt_suggestions($block_id, $nid) {
     }
     return $suggestions;
   } catch ( Exception $e ) {
-      watchdog ( 'Apache Solr', $e->getMessage (), WATCHDOG_ERROR );
+      watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR );
   }
 }
 

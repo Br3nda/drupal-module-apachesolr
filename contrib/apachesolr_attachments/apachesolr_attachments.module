@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_attachments.module,v 1.1.2.9 2008/12/18 10:41:16 jacobsingh Exp $
+// $Id: apachesolr_attachments.module,v 1.1.2.10 2009/02/05 17:26:21 robertDouglass Exp $
 
 /**
  * @file
@@ -254,7 +254,7 @@ function _asa_remove_attachments_from_index($nid) {
     $solr->commit();
   }
   catch (Exception $e) {
-    watchdog(SOLR_ATTACHMENT_WD, $e->getMessage(), WATCHDOG_ERROR);
+    watchdog(SOLR_ATTACHMENT_WD, $e->getMessage(), NULL, WATCHDOG_ERROR);
   }
 }
 
