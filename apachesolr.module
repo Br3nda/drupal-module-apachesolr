@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.101 2009/02/04 13:34:16 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.102 2009/02/05 16:55:28 robertDouglass Exp $
 
 /**
  * @file
@@ -29,14 +29,14 @@ function apachesolr_menu() {
     'type'               => MENU_DEFAULT_LOCAL_TASK,
   );
   $items['admin/settings/apachesolr/enabled-filters'] = array(
-    'title' => 'Enabled filters',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('apachesolr_enabled_facets_form'),
-    'weight' => -7,
-    'access callback' => 'user_access',
-    'access arguments' => array('administer site configuration'),
+    'title'              => 'Enabled filters',
+    'page callback'      => 'drupal_get_form',
+    'page arguments'     => array('apachesolr_enabled_facets_form'),
+    'weight'             => -7,
+    'access callback'    => 'user_access',
+    'access arguments'   => array('administer site configuration'),
     'file'               => 'apachesolr.admin.inc',
-    'type' => MENU_LOCAL_TASK,
+    'type'               => MENU_LOCAL_TASK,
   );
   $items['admin/settings/apachesolr/index'] = array(
     'title'              => 'Search index',
