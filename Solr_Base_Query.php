@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.17 2009/01/27 13:48:52 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.18 2009/02/05 18:33:25 pwolanin Exp $
 
 class Solr_Base_Query {
 
@@ -174,7 +174,7 @@ class Solr_Base_Query {
       $querystring = 'filters='. implode(' ', $fq);
     }
     if ($this->solrsort) {
-      $querystring .= ($querystring) ? '&' . $this->solrsort : $this->solrsort;
+      $querystring .= ($querystring ? '&' : '') .'solrsort='. $this->solrsort;
     }
     return $querystring;
   }
