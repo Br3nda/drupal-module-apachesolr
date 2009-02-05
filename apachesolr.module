@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.102 2009/02/05 16:55:28 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.103 2009/02/05 18:23:24 robertDouglass Exp $
 
 /**
  * @file
@@ -310,8 +310,6 @@ function apachesolr_clean_text($text) {
  * Given a node ID, return a document representing that node.
  */
 function apachesolr_node_to_document($nid) {
-  // Get CCK fields list
-  $cck_fields = apachesolr_cck_fields();
   // Set reset = TRUE to avoid static caching of all nodes that get indexed.
   $node = node_load($nid, NULL, TRUE);
   if (empty($node)) {
@@ -375,6 +373,8 @@ function apachesolr_node_to_document($nid) {
       }
     }
 
+    // Get CCK fields list
+    $cck_fields = apachesolr_cck_fields();
     foreach ($cck_fields as $key => $cck_info) {
       if (isset($node->$key)) {
         // Got a CCK field. See if it is to be indexed.
