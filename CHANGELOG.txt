@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.6 2009/02/04 13:34:16 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.7 2009/02/05 18:30:50 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,8 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+------- Update errant watchdog calls that were using D5 signature by robertDouglass.
+#369780 Rearrange code for better organization and performance by robertDouglass.
 #365901 Fix bug where indexing might hang & improved API by adding a separate
         hook for modules to indicate that a node is excluded, by pwolanin.
 #367361 Use the machine-readable name for disabled node types by pwolanin
