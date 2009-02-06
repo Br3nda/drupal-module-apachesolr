@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.66 2009/02/04 13:34:16 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.67 2009/02/06 03:55:10 pwolanin Exp $
 
 /**
  * @file
@@ -251,8 +251,8 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
             call_user_func_array($function, array(&$results));
           }
         }
-        // Set breadcrumb
-        drupal_set_breadcrumb($query->get_breadcrumb());
+        // Add search terms and filters onto the breadcrumb.
+        drupal_set_breadcrumb(array_merge(menu_get_active_breadcrumb(), $query->get_breadcrumb($_GET['q'])));
         return $results;
 
       } // try

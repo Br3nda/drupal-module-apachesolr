@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.8 2009/02/05 18:33:25 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.9 2009/02/06 03:55:10 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,7 +8,8 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
-#366959 make usage of solrsor consistent in Solr_Base_Query::solrsort by Damien Tournoud
+#369944 Add field aliases and further clean-up the query class, by pwolanin
+#366959 make usage of solrsort consistent in Solr_Base_Query::solrsort by Damien Tournoud
 #       Update errant watchdog calls that were using D5 signature by robertDouglass.
 #369780 Rearrange code for better organization and performance by robertDouglass.
 #365901 Fix bug where indexing might hang & improved API by adding a separate

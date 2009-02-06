@@ -1,42 +1,42 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.18 2009/02/05 18:33:25 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.19 2009/02/06 03:55:10 pwolanin Exp $
 
 class Solr_Base_Query {
 
   /**
-   * This is copied from search module. The search module implementation doesn't
-   * handle quoted terms correctly (bug) and this function is copied here until
-   * I have the bugfix perfected, at which point a patch will be submitted to search
-   * module with the goal of removing the function here.
-   *
-   * Extract a module-specific search option from a search query. e.g. 'type:book'
+   * Extract all uses of one named field from a filter string e.g. 'type:book'
    */
-  static function query_extract($filters, $option) {
-    $pattern = '/(^| )'. $option .':"([^"]*)"/i';
-    if (preg_match_all($pattern, $filters, $matches)) {
-      return array('matches' => $matches[0], 'values' => $matches[2]);
+  static function field_extract(&$filters, $name) {
+    $queries = array();
+    $values = array();
+    // Range queries.  The "TO" is case-sensitive.
+    $patterns[] = '/(^| )'. $name .':(\[\S+ TO \S+\])/';
+    // Match quoted values.
+    $patterns[] = '/(^| )'. $name .':"([^"]*)"/';
+    // Match unquoted values.
+    $patterns[] = '/(^| )'. $name .':([^ ]*)/';
+    foreach ($patterns as $p) {
+      if (preg_match_all($p, $filters, $matches)) {
+        $queries = array_merge($matches[0], $queries);
+        $values = array_merge($matches[2], $values);
+      }
+      // Update the local copy of $filters by removing all matches.
+      $filters = trim(str_replace($matches[0], '', $filters));
     }
-    $pattern = '/(^| )'. $option .':([^ ]*)/i';
-    if (preg_match_all($pattern, $filters, $matches)) {
-      return array('matches' => $matches[0], 'values' => $matches[2]);
-    }
+    return array('queries' => $queries, 'values' => $values);
   }
 
   /**
-   * Takes an array $values and combines the #name and #value in a way
+   * Takes an array $field and combines the #name and #value in a way
    * suitable for use in a Solr query.
    */
-  static function make_field(array $values) {
-    if (empty($values['#name'])) {
-      return implode(' ', array_filter(explode(' ', $values['#value']), 'trim'));
+  static function make_field(array $field) {
+    // If the field value has spaces, or : in it, wrap it in double quotes.
+    // unless it is a range query.
+    if (preg_match('/[ :]/', $field['#value']) && !preg_match('/\[\S+ TO \S+\]/', $field['#value'])) {
+      $field['#value'] = '"'. $field['#value']. '"';
     }
-    else {
-      // If the field value has spaces, or : in it, wrap it in double quotes.
-      if (preg_match('/[ :]/', $values['#value'])) {
-        $values['#value'] = '"'. $values['#value']. '"';
-      }
-      return $values['#name'] . ':' . $values['#value'];
-    }
+    return $field['#name'] . ':' . $field['#value'];
   }
 
   /**
@@ -51,10 +51,24 @@ class Solr_Base_Query {
 
   /**
    * A keyed array where the key is a position integer and the value
-   * is an array with #name and #value properties.
+   * is an array with #name and #value properties.  Each value is a
+   * used for filter queries, e.g. array('#name' => 'uid', '#value' => 0)
+   * for anonymous content.
+
    */
   protected $fields;
+
+  /**
+   * The complete filter string for a query.  Usually from $_GET['filters']
+   * Contains name:value pairs for filter queries.  For example,
+   * "type:book" for book nodes.
+   */
   protected $filters;
+
+  /**
+   * A mapping of field names from the URL to real index field names.
+   */
+  protected $field_map = array();
 
   /**
    * An array of subqueries.
@@ -92,7 +106,7 @@ class Solr_Base_Query {
     $this->filters = trim($filterstring); 
     $this->solrsort = trim($sortstring);
     $this->id = ++self::$idCount;
-    $this->parse_query();
+    $this->parse_filters();
   }
 
   function __clone() {
@@ -114,7 +128,7 @@ class Solr_Base_Query {
     if (empty($name)) {
       return;
     }
-    if (empty($value)) {
+    if (!isset($value)) {
       foreach ($this->fields as $pos => $values) {
         if ($values['#name'] == $name) {
           unset($this->fields[$pos]);
@@ -137,6 +151,28 @@ class Solr_Base_Query {
       }
     }
     return FALSE;
+  }
+
+  /**
+   * Handle aliases for field to make nicer URLs
+   *
+   * @param $field_map
+   *   An array keyed with real Solr index field names, with value being the alias.
+   */
+  function add_field_aliases($field_map) {
+    $this->field_map = array_merge($this->field_map, $field_map);
+    // We have to re-parse the filters.
+    $this->parse_filters();
+  }
+
+  function get_field_aliases() {
+    return $this->field_map;
+  }
+
+  function clear_field_aliases() {
+    $this->field_map = array();
+    // We have to re-parse the filters.
+    $this->parse_filters();
   }
 
   /**
@@ -170,7 +206,7 @@ class Solr_Base_Query {
    */
   public function get_url_querystring() {
     $querystring = '';
-    if ($fq = $this->get_fq()) {
+    if ($fq = $this->rebuild_fq(TRUE)) {
       $querystring = 'filters='. implode(' ', $fq);
     }
     if ($this->solrsort) {
@@ -191,85 +227,87 @@ class Solr_Base_Query {
     return $this->rebuild_query();
   }
 
-  public function get_breadcrumb() {
-    // This encodes an assumption that the breadcrumb is always building off
-    // of the current page. Could be a problem.
-    $breadcrumb = menu_get_active_breadcrumb();
-
-    // double check that the fields are ordered by position.
-    ksort($this->fields);
-
+  /**
+   * Build additional breadcrumb elements relative to $base.
+   */
+  public function get_breadcrumb($base = '') {
     $progressive_crumb = array();
+
     $search_keys = $this->get_query_basic();
-    // TODO: Don't know if hardcoding this is going to come back to bite.
-    $base = 'search/'. arg(1) . '/' . $search_keys;
     if ($search_keys) {
       $breadcrumb[] = l($search_keys, $base);
     }
 
     foreach ($this->fields as $field) {
+      $name = $field['#name'];
+      // Look for a field alias.
+      if (isset($this->field_map[$name])) {
+        $field['#name'] = $this->field_map[$name];
+      }
       $progressive_crumb[] = Solr_Base_Query::make_field($field);
       $options = array('query' => 'filters=' . implode(' ', $progressive_crumb));
-      if (empty($field['#name'])) {
-        $breadcrumb[] = l($field['#value'], $base, $options);
-      }
-      else if ($themed = theme("apachesolr_breadcrumb_{$field['#name']}", $field['#value'])) {
+      if ($themed = theme("apachesolr_breadcrumb_{$name}", $field['#value'])) {
         $breadcrumb[] = l($themed, $base, $options);
       }
       else {
         $breadcrumb[] = l($field['#name'], $base, $options);
       }
     }
-    // the last breadcrumb is the current page, so it shouldn't be a link.
+    // The last breadcrumb is the current page, so it shouldn't be a link.
     $last = count($breadcrumb) - 1;
     $breadcrumb[$last] = strip_tags($breadcrumb[$last]);
-    drupal_set_breadcrumb($breadcrumb);
+
     return $breadcrumb;
   }
 
-  protected function parse_query() {
+  /**
+   * Parse the filter string in $this->filters into $this->fields.
+   *
+   * Builds an array of field name/value pairs.
+   */
+  protected function parse_filters() {
     $this->fields = array();
     $filters = $this->filters;
 
     // Gets information about the fields already in solr index.
     $index_fields = $this->solr->getFields();
 
-    $rows = array();
-    foreach ((array) $index_fields as $name => $field) {
-      do {
-        // save the strlen so we can detect if it has changed at the bottom
-        // of the do loop
-        $a = (int)strlen($filters);
-        // Get the values for $name
-        $extracted = Solr_Base_Query::query_extract($filters, $name);
-        if (count($extracted['values'])) {
-          foreach ($extracted['values'] as $value) {
-            $found = Solr_Base_Query::make_field(array('#name' => $name, '#value' => $value));
-            $pos = strpos($this->filters, $found);
-            // $solr_keys and $solr_crumbs are keyed on $pos so that query order
-            // is maintained. This is important for breadcrumbs.
-            $this->fields[$pos] = array('#name' => $name, '#value' => trim($value));
-          }
-          // Update the local copy of $filters by removing the key that was just found.
-          $filters = trim(str_replace($extracted['matches'], '', $filters));
+    foreach ((array) $index_fields as $name => $data) {
+      // Look for a field alias.
+      $alias = isset($this->field_map[$name]) ? $this->field_map[$name] : $name;
+      // Get the values for $name
+      $extracted = Solr_Base_Query::field_extract($filters, $alias);
+      if (count($extracted['values'])) {
+        foreach ($extracted['values'] as $index => $value) {
+          $pos = strpos($this->filters, $extracted['queries'][$index]);
+          // $solr_keys and $solr_crumbs are keyed on $pos so that query order
+          // is maintained. This is important for breadcrumbs.
+          $this->fields[$pos] = array('#name' => $name, '#value' => trim($value));
         }
-        // Take new strlen to compare with $a.
-        $b = (int)strlen($filters);
-      } while ($a !== $b);
+      }
     }
     // Even though the array has the right keys they are likely in the wrong
     // order. ksort() sorts the array by key while maintaining the key.
     ksort($this->fields);
   }
 
-  protected function rebuild_fq() {
+  /**
+   * Builds a set of filter queries from $this->fields and all subqueries.
+   *
+   * Returns an array of strings that can be combined into
+   * a URL query parameter or passed to Solr as fq paramters.
+   */
+  protected function rebuild_fq($aliases = FALSE) {
     $fields = array();
-    foreach ($this->fields as $pos => $values) {
-      $fields[] = Solr_Base_Query::make_field($values);
+    foreach ($this->fields as $pos => $field) {
+      // Look for a field alias.
+      if ($aliases && isset($this->field_map[$field['#name']])) {
+        $field['#name'] = $this->field_map[$field['#name']];
+      }
+      $fq[] = Solr_Base_Query::make_field($field);
     }
-    $fq = array_filter($fields, 'trim');
     foreach ($this->subqueries as $id => $data) {
-      $subfq = $data['#query']->get_fq();
+      $subfq = $data['#query']->rebuild_fq($aliases);
       if ($subfq) {
         $operator = $data['#fq_operator'];
         $fq[] = "(" . implode(" {$operator} ", $subfq) .")";
