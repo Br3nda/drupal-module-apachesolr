@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.67 2009/02/06 03:55:10 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.68 2009/02/09 14:12:22 pwolanin Exp $
 
 /**
  * @file
@@ -290,7 +290,7 @@ function apachesolr_search_apachesolr_facets() {
     $vocabs = taxonomy_get_vocabularies();
     foreach ($vocabs as $vid => $vocab) {
       // In this case the delta and facet field are the same.
-      $delta = 'imfield_vid_' . $vid;
+      $delta = 'im_vid_' . $vid;
       $facets[$delta] = array(
         'info' => t('Apache Solr Search: Filter by @name', array('@name' => $vocab->name)),
         'facet_field' => $delta,
@@ -352,7 +352,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
         $limit_default = variable_get('apachesolr_facet_query_initial_limit_default', 10);
 
         // Handle taxonomy vocabulary facets
-        if ((strpos($delta, 'imfield_vid_') === 0) && module_exists('taxonomy')) {
+        if ((strpos($delta, 'im_vid_') === 0) && module_exists('taxonomy')) {
 
           if (is_object($response->facet_counts->facet_fields->$delta)) {
             $contains_active = FALSE;

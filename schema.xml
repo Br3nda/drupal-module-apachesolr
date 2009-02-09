@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- $Id: schema.xml,v 1.1.2.1.2.20 2009/01/14 21:41:28 jacobsingh Exp $ -->
+<!-- $Id: schema.xml,v 1.1.2.1.2.21 2009/02/09 14:12:22 pwolanin Exp $ -->
 
 <!--
  This is the Solr schema file. This file should be named "schema.xml" and
@@ -180,7 +180,7 @@
          With various TokenFilterFactories to produce a sortable field
          that does not include some properties of the source text
       -->
-    <fieldType name="alphaOnlySort" class="solr.TextField" sortMissingLast="true" omitNorms="true">
+    <fieldType name="sortString" class="solr.TextField" sortMissingLast="true" omitNorms="true">
       <analyzer>
         <!-- KeywordTokenizer does no actual tokenizing, so the entire
              input string is preserved as a single token
@@ -202,10 +202,11 @@
              infomation on pattern and replacement string syntax.
 
              http://java.sun.com/j2se/1.5.0/docs/api/java/util/regex/package-summary.html
-          -->
+
         <filter class="solr.PatternReplaceFilterFactory"
-                pattern="([^a-z])" replacement="" replace="all"
+                pattern="(^\p{Punct}+)" replacement="" replace="all"
         />
+        -->
       </analyzer>
     </fieldType>
 
@@ -246,14 +247,15 @@
    <field name="hash" type="string" indexed="true" stored="true"/>
    <field name="url" type="string" indexed="true" stored="true"/>
    <field name="title" type="text" indexed="true" stored="true" termVectors="true" omitNorms="true"/>
-   <field name="stitle" type="string" indexed="true" stored="true"/>
+   <field name="title_sort" type="sortString" indexed="true" stored="false"/>
    <field name="body" type="text" indexed="true" stored="true" termVectors="true"/>
    <field name="type" type="string" indexed="true" stored="true"/>
    <field name="type_name" type="string" indexed="true" stored="true"/>
    <field name="path" type="text" indexed="true" stored="true" termVectors="true"/>
    <field name="uid"  type="integer" indexed="true" stored="true"/>
    <field name="name" type="text" indexed="true" stored="true" termVectors="true"/>
-   <field name="sname" type="string" indexed="true" stored="true"/>
+   <field name="sname" type="string" indexed="true" stored="false"/>
+   <field name="name_sort" type="sortString" indexed="true" stored="false"/>
    <field name="created" type="date" indexed="true" stored="true"/>
    <field name="changed" type="date" indexed="true" stored="true"/>
    <field name="last_comment_or_change" type="date" indexed="true" stored="true"/>
@@ -265,9 +267,10 @@
    <field name="taxonomy_names" type="text" indexed="true" stored="false" termVectors="true" multiValued="true" omitNorms="true"/>
    <field name="language" type="string" indexed="true" stored="true"/>
    <!-- The string version of the title is used for sorting -->
-   <copyField source="title" dest="stitle"/>
-   <!-- The string version of the name is used for sorting/multi-site facets -->
+   <copyField source="title" dest="title_sort"/>
+   <!-- The string versions of the name used for sorting/multi-site facets -->
    <copyField source="name" dest="sname"/>
+   <copyField source="name" dest="name_sort"/>
    <!-- Copy terms to a single field that contains all taxonomy term names -->
    <copyField source="tsfield_vid_*" dest="taxonomy_names"/>
 
@@ -301,22 +304,25 @@
         Longer patterns will be matched first.  if equal size patterns
         both match, the first appearing in the schema will be used.  -->
 
-   <dynamicField name="isfield*"  type="integer" indexed="true"  stored="true" multiValued="false"/>
-   <dynamicField name="imfield*"  type="integer" indexed="true"  stored="true" multiValued="true"/>
-   <dynamicField name="sisfield*" type="sint"    indexed="true"  stored="true" multiValued="false"/>
-   <dynamicField name="simfield*" type="sint"    indexed="true"  stored="true" multiValued="true"/>
-   <dynamicField name="smfield*"  type="string"    indexed="true"  stored="true" multiValued="true"/>
-   <dynamicField name="tmfield*"  type="text"    indexed="true"  stored="true" multiValued="true" termVectors="true"/>
-   <dynamicField name="ssfield*"  type="string"    indexed="true"  stored="true" multiValued="false"/>
-   <dynamicField name="tsfield*"  type="text"    indexed="true"  stored="true" multiValued="false" termVectors="true"/>
-   <dynamicField name="dsfield*" type="date"    indexed="true"  stored="true" multiValued="false"/>
-   <dynamicField name="dmfield*" type="date"    indexed="true"  stored="true" multiValued="true"/>
-   <dynamicField name="bmfield*"  type="boolean" indexed="true"  stored="true" multiValued="true"/>
-   <dynamicField name="bsfield*"  type="boolean" indexed="true"  stored="true" multiValued="false"/>
-   <dynamicField name="fsfield*"  type="sfloat"  indexed="true"  stored="true" multiValued="false"/>
-   <dynamicField name="fmfield*"  type="sfloat"  indexed="true"  stored="true" multiValued="true"/>
-   <dynamicField name="psfield*"  type="sdouble" indexed="true"  stored="true" multiValued="false"/>
-   <dynamicField name="pmfield*"  type="sdouble" indexed="true"  stored="true" multiValued="true"/>
+   <dynamicField name="is_*"  type="integer" indexed="true"  stored="true" multiValued="false"/>
+   <dynamicField name="im_*"  type="integer" indexed="true"  stored="true" multiValued="true"/>
+   <dynamicField name="sis_*" type="sint"    indexed="true"  stored="true" multiValued="false"/>
+   <dynamicField name="sim_*" type="sint"    indexed="true"  stored="true" multiValued="true"/>
+   <dynamicField name="sm_*"  type="string"    indexed="true"  stored="true" multiValued="true"/>
+   <dynamicField name="tm_*"  type="text"    indexed="true"  stored="true" multiValued="true" termVectors="true"/>
+   <dynamicField name="ss_*"  type="string"    indexed="true"  stored="true" multiValued="false"/>
+   <dynamicField name="ts_*"  type="text"    indexed="true"  stored="true" multiValued="false" termVectors="true"/>
+   <dynamicField name="ds_*" type="date"    indexed="true"  stored="true" multiValued="false"/>
+   <dynamicField name="dm_*" type="date"    indexed="true"  stored="true" multiValued="true"/>
+   <dynamicField name="bm_*"  type="boolean" indexed="true"  stored="true" multiValued="true"/>
+   <dynamicField name="bs_*"  type="boolean" indexed="true"  stored="true" multiValued="false"/>
+   <dynamicField name="fs_*"  type="sfloat"  indexed="true"  stored="true" multiValued="false"/>
+   <dynamicField name="fm_*"  type="sfloat"  indexed="true"  stored="true" multiValued="true"/>
+   <dynamicField name="ps_*"  type="sdouble" indexed="true"  stored="true" multiValued="false"/>
+   <dynamicField name="pm_*"  type="sdouble" indexed="true"  stored="true" multiValued="true"/>
+   <!-- Sortable version of the dynamic string field -->
+   <dynamicField name="sort_ss_*" type="sortString" indexed="true" stored="false"/>
+   <copyField source="ss_*" dest="sort_ss_*"/>
    <!-- This field is used to store node access records, as opposed to CCK field data -->
    <dynamicField name="nodeaccess*" type="integer" indexed="true" stored="false" multiValued="true"/>
 

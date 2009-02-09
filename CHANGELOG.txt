@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.10 2009/02/08 15:05:28 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.11 2009/02/09 14:12:22 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,8 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#370707 compact field names, create "order by" fields in schema.xml
+        by pwolanin and Damien Tournoud
 #370796 avoid repeated looping/indexing in apachesolr_index_nodes() by Damien Tournoud
 #369944 Add field aliases and further clean-up the query class, by pwolanin
 #366959 make usage of solrsort consistent in Solr_Base_Query::solrsort by Damien Tournoud

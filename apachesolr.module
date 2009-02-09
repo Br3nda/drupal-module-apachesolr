@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.105 2009/02/08 15:05:28 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.106 2009/02/09 14:12:22 pwolanin Exp $
 
 /**
  * @file
@@ -438,13 +438,13 @@ function apachesolr_add_taxonomy_to_document(&$document, $node) {
       $ancestors = taxonomy_get_parents_all($term->tid);
       foreach ($ancestors as $ancestor) {
         $document->setMultiValue('tid', $ancestor->tid);
-        $document->setMultiValue('imfield_vid_'. $ancestor->vid, $ancestor->tid);
+        $document->setMultiValue('im_vid_'. $ancestor->vid, $ancestor->tid);
         $name = apachesolr_clean_text($ancestor->name);
         $document->setMultiValue('vid', $ancestor->vid);
-        $document->{'tsfield_vid_'. $ancestor->vid .'_names'} .= ' '. $name;
+        $document->{'ts_vid_'. $ancestor->vid .'_names'} .= ' '. $name;
         // We index each name as a string for cross-site faceting
         // using the vocab name rather than vid in field construction .
-        $document->setMultiValue('smfield_vid_'. apachesolr_vocab_name($ancestor->vid), $name);
+        $document->setMultiValue('sm_vid_'. apachesolr_vocab_name($ancestor->vid), $name);
       }
     }
   }
@@ -599,9 +599,9 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
           case 'sort':
             $sorts = array(
               'relevancy' => array('name' => t('Relevancy'), 'default' => 'asc'),
-              'stitle' => array('name' => t('Title'), 'default' => 'asc'),
+              'title_sort' => array('name' => t('Title'), 'default' => 'asc'),
               'type' => array('name' => t('Type'), 'default' => 'asc'),
-              'name' => array('name' => t('Author'), 'default' => 'asc'),
+              'name_sort' => array('name' => t('Author'), 'default' => 'asc'),
               'created' => array('name' => t('Date'), 'default' => 'desc'),
             );
 
@@ -908,7 +908,7 @@ function apachesolr_index_key($field) {
     default:
       $type_prefix = 's';
   }
-  $sm = $field['multiple'] ? 'mfield_' : 'sfield_';
+  $sm = $field['multiple'] ? 'm_' : 's_';
   return $type_prefix . $sm . $field['name'];
 }
 
