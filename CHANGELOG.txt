@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.12 2009/02/10 20:25:48 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.13 2009/02/10 20:47:03 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#371858 by pwolanin, re-fill the Luke cache after we empty it on cron
 #372120 by pwolanin, create one MLT block by default on install of apachesolr_mlt
 #370707 compact field names, create "order by" fields in schema.xml
         by pwolanin and Damien Tournoud

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.106 2009/02/09 14:12:22 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.107 2009/02/10 20:47:03 pwolanin Exp $
 
 /**
  * @file
@@ -518,6 +518,9 @@ function apachesolr_cron() {
   try {
     $solr = apachesolr_get_solr();
     $solr->clearCache();
+    // Re-populate the luke cache.
+    // Note: we use 2 since 1 fails on Ubuntu Hardy.
+    $solr->getLuke(2);
     $last = variable_get('apachesolr_last_optimize', 0);
     $time = time();
     // Make sure to omtimize once per day.
