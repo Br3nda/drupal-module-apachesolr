@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.22 2009/02/05 17:28:20 robertDouglass Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.23 2009/02/10 20:25:48 pwolanin Exp $
 
 /**
  * Implementation of hook_menu()
@@ -107,7 +107,7 @@ function apachesolr_mlt_suggestions($block_id, $nid) {
       }
 
       if (count($links) > 0) {
-        $suggestions['subject'] = $block['name'];
+        $suggestions['subject'] = check_plain($block['name']);
         $suggestions['content'] = theme('apachesolr_mlt_recommendation_block', $links);
       }
     }
@@ -141,8 +141,8 @@ function apachesolr_mlt_settings() {
     $block->data = unserialize($block->data);
     $rows[] = array(
       $block->id,
-      $block->data['name'],
-      l('Edit', 'admin/settings/apachesolr_mlt/configure_block/' . check_plain($block->id)) .' | ' . l('Delete', 'admin/settings/apachesolr_mlt/delete_block/' . check_plain($block->id)),
+      check_plain($block->data['name']),
+      l(t('Edit'), 'admin/settings/apachesolr_mlt/configure_block/' . $block->id) .' | ' . l('Delete', 'admin/settings/apachesolr_mlt/delete_block/' . $block->id),
     );
   }
   $header = array(t('Id'), t('Name'), t('Options'));
@@ -178,7 +178,8 @@ function apachesolr_mlt_block_form(&$form_state, $block_id = NULL) {
     '#type' => 'textfield',
     '#title' => t('Block Name'),
     '#description' => t('The block name displayed to site users.'),
-    '#default_value' => isset($block['name']) ? check_plain($block['name']) : '',
+    '#required' => TRUE,
+    '#default_value' => isset($block['name']) ? $block['name'] : '',
     '#weight' => '-2',
   );
   $form['num_results'] = array(
@@ -292,7 +293,6 @@ function apachesolr_mlt_block_form_submit($form, &$form_state) {
  * @return array An array containing a the fields in the solr instance.
  */
 function apachesolr_mlt_get_fields() {
-  include_once drupal_get_path('module', 'apachesolr') .'/Solr_Base_Query.php';
   $solr = apachesolr_get_solr();
   $fields = $solr->getFields();
   $rows = array();
@@ -303,7 +303,6 @@ function apachesolr_mlt_get_fields() {
 
   return $rows;
 }
-
 
 /**
  * function apachesolr_mlt_load_block()
@@ -358,7 +357,7 @@ function apachesolr_mlt_list_blocks() {
   $blocks = array();
   while ($block = db_fetch_object($block_results)) {
     $block->data = unserialize($block->data);
-    $blocks[$block->id] = array('info' => t('Apache Solr recommendations: ') . $block->data['name'], 'cache' => BLOCK_CACHE_PER_PAGE);
+    $blocks[$block->id] = array('info' => t('Apache Solr recommendations: !name', array('!name' => $block->data['name'])) , 'cache' => BLOCK_CACHE_PER_PAGE);
   }
   return $blocks;
 }
