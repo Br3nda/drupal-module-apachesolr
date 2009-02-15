@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.9 2009/01/12 22:20:56 pwolanin Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.10 2009/02/15 11:16:01 drunkenmonkey Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -54,7 +54,8 @@ The solrconfig.xml that comes with this modules defines auto-commit, so
 it may take a few minutes between running cron and when the new content
 is visible in search.
 
-Enable blocks for facets at Administer > Site building > Blocks.   
+Enable blocks for facets first at Administer > Site configuration > Apache Solr > Enabled filters,
+then position them as you like at Administer > Site building > Blocks.   
 
 Troubleshooting
 --------------
