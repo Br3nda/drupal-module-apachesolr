@@ -5,7 +5,9 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
 
   protected $luke;
   protected $luke_cid;
+  protected $stats;
   const LUKE_SERVLET = 'admin/luke';
+  const STATS_SERVLET = 'admin/stats.jsp';
 
   /**
    * Sets $this->luke with the meta-data about the index from admin/luke.
@@ -33,6 +35,29 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       $this->setLuke($num_terms);
     }
     return $this->luke[$num_terms];
+  }
+  
+  /**
+   * Sets $this->stats with the information about the Solr Core form /admin/stats.jsp
+   */
+  protected function setStats() {
+    if (empty($this->stats)) {
+      $url = $this->_constructUrl(self::STATS_SERVLET);
+      $this->stats = $this->_sendRawGet($url);
+    }
+  }
+  
+  /**
+   * Get information about the Solr Core.
+   */
+  public function getStats($parsed = true) {
+    if (!isset($this->stats)) {
+      $this->setStats();
+    }
+    if ($parsed) {
+      return simplexml_load_string($this->stats->getRawResponse());
+    }
+    return $this->stats;
   }
 
   /**
