@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.68 2009/02/09 14:12:22 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.69 2009/02/17 16:07:56 pwolanin Exp $
 
 /**
  * @file
@@ -325,7 +325,9 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
       // Add the blocks
       $blocks = array();
       foreach ($enabled_facets as $delta => $facet_field) {
-        $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE,);
+        if (isset($facets[$delta])) {
+          $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE,);
+        }
       }
       $blocks['currentsearch'] = array(
         'info' => t('Apache Solr Search: Current search'),
