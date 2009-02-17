@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- $Id: schema.xml,v 1.1.2.1.2.22 2009/02/10 19:08:00 pwolanin Exp $ -->
+<!-- $Id: schema.xml,v 1.1.2.1.2.23 2009/02/17 23:14:09 pwolanin Exp $ -->
 
 <!--
  This is the Solr schema file. This file should be named "schema.xml" and
@@ -11,7 +11,7 @@
  http://wiki.apache.org/solr/SchemaXml
 -->
 
-<schema name="drupal" version="1.1">
+<schema name="drupal-0.8" version="1.1">
   <!-- attribute "name" is the name of this schema and is only used for display purposes.
        Applications should change this to reflect the nature of the search collection.
        version="1.1" is Solr's version number for the schema syntax and semantics.  It should
@@ -247,7 +247,7 @@
    <field name="hash" type="string" indexed="true" stored="true"/>
    <field name="url" type="string" indexed="true" stored="true"/>
    <field name="title" type="text" indexed="true" stored="true" termVectors="true" omitNorms="true"/>
-   <field name="title_sort" type="sortString" indexed="true" stored="false"/>
+   <field name="sort_title" type="sortString" indexed="true" stored="false"/>
    <field name="body" type="text" indexed="true" stored="true" termVectors="true"/>
    <field name="type" type="string" indexed="true" stored="true"/>
    <field name="type_name" type="string" indexed="true" stored="true"/>
@@ -255,7 +255,7 @@
    <field name="uid"  type="integer" indexed="true" stored="true"/>
    <field name="name" type="text" indexed="true" stored="true" termVectors="true"/>
    <field name="sname" type="string" indexed="true" stored="false"/>
-   <field name="name_sort" type="sortString" indexed="true" stored="false"/>
+   <field name="sort_name" type="sortString" indexed="true" stored="false"/>
    <field name="created" type="date" indexed="true" stored="true"/>
    <field name="changed" type="date" indexed="true" stored="true"/>
    <field name="last_comment_or_change" type="date" indexed="true" stored="true"/>
@@ -267,10 +267,10 @@
    <field name="taxonomy_names" type="text" indexed="true" stored="false" termVectors="true" multiValued="true" omitNorms="true"/>
    <field name="language" type="string" indexed="true" stored="true"/>
    <!-- The string version of the title is used for sorting -->
-   <copyField source="title" dest="title_sort"/>
+   <copyField source="title" dest="sort_title"/>
    <!-- The string versions of the name used for sorting/multi-site facets -->
    <copyField source="name" dest="sname"/>
-   <copyField source="name" dest="name_sort"/>
+   <copyField source="name" dest="sort_name"/>
    <!-- Copy terms to a single field that contains all taxonomy term names -->
    <copyField source="ts_vid_*" dest="taxonomy_names"/>
 
@@ -330,7 +330,7 @@
         field name or dynamic field, rather than reporting them as an error.
         Alternately, change the type="ignored" to some other type e.g. "text" if you want
         unknown fields indexed and/or stored by default -->
-   <dynamicField name="*" type="ignored" />
+   <dynamicField name="*" type="ignored" multiValued="true" />
 
  </fields>
 
