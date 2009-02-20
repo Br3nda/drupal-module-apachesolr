@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.109 2009/02/19 08:10:37 jacobsingh Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.110 2009/02/20 01:43:35 pwolanin Exp $
 
 /**
  * @file
@@ -349,9 +349,15 @@ function apachesolr_node_to_document($nid) {
     $document->hash = apachesolr_site_hash();
     $document->url = url('node/' . $node->nid, array('absolute' => TRUE));
     $document->nid = $node->nid;
-    $document->status = $node->status;
     $document->uid = $node->uid;
     $document->title = $node->title;
+    $document->status = $node->status;
+    $document->sticky = $node->sticky;
+    $document->promote = $node->promote;
+    $document->moderate = $node->moderate;
+    $document->tnid = $node->tnid;
+    $document->translate = $node->translate;
+    $document->language = $node->language;
     $document->body = strip_tags($text);
     $document->type  = $node->type;
     $document->type_name = apachesolr_strip_ctl_chars(node_get_types('name', $node));
@@ -361,7 +367,6 @@ function apachesolr_node_to_document($nid) {
     $document->last_comment_or_change = apachesolr_date_iso($last_change);
     $document->comment_count = isset($node->comment_count) ? $node->comment_count : 0;
     $document->name = apachesolr_strip_ctl_chars($node->name);
-    $document->language = $node->language;
 
     // Path aliases can have important information about the content.
     // Add them to the index as well.
@@ -749,11 +754,11 @@ function apachesolr_facetcount_save($edit) {
  *
  * }
  */
-function apachesolr_modify_query(&$query, &$params) {
+function apachesolr_modify_query(&$query, &$params, $caller) {
 
   foreach (module_implements('apachesolr_modify_query') as $module) {
     $function_name = "{$module}_apachesolr_modify_query";
-    $function_name($query, $params);
+    $function_name($query, $params, $caller);
   }
   // Add array of fq parameters.
   if ($query && ($fq = $query->get_fq())) {

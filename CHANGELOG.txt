@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.18 2009/02/20 01:38:26 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.19 2009/02/20 01:43:35 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#376255 by pwolanin, Index more node fields, use boolean fields.
 #376966 by JacobSingh and pwolanin, requesting the top terms from luke is very
         expensive, so normally request 0, and only get them for smaller indexes.
 #375991 by pwolanin, build spellcheck index on optimize
