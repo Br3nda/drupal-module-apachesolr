@@ -1,12 +1,12 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.1.2.4 2008/12/17 18:35:04 pwolanin Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.1.2.5 2009/02/20 02:36:39 pwolanin Exp $
 
 /**
  * Implementation of apachesolr_update_index
  */
 function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node) {
   if (count(module_implements('node_grants'))) {
-    // Get node access grants
+    // Get node access grants.
     $result = db_query('SELECT * from {node_access} WHERE nid = %d AND grant_view = 1', $node->nid);
     while ($grant = db_fetch_object($result)) {
       $key = 'nodeaccess_'. $grant->realm;
@@ -22,7 +22,7 @@ function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node) {
  */
 function _apachesolr_nodeaccess_build_subquery($account) {
   if (!user_access('administer nodes', $account) && count(module_implements('node_grants'))) {
-    // Get node access perms 
+    // Get node access grants.
     $grants = node_access_grants('view', $account);
     if (empty($grants)) {
       // If they can't see any content, we might as well not bother searching.
@@ -47,7 +47,8 @@ function apachesolr_nodeaccess_apachesolr_modify_query(&$query, &$params) {
   global $user;
   try {
     $subquery = _apachesolr_nodeaccess_build_subquery($user);
-  } catch (Exception $e) {
+  }
+  catch (Exception $e) {
     $query = NULL;
     watchdog("apachesolr_nodeaccess", 'User %name (UID:!uid) is not allowed to access any content', array('%name' => $user->name, '!uid' => $user->uid));
     return;
