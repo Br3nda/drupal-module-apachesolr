@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.21 2009/02/20 02:03:38 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.22 2009/02/20 02:05:54 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#377494 by pwolanin, Update text type in schema to new example.
 #376270 by pwolanin, also add option to bias on recent comments/changes
 #337879 by pwolanin and blackdog, Store relative not absolute paths.
 #376255 by pwolanin, Index more node fields, use boolean fields.
