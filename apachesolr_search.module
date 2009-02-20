@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.72 2009/02/20 01:38:26 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.73 2009/02/20 01:48:13 pwolanin Exp $
 
 /**
  * @file
@@ -233,7 +233,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
             $extra += node_invoke_nodeapi($doc, 'search result');
             $extra['score'] = $doc->score;
             $results[] = array(
-              'link' => $doc->url,
+              'link' => url('node/' . $doc->nid),
               'type' => apachesolr_search_get_type($doc->type),
               'title' => $doc->title,
               'user' => theme('username', $doc),

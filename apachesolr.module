@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.110 2009/02/20 01:43:35 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.111 2009/02/20 01:48:13 pwolanin Exp $
 
 /**
  * @file
@@ -347,7 +347,6 @@ function apachesolr_node_to_document($nid) {
     $document->id = apachesolr_document_id($node->nid);
     $document->site = url(NULL, array('absolute' => TRUE));
     $document->hash = apachesolr_site_hash();
-    $document->url = url('node/' . $node->nid, array('absolute' => TRUE));
     $document->nid = $node->nid;
     $document->uid = $node->uid;
     $document->title = $node->title;
@@ -368,16 +367,18 @@ function apachesolr_node_to_document($nid) {
     $document->comment_count = isset($node->comment_count) ? $node->comment_count : 0;
     $document->name = apachesolr_strip_ctl_chars($node->name);
 
+    $path = 'node/' . $node->nid;
+    $document->url = url($path, array('absolute' => TRUE));
+    $document->path = $path;
     // Path aliases can have important information about the content.
     // Add them to the index as well.
     if (function_exists('drupal_get_path_alias')) {
       // Add any path alias to the index, looking first for language specific
       // aliases but using language neutral aliases otherwise.
       $language = empty($node->language) ? '' : $node->language;
-      $path = 'node/' . $node->nid;
       $output = drupal_get_path_alias($path, $language);
       if ($output && $output != $path) {
-        $document->path = apachesolr_strip_ctl_chars($output);
+        $document->path_alias = apachesolr_strip_ctl_chars($output);
       }
     }
 
