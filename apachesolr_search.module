@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.74 2009/02/20 02:03:38 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.75 2009/02/20 19:51:26 pwolanin Exp $
 
 /**
  * @file
@@ -33,17 +33,16 @@ function apachesolr_search_help($section) {
  */
 function apachesolr_search_menu() {
   $items['admin/settings/apachesolr/query-fields'] = array(
-    'title'            => 'Query field settings',
+    'title'            => 'Search fields',
     'page callback'    => 'apachesolr_search_settings_page',
     'access arguments' => array('administer site configuration'),
     'weight'           => 1,
     'type'             => MENU_LOCAL_TASK,
     'file'             => 'apachesolr_search.admin.inc',
   );
-  $items['admin/settings/apachesolr/node-types'] = array(
-    'title'            => 'Content type settings',
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('apachesolr_search_type_boost_form'),
+  $items['admin/settings/apachesolr/content-bias'] = array(
+    'title'            => 'Content bias settings',
+    'page callback'    => 'apachesolr_boost_settings_page',
     'access arguments' => array('administer site configuration'),
     'weight'           => 1,
     'type'             => MENU_LOCAL_TASK,
@@ -202,6 +201,16 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         list($changed_steepness, $changed_boost) = explode(':', $changed_settings);
         if ($changed_boost) {
           $params['bf'][] = "recip(rord(last_comment_or_change),$changed_steepness,$total,$total)^$changed_boost";
+        }
+        // Boost for nodes with sticky bit set.
+        $sticky_boost = variable_get('apachesolr_search_sticky_boost', 0);
+        if ($sticky_boost) {
+          $params['bq'][] = "sticky:true^$sticky_boost";
+        }
+        // Boost for nodes with promoted bit set.
+        $promote_boost = variable_get('apachesolr_search_promote_boost', 0);
+        if ($promote_boost) {
+          $params['bq'][] = "promote:true^$promote_boost";
         }
         // Modify the weight of results according to the node types.
         $type_boosts = variable_get('apachesolr_search_type_boosts', array());
