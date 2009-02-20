@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.11 2009/02/03 14:04:51 pwolanin Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.12 2009/02/20 02:03:38 pwolanin Exp $
 
 /**
  * @file
@@ -31,8 +31,9 @@ function apachesolr_search_settings_page() {
 function apachesolr_search_bias_form($form_state) {
 
   $date_settings = variable_get('apachesolr_search_date_boost', '4:200.0');
-  $comment_settings = variable_get('apachesolr_search_comment_boost', '4:200.0');
-
+  $comment_settings = variable_get('apachesolr_search_comment_boost', '0:0');
+  $changed_settings = variable_get('apachesolr_search_changed_boost', '0:0');
+  
   $options = array(
     '10:2000.0' => '10',
     '8:1000.0' => '9',
@@ -57,9 +58,9 @@ function apachesolr_search_bias_form($form_state) {
   $form['biasing']['apachesolr_search_date_boost'] = array(
     '#type' => 'select',
     '#options' => $options,
-    '#title' => t("'More recent change' bias"),
+    '#title' => t("'More recently created' bias"),
     '#default_value' => $date_settings,
-    '#description' => t('This setting will change the result scoring so that results changed more recently may appear before those with higher keyword matching.'),
+    '#description' => t('This setting will change the result scoring so that nodes created more recently may appear before those with higher keyword matching.'),
   );
   $form['biasing']['apachesolr_search_comment_boost'] = array(
     '#type' => 'select',
@@ -68,7 +69,13 @@ function apachesolr_search_bias_form($form_state) {
     '#default_value' => $comment_settings,
     '#description' => t('This setting will change the result scoring so that nodes with more comments may appear before those with higher keyword matching.'),
   );
-
+  $form['biasing']['apachesolr_search_changed_boost'] = array(
+    '#type' => 'select',
+    '#options' => $options,
+    '#title' => t("'More recent comments' bias"),
+    '#default_value' => $changed_settings,
+    '#description' => t('This setting will change the result scoring so that nodes with the most recent comments (or most recent updates to the node itself) may appear before those with higher keyword matching.'),
+  );
   return system_settings_form($form);
 }
 

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.73 2009/02/20 01:48:13 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.74 2009/02/20 02:03:38 pwolanin Exp $
 
 /**
  * @file
@@ -181,25 +181,28 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         else {
           $total = db_result(db_query("SELECT COUNT(nid) FROM {node}"));
         }
-        $date_settings = variable_get('apachesolr_search_date_boost', '4:200.0');
-        list($date_steepness, $date_boost) = explode(':', $date_settings);
-        // Default date-biasing function, as suggested (but steeper) at
+        // For the boost functions for the created timestamp, etc we use the
+        // standard date-biasing function, as suggested (but steeper) at
         // http://wiki.apache.org/solr/DisMaxRequestHandler
         // rord() returns 1 for the newset doc, and the number in the index for
         // the oldest doc.  The function is thus: $total/(rord()*$steepness + $total).
+        $date_settings = variable_get('apachesolr_search_date_boost', '4:200.0');
+        list($date_steepness, $date_boost) = explode(':', $date_settings);
         if ($date_boost) {
           $params['bf'][] = "recip(rord(created),$date_steepness,$total,$total)^$date_boost";
         }
-        $comment_settings = variable_get('apachesolr_search_comment_boost', '4:200.0');
+        // Boost on comment count.
+        $comment_settings = variable_get('apachesolr_search_comment_boost', '0:0');
         list($comment_steepness, $comment_boost) = explode(':', $comment_settings);
-        // Default date-biasing function, as suggested (but steeper) at
-        // http://wiki.apache.org/solr/DisMaxRequestHandler
-        // rord() returns 1 for the newset doc, and the number in the index for
-        // the oldest doc.  The function is thus: $total/(rord()*$steepness + $total).
         if ($comment_boost) {
           $params['bf'][] = "recip(rord(comment_count),$comment_steepness,$total,$total)^$comment_boost";
         }
-
+        // Boost for a more recent comment or node edit.
+        $changed_settings = variable_get('apachesolr_search_changed_boost', '0:0');
+        list($changed_steepness, $changed_boost) = explode(':', $changed_settings);
+        if ($changed_boost) {
+          $params['bf'][] = "recip(rord(last_comment_or_change),$changed_steepness,$total,$total)^$changed_boost";
+        }
         // Modify the weight of results according to the node types.
         $type_boosts = variable_get('apachesolr_search_type_boosts', array());
         if (!empty($type_boosts)) {
