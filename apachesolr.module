@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.111 2009/02/20 01:48:13 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.112 2009/02/20 19:31:16 pwolanin Exp $
 
 /**
  * @file
@@ -171,9 +171,16 @@ function apachesolr_comment($edit, $op) {
     case 'delete':
     case 'publish':
     case 'unpublish':
-      db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid = %d", time(), $edit['nid']);
+      apachesolr_mark_node($edit['nid']);
       break;
   }
+}
+
+/**
+ * Mark one node as needing re-indexing.
+ */
+function apachesolr_mark_node($nid) {
+  db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid = %d", time(), $nid);
 }
 
 /**

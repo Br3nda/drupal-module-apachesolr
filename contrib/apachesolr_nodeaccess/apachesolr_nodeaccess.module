@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.1.2.5 2009/02/20 02:36:39 pwolanin Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.1.2.6 2009/02/20 19:31:16 pwolanin Exp $
 
 /**
  * Implementation of apachesolr_update_index
@@ -84,7 +84,8 @@ function apachesolr_nodeaccess_node_access_records($node) {
   // node_access_needs_rebuild() will usually be TRUE during a
   // full rebuild.
   if (empty($node->apachesolr_nodeaccess_ignore) && !node_access_needs_rebuild()) {
-    db_query('UPDATE {node} SET changed = %d WHERE nid = %d', time(), $node->nid);
+    // Only one node is being changed - mark for re-indexing.
+    apachesolr_mark_node($node->nid);
   }
 }
 
@@ -98,8 +99,10 @@ function apachesolr_nodeaccess_form_alter(&$form, $form_state, $form_id) {
 }
 
 /**
- * Forces Solr to do a total re-index.
- * This is unfortunate because not every node is going to be affected, but there is little we can do.
+ * Force Solr to do a total re-index when node access rules change.
+ *
+ * This is unfortunate because not every node is going to be affected, but
+ * there is little we can do.
  */
 function apachesolr_nodeaccess_rebuild_nodeaccess(&$form, $form_state) {
   drupal_set_message(t('Solr search index will be rebuilt.'));

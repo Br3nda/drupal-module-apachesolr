@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.25 2009/02/20 16:39:44 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.26 2009/02/20 19:31:16 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#378566 by pwolanin, nodeaccess not correctly marking single nodes for re-indexing
 #378270 by pwolanin, suppress MLT admin link when there is no block content
 #378196 by pwolanin, remove PHP client from CVS
 #231200 by janusman and pwolanin, turn on mapping of accented to non-accented
