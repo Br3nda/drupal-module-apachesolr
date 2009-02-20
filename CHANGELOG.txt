@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.27 2009/02/20 19:51:26 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.28 2009/02/20 20:55:02 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,36 +8,39 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
-#378222 by janusman and pwolanin, add boost settings for "sticky" and "promote"
-#378566 by pwolanin, nodeaccess not correctly marking single nodes for re-indexing
-#378270 by pwolanin, suppress MLT admin link when there is no block content
-#378196 by pwolanin, remove PHP client from CVS
+
+Apache Solr integration 6.x-1.0-beta3, 2009-02-20
+------------------------------
+#378222 by janusman and pwolanin, add boost settings for "sticky" and "promote".
+#378566 by pwolanin, nodeaccess not correctly marking single nodes for re-indexing.
+#378270 by pwolanin, suppress MLT admin link when there is no block content.
+#378196 by pwolanin, remove PHP client from CVS per Drupal.org policy.
 #231200 by janusman and pwolanin, turn on mapping of accented to non-accented
         ISO characters for indexing and search. 
 #377494 by pwolanin, Update text type in schema to new example.
-#376270 by pwolanin, also add option to bias on recent comments/changes
+#376270 by pwolanin, also add option to bias on recent comments/changes.
 #337879 by pwolanin and blackdog, Store relative not absolute paths.
 #376255 by pwolanin, Index more node fields, use boolean fields.
 #376966 by JacobSingh and pwolanin, requesting the top terms from luke is very
         expensive, so normally request 0, and only get them for smaller indexes.
-#375991 by pwolanin, build spellcheck index on optimize
-#370707 by pwolanin, make sort field names consistent, make ignored multiValued
-#375723 by pwolanin, prevent fatal error if available facet list changes
-#373921 by JacobSingh, show pending docs on index page from autocommit
-#371858 by pwolanin, re-fill the Luke cache after we empty it on cron
-#372120 by pwolanin, create one MLT block by default on install of apachesolr_mlt
+#375991 by pwolanin, build spellcheck index on optimize.
+#370707 by pwolanin, make sort field names consistent, make ignored multiValued.
+#375723 by pwolanin, prevent fatal error if available facet list changes.
+#373921 by JacobSingh, show pending docs on index page from autocommit.
+#371858 by pwolanin, re-fill the Luke cache after we empty it on cron.
+#372120 by pwolanin, create one MLT block by default on install of apachesolr_mlt.
 #370707 compact field names, create "order by" fields in schema.xml
-        by pwolanin and Damien Tournoud
-#370796 avoid repeated looping/indexing in apachesolr_index_nodes() by Damien Tournoud
-#369944 Add field aliases and further clean-up the query class, by pwolanin
-#366959 make usage of solrsort consistent in Solr_Base_Query::solrsort by Damien Tournoud
+        by pwolanin and Damien Tournoud.
+#370796 avoid repeated looping/indexing in apachesolr_index_nodes() by Damien Tournoud.
+#369944 Add field aliases and further clean-up the query class, by pwolanin.
+#366959 make usage of solrsort consistent in Solr_Base_Query::solrsort by Damien Tournoud.
 #       Update errant watchdog calls that were using D5 signature by robertDouglass.
 #369780 Rearrange code for better organization and performance by robertDouglass.
 #365901 Fix bug where indexing might hang & improved API by adding a separate
         hook for modules to indicate that a node is excluded, by pwolanin.
-#367361 Use the machine-readable name for disabled node types by pwolanin
-#366957 Add a "configure" link to the more like this block by JacobSingh
-#365901 Add a bias on node type (and node-type exclusion) by Damien Tournoud and pwolanin
+#367361 Use the machine-readable name for disabled node types by pwolanin.
+#366957 Add a "configure" link to the more like this block by JacobSingh.
+#365901 Add a bias on node type (and node-type exclusion) by Damien Tournoud and pwolanin.
 
 Apache Solr integration 6.x-1.0-beta2, 2009-01-28 (changes since 6.x-1.0-alpha6 2009-Jan-08)
 ------------------------------
