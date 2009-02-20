@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.22 2009/02/20 02:05:54 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.23 2009/02/20 02:10:39 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,8 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#231200 by janusman and pwolanin, turn on mapping of accented to non-accented
+        ISO characters for indexing and search. 
 #377494 by pwolanin, Update text type in schema to new example.
 #376270 by pwolanin, also add option to bias on recent comments/changes
 #337879 by pwolanin and blackdog, Store relative not absolute paths.
