@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.24 2009/02/20 02:36:39 pwolanin Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.25 2009/02/20 16:39:44 pwolanin Exp $
 
 /**
  * Implementation of hook_menu()
@@ -49,10 +49,7 @@ function apachesolr_mlt_block($op = 'list', $delta = 0, $edit = array()) {
         $access = $node && node_access('view', $node);
       }
       if ($access) {
-        $block = apachesolr_mlt_suggestions($delta, $nid);
-        $configure_link = user_access('administer search') ? l(t('Configure this block'),'admin/settings/apachesolr_mlt/configure_block/' . $delta) : '';
-        $block['content'] .= $configure_link;
-        return $block;
+        return apachesolr_mlt_suggestions($delta, $nid);
       }
     }
   }
@@ -105,13 +102,17 @@ function apachesolr_mlt_suggestions($block_id, $nid) {
 
       if (is_array($r)) {
         foreach ($r as $result) {
-          $links[] = l($result->title, $result->url);
+          // Suitable for single-site mode.
+          $links[] = l($result->title, 'node/' . $result->nid);
         }
       }
 
-      if (count($links) > 0) {
+      if (count($links)) {
         $suggestions['subject'] = check_plain($block['name']);
         $suggestions['content'] = theme('apachesolr_mlt_recommendation_block', $links);
+        if (user_access('administer search')) {
+           $suggestions['content'] .= l(t('Configure this block'),'admin/settings/apachesolr_mlt/configure_block/' . $delta, array('attributes' => array('class' => 'apachesolr-mlt-admin-link')));
+        }
       }
     }
     return $suggestions;
