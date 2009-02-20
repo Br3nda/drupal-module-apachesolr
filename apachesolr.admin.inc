@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.9 2009/02/17 23:14:09 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.10 2009/02/20 01:38:26 pwolanin Exp $
 
 /**
  * @file
@@ -72,8 +72,7 @@ function apachesolr_index_page() {
     // TODO: only clear this every page view if we are running
     // multi-site.
     $solr->clearCache();
-    // Note: we use 2 since 1 fails on Ubuntu Hardy.
-    $data = $solr->getLuke(2);
+    $data = $solr->getLuke();
   }
   catch (Exception $e) {
     watchdog('apachesolr', $e->getMessage());
@@ -94,16 +93,35 @@ function apachesolr_index_page() {
     }
     $pending_msg = $pending_docs ? t('(@pending_docs sent but not yet processed)', array('@pending_docs' => $pending_docs)) : '';
     $output .= '<p>' . t('Number of documents in index: @num !pending', array('@num' => $data->index->numDocs, '!pending' => $pending_msg)) . "</p>\n";
-    $output .= '<p>' . t('Number of terms in index: @num', array('@num' => $data->index->numTerms)) . "</p>\n";
   }
 
-  $fields = (array)$data->fields;
+
+  $limit = variable_get('apachesolr_luke_limit', 20000);
+  if (isset($data->index->numDocs) && $data->index->numDocs > $limit) {
+    $output .= '<p>' . t('You have more than @limit documents, so term frequencies are being omitted for performance reasons.', array('@limit' => $limit)) . "</p>\n";
+    $not_found = t('<em>Omitted</em>');
+  }
+  elseif (isset($data->index->numDocs)) {
+    $not_found = t('Not indexed');
+    try {
+      $solr = apachesolr_get_solr();
+      // Note: we use 2 since 1 fails on Ubuntu Hardy.
+      $data = $solr->getLuke(2);
+      $output .= '<p>' . t('Number of terms in index: @num', array('@num' => $data->index->numTerms)) . "</p>\n";
+    }
+    catch (Exception $e) {
+      watchdog('apachesolr', $e->getMessage());
+      $data->fields = array();
+    }
+  }
+
+  $fields = (array)$data->fields;  
   if ($fields) {
     $output .= '<p>' . t('Number of fields in index: @num', array('@num' => count($fields))) . "</p>\n";
     $rows = array();
     foreach ($fields as $name => $field) {
       // TODO: try to map the name to something more meaningful.
-      $rows[$name] = array($name, $field->type, isset($field->index) ? $field->distinct : t('Not indexed'));
+      $rows[$name] = array($name, $field->type, isset($field->distinct) ? $field->distinct : $not_found);
     }
     ksort($rows);
     // Display the table of Field names, Index Types, and term counts.
