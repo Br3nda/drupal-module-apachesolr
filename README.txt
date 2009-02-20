@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.10 2009/02/15 11:16:01 drunkenmonkey Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.11 2009/02/20 15:20:38 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -17,9 +17,21 @@ use the Core Searches module in tandem with this module.
 Installation
 ------------
 
-Install and enable the ApacheSolr Drupal module as you would any Drupal module.
-
 Prerequisite: Java 5 or higher (a.k.a. 1.5.x).  PHP 5.2.0 or higher.
+
+Install the Apache Solr Drupal module as you would any Drupal module.
+
+Before enabling it, you must also do the following:
+
+Get the PHP library from the external project. The project is
+found at:  http://code.google.com/p/solr-php-client/
+From the apachesolr module directory, run this command:
+
+svn checkout -r5 http://solr-php-client.googlecode.com/svn/trunk/ SolrPhpClient
+
+Note that revision 5 is the currently tested and suggested revision. If you
+do not have svn, you may be able to downlaod a copy of the library from
+https://issues.apache.org/jira/browse/SOLR-341
 
 Download Solr trunk (candidate 1.4.x build) from a nightly build or build it
 from svn.  http://people.apache.org/builds/lucene/solr/nightly/
@@ -48,7 +60,10 @@ apache-solr-nightly/example, and executing the command java -jar start.jar
 Test that your solr server is now available by visiting
 http://localhost:8983/solr/admin/
 
-Now run cron on your Drupal site until your content is indexed.
+Now, you should  enable the "Apache Solr framework" and "Apache Solr search" 
+modules. Check that you can connect to Solr at ?q=admin/setting/apachesolr
+Now run cron on your Drupal site until your content is indexed. You
+can monitor the index at ?q=admin/settings/apachesolr/index
 
 The solrconfig.xml that comes with this modules defines auto-commit, so
 it may take a few minutes between running cron and when the new content
