@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.77 2009/02/23 03:23:40 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.78 2009/02/23 03:40:37 pwolanin Exp $
 
 /**
  * @file
@@ -216,7 +216,10 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         $type_boosts = variable_get('apachesolr_search_type_boosts', array());
         if (!empty($type_boosts)) {
           foreach ($type_boosts as $type => $boost) {
-            $params['bq'][] = "type:$type^$boost";
+            // Only add a param if the boost is != 0 (i.e. > "Normal").
+            if ($boost) {
+              $params['bq'][] = "type:$type^$boost";
+            }
           }
         }
 
