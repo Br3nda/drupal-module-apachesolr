@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.33 2009/02/23 03:40:37 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.34 2009/02/23 14:56:49 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -7,6 +7,9 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
+------------------------------
+
+Apache Solr integration 6.x-1.0-beta4, 2009-02-23
 ------------------------------
 #380670 by pwolanin, only add a bq param for a node-type boost > 'Normal'.
 #379518 by pwolanin, correct mismatch in default boost between 
