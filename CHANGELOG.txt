@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.28 2009/02/20 20:55:02 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.29 2009/02/23 03:09:37 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#380538 by pwolanin, fix code to find vid for taxonomy facet blocks.
 
 Apache Solr integration 6.x-1.0-beta3, 2009-02-20
 ------------------------------
