@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.31 2009/02/23 03:23:40 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.32 2009/02/23 03:27:44 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,8 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#379518 by pwolanin, correct mismatch in default boost between 
+        solrconfig.xml and apachesolr_search.
 #380594 by pwolanin, empty the spellcheck dictionary if the index is deleted.
 #380644 by JacobSingh, Backwards compatability for old sort fields. 
 #380538 by pwolanin, fix code to find vid for taxonomy facet blocks.
