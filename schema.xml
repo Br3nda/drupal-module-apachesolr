@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- $Id: schema.xml,v 1.1.2.1.2.28 2009/02/20 02:19:49 pwolanin Exp $ -->
+<!-- $Id: schema.xml,v 1.1.2.1.2.29 2009/02/23 03:10:07 jacobsingh Exp $ -->
 
 <!--
  This is the Solr schema file. This file should be named "schema.xml" and
@@ -351,7 +351,20 @@
         Alternately, change the type="ignored" to some other type e.g. "text" if you want
         unknown fields indexed and/or stored by default -->
    <dynamicField name="*" type="ignored" multiValued="true" />
+   
+   
+   
+   <!-- BACKWARDS COMPATIBILITY -->
+   <!-- Here is where we store fields which are no longer used -->
+   
+   <!-- Fields previously used for sorting  -->
+   <field name="stitle" type="string" indexed="true" stored="true"/>
+   <field name="title_sort" type="sortString" indexed="true" stored="false"/>
 
+   <field name="name_sort" type="sortString" indexed="true" stored="false"/>
+    
+    
+   <!-- /BACKWARDS COMPATIBILITY -->
  </fields>
 
  <!-- Field to use to determine and enforce document uniqueness.
