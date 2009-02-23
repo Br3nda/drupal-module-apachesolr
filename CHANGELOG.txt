@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.29 2009/02/23 03:09:37 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.30 2009/02/23 03:15:50 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -9,6 +9,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
 #380538 by pwolanin, fix code to find vid for taxonomy facet blocks.
+#380644 by JacobSingh, Backwards compatability for old sort fields. 
 
 Apache Solr integration 6.x-1.0-beta3, 2009-02-20
 ------------------------------
