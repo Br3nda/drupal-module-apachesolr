@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.19 2009/02/06 03:55:10 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.20 2009/02/27 04:32:59 pwolanin Exp $
 
 class Solr_Base_Query {
 
@@ -114,9 +114,10 @@ class Solr_Base_Query {
   }
 
   function add_field($field, $value) {
-    // microtime guarantees that added fields come at the end of the query,
+    static $i = 0;
+    // Counter guarantees that added fields come at the end of the query,
     // in order.
-    $this->fields[microtime()] = array('#name' => $field, '#value' => trim($value));
+    $this->fields[$i++] = array('#name' => $field, '#value' => trim($value));
   }
 
   public function get_fields() {
