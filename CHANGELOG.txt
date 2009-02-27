@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.36 2009/02/27 05:07:01 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.37 2009/02/27 14:38:05 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -9,8 +9,9 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
 
-Apache Solr integration 6.x-1.0-beta5, xxxx-xx-xx
+Apache Solr integration 6.x-1.0-beta5, 2009-02-27
 ------------------------------
+#305370 by pwolanin, don't delete from apachesolr table if Solr query fails.
 #385348 by moshe weitzman, use key in sort links array.
 #385362 by pwolanin, Shorten hash from 32 chars to 12.
 #383804 by JacobSingh, fix query building that broke nodeaccess.

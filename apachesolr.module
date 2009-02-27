@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.114 2009/02/27 05:07:01 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.115 2009/02/27 14:38:05 pwolanin Exp $
 
 /**
  * @file
@@ -518,9 +518,11 @@ function apachesolr_delete_node_from_index($node) {
   try {
     $solr = apachesolr_get_solr();
     $solr->deleteById(apachesolr_document_id($node->nid));
+    return TRUE;
   }
   catch (Exception $e) {
     watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
+    return FALSE;
   }
 }
 
@@ -553,9 +555,10 @@ function apachesolr_cron() {
 function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   switch ($op) {
     case 'delete':
-      apachesolr_delete_node_from_index($node);
-      // TODO: check that there was no exception?
-      db_query("DELETE FROM {apachesolr_search_node} WHERE nid = %d", $node->nid);
+      if (apachesolr_delete_node_from_index($node)) {
+        // There was no exception, so delete from the table.
+        db_query("DELETE FROM {apachesolr_search_node} WHERE nid = %d", $node->nid);
+      }
       break;
     case 'insert':
       db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed) VALUES  (%d, %d, GREATEST(%d, %d))", $node->nid, $node->status, $node->created, $node->changed);
