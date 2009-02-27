@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.113 2009/02/27 04:58:10 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.114 2009/02/27 05:07:01 pwolanin Exp $
 
 /**
  * @file
@@ -638,7 +638,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
               $new_query->set_solrsort($type == "relevancy" ? '' : "{$type} {$new_sort}");
               $active = isset($solrsorts[$type]) || ($type == "relevancy" && !$solrsorts);
               $direction = isset($solrsorts[$type]) ? $solrsorts[$type] : '';
-              $sort_links[] = theme('apachesolr_sort_link', $sort['name'], $path, $new_query->get_url_querystring(), $active, $direction);
+              $sort_links[$type] = theme('apachesolr_sort_link', $sort['name'], $path, $new_query->get_url_querystring(), $active, $direction);
             }
             return array('subject' => t('Sort by'),
                          'content' => theme('apachesolr_sort_list', $sort_links));
