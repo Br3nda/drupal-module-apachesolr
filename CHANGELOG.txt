@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.34 2009/02/23 14:56:49 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.35 2009/02/27 04:58:10 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,8 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#385362 by pwolanin, Shorten hash from 32 chars to 12.
+#383804 by JacobSingh, fix query building that broke nodeaccess.
 
 Apache Solr integration 6.x-1.0-beta4, 2009-02-23
 ------------------------------

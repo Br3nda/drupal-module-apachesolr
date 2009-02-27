@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.112 2009/02/20 19:31:16 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.113 2009/02/27 04:58:10 pwolanin Exp $
 
 /**
  * @file
@@ -119,7 +119,7 @@ function apachesolr_requirements($phase) {
 function apachesolr_site_hash() {
   if (!($hash = variable_get('apachesolr_site_hash', FALSE))) {
     global $base_url;
-    $hash = md5($base_url . drupal_get_private_key() . 'apachesolr');
+    $hash = substr(md5(md5($base_url . drupal_get_private_key() . 'apachesolr')), 0, 12);
     variable_set('apachesolr_site_hash', $hash);
   }
   return $hash;
