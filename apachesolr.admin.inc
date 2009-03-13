@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.10 2009/02/20 01:38:26 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.11 2009/03/13 21:14:50 pwolanin Exp $
 
 /**
  * @file
@@ -165,7 +165,7 @@ function apachesolr_enabled_facets_form_submit($form, &$form_state) {
     $enabled[$module] = array_filter($facets);
   }
   variable_set('apachesolr_enabled_facets', $enabled);
-  drupal_set_message($form_state['values']['submit_message']);
+  drupal_set_message($form_state['values']['submit_message'], 'warning');
 }
 
 /**
