@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.115 2009/02/27 14:38:05 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.116 2009/03/18 22:52:38 pwolanin Exp $
 
 /**
  * @file
@@ -89,7 +89,7 @@ function apachesolr_requirements($phase) {
     $ping = FALSE;
     try {
       $solr = apachesolr_get_solr();
-      $ping = @$solr->ping();
+      $ping = @$solr->ping(variable_get('apachesolr_ping_timeout', 4));
       // If there is no $solr object, there is no server available, so don't continue.
       if (!$ping) {
         throw new Exception(t('No Solr instance available when checking requirements.'));
@@ -246,7 +246,7 @@ function apachesolr_index_nodes($result, $namespace = '', $callback = 'apachesol
     // Get the $solr object
     $solr = apachesolr_get_solr();
     // If there is no server available, don't continue.
-    if (!$solr->ping()) {
+    if (!$solr->ping(variable_get('apachesolr_ping_timeout', 4))) {
       throw new Exception(t('No Solr instance available during indexing.'));
     }
   }
