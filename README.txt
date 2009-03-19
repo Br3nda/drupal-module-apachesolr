@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.11 2009/02/20 15:20:38 pwolanin Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.12 2009/03/19 11:40:54 jacobsingh Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -27,7 +27,7 @@ Get the PHP library from the external project. The project is
 found at:  http://code.google.com/p/solr-php-client/
 From the apachesolr module directory, run this command:
 
-svn checkout -r5 http://solr-php-client.googlecode.com/svn/trunk/ SolrPhpClient
+svn checkout -r6 http://solr-php-client.googlecode.com/svn/trunk/ SolrPhpClient
 
 Note that revision 5 is the currently tested and suggested revision. If you
 do not have svn, you may be able to downlaod a copy of the library from

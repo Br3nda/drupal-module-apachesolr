@@ -10,6 +10,32 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
   const STATS_SERVLET = 'admin/stats.jsp';
 
   /**
+   * Call the /admin/ping servlet, to test the connection to the server.
+   *
+   * @param $timeout
+   *   maximum time to wait for ping in seconds, -1 for unlimited (default 2).
+   * @return
+   *   (float) seconds taken to ping the server, FALSE if timeout occurs.
+   */
+  public function ping($timeout = 2) {
+    $start = microtime(TRUE);
+
+    if ($timeout <= 0.0) {
+      $timeout = -1;
+    }
+    // Attempt a HEAD request to the solr ping url.
+    list($data, $headers) = $this->_makeHttpRequest($this->_pingUrl, 'HEAD', array(), null, $timeout);
+    $response = new Apache_Solr_Response($data, $headers);
+
+    if ($response->getHttpStatus() == 200) {
+      return microtime(TRUE) - $start;
+    }
+    else {
+      return FALSE; 
+    }
+  }
+
+  /**
    * Sets $this->luke with the meta-data about the index from admin/luke.
    */
   protected function setLuke($num_terms = 0) {
