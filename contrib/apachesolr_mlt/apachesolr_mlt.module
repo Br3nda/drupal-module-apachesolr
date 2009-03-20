@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.25 2009/02/20 16:39:44 pwolanin Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.26 2009/03/20 03:53:30 pwolanin Exp $
 
 /**
  * Implementation of hook_menu()
@@ -7,22 +7,23 @@
 function apachesolr_mlt_menu() {
   $items = array();
 
-  $items['admin/settings/apachesolr_mlt'] = array(
-    'title' => 'Apache Solr - More Like This',
+  $items['admin/settings/apachesolr/mlt'] = array(
+    'title' => 'More Like This',
     'description' => 'Configure content recommendation blocks using the Apache Solr "More Like This" handler.',
     'page callback' => 'apachesolr_mlt_settings',
     'access arguments' => array('administer search'),
+    'type' => MENU_LOCAL_TASK,
   );
-  $items['admin/settings/apachesolr_mlt/configure_block'] = array(
+  $items['admin/settings/apachesolr/mlt/configure_block'] = array(
     'type' => MENU_CALLBACK,
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('apachesolr_mlt_block_form', 4),
+    'page arguments' => array('apachesolr_mlt_block_form', 5),
     'access arguments' => array('administer search'),
     );
-  $items['admin/settings/apachesolr_mlt/delete_block'] = array(
+  $items['admin/settings/apachesolr/mlt/delete_block'] = array(
     'type' => MENU_CALLBACK,
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('apachesolr_mlt_delete_block_form', 4),
+    'page arguments' => array('apachesolr_mlt_delete_block_form', 5),
     'access arguments' => array('administer search'),
   );
   return $items;
@@ -111,7 +112,7 @@ function apachesolr_mlt_suggestions($block_id, $nid) {
         $suggestions['subject'] = check_plain($block['name']);
         $suggestions['content'] = theme('apachesolr_mlt_recommendation_block', $links);
         if (user_access('administer search')) {
-           $suggestions['content'] .= l(t('Configure this block'),'admin/settings/apachesolr_mlt/configure_block/' . $delta, array('attributes' => array('class' => 'apachesolr-mlt-admin-link')));
+           $suggestions['content'] .= l(t('Configure this block'),'admin/settings/apachesolr/mlt/configure_block/' . $delta, array('attributes' => array('class' => 'apachesolr-mlt-admin-link')));
         }
       }
     }
@@ -146,11 +147,11 @@ function apachesolr_mlt_settings() {
     $rows[] = array(
       $block->id,
       check_plain($block->data['name']),
-      l(t('Edit'), 'admin/settings/apachesolr_mlt/configure_block/' . $block->id) .' | ' . l('Delete', 'admin/settings/apachesolr_mlt/delete_block/' . $block->id),
+      l(t('Edit'), 'admin/settings/apachesolr/mlt/configure_block/' . $block->id) .' | ' . l('Delete', 'admin/settings/apachesolr/mlt/delete_block/' . $block->id),
     );
   }
   $header = array(t('Id'), t('Name'), t('Options'));
-  $output = l(t('Add block'), 'admin/settings/apachesolr_mlt/configure_block');
+  $output = l(t('Add block'), 'admin/settings/apachesolr/mlt/configure_block');
   $output .= theme('table', $header, $rows);
   return $output;
 }
@@ -252,7 +253,7 @@ function apachesolr_mlt_block_form(&$form_state, $block_id = NULL) {
     '#weight' => '5',
   );
 
-  $form['#redirect'] = 'admin/settings/apachesolr_mlt';
+  $form['#redirect'] = 'admin/settings/apachesolr/mlt';
 
   return $form;
 }
@@ -373,10 +374,10 @@ function apachesolr_mlt_delete_block_form(&$form_values, $block_id = NULL) {
       '#type' => 'value',
       '#value' => $block_id
     );
-    $form['#redirect'] = 'admin/settings/apachesolr_mlt';
+    $form['#redirect'] = 'admin/settings/apachesolr/mlt';
     return confirm_form($form,
       t('Are you sure you want to delete the Apache Solr content recommendation block %name?', array('%name' => $block['name'])),
-      'admin/settings/apachesolr_mlt',
+      'admin/settings/apachesolr/mlt',
       t('The block will be deleted. This action cannot be undone.'),
       t('Delete'), t('Cancel'));
   }
