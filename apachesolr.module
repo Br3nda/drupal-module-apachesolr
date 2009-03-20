@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.10 2009/01/28 20:06:36 pwolanin Exp $
+// $Id: apachesolr.module,v 1.11 2009/03/20 23:40:07 pwolanin Exp $
 
 /**
  * @file
@@ -29,14 +29,14 @@ function apachesolr_menu() {
     'type'               => MENU_DEFAULT_LOCAL_TASK,
   );
   $items['admin/settings/apachesolr/enabled-filters'] = array(
-    'title' => 'Enabled filters',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('apachesolr_enabled_facets_form'),
-    'weight' => -7,
-    'access callback' => 'user_access',
-    'access arguments' => array('administer site configuration'),
+    'title'              => 'Enabled filters',
+    'page callback'      => 'drupal_get_form',
+    'page arguments'     => array('apachesolr_enabled_facets_form'),
+    'weight'             => -7,
+    'access callback'    => 'user_access',
+    'access arguments'   => array('administer site configuration'),
     'file'               => 'apachesolr.admin.inc',
-    'type' => MENU_LOCAL_TASK,
+    'type'               => MENU_LOCAL_TASK,
   );
   $items['admin/settings/apachesolr/index'] = array(
     'title'              => 'Search index',
@@ -89,7 +89,7 @@ function apachesolr_requirements($phase) {
     $ping = FALSE;
     try {
       $solr = apachesolr_get_solr();
-      $ping = @$solr->ping();
+      $ping = @$solr->ping(variable_get('apachesolr_ping_timeout', 4));
       // If there is no $solr object, there is no server available, so don't continue.
       if (!$ping) {
         throw new Exception(t('No Solr instance available when checking requirements.'));
@@ -119,7 +119,7 @@ function apachesolr_requirements($phase) {
 function apachesolr_site_hash() {
   if (!($hash = variable_get('apachesolr_site_hash', FALSE))) {
     global $base_url;
-    $hash = md5($base_url . drupal_get_private_key() . 'apachesolr');
+    $hash = substr(md5(md5($base_url . drupal_get_private_key() . 'apachesolr')), 0, 12);
     variable_set('apachesolr_site_hash', $hash);
   }
   return $hash;
@@ -171,9 +171,16 @@ function apachesolr_comment($edit, $op) {
     case 'delete':
     case 'publish':
     case 'unpublish':
-      db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid = %d", time(), $edit['nid']);
+      apachesolr_mark_node($edit['nid']);
       break;
   }
+}
+
+/**
+ * Mark one node as needing re-indexing.
+ */
+function apachesolr_mark_node($nid) {
+  db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid = %d", time(), $nid);
 }
 
 /**
@@ -239,7 +246,7 @@ function apachesolr_index_nodes($result, $namespace = '', $callback = 'apachesol
     // Get the $solr object
     $solr = apachesolr_get_solr();
     // If there is no server available, don't continue.
-    if (!$solr->ping()) {
+    if (!$solr->ping(variable_get('apachesolr_ping_timeout', 4))) {
       throw new Exception(t('No Solr instance available during indexing.'));
     }
   }
@@ -249,16 +256,17 @@ function apachesolr_index_nodes($result, $namespace = '', $callback = 'apachesol
   }
 
   $documents = array();
-  $solr_last_change = 0;
-  $solr_last_id = 0;
+  $old_position = apachesolr_get_last_index($namespace);
+  $position = $old_position;
 
   while ($row = db_fetch_object($result)) {
     // Variables to track the last item changed.
-    $solr_last_change = $row->changed;
-    $solr_last_id = $row->nid;
+    $position['last_change'] = $row->changed;
+    $position['last_nid'] = $row->nid;
     $callback($documents, $row->nid);
   }
-  if (is_object($solr) && count($documents)) {
+
+  if (count($documents)) {
     try {
       watchdog('Apache Solr', 'Adding @count documents.', array('@count' => count($documents)));
       // Chunk the adds by 20s
@@ -266,19 +274,21 @@ function apachesolr_index_nodes($result, $namespace = '', $callback = 'apachesol
       foreach ($docs_chunk as $docs) {
         $solr->addDocuments($docs);
       }
-      $last = array('last_change' => $solr_last_change, 'last_nid' => $solr_last_id);
-      if ($namespace) {
-        $stored = variable_get('apachesolr_index_last', array());
-        $stored[$namespace] = $last;
-        variable_set('apachesolr_index_last', $stored);
-      }
-      return $last;
     }
     catch (Exception $e) {
       watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
+      return FALSE;
     }
   }
-  return FALSE;
+
+  // Save the new position in case it changed.
+  if ($namespace && $position != $old_position) {
+    $stored = variable_get('apachesolr_index_last', array());
+    $stored[$namespace] = $position;
+    variable_set('apachesolr_index_last', $stored);
+  }
+
+  return $position;
 }
 
 /**
@@ -310,13 +320,23 @@ function apachesolr_clean_text($text) {
  * Given a node ID, return a document representing that node.
  */
 function apachesolr_node_to_document($nid) {
-  // Get CCK fields list
-  $cck_fields = apachesolr_cck_fields();
   // Set reset = TRUE to avoid static caching of all nodes that get indexed.
   $node = node_load($nid, NULL, TRUE);
-  $document = FALSE;
+  if (empty($node)) {
+    return FALSE;
+  }
 
-  if ($node->nid) {
+  $document = FALSE;
+  // Let any module exclude this node from the index.
+  $build_document = TRUE;
+  foreach (module_implements('apachesolr_node_exclude') as $module) {
+    $exclude = module_invoke($module, 'apachesolr_node_exclude', $node);
+    if (!empty($exclude)) {
+      $build_document = FALSE;
+    }
+  }
+
+  if ($build_document) {
     // Build the node body.
     $node->build_mode = NODE_BUILD_SEARCH_INDEX;
     $node = node_build_content($node, FALSE, FALSE);
@@ -334,11 +354,16 @@ function apachesolr_node_to_document($nid) {
     $document->id = apachesolr_document_id($node->nid);
     $document->site = url(NULL, array('absolute' => TRUE));
     $document->hash = apachesolr_site_hash();
-    $document->url = url('node/' . $node->nid, array('absolute' => TRUE));
     $document->nid = $node->nid;
-    $document->status = $node->status;
     $document->uid = $node->uid;
     $document->title = $node->title;
+    $document->status = $node->status;
+    $document->sticky = $node->sticky;
+    $document->promote = $node->promote;
+    $document->moderate = $node->moderate;
+    $document->tnid = $node->tnid;
+    $document->translate = $node->translate;
+    $document->language = $node->language;
     $document->body = strip_tags($text);
     $document->type  = $node->type;
     $document->type_name = apachesolr_strip_ctl_chars(node_get_types('name', $node));
@@ -348,21 +373,24 @@ function apachesolr_node_to_document($nid) {
     $document->last_comment_or_change = apachesolr_date_iso($last_change);
     $document->comment_count = isset($node->comment_count) ? $node->comment_count : 0;
     $document->name = apachesolr_strip_ctl_chars($node->name);
-    $document->language = $node->language;
 
+    $path = 'node/' . $node->nid;
+    $document->url = url($path, array('absolute' => TRUE));
+    $document->path = $path;
     // Path aliases can have important information about the content.
     // Add them to the index as well.
     if (function_exists('drupal_get_path_alias')) {
       // Add any path alias to the index, looking first for language specific
       // aliases but using language neutral aliases otherwise.
       $language = empty($node->language) ? '' : $node->language;
-      $path = 'node/' . $node->nid;
       $output = drupal_get_path_alias($path, $language);
       if ($output && $output != $path) {
-        $document->path = apachesolr_strip_ctl_chars($output);
+        $document->path_alias = apachesolr_strip_ctl_chars($output);
       }
     }
 
+    // Get CCK fields list
+    $cck_fields = apachesolr_cck_fields();
     foreach ($cck_fields as $key => $cck_info) {
       if (isset($node->$key)) {
         // Got a CCK field. See if it is to be indexed.
@@ -423,13 +451,13 @@ function apachesolr_add_taxonomy_to_document(&$document, $node) {
       $ancestors = taxonomy_get_parents_all($term->tid);
       foreach ($ancestors as $ancestor) {
         $document->setMultiValue('tid', $ancestor->tid);
-        $document->setMultiValue('imfield_vid_'. $ancestor->vid, $ancestor->tid);
+        $document->setMultiValue('im_vid_'. $ancestor->vid, $ancestor->tid);
         $name = apachesolr_clean_text($ancestor->name);
         $document->setMultiValue('vid', $ancestor->vid);
-        $document->{'tsfield_vid_'. $ancestor->vid .'_names'} .= ' '. $name;
+        $document->{'ts_vid_'. $ancestor->vid .'_names'} .= ' '. $name;
         // We index each name as a string for cross-site faceting
         // using the vocab name rather than vid in field construction .
-        $document->setMultiValue('smfield_vid_'. apachesolr_vocab_name($ancestor->vid), $name);
+        $document->setMultiValue('sm_vid_'. apachesolr_vocab_name($ancestor->vid), $name);
       }
     }
   }
@@ -490,9 +518,11 @@ function apachesolr_delete_node_from_index($node) {
   try {
     $solr = apachesolr_get_solr();
     $solr->deleteById(apachesolr_document_id($node->nid));
+    return TRUE;
   }
   catch (Exception $e) {
     watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
+    return FALSE;
   }
 }
 
@@ -503,6 +533,18 @@ function apachesolr_cron() {
   try {
     $solr = apachesolr_get_solr();
     $solr->clearCache();
+    // Re-populate the luke cache.
+    $solr->getLuke();
+    // Check for unpublished content that wasn't deleted from the index.
+    $result = db_query("SELECT n.nid, n.status FROM {apachesolr_search_node} asn INNER JOIN {node} n ON n.nid = asn.nid WHERE asn.status != n.status");
+    while ($node = db_fetch_object($result)) {
+      apachesolr_nodeapi($node, 'update');
+    }
+    // Check for deleted content that wasn't deleted from the index.
+    $result = db_query("SELECT asn.nid FROM {apachesolr_search_node} asn LEFT JOIN {node} n ON n.nid = asn.nid WHERE n.nid IS NULL");
+    while ($node = db_fetch_object($result)) {
+      apachesolr_nodeapi($node, 'delete');
+    }
     $last = variable_get('apachesolr_last_optimize', 0);
     $time = time();
     // Make sure to omtimize once per day.
@@ -522,9 +564,10 @@ function apachesolr_cron() {
 function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   switch ($op) {
     case 'delete':
-      apachesolr_delete_node_from_index($node);
-      // TODO: check that there was no exception?
-      db_query("DELETE FROM {apachesolr_search_node} WHERE nid = %d", $node->nid);
+      if (apachesolr_delete_node_from_index($node)) {
+        // There was no exception, so delete from the table.
+        db_query("DELETE FROM {apachesolr_search_node} WHERE nid = %d", $node->nid);
+      }
       break;
     case 'insert':
       db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed) VALUES  (%d, %d, GREATEST(%d, %d))", $node->nid, $node->status, $node->created, $node->changed);
@@ -532,10 +575,14 @@ function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
     case 'update':
       // Check if the node has gone from published to unpublished.
       If (!$node->status && db_result(db_query("SELECT status FROM {apachesolr_search_node} WHERE nid = %d", $node->nid))) {
-        apachesolr_delete_node_from_index($node);
+        if (apachesolr_delete_node_from_index($node)) {
+          // There was no exception, so update the table.
+          db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
+        }
       }
-      // TODO: check that there was no exception?
-      db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
+      else {
+        db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
+      }
       break;
   }
 }
@@ -574,7 +621,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
       if (apachesolr_has_searched()) {
         // Get the query and response. Without these no blocks make sense.
         $response = apachesolr_static_response_cache();
-        if (empty($response)) {
+        if (empty($response) || ($response->response->numFound < 2)) {
           return;
         }
 
@@ -584,9 +631,9 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
           case 'sort':
             $sorts = array(
               'relevancy' => array('name' => t('Relevancy'), 'default' => 'asc'),
-              'stitle' => array('name' => t('Title'), 'default' => 'asc'),
+              'sort_title' => array('name' => t('Title'), 'default' => 'asc'),
               'type' => array('name' => t('Type'), 'default' => 'asc'),
-              'name' => array('name' => t('Author'), 'default' => 'asc'),
+              'sort_name' => array('name' => t('Author'), 'default' => 'asc'),
               'created' => array('name' => t('Date'), 'default' => 'desc'),
             );
 
@@ -604,13 +651,24 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
             $new_query = clone $query;
             foreach ($sorts as $type => $sort) {
               $new_sort = isset($solrsorts[$type]) ? $solrsorts[$type] == 'asc' ? 'desc' : 'asc' : $sort['default'];
-              $new_query->set_solrsort($type == "relevancy" ? '' : "solrsort={$type} {$new_sort}");
+              $new_query->set_solrsort($type == "relevancy" ? '' : "{$type} {$new_sort}");
               $active = isset($solrsorts[$type]) || ($type == "relevancy" && !$solrsorts);
               $direction = isset($solrsorts[$type]) ? $solrsorts[$type] : '';
-              $sort_links[] = theme('apachesolr_sort_link', $sort['name'], $path, $new_query->get_url_querystring(), $active, $direction);
+              $sort_links[$type] = array(
+                'name' => $sort['name'],
+                'path' => $path,
+                'querystring' => $new_query->get_url_querystring(),
+                'active' => $active,
+                'direction' => $direction
+              );
+            }
+            // Allow other modules to add or remove sorts.
+            drupal_alter('apachesolr_sort_links', $sort_links);
+            foreach ($sort_links as $type => $link) {
+              $themed_links[$type] = theme('apachesolr_sort_link', $link['name'], $link['path'], $link['querystring'], $link['active'], $link['direction']);
             }
             return array('subject' => t('Sort by'),
-                         'content' => theme('apachesolr_sort_list', $sort_links));
+                         'content' => theme('apachesolr_sort_list', $themed_links));
           default:
             break;
         }
@@ -731,11 +789,11 @@ function apachesolr_facetcount_save($edit) {
  *
  * }
  */
-function apachesolr_modify_query(&$query, &$params) {
+function apachesolr_modify_query(&$query, &$params, $caller) {
 
   foreach (module_implements('apachesolr_modify_query') as $module) {
     $function_name = "{$module}_apachesolr_modify_query";
-    $function_name($query, $params);
+    $function_name($query, $params, $caller);
   }
   // Add array of fq parameters.
   if ($query && ($fq = $query->get_fq())) {
@@ -893,7 +951,7 @@ function apachesolr_index_key($field) {
     default:
       $type_prefix = 's';
   }
-  $sm = $field['multiple'] ? 'mfield_' : 'sfield_';
+  $sm = $field['multiple'] ? 'm_' : 's_';
   return $type_prefix . $sm . $field['name'];
 }
 

@@ -1,11 +1,55 @@
 <?php
 require_once 'SolrPhpClient/Apache/Solr/Service.php';
 
+/**
+ * PHP 5.1 compatability code.
+ */
+if (!function_exists('json_decode')) {
+  // Zend files include other files.
+  set_include_path(dirname(__FILE__) . PATH_SEPARATOR . get_include_path());
+  require_once 'Zend/Json/Decoder.php';
+
+  /**
+   * Substitute for missing PHP built-in function.
+   */
+  function json_decode($string) {
+    return Zend_Json_Decoder::decode($string, 0);
+  }
+}
+
 class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
 
   protected $luke;
   protected $luke_cid;
+  protected $stats;
   const LUKE_SERVLET = 'admin/luke';
+  const STATS_SERVLET = 'admin/stats.jsp';
+
+  /**
+   * Call the /admin/ping servlet, to test the connection to the server.
+   *
+   * @param $timeout
+   *   maximum time to wait for ping in seconds, -1 for unlimited (default 2).
+   * @return
+   *   (float) seconds taken to ping the server, FALSE if timeout occurs.
+   */
+  public function ping($timeout = 2) {
+    $start = microtime(TRUE);
+
+    if ($timeout <= 0.0) {
+      $timeout = -1;
+    }
+    // Attempt a HEAD request to the solr ping url.
+    list($data, $headers) = $this->_makeHttpRequest($this->_pingUrl, 'HEAD', array(), null, $timeout);
+    $response = new Apache_Solr_Response($data, $headers);
+
+    if ($response->getHttpStatus() == 200) {
+      return microtime(TRUE) - $start;
+    }
+    else {
+      return FALSE; 
+    }
+  }
 
   /**
    * Sets $this->luke with the meta-data about the index from admin/luke.
@@ -33,6 +77,29 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       $this->setLuke($num_terms);
     }
     return $this->luke[$num_terms];
+  }
+  
+  /**
+   * Sets $this->stats with the information about the Solr Core form /admin/stats.jsp
+   */
+  protected function setStats() {
+    if (empty($this->stats)) {
+      $url = $this->_constructUrl(self::STATS_SERVLET);
+      $this->stats = $this->_sendRawGet($url);
+    }
+  }
+  
+  /**
+   * Get information about the Solr Core.
+   */
+  public function getStats($parsed = true) {
+    if (!isset($this->stats)) {
+      $this->setStats();
+    }
+    if ($parsed) {
+      return simplexml_load_string($this->stats->getRawResponse());
+    }
+    return $this->stats;
   }
 
   /**

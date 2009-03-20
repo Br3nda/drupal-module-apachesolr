@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.5 2009/01/28 20:06:36 pwolanin Exp $ */
+/* $Id: README.txt,v 1.6 2009/03/20 23:40:07 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -17,9 +17,26 @@ use the Core Searches module in tandem with this module.
 Installation
 ------------
 
-Install and enable the ApacheSolr Drupal module as you would any Drupal module.
+Prerequisite: Java 5 or higher (a.k.a. 1.5.x).  PHP 5.1.4 or higher.
 
-Prerequisite: Java 5 or higher (a.k.a. 1.5.x).  PHP 5.2.0 or higher.
+Those with PHP < 5.2.0 must install the PECL json module or download
+the Json code from the Zend Framework (see below).
+
+Install the Apache Solr Drupal module as you would any Drupal module.
+
+Before enabling it, you must also do the following:
+
+Get the PHP library from the external project. The project is
+found at:  http://code.google.com/p/solr-php-client/
+From the apachesolr module directory, run this command:
+
+svn checkout -r6 http://solr-php-client.googlecode.com/svn/trunk/ SolrPhpClient
+
+Note that revision 6 is the currently tested and suggested revision. If you
+do not have svn, you may download the 2009-03-11 version of the library from
+http://code.google.com/p/solr-php-client/downloads/list
+Make sure that the final directory is named SolrPhpClient under the apachesolr
+module directory.
 
 Download Solr trunk (candidate 1.4.x build) from a nightly build or build it
 from svn.  http://people.apache.org/builds/lucene/solr/nightly/
@@ -48,13 +65,30 @@ apache-solr-nightly/example, and executing the command java -jar start.jar
 Test that your solr server is now available by visiting
 http://localhost:8983/solr/admin/
 
-Now run cron on your Drupal site until your content is indexed.
+For those using PHP 5.1, you must either install the PECL json extension
+into PHP on your sever, or you may use the Zend framework Json library.
+for the PECL extension see:  http://pecl.php.net/package/json
+The Solr client has been tested with Zend framework release 1.7.7.
+To get this code, you may use svn from the apachesolr directory:
+svn co http://framework.zend.com/svn/framework/standard/tags/release-1.7.7/library/Zend
+However, the only required parts are:
+http://framework.zend.com/svn/framework/standard/tags/release-1.7.7/library/Zend/Exception.php
+http://framework.zend.com/svn/framework/standard/tags/release-1.7.7/library/Zend/Json/
+The 'Zend' directory should normally be under the apachesolr
+directory, but may be elsewhere if you set that location to be
+in your PHP include path.
+
+Now, you should  enable the "Apache Solr framework" and "Apache Solr search" 
+modules. Check that you can connect to Solr at ?q=admin/setting/apachesolr
+Now run cron on your Drupal site until your content is indexed. You
+can monitor the index at ?q=admin/settings/apachesolr/index
 
 The solrconfig.xml that comes with this modules defines auto-commit, so
 it may take a few minutes between running cron and when the new content
 is visible in search.
 
-Enable blocks for facets at Administer > Site building > Blocks.   
+Enable blocks for facets first at Administer > Site configuration > Apache Solr > Enabled filters,
+then position them as you like at Administer > Site building > Blocks.   
 
 Troubleshooting
 --------------

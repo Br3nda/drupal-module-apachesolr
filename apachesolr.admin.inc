@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.2 2009/01/28 20:07:10 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.3 2009/03/20 23:40:07 pwolanin Exp $
 
 /**
  * @file
@@ -72,8 +72,7 @@ function apachesolr_index_page() {
     // TODO: only clear this every page view if we are running
     // multi-site.
     $solr->clearCache();
-    // Note: we use 2 since 1 fails on Ubuntu Hardy.
-    $data = $solr->getLuke(2);
+    $data = $solr->getLuke();
   }
   catch (Exception $e) {
     watchdog('apachesolr', $e->getMessage());
@@ -83,17 +82,46 @@ function apachesolr_index_page() {
 
   $output  = '';
   if (isset($data->index->numDocs)) {
-    $output .= '<p>' . t('Number of documents in index: @num', array('@num' => $data->index->numDocs)) . "</p>\n";
-    $output .= '<p>' . t('Number of terms in index: @num', array('@num' => $data->index->numTerms)) . "</p>\n";
+    $pending_docs = '';
+    try {
+      $stats = $solr->getStats(TRUE);
+      $docsPendingXpath = $stats->xpath('//stat[@name="docsPending"]');
+      $pending_docs = trim($docsPendingXpath[0]);
+    }
+    catch (Exception $e) {
+      watchdog('apachesolr', $e->getMessage());
+    }
+    $pending_msg = $pending_docs ? t('(@pending_docs sent but not yet processed)', array('@pending_docs' => $pending_docs)) : '';
+    $output .= '<p>' . t('Number of documents in index: @num !pending', array('@num' => $data->index->numDocs, '!pending' => $pending_msg)) . "</p>\n";
   }
 
-  $fields = (array)$data->fields;
+
+  $limit = variable_get('apachesolr_luke_limit', 20000);
+  if (isset($data->index->numDocs) && $data->index->numDocs > $limit) {
+    $output .= '<p>' . t('You have more than @limit documents, so term frequencies are being omitted for performance reasons.', array('@limit' => $limit)) . "</p>\n";
+    $not_found = t('<em>Omitted</em>');
+  }
+  elseif (isset($data->index->numDocs)) {
+    $not_found = t('Not indexed');
+    try {
+      $solr = apachesolr_get_solr();
+      // Note: we use 2 since 1 fails on Ubuntu Hardy.
+      $data = $solr->getLuke(2);
+      $output .= '<p>' . t('Number of terms in index: @num', array('@num' => $data->index->numTerms)) . "</p>\n";
+    }
+    catch (Exception $e) {
+      watchdog('apachesolr', $e->getMessage());
+      $data->fields = array();
+    }
+  }
+
+  $fields = (array)$data->fields;  
   if ($fields) {
     $output .= '<p>' . t('Number of fields in index: @num', array('@num' => count($fields))) . "</p>\n";
     $rows = array();
     foreach ($fields as $name => $field) {
       // TODO: try to map the name to something more meaningful.
-      $rows[$name] = array($name, $field->type, isset($field->index) ? $field->distinct : t('Not indexed'));
+      $rows[$name] = array($name, $field->type, isset($field->distinct) ? $field->distinct : $not_found);
     }
     ksort($rows);
     // Display the table of Field names, Index Types, and term counts.
@@ -137,7 +165,7 @@ function apachesolr_enabled_facets_form_submit($form, &$form_state) {
     $enabled[$module] = array_filter($facets);
   }
   variable_set('apachesolr_enabled_facets', $enabled);
-  drupal_set_message($form_state['values']['submit_message']);
+  drupal_set_message($form_state['values']['submit_message'], 'warning');
 }
 
 /**
@@ -161,7 +189,7 @@ function apachesolr_enabled_facets_form() {
   $form = array();
   $form['apachesolr_enabled_facets']['help'] = array (
     '#type' => 'item',
-    '#value' => t('You can use this screen to select which Apache Solr filter blocks should be created by enabling the corresponding Apache Solr filters. For performance reasons, you should only enable filters that you intend to have available to users on the search page.  After selecting which filter blocks to create, you will be sent to the blocks page where you can choose which of those blocks should be enabled when your users search by placing each block in a region.'),
+    '#value' => t('You can use this screen to select which search filter blocks should be created by enabling the corresponding filters on this page. For performance reasons, you should only enable filters that you intend to have available to users on the search page.  After selecting which filter blocks to create, you will be sent to the blocks page where you can choose which of those blocks should be enabled when your users search by placing each block in a region.'),
   );
   if ($module_list) {
     $placeholders = implode(', ', array_fill(0, count($module_list), "'%s'"));

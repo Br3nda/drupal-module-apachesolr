@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_image.module,v 1.3 2009/01/28 20:06:37 pwolanin Exp $
+// $Id: apachesolr_image.module,v 1.4 2009/03/20 23:40:07 pwolanin Exp $
 
 /**
  * Implementation of hook_apachesolr_update_index().
@@ -19,9 +19,9 @@ function apachesolr_image_apachesolr_update_index(&$document, $node) {
       break;
     }
     if ($image_path) {
-      $document->ssfield_image_relative = $image_path;
+      $document->ss_image_relative = $image_path;
       // TODO - support multi-site too.
-      // $document->ssfield_image_absolute = file_create_url($image_path);
+      // $document->ss_image_absolute = file_create_url($image_path);
     }
   }
 }
@@ -31,7 +31,7 @@ function apachesolr_image_apachesolr_update_index(&$document, $node) {
  */
 function apachesolr_image_apachesolr_modify_query(&$query, &$params) {
   // Also retrieve image thumbnail links.
-  $params['fl'] .= ',ssfield_image_relative';
+  $params['fl'] .= ',ss_image_relative';
 }
 
 /**
@@ -39,14 +39,14 @@ function apachesolr_image_apachesolr_modify_query(&$query, &$params) {
  */
 function apachesolr_image_apachesolr_process_results(&$results) {
   foreach ($results as $index => $item) {
-    if ($item['node']->type == 'image' && !empty($item['node']->ssfield_image_relative)) {
+    if ($item['node']->type == 'image' && !empty($item['node']->ss_image_relative)) {
       $results[$index]['snippet'] = theme('apachesolr_image_snippet', $item);
     }
   }
 }
 
 function theme_apachesolr_image_snippet($item){
- return '<span class="apachesolr-image-result">'. theme('image', $item['node']->ssfield_image_relative, $item['title'], $item['title'], array('align' => 'left')) .'</span>'. $item['snippet'] . '<br clear="all"/>';
+ return '<span class="apachesolr-image-result">'. theme('image', $item['node']->ss_image_relative, $item['title'], $item['title'], array('align' => 'left')) .'</span>'. $item['snippet'] . '<br clear="all"/>';
 }
 
 /**
