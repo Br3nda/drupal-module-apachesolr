@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.116 2009/03/18 22:52:38 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.117 2009/03/20 03:48:33 pwolanin Exp $
 
 /**
  * @file
@@ -608,7 +608,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
       if (apachesolr_has_searched()) {
         // Get the query and response. Without these no blocks make sense.
         $response = apachesolr_static_response_cache();
-        if (empty($response)) {
+        if (empty($response) || ($response->response->numFound == 0)) {
           return;
         }
 
