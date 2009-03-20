@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.117 2009/03/20 03:48:33 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.118 2009/03/20 14:10:49 pwolanin Exp $
 
 /**
  * @file
@@ -608,7 +608,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
       if (apachesolr_has_searched()) {
         // Get the query and response. Without these no blocks make sense.
         $response = apachesolr_static_response_cache();
-        if (empty($response) || ($response->response->numFound == 0)) {
+        if (empty($response) || ($response->response->numFound < 2)) {
           return;
         }
 
@@ -641,10 +641,21 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
               $new_query->set_solrsort($type == "relevancy" ? '' : "{$type} {$new_sort}");
               $active = isset($solrsorts[$type]) || ($type == "relevancy" && !$solrsorts);
               $direction = isset($solrsorts[$type]) ? $solrsorts[$type] : '';
-              $sort_links[$type] = theme('apachesolr_sort_link', $sort['name'], $path, $new_query->get_url_querystring(), $active, $direction);
+              $sort_links[$type] = array(
+                'name' => $sort['name'],
+                'path' => $path,
+                'querystring' => $new_query->get_url_querystring(),
+                'active' => $active,
+                'direction' => $direction
+              );
+            }
+            // Allow other modules to add or remove sorts.
+            drupal_alter('apachesolr_sort_links', $sort_links);
+            foreach ($sort_links as $type => $link) {
+              $themed_links[$type] = theme('apachesolr_sort_link', $link['name'], $link['path'], $link['querystring'], $link['active'], $link['direction']);
             }
             return array('subject' => t('Sort by'),
-                         'content' => theme('apachesolr_sort_list', $sort_links));
+                         'content' => theme('apachesolr_sort_list', $themed_links));
           default:
             break;
         }
