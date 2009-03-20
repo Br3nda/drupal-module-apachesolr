@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.41 2009/03/20 14:10:49 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.42 2009/03/20 17:34:23 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -11,6 +11,7 @@ Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-beta6, 2009-03-20
 ------------------------------
+#305370 by pwolanin, Handle failed delete requests so unpublished/deleted content doesn't stay in the index.
 #407570 by pwolanin and moshe weitzman, _alter for sort links, hide for < 2 results.
 #392978 by pwolanin and ncameron, workaround for those using php 5.1, update README.
 #402984 by JacobSingh and pwolanin, put MLT menu under the general ApacheSolr settings.

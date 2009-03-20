@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.118 2009/03/20 14:10:49 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.119 2009/03/20 17:34:23 pwolanin Exp $
 
 /**
  * @file
@@ -534,8 +534,17 @@ function apachesolr_cron() {
     $solr = apachesolr_get_solr();
     $solr->clearCache();
     // Re-populate the luke cache.
-    // Note: we use 2 since 1 fails on Ubuntu Hardy.
     $solr->getLuke();
+    // Check for unpublished content that wasn't deleted from the index.
+    $result = db_query("SELECT n.nid, n.status FROM {apachesolr_search_node} asn INNER JOIN {node} n ON n.nid = asn.nid WHERE asn.status != n.status");
+    while ($node = db_fetch_object($result)) {
+      apachesolr_nodeapi($node, 'update');
+    }
+    // Check for deleted content that wasn't deleted from the index.
+    $result = db_query("SELECT asn.nid FROM {apachesolr_search_node} asn LEFT JOIN {node} n ON n.nid = asn.nid WHERE n.nid IS NULL");
+    while ($node = db_fetch_object($result)) {
+      apachesolr_nodeapi($node, 'delete');
+    }
     $last = variable_get('apachesolr_last_optimize', 0);
     $time = time();
     // Make sure to omtimize once per day.
@@ -566,10 +575,14 @@ function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
     case 'update':
       // Check if the node has gone from published to unpublished.
       If (!$node->status && db_result(db_query("SELECT status FROM {apachesolr_search_node} WHERE nid = %d", $node->nid))) {
-        apachesolr_delete_node_from_index($node);
+        if (apachesolr_delete_node_from_index($node)) {
+          // There was no exception, so update the table.
+          db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
+        }
       }
-      // TODO: check that there was no exception?
-      db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
+      else {
+        db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
+      }
       break;
   }
 }
