@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.39 2009/03/20 03:53:30 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.40 2009/03/20 04:11:16 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,7 +8,9 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#392978 by pwolanin and ncameron, workaround for those using php 5.1, update README
 #402984 by JacobSingh and pwolanin, put MLT menu under the general ApacheSolr settings
+#405732 by JacobSingh, pwolanin: Update to new SolrPhpClient (r6) and make ping() use drupal_http_request. 
 #405722 by JacobSingh, increase ping timeout and make it variable
 #400882 by mkalkbrenner, fix faceting bug due to static counter in method add_field
 #382358 by pwolanin, use tokenizer solr.CharStreamAwareWhitespaceTokenizerFactory to fix highlighting.

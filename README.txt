@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.12 2009/03/19 11:40:54 jacobsingh Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.13 2009/03/20 04:11:16 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -17,7 +17,10 @@ use the Core Searches module in tandem with this module.
 Installation
 ------------
 
-Prerequisite: Java 5 or higher (a.k.a. 1.5.x).  PHP 5.2.0 or higher.
+Prerequisite: Java 5 or higher (a.k.a. 1.5.x).  PHP 5.1.4 or higher.
+
+Those with PHP < 5.2.0 must install the PECL json module or download
+the Json code from the Zend Framework (see below).
 
 Install the Apache Solr Drupal module as you would any Drupal module.
 
@@ -29,9 +32,11 @@ From the apachesolr module directory, run this command:
 
 svn checkout -r6 http://solr-php-client.googlecode.com/svn/trunk/ SolrPhpClient
 
-Note that revision 5 is the currently tested and suggested revision. If you
-do not have svn, you may be able to downlaod a copy of the library from
-https://issues.apache.org/jira/browse/SOLR-341
+Note that revision 6 is the currently tested and suggested revision. If you
+do not have svn, you may download the 2009-03-11 version of the library from
+http://code.google.com/p/solr-php-client/downloads/list
+Make sure that the final directory is named SolrPhpClient under the apachesolr
+module directory.
 
 Download Solr trunk (candidate 1.4.x build) from a nightly build or build it
 from svn.  http://people.apache.org/builds/lucene/solr/nightly/
@@ -59,6 +64,19 @@ apache-solr-nightly/example, and executing the command java -jar start.jar
 
 Test that your solr server is now available by visiting
 http://localhost:8983/solr/admin/
+
+For those using PHP 5.1, you must either install the PECL json extension
+into PHP on your sever, or you may use the Zend framework Json library.
+for the PECL extension see:  http://pecl.php.net/package/json
+The Solr client has been tested with Zend framework release 1.7.7.
+To get this code, you may use svn from the apachesolr directory:
+svn co http://framework.zend.com/svn/framework/standard/tags/release-1.7.7/library/Zend
+However, the only required parts are:
+http://framework.zend.com/svn/framework/standard/tags/release-1.7.7/library/Zend/Exception.php
+http://framework.zend.com/svn/framework/standard/tags/release-1.7.7/library/Zend/Json/
+The 'Zend' directory should normally be under the apachesolr
+directory, but may be elsewhere if you set that location to be
+in your PHP include path.
 
 Now, you should  enable the "Apache Solr framework" and "Apache Solr search" 
 modules. Check that you can connect to Solr at ?q=admin/setting/apachesolr
