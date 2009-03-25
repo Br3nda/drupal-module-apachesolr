@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.21 2009/03/18 20:30:48 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.22 2009/03/25 01:56:01 pwolanin Exp $
 
 class Solr_Base_Query {
 
@@ -296,6 +296,7 @@ class Solr_Base_Query {
    * a URL query parameter or passed to Solr as fq paramters.
    */
   protected function rebuild_fq($aliases = FALSE) {
+    $fq = array();
     $fields = array();
     foreach ($this->fields as $pos => $field) {
       // Look for a field alias.

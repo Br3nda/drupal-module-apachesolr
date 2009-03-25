@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.78 2009/02/23 03:40:37 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.79 2009/03/25 01:56:01 pwolanin Exp $
 
 /**
  * @file
@@ -245,8 +245,10 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
             }
             $doc->created = strtotime($doc->created);
             $doc->changed = strtotime($doc->changed);
-            $extra += node_invoke_nodeapi($doc, 'search result');
-            $extra['score'] = $doc->score;
+            // Allow modules to alter each document.
+            drupal_alter('apachesolr_search_result', $doc);
+            // Copy code from comment_nodeapi().
+            $extra[] = format_plural($doc->comment_count, '1 comment', '@count comments');
             $results[] = array(
               'link' => url('node/' . $doc->nid),
               'type' => apachesolr_search_get_type($doc->type),
@@ -263,7 +265,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
           // Hook to allow modifications of the retrieved results
           foreach (module_implements('apachesolr_process_results') as $module) {
             $function = $module .'_apachesolr_process_results';
-            call_user_func_array($function, array(&$results));
+            $function($results);
           }
         }
         // Add search terms and filters onto the breadcrumb.

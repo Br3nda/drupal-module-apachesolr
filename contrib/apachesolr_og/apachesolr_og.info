@@ -1,0 +1,7 @@
+; $Id: apachesolr_og.info,v 1.1.2.1 2009/03/25 01:56:01 pwolanin Exp $
+name = ApacheSolr Organic Groups
+description = Integrates Organic Groups and ApacheSolr
+dependencies[] = apachesolr
+dependencies[] = og
+package = Apache Solr
+core = "6.x"
