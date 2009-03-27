@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.1.4.12 2009/01/28 19:28:32 pwolanin Exp $
+// $Id: apachesolr.install,v 1.1.4.13 2009/03/27 10:01:35 jacobsingh Exp $
 
 /**
  * @file
@@ -27,6 +27,9 @@ function apachesolr_enable() {
             FROM {node} n LEFT JOIN {apachesolr_search_node} asn ON n.nid = asn.nid
             LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid
             WHERE asn.changed IS NULL");
+   // Make sure no nodes end up with a timestamp that's in the future.
+   $time = time();
+   db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE changed > %d", $time, $time);
 }
 
 /**
@@ -131,5 +134,17 @@ function apachesolr_update_6001() {
   $ret[] = update_sql("UPDATE {blocks} set cache = " . BLOCK_CACHE_PER_PAGE . " WHERE module LIKE 'apachesolr%'");
 
   return $ret;
-  
 }
+
+/**
+ *  Make sure no nodes have a timestamp that's in the future
+ */
+function apachesolr_update_6002() {
+  $ret = array();
+   // Make sure no nodes end up with a timestamp that's in the future.
+   $time = (int) time();
+   $ret[] = update_sql("UPDATE {apachesolr_search_node} SET changed = $time WHERE changed > $time");
+
+   return $ret;
+}
+
