@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.22 2009/03/25 01:56:01 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.23 2009/03/27 09:54:21 jacobsingh Exp $
 
 class Solr_Base_Query {
 
@@ -205,7 +205,10 @@ class Solr_Base_Query {
   public function get_url_querystring() {
     $querystring = '';
     if ($fq = $this->rebuild_fq(TRUE)) {
-      $querystring = 'filters='. implode(' ', $fq);
+      foreach ($fq as $key => $value) {
+        $fq[$key] = drupal_urlencode($value);
+      }
+      $querystring = 'filters='. implode('+', $fq);
     }
     if ($this->solrsort) {
       $querystring .= ($querystring ? '&' : '') .'solrsort='. $this->solrsort;
