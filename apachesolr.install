@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.1.4.13 2009/03/27 10:01:35 jacobsingh Exp $
+// $Id: apachesolr.install,v 1.1.4.14 2009/03/30 20:16:31 pwolanin Exp $
 
 /**
  * @file
@@ -12,6 +12,7 @@
 function apachesolr_install() {
   // Create tables.
   drupal_install_schema('apachesolr');
+  drupal_set_message(t('Search is enabled. You\'re site is <a href="!index_settings_link">currently 0% indexed</a>.', array('!index_settings_link' => url('admin/settings/apachesolr/index'))));
 }
 
 /**

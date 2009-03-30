@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.120 2009/03/27 10:01:35 jacobsingh Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.121 2009/03/30 20:16:31 pwolanin Exp $
 
 /**
  * @file
@@ -23,7 +23,6 @@ function apachesolr_menu() {
   $items['admin/settings/apachesolr/settings'] = array(
     'title'              => 'Settings',
     'weight'             => -10,
-    'access callback'    => 'user_access',
     'access arguments'   => array('administer site configuration'),
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_DEFAULT_LOCAL_TASK,
@@ -33,7 +32,6 @@ function apachesolr_menu() {
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_enabled_facets_form'),
     'weight'             => -7,
-    'access callback'    => 'user_access',
     'access arguments'   => array('administer site configuration'),
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_LOCAL_TASK,
@@ -41,11 +39,21 @@ function apachesolr_menu() {
   $items['admin/settings/apachesolr/index'] = array(
     'title'              => 'Search index',
     'page callback'      => 'apachesolr_index_page',
-    'access callback'    => 'user_access',
     'access arguments'   => array('administer site configuration'),
     'weight'             => -8,
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_LOCAL_TASK,
+  );
+  $items['admin/reports/apachesolr'] = array(
+    'title'              => 'Apache Solr Search index',
+    'page callback'      => 'apachesolr_index_report',
+    'access arguments'   => array('access site reports'),
+    'file'               => 'apachesolr.admin.inc',
+  );
+  $items['admin/reports/apachesolr/index'] = array(
+    'title'              => 'Search index',
+    'file'               => 'apachesolr.admin.inc',
+    'type'               => MENU_DEFAULT_LOCAL_TASK,
   );
   return $items;
 }
@@ -538,12 +546,12 @@ function apachesolr_cron() {
     // Check for unpublished content that wasn't deleted from the index.
     $result = db_query("SELECT n.nid, n.status FROM {apachesolr_search_node} asn INNER JOIN {node} n ON n.nid = asn.nid WHERE asn.status != n.status");
     while ($node = db_fetch_object($result)) {
-      apachesolr_nodeapi($node, 'update');
+      _apachesolr_nodeapi_update($node, FALSE);
     }
     // Check for deleted content that wasn't deleted from the index.
     $result = db_query("SELECT asn.nid FROM {apachesolr_search_node} asn LEFT JOIN {node} n ON n.nid = asn.nid WHERE n.nid IS NULL");
     while ($node = db_fetch_object($result)) {
-      apachesolr_nodeapi($node, 'delete');
+      _apachesolr_nodeapi_delete($node, FALSE);
     }
     $last = variable_get('apachesolr_last_optimize', 0);
     $time = time();
@@ -564,10 +572,7 @@ function apachesolr_cron() {
 function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   switch ($op) {
     case 'delete':
-      if (apachesolr_delete_node_from_index($node)) {
-        // There was no exception, so delete from the table.
-        db_query("DELETE FROM {apachesolr_search_node} WHERE nid = %d", $node->nid);
-      }
+      _apachesolr_nodeapi_delete($node);
       break;
     case 'insert':
       // Make sure no node ends up with a timestamp that's in the future
@@ -575,17 +580,56 @@ function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
       db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed) VALUES  (%d, %d, %d)", $node->nid, $node->status, time());
       break;
     case 'update':
-      // Check if the node has gone from published to unpublished.
-      If (!$node->status && db_result(db_query("SELECT status FROM {apachesolr_search_node} WHERE nid = %d", $node->nid))) {
-        if (apachesolr_delete_node_from_index($node)) {
-          // There was no exception, so update the table.
-          db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
-        }
-      }
-      else {
-        db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
-      }
+      _apachesolr_nodeapi_update($node);
       break;
+  }
+}
+
+/**
+ * Helper function for hook_nodeapi() and hook_cron().
+ */
+function _apachesolr_nodeapi_delete($node, $set_message = TRUE) {
+  if (apachesolr_delete_node_from_index($node)) {
+    // There was no exception, so delete from the table.
+    db_query("DELETE FROM {apachesolr_search_node} WHERE nid = %d", $node->nid);
+    if ($set_message && user_access('administer site configuration') && variable_get('apachesolr_set_nodeapi_messages', 1)) {
+      apachesolr_set_stats_message('Deleted content will be removed from the Apache Solr search index in approximately @autocommit_time_minutes minutes');
+    }
+  }
+}
+
+/**
+ * Helper function for hook_nodeapi() and hook_cron().
+ */
+function _apachesolr_nodeapi_update($node, $set_message = TRUE) {
+  // Check if the node has gone from published to unpublished.
+  if (!$node->status && db_result(db_query("SELECT status FROM {apachesolr_search_node} WHERE nid = %d", $node->nid))) {
+    if (apachesolr_delete_node_from_index($node)) {
+      // There was no exception, so update the table.
+      db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
+      if ($set_message && user_access('administer site configuration') && variable_get('apachesolr_set_nodeapi_messages', 1)) {
+        apachesolr_set_stats_message('Unpublished content will be removed from the Apache Solr search index in approximately @autocommit_time_minutes minutes');
+      }
+    }
+  }
+  else {
+    db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
+  }
+}
+
+/**
+ * Call drupal_set_message() with the text.
+ *
+ * The text is translated with t() and substituted using Solr stats.
+ */
+function apachesolr_set_stats_message($text, $type = 'status', $repeat = FALSE) {
+  try {
+    $solr = apachesolr_get_solr();
+    $stats_summary = $solr->getStatsSummary();
+    drupal_set_message(t($text, $stats_summary), $type, FALSE);
+  }
+  catch (Exception $e) {
+    watchdog('apachesolr', $e->getMessage(), NULL, WATCHDOG_ERROR);
   }
 }
 
