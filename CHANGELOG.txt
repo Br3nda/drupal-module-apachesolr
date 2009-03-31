@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.44 2009/03/30 20:16:31 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.45 2009/03/31 16:06:37 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#368688 by hurleyit and pwolanin, send MLT docs instead of processed links to theme function.
 #383478 by pwolanin and JacobSingh, provide more information about autocommit lag, pending deletes.
 #339490 by aufumy, pwolanin, and JacobSingh, Organic groups Apachesolr integration, new _alter hook.
 

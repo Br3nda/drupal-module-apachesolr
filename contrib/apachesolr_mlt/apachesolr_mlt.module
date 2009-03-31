@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_mlt.module,v 1.1.4.26 2009/03/20 03:53:30 pwolanin Exp $
+// $Id: apachesolr_mlt.module,v 1.1.4.27 2009/03/31 16:06:37 pwolanin Exp $
 
 /**
  * Implementation of hook_menu()
@@ -40,7 +40,7 @@ function apachesolr_mlt_block($op = 'list', $delta = 0, $edit = array()) {
     $blocks = apachesolr_mlt_list_blocks();
     return $blocks;
   }
-  else if ($op == 'view' && !empty($delta) && (arg(0) == 'node')) {
+  elseif ($op == 'view' && !empty($delta) && (arg(0) == 'node')) {
     //return the content of the block, based on the delta
     $nid = arg(1);
     if (is_numeric($nid) && (!arg(2) || arg(2) == 'view')) {
@@ -85,10 +85,7 @@ function apachesolr_mlt_suggestions($block_id, $nid) {
       }
     }
     $query = apachesolr_drupal_query('id:' . apachesolr_document_id($nid));
-    if (empty($query)) {
-      // An error contacting the server.
-      return;
-    }
+
     // This hook allows modules to modify the query and params objects.
     apachesolr_modify_query($query, $params, 'apachesolr_mlt');
     if (empty($query)) {
@@ -98,39 +95,36 @@ function apachesolr_mlt_suggestions($block_id, $nid) {
     $response = $solr->search($query->get_query_basic(), 0, $block['num_results'], $params);
     $suggestions = array();
     if ($response->response) {
-      $r = (array) end($response->response);
-      $links = array();
-
-      if (is_array($r)) {
-        foreach ($r as $result) {
-          // Suitable for single-site mode.
-          $links[] = l($result->title, 'node/' . $result->nid);
-        }
-      }
-
-      if (count($links)) {
+      $docs = (array) end($response->response);
+      if (!empty($docs)) {
         $suggestions['subject'] = check_plain($block['name']);
-        $suggestions['content'] = theme('apachesolr_mlt_recommendation_block', $links);
+        $suggestions['content'] = theme('apachesolr_mlt_recommendation_block', $docs);
         if (user_access('administer search')) {
            $suggestions['content'] .= l(t('Configure this block'),'admin/settings/apachesolr/mlt/configure_block/' . $delta, array('attributes' => array('class' => 'apachesolr-mlt-admin-link')));
         }
       }
     }
     return $suggestions;
-  } catch ( Exception $e ) {
-      watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR );
+  } 
+  catch ( Exception $e ) {
+    watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR );
   }
 }
 
 function apachesolr_mlt_theme($existing, $type, $theme, $path) {
   return array(
     'apachesolr_mlt_recommendation_block' => array(
-      'arguments' => array('links' => NULL),
+      'arguments' => array('docs' => NULL),
     ),
   );
 }
 
-function theme_apachesolr_mlt_recommendation_block($links) {
+function theme_apachesolr_mlt_recommendation_block($docs) {
+  $links = array();
+  foreach ($docs as $result) {
+    // Suitable for single-site mode.
+    $links[] = l($result->title, 'node/' . $result->nid);
+  }
   return theme('item_list', $links);
 }
 
