@@ -90,12 +90,12 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       $this->stats_cid = "apachesolr:stats:" . md5($url);
       $cache = cache_get($this->stats_cid);
       if (isset($cache->data)) {
-        $this->stats = $cache->data;
+        $this->stats = simplexml_load_string($cache->data);
       }
       else {
         $response = $this->_sendRawGet($url);
         $this->stats = simplexml_load_string($response->getRawResponse());
-        cache_set($this->stats_cid, $this->stats);
+        cache_set($this->stats_cid, $response->getRawResponse());
       }
     }
   }
