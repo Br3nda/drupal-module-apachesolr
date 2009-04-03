@@ -242,6 +242,10 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       $result->code = 0;
     }
 
+    if (isset($result->error)) {
+      $responses[0] .= ': ' . check_plain($result->error);
+    }
+
     if (!isset($result->data)) {
       $result->data = '';
     }
