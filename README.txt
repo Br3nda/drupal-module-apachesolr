@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.13 2009/03/20 04:11:16 pwolanin Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.14 2009/04/03 14:20:38 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -32,11 +32,10 @@ From the apachesolr module directory, run this command:
 
 svn checkout -r6 http://solr-php-client.googlecode.com/svn/trunk/ SolrPhpClient
 
-Note that revision 6 is the currently tested and suggested revision. If you
-do not have svn, you may download the 2009-03-11 version of the library from
-http://code.google.com/p/solr-php-client/downloads/list
+Note that revision 6 is the currently tested and suggested revision. 
 Make sure that the final directory is named SolrPhpClient under the apachesolr
-module directory.
+module directory.  Note: the 2009-03-11 version of the library from the 
+googlecode page is r5 and will not work with beta6+.
 
 Download Solr trunk (candidate 1.4.x build) from a nightly build or build it
 from svn.  http://people.apache.org/builds/lucene/solr/nightly/
