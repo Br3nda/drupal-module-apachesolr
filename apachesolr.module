@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.122 2009/04/03 14:06:01 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.123 2009/04/03 14:37:32 pwolanin Exp $
 
 /**
  * @file
@@ -780,6 +780,230 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
   }
   return NULL;
 }
+
+/**
+ * Helper function for displaying a date facet block.
+ *
+ * TODO: Refactor with apachesolr_facet_block().
+ */
+function apachesolr_date_facet_block($response, $query, $module, $delta, $facet_field, $filter_by, $facet_callback = FALSE) {
+  if (!empty($response->facet_counts->facet_dates->$facet_field)) {
+    $field = clone $response->facet_counts->facet_dates->$facet_field;
+
+    $end = $field->end;
+    unset($field->end);
+
+    $gap = $field->gap;
+    unset($field->gap);
+
+    // Treat each date facet as a range start, and use the next date
+    // facet as range end.  Use 'end' for the final end.
+    $range_end = array();
+    foreach ($field as $facet => $count) {
+      if (isset($prev_facet)) {
+        $range_end[$prev_facet] = $facet;
+      }
+      $prev_facet = $facet;
+    }
+    $range_end[$prev_facet] = $end;
+    
+    $contains_active = FALSE;
+    $items = array();
+    foreach ($field as $facet => $count) {
+      // Solr sends this back if it's empty.
+      if ($facet == '_empty_') {
+        continue;
+      }
+      $unclick_link = '';
+      unset($active);
+      if ($facet_callback && function_exists($facet_callback)) {
+        $facet_text = $facet_callback($facet);
+      }
+      else {
+        $facet_text = apachesolr_date_format_iso_by_gap(substr($gap, 2), $facet);
+      }
+      $new_query = clone $query;
+      $new_query->add_field($facet_field, "[$facet TO {$range_end[$facet]}]");
+      $path = 'search/'. arg(1) .'/'. $new_query->get_query_basic();
+      $querystring = $new_query->get_url_querystring();
+
+      $countsort = $count == 0 ? '' : 1 / $count;
+      // if numdocs == 1 and !active, don't add.
+      if ($count == 0 || ($response->numFound == 1 && !$active)) {
+        // skip
+      }
+      else {
+        $items[$active ? $countsort . $facet : 1 + $countsort . $facet] = theme('apachesolr_facet_item', $facet_text, $count, $path, $querystring, $active, $unclick_link, $response->numFound);
+      }
+    }
+    if (count($items) > 0) {
+      // ksort($items);
+      // Get information needed by the rest of the blocks about limits.
+      $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
+      $limit = isset($initial_limits[$module][$delta]) ? $initial_limits[$module][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
+      $output = theme('apachesolr_facet_list', $items, $limit);
+      return array('subject' => $filter_by, 'content' => $output);
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Determine the gap in a date range query filter that we generated.
+ *
+ * This function assumes that the start and end dates are the
+ * beginning and end of a single period: 1 year, month, day, hour,
+ * minute, or second (all date range query filters we generate meet
+ * this criteria).  So, if the seconds are different, it is a second
+ * gap.  If the seconds are the same (incidentally, they will also be
+ * 0) but the minutes are different, it is a minute gap.  If the
+ * minutes are the same but hours are different, it's an hour gap.
+ * etc.
+ *
+ * @param $start
+ *   Start date as an ISO date string.
+ * @param $end
+ *   End date as an ISO date string.
+ * @return
+ *   YEAR, MONTH, DAY, HOUR, MINUTE, or SECOND.
+ */
+function apachesolr_date_find_query_gap($start_iso, $end_iso) {
+  $gaps = array('SECOND' => 6, 'MINUTE' => 5, 'HOUR' => 4, 'DAY' => 3, 'MONTH' => 2, 'YEAR' => 1);
+  $re = '@(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})@';
+  if (preg_match($re, $start_iso, $start) && preg_match($re, $end_iso, $end)) {
+    foreach ($gaps as $gap => $idx) {
+      if ($start[$idx] != $end[$idx]) {
+        return $gap;
+      }
+    }
+  }
+  // can't tell
+  return 'YEAR';
+}
+
+/**
+ * Format an ISO date string based on the gap used to generate it.
+ * 
+ * This function assumes that gaps less than one day will be displayed
+ * in a search context in which a larger containing gap including a
+ * day is already displayed.  So, HOUR, MINUTE, and SECOND gaps only
+ * display time information, without date.
+ *
+ * @param $gap
+ *   A gap.
+ * @param $iso
+ *   An ISO date string.
+ * @return
+ *   A gap-appropriate formatted date.
+ */
+function apachesolr_date_format_iso_by_gap($gap, $iso) {
+  // TODO: If we assume that multiple search queries are formatted in
+  // order, we could store a static list of all gaps we've formatted.
+  // Then, if we format an HOUR, MINUTE, or SECOND without previously
+  // having formatted a DAY or later, we could include date
+  // information.  However, we'd need to do that per-field and I'm not
+  // our callers always have field information handy.
+  $unix = strtotime($iso);
+  if ($unix > 0) {
+    switch ($gap) {
+      case 'YEAR':
+        return gmdate('Y', $unix);
+      case 'MONTH':
+        return gmdate('F Y', $unix);
+      case 'DAY':
+        return gmdate('F j, Y', $unix);
+      case 'HOUR':
+        return gmdate('g A', $unix);
+      case 'MINUTE':
+        return gmdate('g:i A', $unix);
+      case 'SECOND':
+        return gmdate('g:i:s A', $unix);
+    }
+  }
+
+  return $iso;
+}
+
+/**
+ * Format the beginning of a date range query filter that we
+ * generated.
+ *
+ * @param $start_iso
+ *   The start date.
+ * @param $end_iso
+ *   The end date.
+ * @return
+ *   A display string reprepsenting the date range, such as "January
+ * 2009" for "2009-01-01T00:00:00Z TO 2009-02-01T00:00:00Z"
+ */
+function apachesolr_date_format_range($start_iso, $end_iso) {
+  $gap = apachesolr_date_find_query_gap($start_iso, $end_iso);
+  return apachesolr_date_format_iso_by_gap($gap, $start_iso);
+}
+
+/**
+ * Determine the best search gap to use for an arbitrary date range.
+ *
+ * Generally, we the maximum gap that fits between the start and end
+ * date.  If they are more than a year apart, 1 year; if they are more
+ * than a month apart, 1 month; etc.
+ *
+ * This function uses Unix timestamps for its computation and so is
+ * not useful for dates outside that range.
+ *
+ * @param $start
+ *   Start date as an ISO date string.
+ * @param $end
+ *   End date as an ISO date string.
+ * @return
+ *   YEAR, MONTH, DAY, HOUR, MINUTE, or SECOND depending on how far
+ *   apart $start and $end are.
+ */
+function apachesolr_date_determine_gap($start, $end) {
+  $start = strtotime($start);
+  $end = strtotime($end);
+
+  if ($end - $start >= 86400*365) {
+    return 'YEAR';
+  }
+
+  if (date('m', $start) != date('m', $end)) {
+    return 'MONTH';
+  }
+
+  if ($end - $start > 86400) {
+    return 'DAY';
+  }
+  else if ($end - $start > 3600) {
+    return 'HOUR';
+  }
+  else if ($end - $start > 60) {
+    return 'MINUTE';
+  }
+
+  return 'SECOND';
+}
+
+/**
+ * Return the next smaller date gap.
+ *
+ * @param $gap
+ *   A gap.
+ * @return
+ *   The next smaller gap, or NULL if there is no smaller gap.
+ */
+function apachesolr_date_gap_drilldown($gap) {
+  $drill = array(
+    'YEAR' => 'MONTH',
+    'MONTH' => 'DAY',
+    'DAY' => 'HOUR',
+    // For now, HOUR is a reasonable smallest gap.
+    // 'HOUR' => 'MINUTE',
+    // 'MINUTE' => 'SECOND',
+  );
+  return isset($drill[$gap]) ? $drill[$gap] : NULL;
+}
+
 
 /**
  * Used by the 'configure' $op of hook_block so that modules can generically set
