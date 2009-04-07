@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.22 2008/11/22 12:58:07 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.23 2009/04/07 10:34:50 robertDouglass Exp $
 
 /**
  * @file
@@ -285,9 +285,9 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
             foreach ($fields as $name => $field) {
               $index_key = apachesolr_index_key($field);
               if ($index_key == $delta) {
-                if (is_array($response->facets->$index_key)) {
+                if (!empty($response->facet_counts->facet_fields->$index_key)) {
                   $contains_active = FALSE;
-                  foreach ($response->facets->$index_key as $facet => $count) {
+                  foreach ($response->facet_counts->facet_fields->$index_key as $facet => $count) {
                     $unclick_link = '';
                     unset($active);
                     $new_query = clone $query;

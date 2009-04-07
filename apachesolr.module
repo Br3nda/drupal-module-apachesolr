@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.51 2009/02/03 15:38:38 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.52 2009/04/07 10:34:50 robertDouglass Exp $
 
 /**
  * @file
@@ -377,26 +377,25 @@ class ApacheSolrUpdate {
             }
           }
 
-          if ($cck_fields && strpos($key, 'field_') === 0) {
-            // Got a CCK field. See if it is to be indexed.
-            if (in_array($key, array_keys($cck_fields))) {
-              $function = $cck_fields[$key]['callback'];
-              if ($cck_fields[$key]['callback'] && function_exists($function)) {
-                $dynamic_fields = call_user_func_array($function, array($node, $key));
+          foreach ($cck_fields as $key => $cck_info) {
+            if (isset($node->$key)) {
+              // Got a CCK field. See if it is to be indexed.
+              $function = $cck_info['callback'];
+              if ($cck_info['callback'] && function_exists($function)) {
+                $field = call_user_func_array($function, array($node, $key));
               }
               else {
-                $dynamic_fields = $node->$key;
+                $field = $node->$key;
               }
-              if (is_array($dynamic_fields) && count($dynamic_fields) > 0) {
-                foreach ($dynamic_fields as $field) {
-                  if (!empty($field['view'])) {
-                    $index_key = apachesolr_index_key($cck_fields[$key]);
-                    if ($cck_fields[$key]['multiple']) {
-                      $document->setMultiValue($index_key, $field['view']);
-                    }
-                    else {
-                      $document->$index_key = $field['view'];
-                    }
+              $index_key = apachesolr_index_key($cck_info);
+              foreach ($field as $value) {
+                // Don't index NULLs or empty strings
+                if (isset($value['view']) && strlen($value['view'])) {
+                  if ($cck_info['multiple']) {
+                    $document->setMultiValue($index_key, $value['view']);
+                  }
+                  else {
+                    $document->$index_key = $value['view'];
                   }
                 }
               }
@@ -566,7 +565,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
 }
 
 function apachesolr_facet_block($response, $query, $delta, $filter_by, $facet_callback = FALSE) {
-  if (is_object($response->facet_counts->facet_fields->$delta)) {
+  if (!empty($response->facet_counts->facet_fields->$delta)) {
     $contains_active = FALSE;
     $items = array();
     foreach ($response->facet_counts->facet_fields->$delta as $facet => $count) {
@@ -820,7 +819,7 @@ function apachesolr_cck_fields() {
     return $_fields;
   }
   else {
-    return FALSE;
+    return array();
   }
 }
 
