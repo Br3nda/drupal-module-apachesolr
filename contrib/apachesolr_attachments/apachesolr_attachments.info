@@ -1,4 +1,0 @@
-name = Apache Solr for Attachments
-description = Searching file attachments with Apache Solr
-dependencies = apachesolr 
-package = ApacheSolr
