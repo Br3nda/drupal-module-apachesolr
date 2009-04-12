@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.49 2009/04/12 03:16:28 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.50 2009/04/12 21:10:50 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#348029 by pwolanin, Handle negative filters and improve date facet block code.
 #254565 by drunken monkey and Scott Reynolds, change the query class to enable Views integration.
 
 Apache Solr integration 6.x-1.0-beta7, 2009-04-03

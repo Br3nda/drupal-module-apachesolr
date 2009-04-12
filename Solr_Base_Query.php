@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.25 2009/04/12 03:16:28 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.26 2009/04/12 21:10:50 pwolanin Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -297,6 +297,16 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
           // $solr_keys and $solr_crumbs are keyed on $pos so that query order
           // is maintained. This is important for breadcrumbs.
           $this->fields[$pos] = array('#name' => $name, '#value' => trim($value));
+        }
+      }
+      // Look for negative queries for the same field.
+      $extracted = Solr_Base_Query::filter_extract($filters, '-'. $alias);
+      if (count($extracted['values'])) {
+        foreach ($extracted['values'] as $index => $value) {
+          $pos = strpos($this->filters, $extracted['queries'][$index]);
+          // $solr_keys and $solr_crumbs are keyed on $pos so that query order
+          // is maintained. This is important for breadcrumbs.
+          $this->fields[$pos] = array('#name' => '-'. $name, '#value' => trim($value));
         }
       }
     }

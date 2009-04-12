@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.124 2009/04/12 03:16:28 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.125 2009/04/12 21:10:50 pwolanin Exp $
 
 /**
  * @file
@@ -736,40 +736,39 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
     foreach ($response->facet_counts->facet_fields->$facet_field as $facet => $count) {
       // Solr sends this back if it's empty.
       if ($facet == '_empty_') {
-        continue;
+         $field_name = '-'. $facet_field;
+         $facet = '[* TO *]';
+         $facet_text = t('None');
+       }
+       else {
+         $field_name = $facet_field;
+         $facet_text = $facet;
       }
-      $unclick_link = '';
-      unset($active);
+
       if ($facet_callback && function_exists($facet_callback)) {
         $facet_text = $facet_callback($facet);
       }
-      else {
-        $facet_text = $facet;
-      }
+      $unclick_link = '';
+      $active = 0;
       $new_query = clone $query;
-      if ($active = $query->has_filter($facet_field, $facet)) {
+      if ($query->has_filter($field_name, $facet)) {
         $contains_active = TRUE;
-        $new_query->remove_filter($facet_field, $facet);
+        $active = 1;
+        $new_query->remove_filter($field_name, $facet);
         // TODO: don't assume 'search' - find the real path.
         $path = $new_query->get_path();
         $querystring = $new_query->get_url_querystring();
         $unclick_link = theme('apachesolr_unclick_link', $path, $querystring);
       }
       else {
-        $new_query->add_filter($facet_field, $facet);
+        $new_query->add_filter($field_name, $facet);
         $path = $new_query->get_path();
         $querystring = $new_query->get_url_querystring();
       }
-      $countsort = $count == 0 ? '' : 1 / $count;
-      // if numdocs == 1 and !active, don't add.
-      if ($response->numFound == 1 && !$active) {
-        // skip
-      }
-      else {
-        $items[$active ? $countsort . $facet : 1 + $countsort . $facet] = theme('apachesolr_facet_item', $facet_text, $count, $path, $querystring, $active, $unclick_link, $response->numFound);
-      }
+      $items[((1 - $active) / (1 + $count)) . $facet] = theme('apachesolr_facet_item', $facet_text, $count, $path, $querystring, $active, $unclick_link, $response->numFound);
     }
-    if (count($items) > 0) {
+    // Unless a facet is active only display 2 or more.
+    if ($items && ($response->numFound > 1 || $contains_active)) {
       ksort($items);
       // Get information needed by the rest of the blocks about limits.
       $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
@@ -787,6 +786,32 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
  * TODO: Refactor with apachesolr_facet_block().
  */
 function apachesolr_date_facet_block($response, $query, $module, $delta, $facet_field, $filter_by, $facet_callback = FALSE) {
+  $items = array();
+  $active_filters = array();
+  // Add active facets.
+  foreach ($query->get_filters() as $filter) {
+    if (($filter['#name'] == $facet_field) && preg_match('/^\[(\S+) TO (\S+)\]/', $filter['#value'], $matches)) {
+      $filter['#start'] = $matches[1];
+      $filter['#end'] = $matches[2];
+      $active_filters[] = $filter;
+    }
+  }
+  $new_query = clone $query;
+  foreach (array_reverse($active_filters) as $filter) {
+    // Iteratively remove the date facets.
+    $new_query->remove_filter($facet_field, $filter['#value']);
+    $path = $new_query->get_path();
+    $querystring = $new_query->get_url_querystring();
+    $unclick_link = theme('apachesolr_unclick_link', $path, $querystring);
+    if ($facet_callback && function_exists($facet_callback)) {
+      $facet_text = $facet_callback($filter['#start']);
+    }
+    else {
+      $facet_text = apachesolr_date_format_iso_by_gap(apachesolr_date_find_query_gap($filter['#start'], $filter['#end']), $filter['#start']);
+    }
+    array_unshift($items, theme('apachesolr_facet_item', $facet_text, 0, $path, $querystring, TRUE, $unclick_link));
+  }
+  // Add links for additional date filters.
   if (!empty($response->facet_counts->facet_dates->$facet_field)) {
     $field = clone $response->facet_counts->facet_dates->$facet_field;
 
@@ -806,16 +831,12 @@ function apachesolr_date_facet_block($response, $query, $module, $delta, $facet_
       $prev_facet = $facet;
     }
     $range_end[$prev_facet] = $end;
-    
-    $contains_active = FALSE;
-    $items = array();
+
     foreach ($field as $facet => $count) {
       // Solr sends this back if it's empty.
-      if ($facet == '_empty_') {
+      if ($facet == '_empty_' || $count == 0) {
         continue;
       }
-      $unclick_link = '';
-      unset($active);
       if ($facet_callback && function_exists($facet_callback)) {
         $facet_text = $facet_callback($facet);
       }
@@ -823,27 +844,19 @@ function apachesolr_date_facet_block($response, $query, $module, $delta, $facet_
         $facet_text = apachesolr_date_format_iso_by_gap(substr($gap, 2), $facet);
       }
       $new_query = clone $query;
-      $new_query->add_filter($facet_field, "[$facet TO {$range_end[$facet]}]");
-      $path = 'search/'. arg(1) .'/'. $new_query->get_query_basic();
+      $new_query->add_filter($facet_field, '['. $facet .' TO '. $range_end[$facet] .']');
+      $path = $new_query->get_path();
       $querystring = $new_query->get_url_querystring();
 
-      $countsort = $count == 0 ? '' : 1 / $count;
-      // if numdocs == 1 and !active, don't add.
-      if ($count == 0 || ($response->numFound == 1 && !$active)) {
-        // skip
-      }
-      else {
-        $items[$active ? $countsort . $facet : 1 + $countsort . $facet] = theme('apachesolr_facet_item', $facet_text, $count, $path, $querystring, $active, $unclick_link, $response->numFound);
-      }
+      $items[] = theme('apachesolr_facet_item', $facet_text, $count, $path, $querystring, FALSE, '', $response->numFound);
     }
-    if (count($items) > 0) {
-      // ksort($items);
-      // Get information needed by the rest of the blocks about limits.
-      $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
-      $limit = isset($initial_limits[$module][$delta]) ? $initial_limits[$module][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
-      $output = theme('apachesolr_facet_list', $items, $limit);
-      return array('subject' => $filter_by, 'content' => $output);
-    }
+  }
+  if (count($items) > 0) {
+    // Get information needed by the rest of the blocks about limits.
+    $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
+    $limit = isset($initial_limits[$module][$delta]) ? $initial_limits[$module][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
+    $output = theme('apachesolr_facet_list', $items, $limit);
+    return array('subject' => $filter_by, 'content' => $output);
   }
   return NULL;
 }
