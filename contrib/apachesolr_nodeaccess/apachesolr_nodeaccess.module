@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.1.2.6 2009/02/20 19:31:16 pwolanin Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.1.2.7 2009/04/12 03:16:30 pwolanin Exp $
 
 /**
  * Implementation of apachesolr_update_index
@@ -32,7 +32,7 @@ function _apachesolr_nodeaccess_build_subquery($account) {
     $node_access_query = apachesolr_drupal_query();
     foreach ($grants as $realm => $gids) {
       foreach ($gids as $gid) {
-        $node_access_query->add_field('nodeaccess_' . $realm, $gid);
+        $node_access_query->add_filter('nodeaccess_' . $realm, $gid);
       }
     }
     return $node_access_query;

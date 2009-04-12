@@ -1,5 +1,5 @@
 <?php
-// $Id: solr_base_query.test,v 1.1.4.9 2008/11/21 21:23:36 pwolanin Exp $
+// $Id: solr_base_query.test,v 1.1.4.10 2009/04/12 03:16:33 pwolanin Exp $
 
 
 /***
@@ -41,7 +41,7 @@ class DrupalSolrQueryTests extends DrupalWebTestCase {
     foreach ($this->queries as $string) {
       $query = apachesolr_drupal_query($string, TRUE);
       // force the query to be rebuilt without removing any fields.
-      $query->remove_field('fake-field-name');
+      $query->remove_filter('fake-field-name');
       $this->assertEqual($string, $query->get_query());
     }
   }
@@ -49,7 +49,7 @@ class DrupalSolrQueryTests extends DrupalWebTestCase {
   function testAddTerm() {
     foreach ($this->queries as $string) {
       $query = apachesolr_drupal_query($string, TRUE);
-      $query->add_field('wham', '1');
+      $query->add_filter('wham', '1');
       $this->assertEqual($string . ' wham:1', $query->get_query());
     }
   }
@@ -57,27 +57,27 @@ class DrupalSolrQueryTests extends DrupalWebTestCase {
   function testRemoveTerm() {
     $string = 'foo';
     $query = apachesolr_drupal_query($string, TRUE);
-    $query->remove_field('', 'foo');
+    $query->remove_filter('', 'foo');
     $this->assertEqual('foo', $query->get_query());
 
     $string = 'foo bar';
     $query = apachesolr_drupal_query($string, TRUE);
-    $query->remove_field('', 'foo');
+    $query->remove_filter('', 'foo');
     $this->assertEqual('foo bar', $query->get_query());
 
     $string = 'foo uid:1 bar';
     $query = apachesolr_drupal_query($string, TRUE);
-    $query->remove_field('uid', '1');
+    $query->remove_filter('uid', '1');
     $this->assertEqual('foo bar', $query->get_query());
 
     $string = 'foo uid:1 bar';
     $query = apachesolr_drupal_query($string, TRUE);
-    $query->remove_field('uid');
+    $query->remove_filter('uid');
     $this->assertEqual('foo bar', $query->get_query());
 
     $string = 'foo uid:1 bar uid:2 tid:3';
     $query = apachesolr_drupal_query($string, TRUE);
-    $query->remove_field('uid', '1');
+    $query->remove_filter('uid', '1');
 
     // Not very beautiful, but probably best way there is:
     $pass = TRUE;
@@ -103,7 +103,7 @@ class DrupalSolrQueryTests extends DrupalWebTestCase {
 
     $string = 'foo uid:1 bar uid:2 tid:3';
     $query = apachesolr_drupal_query($string, TRUE);
-    $query->remove_field('uid');
+    $query->remove_filter('uid');
     $this->assertEqual('foo bar tid:3', $query->get_query());
   }
 }

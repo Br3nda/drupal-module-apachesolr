@@ -1,12 +1,12 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.24 2009/04/03 14:37:32 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.25 2009/04/12 03:16:28 pwolanin Exp $
 
-class Solr_Base_Query {
+class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
   /**
    * Extract all uses of one named field from a filter string e.g. 'type:book'
    */
-  static function field_extract(&$filters, $name) {
+  static function filter_extract(&$filters, $name) {
     $queries = array();
     $values = array();
     // Range queries.  The "TO" is case-sensitive.
@@ -30,13 +30,13 @@ class Solr_Base_Query {
    * Takes an array $field and combines the #name and #value in a way
    * suitable for use in a Solr query.
    */
-  static function make_field(array $field) {
+  static function make_filter(array $filter) {
     // If the field value has spaces, or : in it, wrap it in double quotes.
     // unless it is a range query.
-    if (preg_match('/[ :]/', $field['#value']) && !preg_match('/[\[\{]\S+ TO \S+[\]\}]/', $field['#value'])) {
-      $field['#value'] = '"'. $field['#value']. '"';
+    if (preg_match('/[ :]/', $filter['#value']) && !preg_match('/[\[\{]\S+ TO \S+[\]\}]/', $filter['#value'])) {
+      $filter['#value'] = '"'. $filter['#value']. '"';
     }
-    return $field['#name'] . ':' . $field['#value'];
+    return $filter['#name'] . ':' . $filter['#value'];
   }
 
   /**
@@ -54,7 +54,6 @@ class Solr_Base_Query {
    * is an array with #name and #value properties.  Each value is a
    * used for filter queries, e.g. array('#name' => 'uid', '#value' => 0)
    * for anonymous content.
-
    */
   protected $fields;
 
@@ -113,15 +112,15 @@ class Solr_Base_Query {
     $this->id = ++self::$idCount;
   }
 
-  function add_field($field, $value) {
+  function add_filter($field, $value) {
     $this->fields[] = array('#name' => $field, '#value' => trim($value));
   }
 
-  public function get_fields() {
+  public function get_filters() {
     return $this->fields;
   }
 
-  public function remove_field($name, $value = NULL) {
+  public function remove_filter($name, $value = NULL) {
     // We can only remove named fields.
     if (empty($name)) {
       return;
@@ -142,7 +141,7 @@ class Solr_Base_Query {
     }
   }
 
-  public function has_field($name, $value) {
+  public function has_filter($name, $value) {
     foreach ($this->fields as $pos => $values) {
       if (!empty($values['#name']) && !empty($values['#value']) && $values['#name'] == $name && $values['#value'] == $value) {
         return TRUE;
@@ -179,12 +178,12 @@ class Solr_Base_Query {
    * OR.
    *
    * @param $query
-   *   An instance of Solr_Base_Query.
+   *   An instance of Drupal_Solr_Query_Interface.
    *
    * @param $operator
    *   'AND' or 'OR'
    */
-  function add_subquery(Solr_Base_Query $query, $fq_operator = 'OR', $q_operator = 'AND') {
+  function add_subquery(Drupal_Solr_Query_Interface $query, $fq_operator = 'OR', $q_operator = 'AND') {
     $this->subqueries[$query->id] = array('#query' => $query, '#fq_operator' => $fq_operator, '#q_operator' => $q_operator);
   }
 
@@ -227,6 +226,20 @@ class Solr_Base_Query {
   public function get_query_basic() {
     return $this->rebuild_query();
   }
+  
+  /**
+   * return the search path
+   * this class assumes its always through the search api
+   *
+   * @param string $new_keywords
+   * if we are using new keywords as our query string
+   */
+  public function get_path($new_keywords = NULL) {
+    if ($new_keywords) {
+      return 'search/' . arg(1) . '/' . $new_keywords;
+    }
+    return 'search/' . arg(1) . '/' . $this->get_query_basic();
+  }
 
   /**
    * Build additional breadcrumb elements relative to $base.
@@ -245,7 +258,7 @@ class Solr_Base_Query {
       if (isset($this->field_map[$name])) {
         $field['#name'] = $this->field_map[$name];
       }
-      $progressive_crumb[] = Solr_Base_Query::make_field($field);
+      $progressive_crumb[] = Solr_Base_Query::make_filter($field);
       $options = array('query' => 'filters=' . implode(' ', $progressive_crumb));
       if ($themed = theme("apachesolr_breadcrumb_{$name}", $field['#value'])) {
         $breadcrumb[] = l($themed, $base, $options);
@@ -277,7 +290,7 @@ class Solr_Base_Query {
       // Look for a field alias.
       $alias = isset($this->field_map[$name]) ? $this->field_map[$name] : $name;
       // Get the values for $name
-      $extracted = Solr_Base_Query::field_extract($filters, $alias);
+      $extracted = Solr_Base_Query::filter_extract($filters, $alias);
       if (count($extracted['values'])) {
         foreach ($extracted['values'] as $index => $value) {
           $pos = strpos($this->filters, $extracted['queries'][$index]);
@@ -306,7 +319,7 @@ class Solr_Base_Query {
       if ($aliases && isset($this->field_map[$field['#name']])) {
         $field['#name'] = $this->field_map[$field['#name']];
       }
-      $fq[] = Solr_Base_Query::make_field($field);
+      $fq[] = Solr_Base_Query::make_filter($field);
     }
     foreach ($this->subqueries as $id => $data) {
       $subfq = $data['#query']->rebuild_fq($aliases);

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.80 2009/04/03 14:37:32 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.81 2009/04/12 03:16:29 pwolanin Exp $
 
 /**
  * @file
@@ -90,7 +90,13 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
 
       try {
         // This is the object that knows about the query coming from the user.
-        $query = apachesolr_current_query($keys);
+        if (empty($filters) && !empty($_GET['filters'])) {
+          $filters = $_GET['filters'];
+        }
+        if (empty($solrsort) && !empty($_GET['solrsort'])) {
+          $solrsort = $_GET['solrsort'];
+        }
+        $query = apachesolr_drupal_query($keys, $filters, $solrsort);
         if (is_null($query)) {
           throw new Exception(t('Could not construct a Solr query in function apachesolr_search_search()'));
         }
@@ -246,6 +252,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         if (!$query) {
           return array();
         }
+        apachesolr_current_query($query);
 
         $response = $solr->search($query->get_query_basic(), $params['start'], $params['rows'], $params);
         // The response is cached so that it is accessible to the blocks and anything
@@ -310,7 +317,7 @@ function apachesolr_search_date_range($query, &$params, $delta) {
   // Find the smallest filter range for $delta in the query.  $query
   // has no method to retrieve filters for $delta, so we iterate
   // through them all.
-  $fields = $query->get_fields();
+  $fields = $query->get_filters();
   foreach ($fields as $info) {
     if ($info['#name'] == $delta) {
       // $info['#value'] is the filter value.  Ideally it would also
@@ -469,16 +476,16 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
               unset($active);
               $term = taxonomy_get_term($tid);
               $new_query = clone $query;
-              if ($active = $query->has_field('tid', $tid)) {
+              if ($active = $query->has_filter('tid', $tid)) {
                 $contains_active = TRUE;
-                $new_query->remove_field('tid', $term->tid);
-                $path = 'search/' . arg(1) . '/' . $new_query->get_query_basic();
+                $new_query->remove_filter('tid', $term->tid);
+                $path = $new_query->get_path();
                 $querystring = $new_query->get_url_querystring();
                 $unclick_link = theme('apachesolr_unclick_link', $path, $querystring);
               }
               else {
-                $new_query->add_field('tid', $term->tid);
-                $path = 'search/' . arg(1) . '/' . $new_query->get_query_basic();
+                $new_query->add_filter('tid', $term->tid);
+                $path = $new_query->get_path();
                 $querystring = $new_query->get_url_querystring();
               }
               $countsort = $count == 0 ? '' : 1 / $count;
@@ -506,9 +513,8 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
 
         switch ($delta) {
           case 'currentsearch':
-            $fields = $query->get_fields();
-            $search_keys = $query->get_query_basic();
-            $path = 'search/' . arg(1) . '/' . $search_keys;
+            $fields = $query->get_filters();
+            $path = $query->get_path();
             $options = array();
             if (!$fields) {
               $options['attributes']['class'] = 'active';
@@ -517,8 +523,8 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
             foreach($fields as $field) {
               if ($field['#name']) {
                 $new_query = clone $query;
-                $new_query->remove_field($field['#name'], $field['#value']);
-                $path = 'search/'. arg(1) .'/'. $new_query->get_query_basic();
+                $new_query->remove_filter($field['#name'], $field['#value']);
+                $path = $new_query->get_path();
                 $querystring = $new_query->get_url_querystring();
                 $unclick_link = theme('apachesolr_unclick_link', $path, $querystring);
                 if (! $fielddisplay = theme("apachesolr_breadcrumb_". $field['#name'], $field['#value'])) {
@@ -615,7 +621,7 @@ function apachesolr_search_form_search_form_alter(&$form, $form_state) {
         '#suffix' => '</div>',
         '#type' => 'item',
         '#title' => t('Did you mean'),
-        '#value' => l($new_keywords, 'search/'. arg(1) .'/'. $new_keywords),
+        '#value' => l($new_keywords, $query->get_path($new_keywords)),
       );
     }
   }

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.123 2009/04/03 14:37:32 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.124 2009/04/12 03:16:28 pwolanin Exp $
 
 /**
  * @file
@@ -695,7 +695,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
             }
 
             $sort_links = array();
-            $path = 'search/' . arg(1) . '/' . $query->get_query_basic();
+            $path = $query->get_path();
             $new_query = clone $query;
             foreach ($sorts as $type => $sort) {
               $new_sort = isset($solrsorts[$type]) ? $solrsorts[$type] == 'asc' ? 'desc' : 'asc' : $sort['default'];
@@ -747,17 +747,17 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
         $facet_text = $facet;
       }
       $new_query = clone $query;
-      if ($active = $query->has_field($facet_field, $facet)) {
+      if ($active = $query->has_filter($facet_field, $facet)) {
         $contains_active = TRUE;
-        $new_query->remove_field($facet_field, $facet);
+        $new_query->remove_filter($facet_field, $facet);
         // TODO: don't assume 'search' - find the real path.
-        $path = 'search/'. arg(1) .'/'. $new_query->get_query_basic();
+        $path = $new_query->get_path();
         $querystring = $new_query->get_url_querystring();
         $unclick_link = theme('apachesolr_unclick_link', $path, $querystring);
       }
       else {
-        $new_query->add_field($facet_field, $facet);
-        $path = 'search/'. arg(1) .'/'. $new_query->get_query_basic();
+        $new_query->add_filter($facet_field, $facet);
+        $path = $new_query->get_path();
         $querystring = $new_query->get_url_querystring();
       }
       $countsort = $count == 0 ? '' : 1 / $count;
@@ -823,7 +823,7 @@ function apachesolr_date_facet_block($response, $query, $module, $delta, $facet_
         $facet_text = apachesolr_date_format_iso_by_gap(substr($gap, 2), $facet);
       }
       $new_query = clone $query;
-      $new_query->add_field($facet_field, "[$facet TO {$range_end[$facet]}]");
+      $new_query->add_filter($facet_field, "[$facet TO {$range_end[$facet]}]");
       $path = 'search/'. arg(1) .'/'. $new_query->get_query_basic();
       $querystring = $new_query->get_url_querystring();
 
@@ -1057,7 +1057,7 @@ function apachesolr_facetcount_save($edit) {
  *
  * function my_module_apachesolr_modify_query(&$query, &$params) {
  *   // I only want to see articles by the admin!
- *   $query->add_field("uid", 1);
+ *   $query->add_filter("uid", 1);
  *
  * }
  */
@@ -1100,7 +1100,7 @@ function apachesolr_has_searched($searched = NULL) {
  */
 function apachesolr_get_solr($host = NULL, $port = NULL, $path = NULL) {
   static $solr_cache;
-
+  
   if (empty($host)) {
     $host = variable_get('apachesolr_host', 'localhost');
   }
@@ -1144,7 +1144,6 @@ function apachesolr_static_response_cache($response = NULL) {
  * The query object is built from the keys, filters, and sort.
  */
 function apachesolr_drupal_query($keys = '', $filters = '', $solrsort = '') {
-
   list($module, $class) = variable_get('apachesolr_query_class', array('apachesolr', 'Solr_Base_Query'));
   include_once drupal_get_path('module', $module) .'/'. $class .'.php';
 
@@ -1155,37 +1154,20 @@ function apachesolr_drupal_query($keys = '', $filters = '', $solrsort = '') {
     watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
     $query = NULL;
   }
+  
   return $query;
 }
 
 /**
- * Factory function for query objects representing the current search URL.
- *
- * The query object is built from the keys in the URL, but these may be
- * overridden by passing in parameters.
+ * Static getter/setter for the current query
  */
-function apachesolr_current_query($keys = '', $filters = '', $solrsort = '', $reset = FALSE) {
-  static $_queries = array();
-
-  if ($reset) {
-    $_queries = array();
+function apachesolr_current_query($query = NULL) {
+  static $query_obj = NULL;
+  if (!empty($query)) {
+    $query_obj = $query;
   }
-
-  if (empty($keys)) {
-    $keys = search_get_keys();
-  }
-  if (empty($filters) && !empty($_GET['filters'])) {
-    $filters = $_GET['filters'];
-  }
-  if (empty($solrsort) && !empty($_GET['solrsort'])) {
-    $solrsort = $_GET['solrsort'];
-  }
-  $index = $keys . '&filters=' . $filters;
-
-  if (empty($_queries) || !array_key_exists($index, $_queries)) {
-    $_queries[$index] = apachesolr_drupal_query($keys, $filters, $solrsort);
-  }
-  return is_object($_queries[$index]) ? clone $_queries[$index] : $_queries[$index];
+  
+  return $query_obj;
 }
 
 /**
@@ -1341,5 +1323,78 @@ function theme_apachesolr_facet_list($items, $display_limit = 0) {
 
 function theme_apachesolr_sort_list($items) {
   return theme('item_list', $items);
+}
+
+/**
+ * The interface for which all 'query' objects talk
+ */
+interface Drupal_Solr_Query_Interface {
+  /**
+   * Checks to see if a specific filter is already present.
+   *
+   * @param string $field
+   * the facet field to check
+   *
+   * @param string $value
+   * The facet value to check against
+   */
+  function has_filter($field, $value);
+  
+  /**
+   * Remove a filter from the query
+   *
+   * @param string $field
+   * the facet field to remove
+   *
+   * @param string $value
+   * The facet value to remove
+   * This value can be NULL
+   */
+  function remove_filter($field, $value = NULL);
+  
+  /**
+   * Add a filter to a query
+   *
+   * @param string $field
+   * the facet field to apply to this query
+   *
+   * @param string value
+   * the value of the facet to apply
+   */
+  function add_filter($field, $value);
+  
+  /**
+   * return the search path
+   */
+  function get_path();
+  
+  /**
+   * Return any query string for use in the l function.
+   *
+   * @see l()
+   */
+  function get_url_querystring();
+  
+  /**
+   * return the basic string query
+   */
+  function get_query_basic();
+  
+  /**
+   * Set the solrsort.
+   *
+   * @param string raw string to set the sort to
+   */
+  function set_solrsort($sortstring);
+  
+  /**
+   * Return an array of all filters.
+   */
+  function get_filters();
+  
+  /**
+   * Add a subquery to the query.
+   */
+  function add_subquery(Drupal_Solr_Query_Interface $query, $fq_operator = 'OR', $q_operator = 'AND');
 }
 
