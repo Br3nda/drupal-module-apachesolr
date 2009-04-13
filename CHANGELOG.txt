@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.50 2009/04/12 21:10:50 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.51 2009/04/13 14:51:14 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#432140 by Damien Tournoud, use format_interval() for more attractive, localizable time intervals.
 #348029 by pwolanin, Handle negative filters and improve date facet block code.
 #254565 by drunken monkey and Scott Reynolds, change the query class to enable Views integration.
 

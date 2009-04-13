@@ -120,7 +120,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     $summary = array(
      '@pending_docs' => '',
      '@autocommit_time_seconds' => '',
-     '@autocommit_time_minutes' => '',
+     '@autocommit_time' => '',
      '@deletes_by_id' => '',
      '@deletes_by_query' => '',
      '@deletes_total' => '',
@@ -132,8 +132,8 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       $max_time_xpath = $stats->xpath('//stat[@name="autocommit maxTime"]');
       $max_time = (int) trim(current($max_time_xpath));
       // Convert to seconds.
-      $summary['@autocommit_time_seconds'] = $max_time/1000;
-      $summary['@autocommit_time_minutes'] = $max_time/60000;
+      $summary['@autocommit_time_seconds'] = $max_time / 1000;
+      $summary['@autocommit_time'] = format_interval($max_time / 1000);
       $deletes_id_xpath = $stats->xpath('//stat[@name="deletesById"]');
       $summary['@deletes_by_id'] = (int) trim($deletes_id_xpath[0]);
       $deletes_query_xpath = $stats->xpath('//stat[@name="deletesByQuery"]');

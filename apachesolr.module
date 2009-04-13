@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.125 2009/04/12 21:10:50 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.126 2009/04/13 14:51:15 pwolanin Exp $
 
 /**
  * @file
@@ -595,7 +595,7 @@ function _apachesolr_nodeapi_delete($node, $set_message = TRUE) {
     // There was no exception, so delete from the table.
     db_query("DELETE FROM {apachesolr_search_node} WHERE nid = %d", $node->nid);
     if ($set_message && user_access('administer site configuration') && variable_get('apachesolr_set_nodeapi_messages', 1)) {
-      apachesolr_set_stats_message('Deleted content will be removed from the Apache Solr search index in approximately @autocommit_time_minutes minutes');
+      apachesolr_set_stats_message('Deleted content will be removed from the Apache Solr search index in approximately @autocommit_time.');
     }
   }
 }
@@ -610,7 +610,7 @@ function _apachesolr_nodeapi_update($node, $set_message = TRUE) {
       // There was no exception, so update the table.
       db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
       if ($set_message && user_access('administer site configuration') && variable_get('apachesolr_set_nodeapi_messages', 1)) {
-        apachesolr_set_stats_message('Unpublished content will be removed from the Apache Solr search index in approximately @autocommit_time_minutes minutes');
+        apachesolr_set_stats_message('Unpublished content will be removed from the Apache Solr search index in approximately @autocommit_time.');
       }
     }
   }
