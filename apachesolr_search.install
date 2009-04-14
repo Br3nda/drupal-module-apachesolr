@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.install,v 1.1.2.4 2009/01/27 13:41:22 pwolanin Exp $
+// $Id: apachesolr_search.install,v 1.1.2.5 2009/04/14 00:12:18 pwolanin Exp $
 
 /**
  * @file
@@ -61,5 +61,16 @@ function apachesolr_search_update_6002() {
   }
   variable_del('apacehsolr_search_date_boost');
   variable_del('apacehsolr_search_comment_boost');
+  return $ret;
+}
+
+/**
+ * Enable facet missing for books.
+ */
+function apachesolr_search_update_6003() {
+  $ret = array();
+  $facet_missing = variable_get('apachesolr_facet_missing', array());
+  $facet_missing['apachesolr_search']['is_book_bid'] = 1;
+  variable_set('apachesolr_facet_missing', $facet_missing);
   return $ret;
 }

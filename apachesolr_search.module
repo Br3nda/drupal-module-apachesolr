@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.81 2009/04/12 03:16:29 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.82 2009/04/14 00:12:18 pwolanin Exp $
 
 /**
  * @file
@@ -134,6 +134,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         }
 
         $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
+        $facet_missing = variable_get('apachesolr_facet_missing', array());
         // Request all enabled facets.  We need $all_facets so we can
         // check the facet_date property and callback, because
         // get_enabled_facets() does not (currently) return all of that.
@@ -157,6 +158,10 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
               // Facet limits
               if (isset($facet_query_limits[$module][$delta])) {
                 $params['f.' . $facet_field . '.facet.limit'] = $facet_query_limits[$module][$delta];
+              }
+              // Facet missing
+              if (!empty($facet_missing[$module][$delta])) {
+                $params['f.' . $facet_field . '.facet.missing'] = 'true';
               }
             }
           }
@@ -396,6 +401,14 @@ function apachesolr_search_apachesolr_facets() {
     'facet_date_range_callback' => 'apachesolr_search_date_range',
   );
 
+  // A book module facet.
+  if (module_exists('book')) {
+    $facets['is_book_bid'] = array(
+      'info' => t('Apache Solr Search: Filter by Book'),
+      'facet_field' => 'is_book_bid',
+    );
+  }
+
   // Get taxonomy vocabulary facets.
   if (module_exists('taxonomy')) {
     $vocabs = taxonomy_get_vocabularies();
@@ -403,7 +416,7 @@ function apachesolr_search_apachesolr_facets() {
       // In this case the delta and facet field are the same.
       $delta = 'im_vid_' . $vid;
       $facets[$delta] = array(
-        'info' => t('Apache Solr Search: Filter by @name', array('@name' => $vocab->name)),
+        'info' => t('Apache Solr Search: Filter by taxonomy @name', array('@name' => $vocab->name)),
         'facet_field' => $delta,
       );
     }
@@ -472,6 +485,10 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
             $terms = array();
 
             foreach ($response->facet_counts->facet_fields->$delta as $tid => $count) {
+              if ($tid == '_empty_') {
+                // TODO - for now we don't handle facet missing.
+                continue;
+              }
               $unclick_link = '';
               unset($active);
               $term = taxonomy_get_term($tid);
@@ -490,11 +507,8 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
               }
               $countsort = $count == 0 ? '' : 1 / $count;
               // if numdocs == 1 and !active, don't add.
-              if ($response->numFound == 1 && !$active) {
-                // skip
-              }
-              else {
-                $terms[$term->vid][$active ? $countsort . $term->name : 1 + $countsort . $term->name] = theme('apachesolr_facet_item', $term->name, $count, $path, $querystring, $active, $unclick_link, $response->numFound);
+              if ($response->response->numFound > 1 || $active) {
+                $terms[$term->vid][$active ? $countsort . $term->name : 1 + $countsort . $term->name] = theme('apachesolr_facet_item', $term->name, $count, $path, $querystring, $active, $unclick_link, $response->response->numFound);
               }
             }
           }
@@ -535,7 +549,8 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
             }
             $content = theme('apachesolr_currentsearch', $response->response->numFound, $links);
             return array('subject' => t('Current search'), 'content' => $content);
-
+          case 'is_book_bid':
+            return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by book'), 'apachesolr_search_get_book');
           case 'language':
             return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by language'), 'locale_language_name');
            case 'uid':
@@ -572,6 +587,19 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
         apachesolr_facetcount_save($edit);
       }
       break;
+  }
+}
+
+/**
+ * Callback function for the 'Filter by book' facet block.
+ */
+function apachesolr_search_get_book($facet, &$options) {
+  if (is_numeric($facet)) {
+    return db_result(db_query('SELECT title FROM {node} WHERE nid = %d', $facet));
+  }
+  else {
+    $options['html'] = TRUE;
+    return theme('placeholder', t('Not in any book'));
   }
 }
 
@@ -673,6 +701,9 @@ function apachesolr_search_build_spellcheck() {
  */
 function apachesolr_search_theme() {
   return array(
+    'apachesolr_breadcrumb_is_book_bid' => array(
+      'arguments' => array('bid' => NULL),
+    ),
     'apachesolr_breadcrumb_uid' => array(
       'arguments' => array('uid' => NULL),
     ),
@@ -735,6 +766,14 @@ function theme_apachesolr_breadcrumb_tid($tid) {
  */
 function theme_apachesolr_breadcrumb_type($type) {
   return node_get_types('name', $type);
+}
+
+/**
+ * Return the title of a book.
+ */
+function theme_apachesolr_breadcrumb_is_book_bid($bid) {
+  $options = array();
+  return apachesolr_search_get_book($bid, $options);
 }
 
 /**

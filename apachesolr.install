@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.1.4.14 2009/03/30 20:16:31 pwolanin Exp $
+// $Id: apachesolr.install,v 1.1.4.15 2009/04/14 00:12:18 pwolanin Exp $
 
 /**
  * @file
@@ -149,3 +149,14 @@ function apachesolr_update_6002() {
    return $ret;
 }
 
+/**
+ *  Re-index nodes in books.
+ */
+function apachesolr_update_6003() {
+  $ret = array();
+  if (module_exists('book')) {
+    $time = (int) time();
+    $ret[] = update_sql("UPDATE {apachesolr_search_node} SET changed = $time WHERE nid IN (SELECT nid from {book})");
+  }
+  return $ret;
+}

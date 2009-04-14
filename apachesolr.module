@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.126 2009/04/13 14:51:15 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.127 2009/04/14 00:12:18 pwolanin Exp $
 
 /**
  * @file
@@ -373,7 +373,9 @@ function apachesolr_node_to_document($nid) {
     $document->moderate = $node->moderate;
     $document->tnid = $node->tnid;
     $document->translate = $node->translate;
-    $document->language = $node->language;
+    if (!empty($node->language)) {
+      $document->language = $node->language;
+    }
     $document->body = strip_tags(str_replace(array('<', '>'), array(' <', '> '), $text));
     $document->type  = $node->type;
     $document->type_name = apachesolr_strip_ctl_chars(node_get_types('name', $node));
@@ -424,6 +426,11 @@ function apachesolr_node_to_document($nid) {
           }
         }
       }
+    }
+    // Index book module data.
+    if (!empty($node->book['bid'])) {
+      // Hard-coded - must change if apachesolr_index_key() changes.
+      $document->is_book_bid = (int) $node->book['bid'];
     }
     apachesolr_add_tags_to_document($document, $text);
     apachesolr_add_taxonomy_to_document($document, $node);
@@ -734,11 +741,16 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
     $contains_active = FALSE;
     $items = array();
     foreach ($response->facet_counts->facet_fields->$facet_field as $facet => $count) {
+      $countsort = 1000000 - $count;
+      $options = array();
       // Solr sends this back if it's empty.
       if ($facet == '_empty_') {
          $field_name = '-'. $facet_field;
          $facet = '[* TO *]';
-         $facet_text = t('None');
+         $facet_text = theme('placeholder', t('Missing this field'));
+         $options['html'] = TRUE;
+         // Put this just below any active facets.
+         $countsort = 1;
        }
        else {
          $field_name = $facet_field;
@@ -746,14 +758,14 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
       }
 
       if ($facet_callback && function_exists($facet_callback)) {
-        $facet_text = $facet_callback($facet);
+        $facet_text = $facet_callback($facet, $options);
       }
       $unclick_link = '';
-      $active = 0;
+      $active = FALSE;
       $new_query = clone $query;
       if ($query->has_filter($field_name, $facet)) {
-        $contains_active = TRUE;
-        $active = 1;
+        $contains_active = $active = TRUE;
+        $countsort = 0;
         $new_query->remove_filter($field_name, $facet);
         // TODO: don't assume 'search' - find the real path.
         $path = $new_query->get_path();
@@ -765,10 +777,12 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
         $path = $new_query->get_path();
         $querystring = $new_query->get_url_querystring();
       }
-      $items[((1 - $active) / (1 + $count)) . $facet] = theme('apachesolr_facet_item', $facet_text, $count, $path, $querystring, $active, $unclick_link, $response->numFound);
+      if ($count || $active) {
+        $items[$countsort . ':' . $facet_text] = theme('apachesolr_facet_item', $facet_text, $count, $path, $querystring, $active, $unclick_link, $response->response->numFound, $options);
+      }
     }
     // Unless a facet is active only display 2 or more.
-    if ($items && ($response->numFound > 1 || $contains_active)) {
+    if ($items && ($response->response->numFound > 1 || $contains_active)) {
       ksort($items);
       // Get information needed by the rest of the blocks about limits.
       $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
@@ -848,7 +862,7 @@ function apachesolr_date_facet_block($response, $query, $module, $delta, $facet_
       $path = $new_query->get_path();
       $querystring = $new_query->get_url_querystring();
 
-      $items[] = theme('apachesolr_facet_item', $facet_text, $count, $path, $querystring, FALSE, '', $response->numFound);
+      $items[] = theme('apachesolr_facet_item', $facet_text, $count, $path, $querystring, FALSE, '', $response->response->numFound);
     }
   }
   if (count($items) > 0) {
@@ -1025,6 +1039,7 @@ function apachesolr_date_gap_drilldown($gap) {
 function apachesolr_facetcount_form($module, $delta) {
   $initial = variable_get('apachesolr_facet_query_initial_limits', array());
   $limits = variable_get('apachesolr_facet_query_limits', array());
+  $facet_missing = variable_get('apachesolr_facet_missing', array());
 
   $limit = drupal_map_assoc(array(50, 40, 30, 20, 15, 10, 5, 3));
 
@@ -1043,7 +1058,13 @@ function apachesolr_facetcount_form($module, $delta) {
     '#description' => t('The maximum number of filter links to show in this block.'),
     '#default_value' => isset($limits[$module][$delta]) ? $limits[$module][$delta] : variable_get('apachesolr_facet_query_limit_default', 20),
   );
-
+  $form['apachesolr_facet_missing'] = array(
+    '#type' => 'radios',
+    '#title' => t('Include a facet for missing'),
+    '#options' => array(0 => t('No'), 1 => t('Yes')),
+    '#description' => t('A facet can be generated corresponding to all documents entirely missing this field.'),
+    '#default_value' => isset($facet_missing[$module][$delta]) ? $facet_missing[$module][$delta] : 0,
+  );
   return $form;
 }
 
@@ -1061,6 +1082,9 @@ function apachesolr_facetcount_save($edit) {
   $initial = variable_get('apachesolr_facet_query_initial_limits', array());
   $initial[$module][$delta] = (int)$edit['apachesolr_facet_query_initial_limit'];
   variable_set('apachesolr_facet_query_initial_limits', $initial);
+  $facet_missing = variable_get('apachesolr_facet_missing', array());
+  $facet_missing[$module][$delta] = (int)$edit['apachesolr_facet_missing'];
+  variable_set('apachesolr_facet_missing', $facet_missing);
 }
 
 /**
@@ -1223,8 +1247,7 @@ function apachesolr_index_key($field) {
 }
 
 /**
- * This invokes the hook_apachesolr_cck_field_mappings to find out how to handle
- * CCK fields.
+ * Invokes hook_apachesolr_cck_field_mappings to find out how to handle CCK fields.
  */
 function apachesolr_cck_fields() {
   static $fields;
@@ -1258,7 +1281,7 @@ function apachesolr_cck_fields() {
 function apachesolr_theme() {
   return array(
     'apachesolr_facet_item' => array(
-      'arguments' => array('name' => NULL, 'count' => NULL, 'path' => NULL, 'querystring' => '', 'active' => FALSE, 'unclick_link' => NULL, 'num_found' => NULL),
+      'arguments' => array('name' => NULL, 'count' => NULL, 'path' => NULL, 'querystring' => '', 'active' => FALSE, 'unclick_link' => NULL, 'num_found' => NULL, 'options' => NULL),
     ),
     'apachesolr_unclick_link' => array(
       'arguments' => array('url' => NULL, 'querystring' => ''),
@@ -1275,26 +1298,46 @@ function apachesolr_theme() {
   );
 }
 
-function theme_apachesolr_facet_item($name, $count, $path, $querystring = '', $active = FALSE, $unclick_link = NULL, $num_found = NULL) {
-  $attributes = array();
+function theme_apachesolr_facet_item($name, $count, $path, $querystring = '', $active = FALSE, $unclick_link = NULL, $num_found = NULL, $options = array()) {
+
   if ($active) {
-    $attributes['class'] = 'active';
+    if (isset($options['attributes']['class'])) {
+      $options['attributes']['class'] .= ' active';
+    }
+    else {
+      $options['attributes']['class'] = 'active';
+    }
   }
   if ($unclick_link) {
-    return $unclick_link . ' '. check_plain($name);
+    if (empty($options['html'])) {
+      $name = check_plain($name);
+    }
+    return $unclick_link . ' '. $name;
   }
   else {
-    return apachesolr_l($name ." ($count)",  $path, array('attributes' => $attributes, 'query' => $querystring));
+    $options['query'] = $querystring;
+    return apachesolr_l($name ." ($count)",  $path, $options);
   }
 }
 
+/**
+ * A replacement for l() - very similar but doesn't add the 'active' class.
+ *
+ * @see http://api.drupal.org/api/function/l/6 for parameters and options.
+ *
+ * @return
+ *   an HTML string containing a link to the given path.
+ */
 function apachesolr_l($text, $path, $options = array()) {
   // Merge in defaults.
   $options += array(
     'attributes' => array(),
+    'html' => FALSE,
   );
+  // Don't need this, and just to be safe.
+  unset($options['attributes']['title']);
 
-  return '<a href="'. check_url(url($path, $options)) .'"'. drupal_attributes($options['attributes']) .'>'. check_plain($text) .'</a>';
+  return '<a href="'. check_url(url($path, $options)) .'"'. drupal_attributes($options['attributes']) .'>'. ($options['html'] ? $text : check_plain($text)) .'</a>';
 }
 
 
