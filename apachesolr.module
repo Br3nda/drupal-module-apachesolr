@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.127 2009/04/14 00:12:18 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.128 2009/04/15 23:20:02 pwolanin Exp $
 
 /**
  * @file
@@ -1199,12 +1199,12 @@ function apachesolr_drupal_query($keys = '', $filters = '', $solrsort = '') {
  * Static getter/setter for the current query
  */
 function apachesolr_current_query($query = NULL) {
-  static $query_obj = NULL;
-  if (!empty($query)) {
-    $query_obj = $query;
+  static $saved_query = NULL;
+  if (is_object($query)) {
+    $saved_query = clone $query;
   }
-  
-  return $query_obj;
+
+  return empty($saved_query) ? $saved_query : clone $saved_query;
 }
 
 /**

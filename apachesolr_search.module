@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.82 2009/04/14 00:12:18 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.83 2009/04/15 23:20:02 pwolanin Exp $
 
 /**
  * @file
@@ -251,14 +251,17 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
             }
           }
         }
-
+        
+        // cache the built query. Since all the built queries go through
+        // this process, all the hook_invocations will happen later
+        apachesolr_current_query($query);
+        
         // This hook allows modules to modify the query and params objects.
         apachesolr_modify_query($query, $params, 'apachesolr_search');
         if (!$query) {
           return array();
         }
-        apachesolr_current_query($query);
-
+        
         $response = $solr->search($query->get_query_basic(), $params['start'], $params['rows'], $params);
         // The response is cached so that it is accessible to the blocks and anything
         // else that needs it beyond the initial search.
