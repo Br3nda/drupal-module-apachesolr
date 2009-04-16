@@ -1,17 +1,29 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.1.2.7 2009/04/12 03:16:30 pwolanin Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.1.2.8 2009/04/16 14:34:16 pwolanin Exp $
 
 /**
  * Implementation of apachesolr_update_index
  */
 function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node) {
-  if (count(module_implements('node_grants'))) {
+  static $account;
+
+  if (!isset($account)) {
+    // Load the anonymous user.
+    $account = drupal_anonymous_user();
+  }
+
+  if (!node_access('view', $node, $account)) {
     // Get node access grants.
-    $result = db_query('SELECT * from {node_access} WHERE nid = %d AND grant_view = 1', $node->nid);
+    $result = db_query('SELECT * FROM {node_access} WHERE (nid = 0 OR nid = %d) AND grant_view = 1', $node->nid);
     while ($grant = db_fetch_object($result)) {
-      $key = 'nodeaccess_'. $grant->realm;
+      $key = 'nodeaccess_' . apachesolr_site_hash() . '_' . $grant->realm;
       $document->setMultiValue($key, $grant->gid);
     }
+  }
+  else {
+    // Add the generic view grant if we are not using
+    // node access or the node is viewable by anonymous users.
+    $document->setMultiValue('nodeaccess_all', 0);
   }
 }
 
@@ -21,23 +33,26 @@ function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node) {
  * @param $account an account to get grants for and build a solr query
  */
 function _apachesolr_nodeaccess_build_subquery($account) {
-  if (!user_access('administer nodes', $account) && count(module_implements('node_grants'))) {
+  if (!user_access('access content', $account)) {
+    return NULL;
+  }
+  $node_access_query = apachesolr_drupal_query();
+  if (user_access('administer nodes', $account)) {
+    // Access all content from the current site, or public content.
+    $node_access_query->add_filter('nodeaccess_all', 0);
+    $node_access_query->add_filter('hash', apachesolr_site_hash());
+  }
+  else {
     // Get node access grants.
     $grants = node_access_grants('view', $account);
-    if (empty($grants)) {
-      // If they can't see any content, we might as well not bother searching.
-      // Catch the exception to null out the query.
-      throw new Exception("This user cannot access any content!");
-    }
-    $node_access_query = apachesolr_drupal_query();
     foreach ($grants as $realm => $gids) {
       foreach ($gids as $gid) {
-        $node_access_query->add_filter('nodeaccess_' . $realm, $gid);
+        $node_access_query->add_filter('nodeaccess_' . apachesolr_site_hash() . '_' . $realm, $gid);
       }
     }
-    return $node_access_query;
+    $node_access_query->add_filter('nodeaccess_all', 0);
   }
-  return NULL;
+  return $node_access_query;
 }
 
 /**
@@ -108,4 +123,8 @@ function apachesolr_nodeaccess_rebuild_nodeaccess(&$form, $form_state) {
   drupal_set_message(t('Solr search index will be rebuilt.'));
   node_access_needs_rebuild(TRUE);
   apachesolr_clear_last_index();
+}
+
+function apachesolr_nodeaccess_enable() {
+  drupal_set_message(t('Your content <a href="@url">must be re-indexed</a> before Apache Solr node access will be functional on searches.', array('@url' => url('admin/settings/apachesolr/index'))), 'error');
 }
