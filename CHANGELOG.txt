@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.52 2009/04/14 00:12:18 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.53 2009/04/16 13:32:37 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,10 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+
+Apache Solr integration 6.x-1.0-beta8, 2009-04-16
+------------------------------
+#432946 by pwolanin, query class and sort cleanups.
 #393480 by pwolanin and Jody Lynn, provide a book facet and facets for missing fields.
 #432140 by Damien Tournoud, use format_interval() for more attractive, localizable time intervals.
 #348029 by pwolanin, Handle negative filters and improve date facet block code.

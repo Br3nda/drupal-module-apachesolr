@@ -1,39 +1,47 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.26 2009/04/12 21:10:50 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.27 2009/04/16 13:32:38 pwolanin Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
   /**
    * Extract all uses of one named field from a filter string e.g. 'type:book'
    */
-  static function filter_extract(&$filters, $name) {
-    $queries = array();
-    $values = array();
+  public function filter_extract(&$filterstring, $name) {
+    $extracted = array();
     // Range queries.  The "TO" is case-sensitive.
-    $patterns[] = '/(^| )'. $name .':([\[\{]\S+ TO \S+[\]\}])/';
+    $patterns[] = '/(^| )'. $name .':([\[\{](\S+) TO (\S+)[\]\}])/';
     // Match quoted values.
     $patterns[] = '/(^| )'. $name .':"([^"]*)"/';
     // Match unquoted values.
     $patterns[] = '/(^| )'. $name .':([^ ]*)/';
     foreach ($patterns as $p) {
-      if (preg_match_all($p, $filters, $matches)) {
-        $queries = array_merge($matches[0], $queries);
-        $values = array_merge($matches[2], $values);
+      if (preg_match_all($p, $filterstring, $matches, PREG_SET_ORDER)) {
+        foreach($matches as $match) {
+          $filter = array();
+          $filter['#query'] = $match[0];
+          $filter['#value'] = trim($match[2]);
+          if (isset($match[3])) {
+            // Extra data for range queries
+            $filter['#start'] = $match[3];
+            $filter['#end'] = $match[4];
+          }
+          $extracted[] = $filter;
+          // Update the local copy of $filters by removing the match.
+          $filterstring = str_replace($match[0], '', $filterstring);
+        }
       }
-      // Update the local copy of $filters by removing all matches.
-      $filters = trim(str_replace($matches[0], '', $filters));
     }
-    return array('queries' => $queries, 'values' => $values);
+    return $extracted;
   }
 
   /**
    * Takes an array $field and combines the #name and #value in a way
    * suitable for use in a Solr query.
    */
-  static function make_filter(array $filter) {
+  public function make_filter(array $filter) {
     // If the field value has spaces, or : in it, wrap it in double quotes.
     // unless it is a range query.
-    if (preg_match('/[ :]/', $filter['#value']) && !preg_match('/[\[\{]\S+ TO \S+[\]\}]/', $filter['#value'])) {
+    if (preg_match('/[ :]/', $filter['#value']) && !isset($filter['#start']) && !preg_match('/[\[\{]\S+ TO \S+[\]\}]/', $filter['#value'])) {
       $filter['#value'] = '"'. $filter['#value']. '"';
     }
     return $filter['#name'] . ':' . $filter['#value'];
@@ -47,7 +55,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
   /**
    * Each query/subquery will have a unique ID
    */
-  public $id;
+  protected $id;
 
   /**
    * A keyed array where the key is a position integer and the value
@@ -62,7 +70,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
    * Contains name:value pairs for filter queries.  For example,
    * "type:book" for book nodes.
    */
-  protected $filters;
+  protected $filterstring;
 
   /**
    * A mapping of field names from the URL to real index field names.
@@ -84,6 +92,8 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
    */
   protected $solr;
 
+  protected $available_sorts;
+
   /**
    * @param $solr
    *  An instantiated Apache_Solr_Service Object.
@@ -102,22 +112,33 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
   function __construct($solr, $querypath, $filterstring, $sortstring) {
     $this->solr = $solr;
     $this->querypath = trim($querypath);
-    $this->filters = trim($filterstring);
+    $this->filterstring = trim($filterstring);
     $this->solrsort = trim($sortstring);
     $this->id = ++self::$idCount;
     $this->parse_filters();
+    $this->available_sorts = $this->default_sorts();
   }
 
   function __clone() {
     $this->id = ++self::$idCount;
   }
 
-  function add_filter($field, $value) {
+  public function add_filter($field, $value) {
     $this->fields[] = array('#name' => $field, '#value' => trim($value));
   }
 
-  public function get_filters() {
-    return $this->fields;
+  public function get_filters($name = NULL) {
+    if (empty($name)) {
+      return $this->fields;
+    }
+    reset($this->fields);
+    $matches = array();
+    foreach ($this->fields as $filter) {
+      if ($filter['#name'] == $name) {
+        $matches[] = $filter;
+      }
+    }
+    return $matches;
   }
 
   public function remove_filter($name, $value = NULL) {
@@ -183,11 +204,11 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
    * @param $operator
    *   'AND' or 'OR'
    */
-  function add_subquery(Drupal_Solr_Query_Interface $query, $fq_operator = 'OR', $q_operator = 'AND') {
+  public function add_subquery(Drupal_Solr_Query_Interface $query, $fq_operator = 'OR', $q_operator = 'AND') {
     $this->subqueries[$query->id] = array('#query' => $query, '#fq_operator' => $fq_operator, '#q_operator' => $q_operator);
   }
 
-  function remove_subquery(Solr_Base_Query $query) {
+  public function remove_subquery(Solr_Base_Query $query) {
     unset($this->subqueries[$query->id]);
   }
 
@@ -198,6 +219,28 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
   public function set_solrsort($sortstring) {
     $this->solrsort = trim($sortstring);
   }
+
+  public function get_available_sorts() {
+    return $this->available_sorts;
+  }
+
+  public function set_available_sort($field, $sort) {
+    $this->available_sorts[$field] = $sort;
+  }
+
+  /**
+   * Returns a default list of sorts.
+   */
+  protected function default_sorts() {
+    return array(
+      'relevancy' => array('name' => t('Relevancy'), 'default' => 'asc'),
+      'sort_title' => array('name' => t('Title'), 'default' => 'asc'),
+      'type' => array('name' => t('Type'), 'default' => 'asc'),
+      'sort_name' => array('name' => t('Author'), 'default' => 'asc'),
+      'created' => array('name' => t('Date'), 'default' => 'desc'),
+    );
+  }
+
   /**
    * Return filters and sort in a form suitable for a query param to url().
    */
@@ -258,7 +301,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
       if (isset($this->field_map[$name])) {
         $field['#name'] = $this->field_map[$name];
       }
-      $progressive_crumb[] = Solr_Base_Query::make_filter($field);
+      $progressive_crumb[] = $this->make_filter($field);
       $options = array('query' => 'filters=' . implode(' ', $progressive_crumb));
       if ($themed = theme("apachesolr_breadcrumb_{$name}", $field['#value'])) {
         $breadcrumb[] = l($themed, $base, $options);
@@ -281,7 +324,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
    */
   protected function parse_filters() {
     $this->fields = array();
-    $filters = $this->filters;
+    $filterstring = $this->filterstring;
 
     // Gets information about the fields already in solr index.
     $index_fields = $this->solr->getFields();
@@ -289,24 +332,18 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     foreach ((array) $index_fields as $name => $data) {
       // Look for a field alias.
       $alias = isset($this->field_map[$name]) ? $this->field_map[$name] : $name;
-      // Get the values for $name
-      $extracted = Solr_Base_Query::filter_extract($filters, $alias);
-      if (count($extracted['values'])) {
-        foreach ($extracted['values'] as $index => $value) {
-          $pos = strpos($this->filters, $extracted['queries'][$index]);
-          // $solr_keys and $solr_crumbs are keyed on $pos so that query order
-          // is maintained. This is important for breadcrumbs.
-          $this->fields[$pos] = array('#name' => $name, '#value' => trim($value));
-        }
-      }
-      // Look for negative queries for the same field.
-      $extracted = Solr_Base_Query::filter_extract($filters, '-'. $alias);
-      if (count($extracted['values'])) {
-        foreach ($extracted['values'] as $index => $value) {
-          $pos = strpos($this->filters, $extracted['queries'][$index]);
-          // $solr_keys and $solr_crumbs are keyed on $pos so that query order
-          // is maintained. This is important for breadcrumbs.
-          $this->fields[$pos] = array('#name' => '-'. $name, '#value' => trim($value));
+      // Look for normal and negative queries for the same field.
+      foreach(array('', '-') as $prefix) {
+        // Get the values for $name
+        $extracted = $this->filter_extract($filterstring, $prefix . $alias);
+        if (count($extracted)) {
+          foreach ($extracted as $filter) {
+            $pos = strpos($this->filterstring, $filter['#query']);
+            // $solr_keys and $solr_crumbs are keyed on $pos so that query order
+            // is maintained. This is important for breadcrumbs.
+            $filter['#name'] = $prefix . $name;
+            $this->fields[$pos] = $filter;
+          }
         }
       }
     }
@@ -329,7 +366,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
       if ($aliases && isset($this->field_map[$field['#name']])) {
         $field['#name'] = $this->field_map[$field['#name']];
       }
-      $fq[] = Solr_Base_Query::make_filter($field);
+      $fq[] = $this->make_filter($field);
     }
     foreach ($this->subqueries as $id => $data) {
       $subfq = $data['#query']->rebuild_fq($aliases);

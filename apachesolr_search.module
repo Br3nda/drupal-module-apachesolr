@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.83 2009/04/15 23:20:02 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.84 2009/04/16 13:32:38 pwolanin Exp $
 
 /**
  * @file
@@ -97,7 +97,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
           $solrsort = $_GET['solrsort'];
         }
         $query = apachesolr_drupal_query($keys, $filters, $solrsort);
-        if (is_null($query)) {
+        if (empty($query)) {
           throw new Exception(t('Could not construct a Solr query in function apachesolr_search_search()'));
         }
 
@@ -135,22 +135,17 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
 
         $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
         $facet_missing = variable_get('apachesolr_facet_missing', array());
-        // Request all enabled facets.  We need $all_facets so we can
-        // check the facet_date property and callback, because
-        // get_enabled_facets() does not (currently) return all of that.
-        $all_facets = module_invoke_all('apachesolr_facets');
+
         foreach (apachesolr_get_enabled_facets() as $module => $module_facets) {
           foreach($module_facets as $delta => $facet_field) {
-            if (isset($all_facets[$delta]['facet_date'])) {
-              $facet_date = $all_facets[$delta]['facet_date'];
-              $params['facet.date'][] = $facet_date;
-
-              $callback = $all_facets[$delta]['facet_date_range_callback'];
-              list($start, $end, $gap) = $callback($query, $params, $delta);
+            // TODO: generalize handling of date and range facets.
+            if ($module == 'apachesolr_search' && ($facet_field == 'created' || $facet_field == 'changed')) {
+              list($start, $end, $gap) = apachesolr_search_date_range($query, $facet_field);
               if ($gap) {
-                $params['f.'. $facet_date .'.facet.date.start'] = $start;
-                $params['f.'. $facet_date .'.facet.date.end'] = $end;
-                $params['f.'. $facet_date .'.facet.date.gap'] = $gap;
+                $params['facet.date'][] = $facet_field;
+                $params['f.'. $facet_field .'.facet.date.start'] = $start;
+                $params['f.'. $facet_field .'.facet.date.end'] = $end;
+                $params['f.'. $facet_field .'.facet.date.gap'] = $gap;
               }
             }
             else {
@@ -252,7 +247,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
           }
         }
         
-        // cache the built query. Since all the built queries go through
+        // Cache the built query. Since all the built queries go through
         // this process, all the hook_invocations will happen later
         apachesolr_current_query($query);
         
@@ -261,7 +256,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         if (!$query) {
           return array();
         }
-        
+
         $response = $solr->search($query->get_query_basic(), $params['start'], $params['rows'], $params);
         // The response is cached so that it is accessible to the blocks and anything
         // else that needs it beyond the initial search.
@@ -308,63 +303,37 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       } // try
       catch (Exception $e) {
         watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
-        apachesolr_failure(t('Solr search'), is_null($query) ? $keys : $query->get_query_basic());
+        apachesolr_failure(t('Solr search'), empty($query) ? $keys : $query->get_query_basic());
       }
       break;
   } // switch
 }
 
-function _hack_parse_date_range($str) {
-  if (preg_match('/\[(\S+) TO (\S+)\]/', $str, $m)) {
-    return array($m[1], strtotime($m[1]), $m[2], strtotime($m[2]));
-  }
-  return array();
-}
-  
-function apachesolr_search_date_range($query, &$params, $delta) {
-  // Find the smallest filter range for $delta in the query.  $query
-  // has no method to retrieve filters for $delta, so we iterate
-  // through them all.
-  $fields = $query->get_filters();
-  foreach ($fields as $info) {
-    if ($info['#name'] == $delta) {
-      // $info['#value'] is the filter value.  Ideally it would also
-      // have #range, #from, and #to properties.  Until it does, we
-      // parse them out ourselves.
-      //
-      // Also, if we had an ISO date library we could use them
-      // directly.  Instead, we convert to Unix timestamps for comparison.
-      list($_start_iso, $_start, $_end_iso, $_end) = _hack_parse_date_range($info['#value']);
-      // Only use dates that we were able to parse into timestamps.
-      if ($_start > 0 && $_end > 0) {
-        if (!isset($start) || $_start > $start) {
-          $start = $_start;
-          $start_iso = $_start_iso;
-        }
-        if (!isset($end) || $_end < $end) {
-          $end = $_end;
-          $end_iso = $_end_iso;
-        }
-        
-        // Determine the drilldown gap for this range.
-        $gap = apachesolr_date_gap_drilldown(apachesolr_date_find_query_gap($start_iso, $end_iso));
-      }
+function apachesolr_search_date_range($query, $facet_field) {
+  foreach ($query->get_filters($facet_field) as $filter) {
+    // If we had an ISO date library we could use ISO dates
+    // directly.  Instead, we convert to Unix timestamps for comparison.
+    // Only use dates if we are able to parse into timestamps.
+    $start = strtotime($filter['#start']);
+    $end = strtotime($filter['#end']);
+    if ($start && $end && ($start < $end)) {
+        $start_iso = $filter['#start'];
+        $end_iso = $filter['#end'];
+      // Determine the drilldown gap for this range.
+      $gap = apachesolr_date_gap_drilldown(apachesolr_date_find_query_gap($start_iso, $end_iso));
     }
   }
-      
   // If there is no $delta field in query object, get initial
   // facet.date.* params from the DB and determine the best search
   // gap to use.  This callback assumes $delta is 'changed' or 'created'.
   if (!isset($start_iso)) {
-    $start_iso = apachesolr_date_iso(db_result(db_query("SELECT MIN($delta) FROM {node} WHERE status = 1")));
-    $end_iso = apachesolr_date_iso(db_result(db_query("SELECT MAX($delta) FROM {node} WHERE status = 1")));
+    $start_iso = apachesolr_date_iso(db_result(db_query("SELECT MIN($facet_field) FROM {node} WHERE status = 1")));
+    $end_iso = apachesolr_date_iso(db_result(db_query("SELECT MAX($facet_field) FROM {node} WHERE status = 1")));
     $gap = apachesolr_date_determine_gap($start_iso, $end_iso);
   }
-
-  // Return a query range from the beginning of a gap period to the
-  // beginning of the next gap period.  We ALWAYS generate query
-  // ranges of this form and the apachesolr_date_*() helper functions
-  // require it.
+  // Return a query range from the beginning of a gap period to the beginning
+  // of the next gap period.  We ALWAYS generate query ranges of this form
+  // and the apachesolr_date_*() helper functions require it.
   return array("$start_iso/$gap", "$end_iso+1$gap/$gap", "+1$gap");
 }
 
@@ -389,19 +358,13 @@ function apachesolr_search_apachesolr_facets() {
     'facet_field' => 'language',
   );
 
-  // TODO bjaspan: I need to include facet_field or the entry is
-  // ignored, even though facet_date is the key element.
   $facets['changed'] = array(
     'info' => t('Apache Solr Search: Filter by updated date'),
     'facet_field' => 'changed',
-    'facet_date' => 'changed',
-    'facet_date_range_callback' => 'apachesolr_search_date_range',
   );
   $facets['created'] = array(
     'info' => t('Apache Solr Search: Filter by post date'),
     'facet_field' => 'created',
-    'facet_date' => 'created',
-    'facet_date_range_callback' => 'apachesolr_search_date_range',
   );
 
   // A book module facet.
@@ -547,7 +510,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
                 if (! $fielddisplay = theme("apachesolr_breadcrumb_". $field['#name'], $field['#value'])) {
                   $fielddisplay = $field['#value'];
                 }
-                $links[] = theme('apachesolr_facet_item', $fielddisplay, NULL, $path, $querystring, $active, $unclick_link, $response->numFound);
+                $links[] = theme('apachesolr_facet_item', $fielddisplay, NULL, $path, $querystring, $active, $unclick_link, $response->response->numFound);
               }
             }
             $content = theme('apachesolr_currentsearch', $response->response->numFound, $links);
@@ -732,11 +695,8 @@ function apachesolr_search_theme() {
 }
 
 function theme_apachesolr_breadcrumb_date_range($range) {
-  if (preg_match('@[\[\{](\S+) TO (\S+)[\]\}]@', $range, $m)) {
-    list($all, $start_iso, $end_iso) = $m;
-    return apachesolr_date_format_range($m[1], $m[2]);
-    $start_label = apachesolr_date_format_iso_by_gap($gap, $start_iso);
-    return "$start_label";
+  if (preg_match('@[\[\{](\S+) TO (\S+)[\]\}]@', $range, $match)) {
+    return apachesolr_date_format_range($match[1], $match[2]);
   }
   return $range;
 }
@@ -787,7 +747,7 @@ function theme_apachesolr_currentsearch($total_found, $links) {
 }
 
 /**
- * Returns the snipit text for a search entry
+ * Theme the highlighted snippet text for a search entry.
  *
  * @param object $doc
  * @param array $snippets
