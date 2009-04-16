@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.84 2009/04/16 13:32:38 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.85 2009/04/16 15:26:44 pwolanin Exp $
 
 /**
  * @file
@@ -735,8 +735,12 @@ function theme_apachesolr_breadcrumb_type($type) {
  * Return the title of a book.
  */
 function theme_apachesolr_breadcrumb_is_book_bid($bid) {
-  $options = array();
-  return apachesolr_search_get_book($bid, $options);
+  if (is_numeric($bid)) {
+    return db_result(db_query('SELECT title FROM {node} WHERE nid = %d', $bid));
+  }
+  else {
+    return t('Not in any book');
+  }
 }
 
 /**
