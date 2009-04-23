@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.28 2009/04/16 15:26:44 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.29 2009/04/23 20:03:54 pwolanin Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -83,9 +83,14 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
   protected $subqueries = array();
 
   /**
-   * The query path (search keywords).
+   * The search keywords.
    */
-  protected $querypath;
+  protected $keys;
+
+  /**
+   * The search base path.
+   */
+  protected $base_path;
 
   /**
    * Apache_Solr_Service object
@@ -96,24 +101,28 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
   /**
    * @param $solr
-   *  An instantiated Apache_Solr_Service Object.
-   *  Can be instantiated from apachesolr_get_solr().
+   *   An instantiated Apache_Solr_Service Object.
+   *   Can be instantiated from apachesolr_get_solr().
    *
-   * @param $querypath
+   * @param $keys
    *   The string that a user would type into the search box. Suitable input
-   *   may come from search_get_keys()
+   *   may come from search_get_keys().
    *
    * @param $filterstring
    *   Key and value pairs that are applied as a filter query.
    *
    * @param $sortstring
    *   Visible string telling solr how to sort - added to output querystring.
+   *
+   * @param $base_path
+   *   The search base path (without the keywords) for this query.
    */
-  function __construct($solr, $querypath, $filterstring, $sortstring) {
+  function __construct($solr, $keys, $filterstring, $sortstring, $base_path) {
     $this->solr = $solr;
-    $this->querypath = trim($querypath);
+    $this->keys = trim($keys);
     $this->filterstring = trim($filterstring);
     $this->solrsort = trim($sortstring);
+    $this->base_path = $base_path;
     $this->id = ++self::$idCount;
     $this->parse_filters();
     $this->available_sorts = $this->default_sorts();
@@ -271,17 +280,16 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
   }
   
   /**
-   * return the search path
-   * this class assumes its always through the search api
+   * Return the search path.
    *
    * @param string $new_keywords
-   * if we are using new keywords as our query string
+   *   Optional. When set, this string overrides the query's current keywords.
    */
   public function get_path($new_keywords = NULL) {
     if ($new_keywords) {
-      return 'search/' . arg(1) . '/' . $new_keywords;
+      return $this->base_path . '/' . $new_keywords;
     }
-    return 'search/' . arg(1) . '/' . $this->get_query_basic();
+    return $this->base_path . '/' . $this->get_query_basic();
   }
 
   /**
@@ -385,7 +393,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
   }
 
   protected function rebuild_query() {
-    $query = $this->querypath;
+    $query = $this->keys;
     foreach ($this->subqueries as $id => $data) {
       $operator = $data['#q_operator'];
       $subquery = $data['#query']->get_query_basic();

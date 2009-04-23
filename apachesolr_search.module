@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.85 2009/04/16 15:26:44 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.86 2009/04/23 20:03:54 pwolanin Exp $
 
 /**
  * @file
@@ -89,14 +89,14 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
     case 'search':
 
       try {
-        // This is the object that knows about the query coming from the user.
         if (empty($filters) && !empty($_GET['filters'])) {
           $filters = $_GET['filters'];
         }
         if (empty($solrsort) && !empty($_GET['solrsort'])) {
           $solrsort = $_GET['solrsort'];
         }
-        $query = apachesolr_drupal_query($keys, $filters, $solrsort);
+        // This is the object that knows about the query coming from the user.
+        $query = apachesolr_drupal_query($keys, $filters, $solrsort, 'search/' . arg(1));
         if (empty($query)) {
           throw new Exception(t('Could not construct a Solr query in function apachesolr_search_search()'));
         }

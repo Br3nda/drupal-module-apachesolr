@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.54 2009/04/16 14:34:15 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.55 2009/04/23 20:03:54 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,8 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#337737 by David Lesieur, mikejoconnor and Scott Reynolds, localize arg(1) dependence.
+        Changes query get_path() to facilitate generate facets outside the search page.
 
 Apache Solr integration 6.x-1.0-beta8, 2009-04-16
 ------------------------------
