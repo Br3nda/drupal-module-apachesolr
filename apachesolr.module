@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.131 2009/04/23 20:03:54 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.132 2009/04/24 17:22:55 pwolanin Exp $
 
 /**
  * @file
@@ -1216,7 +1216,44 @@ interface Drupal_Solr_Query_Interface {
   
   /**
    * Add a subquery to the query.
+   *
+   * @param Drupal_Solr_Query_Interface $query
+   *   The query to add to the orginal query - may have keywords or filters.
+   *
+   * @param string $fq_operator
+   *   The operator to use within the filter part of the subquery
+   *
+   * @param string $q_operator
+   *   The operator to use in joining the subquery to
+   *   the main keywords.  Note - this is unlikely to work
+   *   with the Dismax handler when the main query is only
+   *   keywords.
    */
   function add_subquery(Drupal_Solr_Query_Interface $query, $fq_operator = 'OR', $q_operator = 'AND');
+  
+  /**
+   * return the sorts that are provided by the query object
+   *
+   * @return array all the sorts provided
+   */
+  function get_available_sorts();
+  
+  /**
+   * Remove a specific subquery
+   *
+   * @param Drupal_Solr_Query_Interface $query
+   * the query to remove
+   */
+  function remove_subquery(Drupal_Solr_Query_Interface $query);
+  
+  /**
+   * remove all subqueries
+   */
+  function remove_subqueries();
+  
+  /**
+   * make a sort available
+   */
+  function set_available_sort($field, $sort);
 }
 

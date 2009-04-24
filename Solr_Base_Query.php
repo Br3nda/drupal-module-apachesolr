@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.30 2009/04/24 13:32:34 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.31 2009/04/24 17:22:55 pwolanin Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -217,7 +217,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     $this->subqueries[$query->id] = array('#query' => $query, '#fq_operator' => $fq_operator, '#q_operator' => $q_operator);
   }
 
-  public function remove_subquery(Solr_Base_Query $query) {
+  public function remove_subquery(Drupal_Solr_Query_Interface $query) {
     unset($this->subqueries[$query->id]);
   }
 
