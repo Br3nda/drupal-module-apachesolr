@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.29 2009/04/23 20:03:54 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.30 2009/04/24 13:32:34 pwolanin Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -55,7 +55,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
   /**
    * Each query/subquery will have a unique ID
    */
-  protected $id;
+  public $id;
 
   /**
    * A keyed array where the key is a position integer and the value
