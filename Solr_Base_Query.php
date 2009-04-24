@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.31 2009/04/24 17:22:55 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.32 2009/04/24 18:03:24 pwolanin Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -9,16 +9,17 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
   public function filter_extract(&$filterstring, $name) {
     $extracted = array();
     // Range queries.  The "TO" is case-sensitive.
-    $patterns[] = '/(^| )'. $name .':([\[\{](\S+) TO (\S+)[\]\}])/';
+    $patterns[] = '/(^| |-)'. $name .':([\[\{](\S+) TO (\S+)[\]\}])/';
     // Match quoted values.
-    $patterns[] = '/(^| )'. $name .':"([^"]*)"/';
+    $patterns[] = '/(^| |-)'. $name .':"([^"]*)"/';
     // Match unquoted values.
-    $patterns[] = '/(^| )'. $name .':([^ ]*)/';
+    $patterns[] = '/(^| |-)'. $name .':([^ ]*)/';
     foreach ($patterns as $p) {
       if (preg_match_all($p, $filterstring, $matches, PREG_SET_ORDER)) {
         foreach($matches as $match) {
           $filter = array();
           $filter['#query'] = $match[0];
+          $filter['#exclude'] = ($match[1] == '-');
           $filter['#value'] = trim($match[2]);
           if (isset($match[3])) {
             // Extra data for range queries
@@ -44,7 +45,8 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     if (preg_match('/[ :]/', $filter['#value']) && !isset($filter['#start']) && !preg_match('/[\[\{]\S+ TO \S+[\]\}]/', $filter['#value'])) {
       $filter['#value'] = '"'. $filter['#value']. '"';
     }
-    return $filter['#name'] . ':' . $filter['#value'];
+    $prefix = empty($filter['#exclude']) ? '' : '-';
+    return $prefix . $filter['#name'] . ':' . $filter['#value'];
   }
 
   /**
@@ -132,10 +134,16 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     $this->id = ++self::$idCount;
   }
 
-  public function add_filter($field, $value) {
-    $this->fields[] = array('#name' => $field, '#value' => trim($value));
+  public function add_filter($field, $value, $exclude = FALSE) {
+    $this->fields[] = array('#exclude' => $exclude, '#name' => $field, '#value' => trim($value));
   }
 
+  /**
+   * Get all filters, or the subset of filters for one field.
+   *
+   * @param $name
+   *   Optional name of a Solr field.
+   */
   public function get_filters($name = NULL) {
     if (empty($name)) {
       return $this->fields;
@@ -305,19 +313,13 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
     foreach ($this->fields as $field) {
       $name = $field['#name'];
-      $prefix = '';
-      // Handle negative queries.
-      if ($name[0] == '-') {
-        $name = substr($name, 1);
-        $prefix = '-';
-      }
       // Look for a field alias.
       if (isset($this->field_map[$name])) {
-        $field['#name'] = $prefix . $this->field_map[$name];
+        $field['#name'] = $this->field_map[$name];
       }
       $progressive_crumb[] = $this->make_filter($field);
       $options = array('query' => 'filters=' . implode(' ', $progressive_crumb));
-      if ($themed = theme("apachesolr_breadcrumb_{$name}", $field['#value'])) {
+      if ($themed = theme("apachesolr_breadcrumb_" . $name, $field['#value'], $field['#exclude'])) {
         $breadcrumb[] = l($themed, $base, $options);
       }
       else {
@@ -346,18 +348,15 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     foreach ((array) $index_fields as $name => $data) {
       // Look for a field alias.
       $alias = isset($this->field_map[$name]) ? $this->field_map[$name] : $name;
-      // Look for normal and negative queries for the same field.
-      foreach(array('', '-') as $prefix) {
-        // Get the values for $name
-        $extracted = $this->filter_extract($filterstring, $prefix . $alias);
-        if (count($extracted)) {
-          foreach ($extracted as $filter) {
-            $pos = strpos($this->filterstring, $filter['#query']);
-            // $solr_keys and $solr_crumbs are keyed on $pos so that query order
-            // is maintained. This is important for breadcrumbs.
-            $filter['#name'] = $prefix . $name;
-            $this->fields[$pos] = $filter;
-          }
+      // Get the values for $name
+      $extracted = $this->filter_extract($filterstring, $alias);
+      if (count($extracted)) {
+        foreach ($extracted as $filter) {
+          $pos = strpos($this->filterstring, $filter['#query']);
+          // $solr_keys and $solr_crumbs are keyed on $pos so that query order
+          // is maintained. This is important for breadcrumbs.
+          $filter['#name'] = $name;
+          $this->fields[$pos] = $filter;
         }
       }
     }

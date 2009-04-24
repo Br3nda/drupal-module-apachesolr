@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.132 2009/04/24 17:22:55 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.133 2009/04/24 18:03:24 pwolanin Exp $
 
 /**
  * @file
@@ -511,19 +511,20 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
     $contains_active = FALSE;
     $items = array();
     foreach ($response->facet_counts->facet_fields->$facet_field as $facet => $count) {
-      $countsort = 1000000 - $count;
+      $sortpre = 1000000 - $count;
       $options = array();
+      $exclude = FALSE;
       // Solr sends this back if it's empty.
       if ($facet == '_empty_') {
-         $field_name = '-'. $facet_field;
+         $exclude = TRUE;
          $facet = '[* TO *]';
          $facet_text = theme('placeholder', t('Missing this field'));
          $options['html'] = TRUE;
          // Put this just below any active facets.
-         $countsort = 1;
+         // '-' sorts before all numbers, but after '*'.
+         $sortpre = '-';
        }
        else {
-         $field_name = $facet_field;
          $facet_text = $facet;
       }
 
@@ -533,27 +534,28 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
       $unclick_link = '';
       $active = FALSE;
       $new_query = clone $query;
-      if ($query->has_filter($field_name, $facet)) {
+      if ($query->has_filter($facet_field, $facet)) {
         $contains_active = $active = TRUE;
-        $countsort = 0;
-        $new_query->remove_filter($field_name, $facet);
-        // TODO: don't assume 'search' - find the real path.
+        // '*' sorts before all numbers.
+        $sortpre = '*';
+        $new_query->remove_filter($facet_field, $facet);
+
         $path = $new_query->get_path();
         $querystring = $new_query->get_url_querystring();
         $unclick_link = theme('apachesolr_unclick_link', $path, $querystring);
       }
       else {
-        $new_query->add_filter($field_name, $facet);
+        $new_query->add_filter($facet_field, $facet, $exclude);
         $path = $new_query->get_path();
         $querystring = $new_query->get_url_querystring();
       }
       if ($count || $active) {
-        $items[$countsort . '*' . $facet_text] = theme('apachesolr_facet_item', $facet_text, $count, $path, $querystring, $active, $unclick_link, $response->response->numFound, $options);
+        $items[$sortpre . '*' . $facet_text] = theme('apachesolr_facet_item', $facet_text, $count, $path, $querystring, $active, $unclick_link, $response->response->numFound, $options);
       }
     }
     // Unless a facet is active only display 2 or more.
     if ($items && ($response->response->numFound > 1 || $contains_active)) {
-      ksort($items);
+      ksort($items, SORT_STRING);
       // Get information needed by the rest of the blocks about limits.
       $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
       $limit = isset($initial_limits[$module][$delta]) ? $initial_limits[$module][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
@@ -856,7 +858,7 @@ function apachesolr_facetcount_save($edit) {
 function apachesolr_modify_query(&$query, &$params, $caller) {
 
   foreach (module_implements('apachesolr_modify_query') as $module) {
-    $function_name = "{$module}_apachesolr_modify_query";
+    $function_name = $module . '_apachesolr_modify_query';
     $function_name($query, $params, $caller);
   }
   // Add array of fq parameters.
@@ -1148,7 +1150,7 @@ function theme_apachesolr_sort_list($items) {
 }
 
 /**
- * The interface for which all 'query' objects talk
+ * The interface for all 'query' objects.
  */
 interface Drupal_Solr_Query_Interface {
   /**
@@ -1178,12 +1180,17 @@ interface Drupal_Solr_Query_Interface {
    * Add a filter to a query
    *
    * @param string $field
-   * the facet field to apply to this query
+   *   the facet field to apply to this query
    *
    * @param string value
-   * the value of the facet to apply
+   *   the value of the facet to apply
+   *
+   * @param boolean $exclude
+   *   Optional paramter.  If TRUE, the filter will be negative,
+   *   meaning that matching values will be excluded from the
+   *   result set.
    */
-  function add_filter($field, $value);
+  function add_filter($field, $value, $exclude = FALSE);
   
   /**
    * Return the search path (including the search keywords).
