@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.133 2009/04/24 18:03:24 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.134 2009/04/28 18:45:25 pwolanin Exp $
 
 /**
  * @file
@@ -1024,15 +1024,29 @@ function apachesolr_cck_fields() {
     $fields = array();
     // If CCK isn't enabled, do nothing.
     if (module_exists('content')) {
-      // A single default mapping for text fields.
-      $mappings['text'] = array('callback' => '', 'index_type' => 'string', 'widget_types' => array('optionwidgets_select' => 1, 'optionwidgets_buttons' => 1));
-      $mappings = module_invoke_all('apachesolr_cck_field_mappings') + $mappings;
+      // A single default mapping for all text fields.
+      $mappings['text'] = array(
+        'optionwidgets_select' => array('callback' => '', 'index_type' => 'string'),
+        'optionwidgets_buttons' => array('callback' => '', 'index_type' => 'string')
+      );
+      // A field-specific mapping would look like:
+      // $mappings['per-field']['field_model_name'] = array('callback' => '', 'index_type' => 'string');
+      // or
+      // $mappings['per-field']['field_model_price'] = array('callback' => '', 'index_type' => 'float');
+      // Allow other modules to add or alter mappings.
+      drupal_alter('apachesolr_cck_fields', $mappings);
       $result = db_query("SELECT  i.field_name, f.multiple, f.type AS field_type, i.widget_type, i.label FROM {content_node_field_instance} i INNER JOIN {content_node_field} f ON i.field_name = f.field_name;");
       while ($row = db_fetch_object($result)) {
-        // Only deal with fields that have options widgets (facets don't make sense otherwise), or fields that have specific mappings.
-        if (isset($mappings[$row->field_type]) && !empty($mappings[$row->field_type]['widget_types'][$row->widget_type])) {
-          $row->index_type = $mappings[$row->field_type]['index_type'];
-          $row->callback = $mappings[$row->field_type]['callback'];
+        // Only deal with fields that have option widgets (facets don't make sense otherwise), or fields that have specific mappings.
+        if ((isset($mappings[$row->field_type][$row->widget_type]) && !isset($fields[$row->field_name])) || isset($mappings['per-field'][$row->field_name])) {
+          if (isset($mappings['per-field'][$row->field_name])) {
+            $row->index_type = $mappings['per-field'][$row->field_name]['index_type'];
+            $row->callback = $mappings['per-field'][$row->field_name]['callback'];
+          }
+          else {
+            $row->index_type = $mappings[$row->field_type][$row->widget_type]['index_type'];
+            $row->callback = $mappings[$row->field_type][$row->widget_type]['callback'];
+          }
           $row->multiple = (bool) $row->multiple;
           $row->name = 'cck_' . $row->field_name;
           $fields[$row->field_name] = (array) $row;

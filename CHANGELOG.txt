@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.58 2009/04/24 18:03:24 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.59 2009/04/28 18:45:25 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#271753 by pwolanin, more granular CCK field mappings via _alter hook.
 #436074 by pwolanin, better query class handling of negative queries.
 #442198 by Scott Reynolds and pwolanin, update the Drupal_Solr_Query_Interface interface.
 #443252 by Scott Reynolds, (bugfix for regression) make protected id public again.
