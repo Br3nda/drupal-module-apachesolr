@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.59 2009/04/28 18:45:25 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.60 2009/04/28 23:36:13 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, xxxx-xx-xx
 ------------------------------
+#447890 by pwolanin, properly respect 'access content' permission in _nodeaccess.
 #271753 by pwolanin, more granular CCK field mappings via _alter hook.
 #436074 by pwolanin, better query class handling of negative queries.
 #442198 by Scott Reynolds and pwolanin, update the Drupal_Solr_Query_Interface interface.

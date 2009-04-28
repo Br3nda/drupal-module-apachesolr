@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.1.2.8 2009/04/16 14:34:16 pwolanin Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.1.2.9 2009/04/28 23:36:13 pwolanin Exp $
 
 /**
  * Implementation of apachesolr_update_index
@@ -34,7 +34,7 @@ function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node) {
  */
 function _apachesolr_nodeaccess_build_subquery($account) {
   if (!user_access('access content', $account)) {
-    return NULL;
+    throw new Exception('No access');
   }
   $node_access_query = apachesolr_drupal_query();
   if (user_access('administer nodes', $account)) {
