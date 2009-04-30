@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.2 2009/04/28 18:45:25 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.3 2009/04/30 16:51:47 pwolanin Exp $
 
 /**
  * @file
@@ -28,9 +28,14 @@ function apachesolr_strip_ctl_chars($text) {
  * Strip html tags and also control characters that cause Jetty/Solr to fail.
  */
 function apachesolr_clean_text($text) {
-  $text = preg_replace('@[\x00-\x08\x0B\x0C\x0E-\x1F]@', ' ', $text);
+  return _apachesolr_strip_decode(preg_replace('@[\x00-\x08\x0B\x0C\x0E-\x1F]@', ' ', $text));
+}
+
+function _apachesolr_strip_decode($text) {
   // Add spaces before stripping tags to avoid running words together.
-  return strip_tags(str_replace(array('<', '>'), array(' <', '> '), $text));
+  $text = filter_xss(str_replace(array('<', '>'), array(' <', '> '), $text), array());
+  // Decode entities and then make safe any < or > characters.
+  return htmlspecialchars(html_entity_decode($text, ENT_NOQUOTES, 'UTF-8'), ENT_NOQUOTES, 'UTF-8', FALSE);
 }
 
 /**
@@ -83,7 +88,7 @@ function apachesolr_node_to_document($nid) {
     if (!empty($node->language)) {
       $document->language = $node->language;
     }
-    $document->body = strip_tags(str_replace(array('<', '>'), array(' <', '> '), $text));
+    $document->body = _apachesolr_strip_decode($text);
     $document->type  = $node->type;
     $document->type_name = apachesolr_strip_ctl_chars(node_get_types('name', $node));
     $document->created = apachesolr_date_iso($node->created);
@@ -123,12 +128,13 @@ function apachesolr_node_to_document($nid) {
         $index_key = apachesolr_index_key($cck_info);
         foreach ($field as $value) {
           // Don't index NULLs or empty strings
-          if (isset($value['safe']) && strlen($value['safe'])) {
+          // We can use 'value' rather than 'safe' since we strip tags and later check_plain().
+          if (isset($value['value']) && strlen($value['value'])) {
             if ($cck_info['multiple']) {
-              $document->setMultiValue($index_key, apachesolr_clean_text($value['safe']));
+              $document->setMultiValue($index_key, apachesolr_clean_text($value['value']));
             }
             else {
-              $document->$index_key = apachesolr_clean_text($value['safe']);
+              $document->$index_key = apachesolr_clean_text($value['value']);
             }
           }
         }

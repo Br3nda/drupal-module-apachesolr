@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.32 2009/04/24 18:03:24 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.33 2009/04/30 16:51:47 pwolanin Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -265,7 +265,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     $querystring = '';
     if ($fq = $this->rebuild_fq(TRUE)) {
       foreach ($fq as $key => $value) {
-        $fq[$key] = drupal_urlencode($value);
+        $fq[$key] = rawurlencode($value);
       }
       $querystring = 'filters='. implode('+', $fq);
     }
