@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.3 2009/04/30 16:51:47 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.4 2009/04/30 17:38:40 pwolanin Exp $
 
 /**
  * @file
@@ -9,8 +9,8 @@
 /**
  * Add a document to the $documents array based on a node ID.
  */
-function apachesolr_add_node_document(&$documents, $nid) {
-  if ($document = apachesolr_node_to_document($nid)) {
+function apachesolr_add_node_document(&$documents, $nid, $namespace) {
+  if ($document = apachesolr_node_to_document($nid, $namespace)) {
     $documents[] = $document;
   }
 }
@@ -41,7 +41,7 @@ function _apachesolr_strip_decode($text) {
 /**
  * Given a node ID, return a document representing that node.
  */
-function apachesolr_node_to_document($nid) {
+function apachesolr_node_to_document($nid, $namespace) {
   // Set reset = TRUE to avoid static caching of all nodes that get indexed.
   $node = node_load($nid, NULL, TRUE);
   if (empty($node)) {
@@ -52,7 +52,7 @@ function apachesolr_node_to_document($nid) {
   // Let any module exclude this node from the index.
   $build_document = TRUE;
   foreach (module_implements('apachesolr_node_exclude') as $module) {
-    $exclude = module_invoke($module, 'apachesolr_node_exclude', $node);
+    $exclude = module_invoke($module, 'apachesolr_node_exclude', $node, $namespace);
     if (!empty($exclude)) {
       $build_document = FALSE;
     }

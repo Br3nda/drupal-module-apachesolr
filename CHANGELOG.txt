@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.62 2009/04/30 17:23:13 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.63 2009/04/30 17:38:40 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-beta9, 2009-04-30
 ------------------------------
+#405780 by blackdog and pwolanin, skip excluded node types during counting and indexing.
 #441628 by aufumy and pwolanin, update _og for negative facets, minor fixes, install/enable/update hooks.
 #447622 by pwolanin and mkalkbrenner, better encoding of html entities and CCK facets.
 #447890 by pwolanin, properly respect 'access content' permission in _nodeaccess.

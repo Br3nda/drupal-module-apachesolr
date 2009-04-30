@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.87 2009/04/24 18:03:24 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.88 2009/04/30 17:38:41 pwolanin Exp $
 
 /**
  * @file
@@ -62,12 +62,13 @@ function apachesolr_search_update_index() {
 }
 
 /**
- * Implementation of hook_apachesolr_node_exclude().
+ * Implementation of hook_apachesolr_types_exclude().
  */
-function apachesolr_search_apachesolr_node_exclude($node) {
-  $excluded_types = variable_get('apachesolr_search_excluded_types', array());
-  // Exclude from processing node types we don't want.
-  return !empty($excluded_types[$node->type]);
+function apachesolr_search_apachesolr_types_exclude($namespace) {
+  if ($namespace == 'apachesolr_search') {
+    $excluded_types = variable_get('apachesolr_search_excluded_types', array());
+    return array_filter($excluded_types);
+  }
 }
 
 /**

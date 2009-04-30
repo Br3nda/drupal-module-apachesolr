@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.13 2009/02/20 19:51:26 pwolanin Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.14 2009/04/30 17:38:41 pwolanin Exp $
 
 /**
  * @file
@@ -234,7 +234,9 @@ function apachesolr_search_type_boost_form_submit($form_id, &$form_state) {
 
   foreach ($new_excluded_types as $type => $excluded) {
     // Remove newly omitted node types.
-    if (!empty($new_excluded_types[$type]) && empty($old_excluded_types[$type])) {
+    // Note - we omit a check on empty($old_excluded_types[$type]) so that
+    // the admin can re-submit this page if the delete operation fails.
+    if (!empty($new_excluded_types[$type])) {
       $solr = apachesolr_get_solr();
       $solr->deleteByQuery("type:$type");
     }
