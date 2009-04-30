@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.135 2009/04/30 17:38:40 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.136 2009/04/30 18:00:00 pwolanin Exp $
 
 /**
  * @file
@@ -299,6 +299,8 @@ function apachesolr_index_nodes($result, $namespace = '', $callback = 'apachesol
       foreach ($docs_chunk as $docs) {
         $solr->addDocuments($docs);
       }
+      // Set the timestamp to indicate an index update.
+      apachesolr_index_updated(time());
     }
     catch (Exception $e) {
       watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
@@ -328,6 +330,7 @@ function apachesolr_delete_node_from_index($node) {
   try {
     $solr = apachesolr_get_solr();
     $solr->deleteById(apachesolr_document_id($node->nid));
+    apachesolr_index_updated(time());
     return TRUE;
   }
   catch (Exception $e) {
@@ -337,14 +340,26 @@ function apachesolr_delete_node_from_index($node) {
 }
 
 /**
+ * Helper function to keep track of when the index has been updated.
+ */
+function apachesolr_index_updated($updated = NULL) {
+  if (isset($updated)) {
+    if ($updated) {
+      variable_set('apachesolr_index_updated', (int) $updated);
+    }
+    else {
+      variable_del('apachesolr_index_updated');
+    }
+  }
+  return variable_get('apachesolr_index_updated', 0);
+}
+
+/**
  * Implementation of hook_cron().
  */
 function apachesolr_cron() {
   try {
     $solr = apachesolr_get_solr();
-    $solr->clearCache();
-    // Re-populate the luke cache.
-    $solr->getLuke();
     // Check for unpublished content that wasn't deleted from the index.
     $result = db_query("SELECT n.nid, n.status FROM {apachesolr_search_node} asn INNER JOIN {node} n ON n.nid = asn.nid WHERE asn.status != n.status");
     while ($node = db_fetch_object($result)) {
@@ -361,10 +376,24 @@ function apachesolr_cron() {
     if ($time - $last > 60*60*24) {
       $solr->optimize(FALSE, FALSE);
       variable_set('apachesolr_last_optimize', $time);
+      apachesolr_index_updated($time);
+    }
+    // Only clear the cache if the index changed, but at least once daily.
+    // TODO: clear on some schedule if running multi-site.
+    $updated = apachesolr_index_updated();
+    if ($updated) {
+      $solr->clearCache();
+      // Re-populate the luke cache.
+      $solr->getLuke();
+      // TODO: an admin interface for setting this.  Assume for now 5 minutes.
+      if ($time - $updated >= variable_get('apachesolr_cache_delay', 300)) {
+        // Clear the updated flag.
+        apachesolr_index_updated(FALSE);
+      }
     }
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
+    watchdog('Apache Solr', $e->getMessage() . ' in apachesolr_cron', NULL, WATCHDOG_ERROR);
   }
 }
 

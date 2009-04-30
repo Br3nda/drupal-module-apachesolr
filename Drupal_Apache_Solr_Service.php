@@ -148,6 +148,16 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
    * Clear cached Solr data.
    */
   public function clearCache() {
+    // Don't clear cached data if the server is unavailable.
+    if (@$this->ping()) {
+      $this->_clearCache();
+    }
+    else {
+      throw new Exception('No Solr instance available when trying to clear the cache.');
+    }
+  }
+
+  protected function _clearCache() {
     cache_clear_all("apachesolr:luke:", 'cache', TRUE);
     cache_clear_all("apachesolr:stats:", 'cache', TRUE);
     $this->luke = array();
@@ -161,7 +171,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
    */
   public function commit($optimize = TRUE, $waitFlush = TRUE, $waitSearcher = TRUE, $timeout = 3600) {
     parent::commit($optimize, $waitFlush, $waitSearcher, $timeout);
-    $this->clearCache();
+    $this->_clearCache();
   }
 
   /**
@@ -181,7 +191,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
    */
   public function __construct($host = 'localhost', $port = 8180, $path = '/solr/') {
     parent::__construct($host, $port, $path);
-    $this->luke_cid = "apachesolr:luke:$host:$port:$path";
+    $this->luke_cid = "apachesolr:luke:" . md5($this->_lukeUrl);
     $cache = cache_get($this->luke_cid);
     if (isset($cache->data)) {
       $this->luke = $cache->data;

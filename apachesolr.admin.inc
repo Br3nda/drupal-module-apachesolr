@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.14 2009/04/13 14:51:15 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.15 2009/04/30 18:00:00 pwolanin Exp $
 
 /**
  * @file
@@ -75,13 +75,14 @@ function apachesolr_settings() {
 function apachesolr_index_page() {
   try {
     $solr = apachesolr_get_solr();
-    // TODO: only clear this every page view if we are running
-    // multi-site.
-    $solr->clearCache();
+    // TODO: possibly clear this every page view if we are running multi-site.
+    if (apachesolr_index_updated()) {
+      $solr->clearCache();
+    }
     $data = $solr->getLuke();
   }
   catch (Exception $e) {
-    watchdog('apachesolr', $e->getMessage(), NULL, WATCHDOG_ERROR);
+    watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
     drupal_set_message($e->getMessage(), "warning");
     $data->fields = array();
   }
@@ -95,7 +96,7 @@ function apachesolr_index_page() {
       $delete_msg = '<p>' . t('Numer of pending deletions: @deletes_total', $stats_summary) . "</p>\n";
     }
     catch (Exception $e) {
-      watchdog('apachesolr', $e->getMessage(), NULL, WATCHDOG_ERROR);
+      watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
     }
     $output .= $delay_msg;
     $pending_msg = $stats_summary['@pending_docs'] ? t('(@pending_docs sent but not yet processed)', $stats_summary) : '';
@@ -112,13 +113,14 @@ function apachesolr_index_page() {
 function apachesolr_index_report() {
   try {
     $solr = apachesolr_get_solr();
-    // TODO: only clear this every page view if we are running
-    // multi-site.
-    $solr->clearCache();
+    // TODO: possibly clear this every page view if we are running multi-site.
+    if (apachesolr_index_updated()) {
+      $solr->clearCache();
+    }
     $data = $solr->getLuke();
   }
   catch (Exception $e) {
-    watchdog('apachesolr', $e->getMessage());
+    watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
     drupal_set_message($e->getMessage(), "warning");
     $data->fields = array();
   }
@@ -139,7 +141,7 @@ function apachesolr_index_report() {
       $output .= '<p>' . t('Number of terms in index: @num', array('@num' => $data->index->numTerms)) . "</p>\n";
     }
     catch (Exception $e) {
-      watchdog('apachesolr', $e->getMessage());
+      watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
       $data->fields = array();
     }
   }
@@ -336,6 +338,7 @@ function apachesolr_delete_index() {
     $solr->deleteByQuery($query);
     $solr->commit();
     apachesolr_clear_last_index();
+    apachesolr_index_updated(time());
     // This form can't be seen by anyone without 'administer site configuration'
     // permission, so no need to check perms before displaying a run-cron link.
     drupal_set_message(t('The Solr content index has been erased. You must now !run_cron until your entire site has been re-indexed.', array('!run_cron' => l(t('run cron'), 'admin/reports/status/run-cron', array('query' => array('destination' => 'admin/settings/apachesolr/index'))))));
