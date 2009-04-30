@@ -1,4 +1,4 @@
-; $Id: apachesolr.info,v 1.4 2009/03/20 23:40:07 pwolanin Exp $
+; $Id: apachesolr.info,v 1.5 2009/04/30 18:54:02 pwolanin Exp $
 name = Apache Solr framework
 description = Framework for searching with Solr
 dependencies [] = search

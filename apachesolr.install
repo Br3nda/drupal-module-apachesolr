@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.4 2009/03/20 23:40:07 pwolanin Exp $
+// $Id: apachesolr.install,v 1.5 2009/04/30 18:54:02 pwolanin Exp $
 
 /**
  * @file
@@ -12,6 +12,7 @@
 function apachesolr_install() {
   // Create tables.
   drupal_install_schema('apachesolr');
+  drupal_set_message(t('Search is enabled. You\'re site is <a href="!index_settings_link">currently 0% indexed</a>.', array('!index_settings_link' => url('admin/settings/apachesolr/index'))));
 }
 
 /**
@@ -27,6 +28,9 @@ function apachesolr_enable() {
             FROM {node} n LEFT JOIN {apachesolr_search_node} asn ON n.nid = asn.nid
             LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid
             WHERE asn.changed IS NULL");
+   // Make sure no nodes end up with a timestamp that's in the future.
+   $time = time();
+   db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE changed > %d", $time, $time);
 }
 
 /**
@@ -131,5 +135,28 @@ function apachesolr_update_6001() {
   $ret[] = update_sql("UPDATE {blocks} set cache = " . BLOCK_CACHE_PER_PAGE . " WHERE module LIKE 'apachesolr%'");
 
   return $ret;
-  
+}
+
+/**
+ *  Make sure no nodes have a timestamp that's in the future
+ */
+function apachesolr_update_6002() {
+  $ret = array();
+   // Make sure no nodes end up with a timestamp that's in the future.
+   $time = (int) time();
+   $ret[] = update_sql("UPDATE {apachesolr_search_node} SET changed = $time WHERE changed > $time");
+
+   return $ret;
+}
+
+/**
+ *  Re-index nodes in books.
+ */
+function apachesolr_update_6003() {
+  $ret = array();
+  if (module_exists('book')) {
+    $time = (int) time();
+    $ret[] = update_sql("UPDATE {apachesolr_search_node} SET changed = $time WHERE nid IN (SELECT nid from {book})");
+  }
+  return $ret;
 }

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.11 2009/03/20 23:40:07 pwolanin Exp $
+// $Id: apachesolr.module,v 1.12 2009/04/30 18:54:02 pwolanin Exp $
 
 /**
  * @file
@@ -23,7 +23,6 @@ function apachesolr_menu() {
   $items['admin/settings/apachesolr/settings'] = array(
     'title'              => 'Settings',
     'weight'             => -10,
-    'access callback'    => 'user_access',
     'access arguments'   => array('administer site configuration'),
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_DEFAULT_LOCAL_TASK,
@@ -33,7 +32,6 @@ function apachesolr_menu() {
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_enabled_facets_form'),
     'weight'             => -7,
-    'access callback'    => 'user_access',
     'access arguments'   => array('administer site configuration'),
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_LOCAL_TASK,
@@ -41,11 +39,21 @@ function apachesolr_menu() {
   $items['admin/settings/apachesolr/index'] = array(
     'title'              => 'Search index',
     'page callback'      => 'apachesolr_index_page',
-    'access callback'    => 'user_access',
     'access arguments'   => array('administer site configuration'),
     'weight'             => -8,
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_LOCAL_TASK,
+  );
+  $items['admin/reports/apachesolr'] = array(
+    'title'              => 'Apache Solr Search index',
+    'page callback'      => 'apachesolr_index_report',
+    'access arguments'   => array('access site reports'),
+    'file'               => 'apachesolr.admin.inc',
+  );
+  $items['admin/reports/apachesolr/index'] = array(
+    'title'              => 'Search index',
+    'file'               => 'apachesolr.admin.inc',
+    'type'               => MENU_DEFAULT_LOCAL_TASK,
   );
   return $items;
 }
@@ -199,9 +207,10 @@ function apachesolr_node_type($op, $info) {
  * Helper function for modules implmenting hook_search's 'status' op.
  */
 function apachesolr_index_status($namespace) {
-  extract(apachesolr_get_last_index($namespace));
-  $total = db_result(db_query('SELECT COUNT(*) FROM {node} WHERE status = 1'));
-  $remaining = db_result(db_query('SELECT COUNT(*) FROM {apachesolr_search_node} WHERE (changed > %d OR (changed = %d AND nid > %d)) AND status = 1', $last_change, $last_change, $last_nid));
+  list($excluded_types, $args, $join_sql, $exclude_sql) = _apachesolr_exclude_types($namespace);
+
+  $total = db_result(db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE asn.status = 1 " . $exclude_sql, $excluded_types));
+  $remaining = db_result(db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > %d OR (asn.changed = %d AND asn.nid > %d)) AND asn.status = 1 "  . $exclude_sql, $args));
   return array('remaining' => $remaining, 'total' => $total);
 }
 
@@ -226,12 +235,28 @@ function apachesolr_clear_last_index($namespace = '') {
     variable_del('apachesolr_index_last');
   }
 }
+
+function _apachesolr_exclude_types($namespace) {
+  extract(apachesolr_get_last_index($namespace));
+  $excluded_types = module_invoke_all('apachesolr_types_exclude', $namespace);
+  $args = array($last_change, $last_change, $last_nid);
+  $join_sql = '';
+  $exclude_sql = '';
+  if ($excluded_types) {
+    $excluded_types = array_unique($excluded_types);
+    $join_sql = "INNER JOIN {node} n ON n.nid = asn.nid ";
+    $exclude_sql = "AND n.type NOT IN(". db_placeholders($excluded_types, 'varchar') .") ";
+    $args = array_merge($args, $excluded_types);
+  }
+  return array($excluded_types, $args, $join_sql, $exclude_sql);
+}
+
 /**
  * Returns a resource from a query based on an indexing namespace.
  */
 function apachesolr_get_nodes_to_index($namespace, $limit) {
-  extract(apachesolr_get_last_index($namespace));
-  return  db_query_range("SELECT nid, changed FROM {apachesolr_search_node} WHERE (changed > %d OR (changed = %d AND nid > %d)) AND status = 1 ORDER BY changed ASC, nid ASC", $last_change, $last_change, $last_nid, 0, $limit);
+  list($excluded_types, $args, $join_sql, $exclude_sql) = _apachesolr_exclude_types($namespace);
+  return  db_query_range("SELECT asn.nid, asn.changed FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > %d OR (asn.changed = %d AND asn.nid > %d)) AND asn.status = 1 ". $exclude_sql ."ORDER BY asn.changed ASC, asn.nid ASC", $args, 0, $limit);
 }
 
 /**
@@ -254,7 +279,7 @@ function apachesolr_index_nodes($result, $namespace = '', $callback = 'apachesol
     watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
     return FALSE;
   }
-
+  include_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.index.inc') ;
   $documents = array();
   $old_position = apachesolr_get_last_index($namespace);
   $position = $old_position;
@@ -263,7 +288,7 @@ function apachesolr_index_nodes($result, $namespace = '', $callback = 'apachesol
     // Variables to track the last item changed.
     $position['last_change'] = $row->changed;
     $position['last_nid'] = $row->nid;
-    $callback($documents, $row->nid);
+    $callback($documents, $row->nid, $namespace);
   }
 
   if (count($documents)) {
@@ -274,6 +299,8 @@ function apachesolr_index_nodes($result, $namespace = '', $callback = 'apachesol
       foreach ($docs_chunk as $docs) {
         $solr->addDocuments($docs);
       }
+      // Set the timestamp to indicate an index update.
+      apachesolr_index_updated(time());
     }
     catch (Exception $e) {
       watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
@@ -292,142 +319,6 @@ function apachesolr_index_nodes($result, $namespace = '', $callback = 'apachesol
 }
 
 /**
- * Add a document to the $documents array based on a node ID.
- */
-function apachesolr_add_node_document(&$documents, $nid) {
-  if ($document = apachesolr_node_to_document($nid)) {
-    $documents[] = $document;
-  }
-}
-
-/**
- * Strip control characters that cause Jetty/Solr to fail.
- */
-function apachesolr_strip_ctl_chars($text) {
-  // See:  http://w3.org/International/questions/qa-forms-utf-8.html
-  // Printable utf-8 does not include any of these chars below x7F
-  return preg_replace('@[\x00-\x08\x0B\x0C\x0E-\x1F]@', ' ', $text);
-}
-
-/**
- * Strip html tags and also control characters that cause Jetty/Solr to fail.
- */
-function apachesolr_clean_text($text) {
-  return strip_tags(preg_replace('@[\x00-\x08\x0B\x0C\x0E-\x1F]@', ' ', $text));
-}
-
-/**
- * Given a node ID, return a document representing that node.
- */
-function apachesolr_node_to_document($nid) {
-  // Set reset = TRUE to avoid static caching of all nodes that get indexed.
-  $node = node_load($nid, NULL, TRUE);
-  if (empty($node)) {
-    return FALSE;
-  }
-
-  $document = FALSE;
-  // Let any module exclude this node from the index.
-  $build_document = TRUE;
-  foreach (module_implements('apachesolr_node_exclude') as $module) {
-    $exclude = module_invoke($module, 'apachesolr_node_exclude', $node);
-    if (!empty($exclude)) {
-      $build_document = FALSE;
-    }
-  }
-
-  if ($build_document) {
-    // Build the node body.
-    $node->build_mode = NODE_BUILD_SEARCH_INDEX;
-    $node = node_build_content($node, FALSE, FALSE);
-    $node->body = drupal_render($node->content);
-    $node->title = apachesolr_clean_text($node->title);
-
-    $text = $node->body;
-
-    // Fetch extra data normally not visible, including comments.
-    $extra = node_invoke_nodeapi($node, 'update index');
-    $text .= "\n\n" . implode(' ', $extra);
-    $text = apachesolr_strip_ctl_chars($text);
-
-    $document = new Apache_Solr_Document();
-    $document->id = apachesolr_document_id($node->nid);
-    $document->site = url(NULL, array('absolute' => TRUE));
-    $document->hash = apachesolr_site_hash();
-    $document->nid = $node->nid;
-    $document->uid = $node->uid;
-    $document->title = $node->title;
-    $document->status = $node->status;
-    $document->sticky = $node->sticky;
-    $document->promote = $node->promote;
-    $document->moderate = $node->moderate;
-    $document->tnid = $node->tnid;
-    $document->translate = $node->translate;
-    $document->language = $node->language;
-    $document->body = strip_tags($text);
-    $document->type  = $node->type;
-    $document->type_name = apachesolr_strip_ctl_chars(node_get_types('name', $node));
-    $document->created = apachesolr_date_iso($node->created);
-    $document->changed = apachesolr_date_iso($node->changed);
-    $last_change = (isset($node->last_comment_timestamp) && $node->last_comment_timestamp > $node->changed) ? $node->last_comment_timestamp : $node->changed;
-    $document->last_comment_or_change = apachesolr_date_iso($last_change);
-    $document->comment_count = isset($node->comment_count) ? $node->comment_count : 0;
-    $document->name = apachesolr_strip_ctl_chars($node->name);
-
-    $path = 'node/' . $node->nid;
-    $document->url = url($path, array('absolute' => TRUE));
-    $document->path = $path;
-    // Path aliases can have important information about the content.
-    // Add them to the index as well.
-    if (function_exists('drupal_get_path_alias')) {
-      // Add any path alias to the index, looking first for language specific
-      // aliases but using language neutral aliases otherwise.
-      $language = empty($node->language) ? '' : $node->language;
-      $output = drupal_get_path_alias($path, $language);
-      if ($output && $output != $path) {
-        $document->path_alias = apachesolr_strip_ctl_chars($output);
-      }
-    }
-
-    // Get CCK fields list
-    $cck_fields = apachesolr_cck_fields();
-    foreach ($cck_fields as $key => $cck_info) {
-      if (isset($node->$key)) {
-        // Got a CCK field. See if it is to be indexed.
-        $function = $cck_info['callback'];
-        if ($cck_info['callback'] && function_exists($function)) {
-          $field = call_user_func_array($function, array($node, $key));
-        }
-        else {
-          $field = $node->$key;
-        }
-        $index_key = apachesolr_index_key($cck_info);
-        foreach ($field as $value) {
-          // Don't index NULLs or empty strings
-          if (isset($value['safe']) && strlen($value['safe'])) {
-            if ($cck_info['multiple']) {
-              $document->setMultiValue($index_key, apachesolr_clean_text($value['safe']));
-            }
-            else {
-              $document->$index_key = apachesolr_clean_text($value['safe']);
-            }
-          }
-        }
-      }
-    }
-    apachesolr_add_tags_to_document($document, $text);
-    apachesolr_add_taxonomy_to_document($document, $node);
-
-    // Let modules add to the document - TODO convert to drupal_alter().
-    foreach (module_implements('apachesolr_update_index') as $module) {
-      $function = $module .'_apachesolr_update_index';
-      $function($document, $node);
-    }
-  }
-  return $document;
-}
-
-/**
  * Convert date from timestamp into ISO 8601 format.
  * http://lucene.apache.org/solr/api/org/apache/solr/schema/DateField.html
  */
@@ -435,89 +326,11 @@ function apachesolr_date_iso($date_timestamp) {
   return gmdate('Y-m-d\TH:i:s\Z', $date_timestamp);
 }
 
-/**
- * Extract taxonomy from $node and add to dynamic fields.
- */
-function apachesolr_add_taxonomy_to_document(&$document, $node) {
-  if (isset($node->taxonomy) && is_array($node->taxonomy)) {
-    foreach ($node->taxonomy as $term) {
-      // Double indexing of tids lets us do effecient searches (on tid)
-      // and do accurate per-vocabulary faceting.
-
-      // By including the ancestors to a term in the index we make
-      // sure that searches for general categories match specific
-      // categories, e.g. Fruit -> apple, a search for fruit will find
-      // content categorized with apple.
-      $ancestors = taxonomy_get_parents_all($term->tid);
-      foreach ($ancestors as $ancestor) {
-        $document->setMultiValue('tid', $ancestor->tid);
-        $document->setMultiValue('im_vid_'. $ancestor->vid, $ancestor->tid);
-        $name = apachesolr_clean_text($ancestor->name);
-        $document->setMultiValue('vid', $ancestor->vid);
-        $document->{'ts_vid_'. $ancestor->vid .'_names'} .= ' '. $name;
-        // We index each name as a string for cross-site faceting
-        // using the vocab name rather than vid in field construction .
-        $document->setMultiValue('sm_vid_'. apachesolr_vocab_name($ancestor->vid), $name);
-      }
-    }
-  }
-}
-
-/**
- * Helper function - return a safe (PHP identifier) vocabulary name.
- */
-function apachesolr_vocab_name($vid) {
-  static $names = array();
-
-  if (!isset($names[$vid])) {
-    $vocab_name = db_result(db_query('SELECT v.name FROM {vocabulary} v WHERE v.vid = %d', $vid));
-    $names[$vid] = preg_replace('/[^a-zA-Z0-9_\x7f-\xff]/', '_', $vocab_name);
-    // Fallback for names ending up all as '_'.
-    $check = rtrim($names[$vid], '_');
-    if (!$check) {
-      $names[$vid] = '_' . $vid . '_';
-    }
-  }
-  return $names[$vid];
-}
-
-/**
- * Extract HTML tag contents from $text and add to boost fields.
- *
- * $text must be stripped of control characters before hand.
- */
-function apachesolr_add_tags_to_document(&$document, $text) {
-  $tags_to_index = variable_get('apachesolr_tags_to_index', array(
-    'h1' => 'tags_h1',
-    'h2' => 'tags_h2_h3',
-    'h3' => 'tags_h2_h3',
-    'h4' => 'tags_h4_h5_h6',
-    'h5' => 'tags_h4_h5_h6',
-    'h6' => 'tags_h4_h5_h6',
-    'u' => 'tags_inline',
-    'b' => 'tags_inline',
-    'i' => 'tags_inline',
-    'strong' => 'tags_inline',
-    'em' => 'tags_inline',
-    'a' => 'tags_a'
-  ));
-
-  // Strip off all ignored tags.
-  $text = strip_tags($text, '<'. implode('><', array_keys($tags_to_index)) .'>');
-
-  preg_match_all('@<('. implode('|', array_keys($tags_to_index)) .')[^>]*>(.*)</\1>@Ui', $text, $matches);
-  foreach ($matches[1] as $key => $tag) {
-    // We don't want to index links auto-generated by the url filter.
-    if ($tag != 'a' || !preg_match('@(?:http://|https://|ftp://|mailto:|smb://|afp://|file://|gopher://|news://|ssl://|sslv2://|sslv3://|tls://|tcp://|udp://|www\.)[a-zA-Z0-9]+@', $matches[2][$key])) {
-      $document->{$tags_to_index[$tag]} .= ' '. $matches[2][$key];
-    }
-  }
-}
-
 function apachesolr_delete_node_from_index($node) {
   try {
     $solr = apachesolr_get_solr();
     $solr->deleteById(apachesolr_document_id($node->nid));
+    apachesolr_index_updated(time());
     return TRUE;
   }
   catch (Exception $e) {
@@ -527,23 +340,35 @@ function apachesolr_delete_node_from_index($node) {
 }
 
 /**
+ * Helper function to keep track of when the index has been updated.
+ */
+function apachesolr_index_updated($updated = NULL) {
+  if (isset($updated)) {
+    if ($updated) {
+      variable_set('apachesolr_index_updated', (int) $updated);
+    }
+    else {
+      variable_del('apachesolr_index_updated');
+    }
+  }
+  return variable_get('apachesolr_index_updated', 0);
+}
+
+/**
  * Implementation of hook_cron().
  */
 function apachesolr_cron() {
   try {
     $solr = apachesolr_get_solr();
-    $solr->clearCache();
-    // Re-populate the luke cache.
-    $solr->getLuke();
     // Check for unpublished content that wasn't deleted from the index.
     $result = db_query("SELECT n.nid, n.status FROM {apachesolr_search_node} asn INNER JOIN {node} n ON n.nid = asn.nid WHERE asn.status != n.status");
     while ($node = db_fetch_object($result)) {
-      apachesolr_nodeapi($node, 'update');
+      _apachesolr_nodeapi_update($node, FALSE);
     }
     // Check for deleted content that wasn't deleted from the index.
     $result = db_query("SELECT asn.nid FROM {apachesolr_search_node} asn LEFT JOIN {node} n ON n.nid = asn.nid WHERE n.nid IS NULL");
     while ($node = db_fetch_object($result)) {
-      apachesolr_nodeapi($node, 'delete');
+      _apachesolr_nodeapi_delete($node, FALSE);
     }
     $last = variable_get('apachesolr_last_optimize', 0);
     $time = time();
@@ -551,10 +376,24 @@ function apachesolr_cron() {
     if ($time - $last > 60*60*24) {
       $solr->optimize(FALSE, FALSE);
       variable_set('apachesolr_last_optimize', $time);
+      apachesolr_index_updated($time);
+    }
+    // Only clear the cache if the index changed, but at least once daily.
+    // TODO: clear on some schedule if running multi-site.
+    $updated = apachesolr_index_updated();
+    if ($updated) {
+      $solr->clearCache();
+      // Re-populate the luke cache.
+      $solr->getLuke();
+      // TODO: an admin interface for setting this.  Assume for now 5 minutes.
+      if ($time - $updated >= variable_get('apachesolr_cache_delay', 300)) {
+        // Clear the updated flag.
+        apachesolr_index_updated(FALSE);
+      }
     }
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
+    watchdog('Apache Solr', $e->getMessage() . ' in apachesolr_cron', NULL, WATCHDOG_ERROR);
   }
 }
 
@@ -564,26 +403,64 @@ function apachesolr_cron() {
 function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   switch ($op) {
     case 'delete':
-      if (apachesolr_delete_node_from_index($node)) {
-        // There was no exception, so delete from the table.
-        db_query("DELETE FROM {apachesolr_search_node} WHERE nid = %d", $node->nid);
-      }
+      _apachesolr_nodeapi_delete($node);
       break;
     case 'insert':
-      db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed) VALUES  (%d, %d, GREATEST(%d, %d))", $node->nid, $node->status, $node->created, $node->changed);
+      // Make sure no node ends up with a timestamp that's in the future
+      // by using time() rather than the node's changed or created timestamp.
+      db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed) VALUES  (%d, %d, %d)", $node->nid, $node->status, time());
       break;
     case 'update':
-      // Check if the node has gone from published to unpublished.
-      If (!$node->status && db_result(db_query("SELECT status FROM {apachesolr_search_node} WHERE nid = %d", $node->nid))) {
-        if (apachesolr_delete_node_from_index($node)) {
-          // There was no exception, so update the table.
-          db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
-        }
-      }
-      else {
-        db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
-      }
+      _apachesolr_nodeapi_update($node);
       break;
+  }
+}
+
+/**
+ * Helper function for hook_nodeapi() and hook_cron().
+ */
+function _apachesolr_nodeapi_delete($node, $set_message = TRUE) {
+  if (apachesolr_delete_node_from_index($node)) {
+    // There was no exception, so delete from the table.
+    db_query("DELETE FROM {apachesolr_search_node} WHERE nid = %d", $node->nid);
+    if ($set_message && user_access('administer site configuration') && variable_get('apachesolr_set_nodeapi_messages', 1)) {
+      apachesolr_set_stats_message('Deleted content will be removed from the Apache Solr search index in approximately @autocommit_time.');
+    }
+  }
+}
+
+/**
+ * Helper function for hook_nodeapi() and hook_cron().
+ */
+function _apachesolr_nodeapi_update($node, $set_message = TRUE) {
+  // Check if the node has gone from published to unpublished.
+  if (!$node->status && db_result(db_query("SELECT status FROM {apachesolr_search_node} WHERE nid = %d", $node->nid))) {
+    if (apachesolr_delete_node_from_index($node)) {
+      // There was no exception, so update the table.
+      db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
+      if ($set_message && user_access('administer site configuration') && variable_get('apachesolr_set_nodeapi_messages', 1)) {
+        apachesolr_set_stats_message('Unpublished content will be removed from the Apache Solr search index in approximately @autocommit_time.');
+      }
+    }
+  }
+  else {
+    db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
+  }
+}
+
+/**
+ * Call drupal_set_message() with the text.
+ *
+ * The text is translated with t() and substituted using Solr stats.
+ */
+function apachesolr_set_stats_message($text, $type = 'status', $repeat = FALSE) {
+  try {
+    $solr = apachesolr_get_solr();
+    $stats_summary = $solr->getStatsSummary();
+    drupal_set_message(t($text, $stats_summary), $type, FALSE);
+  }
+  catch (Exception $e) {
+    watchdog('apachesolr', $e->getMessage(), NULL, WATCHDOG_ERROR);
   }
 }
 
@@ -629,13 +506,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
 
         switch ($delta) {
           case 'sort':
-            $sorts = array(
-              'relevancy' => array('name' => t('Relevancy'), 'default' => 'asc'),
-              'sort_title' => array('name' => t('Title'), 'default' => 'asc'),
-              'type' => array('name' => t('Type'), 'default' => 'asc'),
-              'sort_name' => array('name' => t('Author'), 'default' => 'asc'),
-              'created' => array('name' => t('Date'), 'default' => 'desc'),
-            );
+            $sorts = $query->get_available_sorts();
 
             $solrsorts = array();
             $sort_parameter = isset($_GET['solrsort']) ? check_plain($_GET['solrsort']) : FALSE;
@@ -647,7 +518,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
             }
 
             $sort_links = array();
-            $path = 'search/' . arg(1) . '/' . $query->get_query_basic();
+            $path = $query->get_path();
             $new_query = clone $query;
             foreach ($sorts as $type => $sort) {
               $new_sort = isset($solrsorts[$type]) ? $solrsorts[$type] == 'asc' ? 'desc' : 'asc' : $sort['default'];
@@ -686,43 +557,51 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
     $contains_active = FALSE;
     $items = array();
     foreach ($response->facet_counts->facet_fields->$facet_field as $facet => $count) {
+      $sortpre = 1000000 - $count;
+      $options = array();
+      $exclude = FALSE;
       // Solr sends this back if it's empty.
       if ($facet == '_empty_') {
-        continue;
+         $exclude = TRUE;
+         $facet = '[* TO *]';
+         $facet_text = theme('placeholder', t('Missing this field'));
+         $options['html'] = TRUE;
+         // Put this just below any active facets.
+         // '-' sorts before all numbers, but after '*'.
+         $sortpre = '-';
+       }
+       else {
+         $facet_text = $facet;
+      }
+
+      if ($facet_callback && function_exists($facet_callback)) {
+        $facet_text = $facet_callback($facet, $options);
       }
       $unclick_link = '';
-      unset($active);
-      if ($facet_callback && function_exists($facet_callback)) {
-        $facet_text = $facet_callback($facet);
-      }
-      else {
-        $facet_text = $facet;
-      }
+      $active = FALSE;
       $new_query = clone $query;
-      if ($active = $query->has_field($facet_field, $facet)) {
-        $contains_active = TRUE;
-        $new_query->remove_field($facet_field, $facet);
-        // TODO: don't assume 'search' - find the real path.
-        $path = 'search/'. arg(1) .'/'. $new_query->get_query_basic();
+      if ($query->has_filter($facet_field, $facet)) {
+        $contains_active = $active = TRUE;
+        // '*' sorts before all numbers.
+        $sortpre = '*';
+        $new_query->remove_filter($facet_field, $facet);
+
+        $path = $new_query->get_path();
         $querystring = $new_query->get_url_querystring();
         $unclick_link = theme('apachesolr_unclick_link', $path, $querystring);
       }
       else {
-        $new_query->add_field($facet_field, $facet);
-        $path = 'search/'. arg(1) .'/'. $new_query->get_query_basic();
+        $new_query->add_filter($facet_field, $facet, $exclude);
+        $path = $new_query->get_path();
         $querystring = $new_query->get_url_querystring();
       }
-      $countsort = $count == 0 ? '' : 1 / $count;
-      // if numdocs == 1 and !active, don't add.
-      if ($response->numFound == 1 && !$active) {
-        // skip
-      }
-      else {
-        $items[$active ? $countsort . $facet : 1 + $countsort . $facet] = theme('apachesolr_facet_item', $facet_text, $count, $path, $querystring, $active, $unclick_link, $response->numFound);
+      if ($count || $active) {
+        $items[$sortpre . '*' . $facet_text] = theme('apachesolr_facet_item', $facet_text, $count, $path, $querystring, $active, $unclick_link, $response->response->numFound, $options);
       }
     }
-    if (count($items) > 0) {
-      ksort($items);
+    // Unless a facet is active only display 2 or more.
+    if ($items && ($response->response->numFound > 1 || $contains_active)) {
+      ksort($items, SORT_STRING);
       // Get information needed by the rest of the blocks about limits.
       $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
       $limit = isset($initial_limits[$module][$delta]) ? $initial_limits[$module][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
@@ -734,12 +613,236 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
 }
 
 /**
+ * Helper function for displaying a date facet block.
+ *
+ * TODO: Refactor with apachesolr_facet_block().
+ */
+function apachesolr_date_facet_block($response, $query, $module, $delta, $facet_field, $filter_by, $facet_callback = FALSE) {
+  $items = array();
+
+  $new_query = clone $query;
+  foreach (array_reverse($new_query->get_filters($facet_field)) as $filter) {
+    // Iteratively remove the date facets.
+    $new_query->remove_filter($facet_field, $filter['#value']);
+    $path = $new_query->get_path();
+    $querystring = $new_query->get_url_querystring();
+    $unclick_link = theme('apachesolr_unclick_link', $path, $querystring);
+    if ($facet_callback && function_exists($facet_callback)) {
+      $facet_text = $facet_callback($filter['#start']);
+    }
+    else {
+      $facet_text = apachesolr_date_format_iso_by_gap(apachesolr_date_find_query_gap($filter['#start'], $filter['#end']), $filter['#start']);
+    }
+    array_unshift($items, theme('apachesolr_facet_item', $facet_text, 0, $path, $querystring, TRUE, $unclick_link));
+  }
+  // Add links for additional date filters.
+  if (!empty($response->facet_counts->facet_dates->$facet_field)) {
+    $field = clone $response->facet_counts->facet_dates->$facet_field;
+
+    $end = $field->end;
+    unset($field->end);
+
+    $gap = $field->gap;
+    unset($field->gap);
+
+    // Treat each date facet as a range start, and use the next date
+    // facet as range end.  Use 'end' for the final end.
+    $range_end = array();
+    foreach ($field as $facet => $count) {
+      if (isset($prev_facet)) {
+        $range_end[$prev_facet] = $facet;
+      }
+      $prev_facet = $facet;
+    }
+    $range_end[$prev_facet] = $end;
+
+    foreach ($field as $facet => $count) {
+      // Solr sends this back if it's empty.
+      if ($facet == '_empty_' || $count == 0) {
+        continue;
+      }
+      if ($facet_callback && function_exists($facet_callback)) {
+        $facet_text = $facet_callback($facet);
+      }
+      else {
+        $facet_text = apachesolr_date_format_iso_by_gap(substr($gap, 2), $facet);
+      }
+      $new_query = clone $query;
+      $new_query->add_filter($facet_field, '['. $facet .' TO '. $range_end[$facet] .']');
+      $path = $new_query->get_path();
+      $querystring = $new_query->get_url_querystring();
+
+      $items[] = theme('apachesolr_facet_item', $facet_text, $count, $path, $querystring, FALSE, '', $response->response->numFound);
+    }
+  }
+  if (count($items) > 0) {
+    // Get information needed by the rest of the blocks about limits.
+    $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
+    $limit = isset($initial_limits[$module][$delta]) ? $initial_limits[$module][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
+    $output = theme('apachesolr_facet_list', $items, $limit);
+    return array('subject' => $filter_by, 'content' => $output);
+  }
+  return NULL;
+}
+
+/**
+ * Determine the gap in a date range query filter that we generated.
+ *
+ * This function assumes that the start and end dates are the
+ * beginning and end of a single period: 1 year, month, day, hour,
+ * minute, or second (all date range query filters we generate meet
+ * this criteria).  So, if the seconds are different, it is a second
+ * gap.  If the seconds are the same (incidentally, they will also be
+ * 0) but the minutes are different, it is a minute gap.  If the
+ * minutes are the same but hours are different, it's an hour gap.
+ * etc.
+ *
+ * @param $start
+ *   Start date as an ISO date string.
+ * @param $end
+ *   End date as an ISO date string.
+ * @return
+ *   YEAR, MONTH, DAY, HOUR, MINUTE, or SECOND.
+ */
+function apachesolr_date_find_query_gap($start_iso, $end_iso) {
+  $gaps = array('SECOND' => 6, 'MINUTE' => 5, 'HOUR' => 4, 'DAY' => 3, 'MONTH' => 2, 'YEAR' => 1);
+  $re = '@(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})@';
+  if (preg_match($re, $start_iso, $start) && preg_match($re, $end_iso, $end)) {
+    foreach ($gaps as $gap => $idx) {
+      if ($start[$idx] != $end[$idx]) {
+        return $gap;
+      }
+    }
+  }
+  // can't tell
+  return 'YEAR';
+}
+
+/**
+ * Format an ISO date string based on the gap used to generate it.
+ * 
+ * This function assumes that gaps less than one day will be displayed
+ * in a search context in which a larger containing gap including a
+ * day is already displayed.  So, HOUR, MINUTE, and SECOND gaps only
+ * display time information, without date.
+ *
+ * @param $gap
+ *   A gap.
+ * @param $iso
+ *   An ISO date string.
+ * @return
+ *   A gap-appropriate formatted date.
+ */
+function apachesolr_date_format_iso_by_gap($gap, $iso) {
+  // TODO: If we assume that multiple search queries are formatted in
+  // order, we could store a static list of all gaps we've formatted.
+  // Then, if we format an HOUR, MINUTE, or SECOND without previously
+  // having formatted a DAY or later, we could include date
+  // information.  However, we'd need to do that per-field and I'm not
+  // our callers always have field information handy.
+  $unix = strtotime($iso);
+  if ($unix > 0) {
+    switch ($gap) {
+      case 'YEAR':
+        return gmdate('Y', $unix);
+      case 'MONTH':
+        return gmdate('F Y', $unix);
+      case 'DAY':
+        return gmdate('F j, Y', $unix);
+      case 'HOUR':
+        return gmdate('g A', $unix);
+      case 'MINUTE':
+        return gmdate('g:i A', $unix);
+      case 'SECOND':
+        return gmdate('g:i:s A', $unix);
+    }
+  }
+
+  return $iso;
+}
+
+/**
+ * Format the beginning of a date range query filter that we
+ * generated.
+ *
+ * @param $start_iso
+ *   The start date.
+ * @param $end_iso
+ *   The end date.
+ * @return
+ *   A display string reprepsenting the date range, such as "January
+ * 2009" for "2009-01-01T00:00:00Z TO 2009-02-01T00:00:00Z"
+ */
+function apachesolr_date_format_range($start_iso, $end_iso) {
+  $gap = apachesolr_date_find_query_gap($start_iso, $end_iso);
+  return apachesolr_date_format_iso_by_gap($gap, $start_iso);
+}
+
+/**
+ * Determine the best search gap to use for an arbitrary date range.
+ *
+ * Generally, we the maximum gap that fits between the start and end
+ * date.  If they are more than a year apart, 1 year; if they are more
+ * than a month apart, 1 month; etc.
+ *
+ * This function uses Unix timestamps for its computation and so is
+ * not useful for dates outside that range.
+ *
+ * @param $start
+ *   Start date as an ISO date string.
+ * @param $end
+ *   End date as an ISO date string.
+ * @return
+ *   YEAR, MONTH, DAY, HOUR, MINUTE, or SECOND depending on how far
+ *   apart $start and $end are.
+ */
+function apachesolr_date_determine_gap($start, $end) {
+  $start = strtotime($start);
+  $end = strtotime($end);
+
+  if ($end - $start >= 86400*365) {
+    return 'YEAR';
+  }
+
+  if (date('m', $start) != date('m', $end)) {
+    return 'MONTH';
+  }
+
+  if ($end - $start > 86400) {
+    return 'DAY';
+  }
+  // For now, HOUR is a reasonable smallest gap.
+  return 'HOUR';
+}
+
+/**
+ * Return the next smaller date gap.
+ *
+ * @param $gap
+ *   A gap.
+ * @return
+ *   The next smaller gap, or NULL if there is no smaller gap.
+ */
+function apachesolr_date_gap_drilldown($gap) {
+  $drill = array(
+    'YEAR' => 'MONTH',
+    'MONTH' => 'DAY',
+    'DAY' => 'HOUR',
+    // For now, HOUR is a reasonable smallest gap.
+    // 'HOUR' => 'MINUTE',
+  );
+  return isset($drill[$gap]) ? $drill[$gap] : NULL;
+}
+
+
+/**
  * Used by the 'configure' $op of hook_block so that modules can generically set
  * facet limits on their blocks.
  */
 function apachesolr_facetcount_form($module, $delta) {
   $initial = variable_get('apachesolr_facet_query_initial_limits', array());
   $limits = variable_get('apachesolr_facet_query_limits', array());
+  $facet_missing = variable_get('apachesolr_facet_missing', array());
 
   $limit = drupal_map_assoc(array(50, 40, 30, 20, 15, 10, 5, 3));
 
@@ -758,7 +861,13 @@ function apachesolr_facetcount_form($module, $delta) {
     '#description' => t('The maximum number of filter links to show in this block.'),
     '#default_value' => isset($limits[$module][$delta]) ? $limits[$module][$delta] : variable_get('apachesolr_facet_query_limit_default', 20),
   );
-
+  $form['apachesolr_facet_missing'] = array(
+    '#type' => 'radios',
+    '#title' => t('Include a facet for missing'),
+    '#options' => array(0 => t('No'), 1 => t('Yes')),
+    '#description' => t('A facet can be generated corresponding to all documents entirely missing this field.'),
+    '#default_value' => isset($facet_missing[$module][$delta]) ? $facet_missing[$module][$delta] : 0,
+  );
   return $form;
 }
 
@@ -776,6 +885,9 @@ function apachesolr_facetcount_save($edit) {
   $initial = variable_get('apachesolr_facet_query_initial_limits', array());
   $initial[$module][$delta] = (int)$edit['apachesolr_facet_query_initial_limit'];
   variable_set('apachesolr_facet_query_initial_limits', $initial);
+  $facet_missing = variable_get('apachesolr_facet_missing', array());
+  $facet_missing[$module][$delta] = (int)$edit['apachesolr_facet_missing'];
+  variable_set('apachesolr_facet_missing', $facet_missing);
 }
 
 /**
@@ -785,14 +897,14 @@ function apachesolr_facetcount_save($edit) {
  *
  * function my_module_apachesolr_modify_query(&$query, &$params) {
  *   // I only want to see articles by the admin!
- *   $query->add_field("uid", 1);
+ *   $query->add_filter("uid", 1);
  *
  * }
  */
 function apachesolr_modify_query(&$query, &$params, $caller) {
 
   foreach (module_implements('apachesolr_modify_query') as $module) {
-    $function_name = "{$module}_apachesolr_modify_query";
+    $function_name = $module . '_apachesolr_modify_query';
     $function_name($query, $params, $caller);
   }
   // Add array of fq parameters.
@@ -828,7 +940,7 @@ function apachesolr_has_searched($searched = NULL) {
  */
 function apachesolr_get_solr($host = NULL, $port = NULL, $path = NULL) {
   static $solr_cache;
-
+  
   if (empty($host)) {
     $host = variable_get('apachesolr_host', 'localhost');
   }
@@ -869,51 +981,44 @@ function apachesolr_static_response_cache($response = NULL) {
 /**
  * Factory function for query objects.
  *
- * The query object is built from the keys, filters, and sort.
+ * @param $keys
+ *   The string that a user would type into the search box. Suitable input
+ *   may come from search_get_keys().
+ *
+ * @param $filters
+ *   Key and value pairs that are applied as a filter query.
+ *
+ * @param $solrsort
+ *   Visible string telling solr how to sort.
+ *
+ * @param $base_path
+ *   The search base path (without the keywords) for this query.
  */
-function apachesolr_drupal_query($keys = '', $filters = '', $solrsort = '') {
-
+function apachesolr_drupal_query($keys = '', $filters = '', $solrsort = '', $base_path = '') {
   list($module, $class) = variable_get('apachesolr_query_class', array('apachesolr', 'Solr_Base_Query'));
   include_once drupal_get_path('module', $module) .'/'. $class .'.php';
-
+  
   try {
-    $query = new $class(apachesolr_get_solr(), $keys, $filters, $solrsort);
+    $query = new $class(apachesolr_get_solr(), $keys, $filters, $solrsort, $base_path);
   }
   catch (Exception $e) {
     watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
     $query = NULL;
   }
+  
   return $query;
 }
 
 /**
- * Factory function for query objects representing the current search URL.
- *
- * The query object is built from the keys in the URL, but these may be
- * overridden by passing in parameters.
+ * Static getter/setter for the current query
  */
-function apachesolr_current_query($keys = '', $filters = '', $solrsort = '', $reset = FALSE) {
-  static $_queries = array();
-
-  if ($reset) {
-    $_queries = array();
+function apachesolr_current_query($query = NULL) {
+  static $saved_query = NULL;
+  if (is_object($query)) {
+    $saved_query = clone $query;
   }
 
-  if (empty($keys)) {
-    $keys = search_get_keys();
-  }
-  if (empty($filters) && !empty($_GET['filters'])) {
-    $filters = $_GET['filters'];
-  }
-  if (empty($solrsort) && !empty($_GET['solrsort'])) {
-    $solrsort = $_GET['solrsort'];
-  }
-  $index = $keys . '&filters=' . $filters;
-
-  if (empty($_queries) || !array_key_exists($index, $_queries)) {
-    $_queries[$index] = apachesolr_drupal_query($keys, $filters, $solrsort);
-  }
-  return is_object($_queries[$index]) ? clone $_queries[$index] : $_queries[$index];
+  return empty($saved_query) ? $saved_query : clone $saved_query;
 }
 
 /**
@@ -956,8 +1061,7 @@ function apachesolr_index_key($field) {
 }
 
 /**
- * This invokes the hook_apachesolr_cck_field_mappings to find out how to handle
- * CCK fields.
+ * Invokes hook_apachesolr_cck_field_mappings to find out how to handle CCK fields.
  */
 function apachesolr_cck_fields() {
   static $fields;
@@ -966,15 +1070,29 @@ function apachesolr_cck_fields() {
     $fields = array();
     // If CCK isn't enabled, do nothing.
     if (module_exists('content')) {
-      // A single default mapping for text fields.
-      $mappings['text'] = array('callback' => '', 'index_type' => 'string', 'widget_types' => array('optionwidgets_select' => 1, 'optionwidgets_buttons' => 1));
-      $mappings = module_invoke_all('apachesolr_cck_field_mappings') + $mappings;
+      // A single default mapping for all text fields.
+      $mappings['text'] = array(
+        'optionwidgets_select' => array('callback' => '', 'index_type' => 'string'),
+        'optionwidgets_buttons' => array('callback' => '', 'index_type' => 'string')
+      );
+      // A field-specific mapping would look like:
+      // $mappings['per-field']['field_model_name'] = array('callback' => '', 'index_type' => 'string');
+      // or
+      // $mappings['per-field']['field_model_price'] = array('callback' => '', 'index_type' => 'float');
+      // Allow other modules to add or alter mappings.
+      drupal_alter('apachesolr_cck_fields', $mappings);
       $result = db_query("SELECT  i.field_name, f.multiple, f.type AS field_type, i.widget_type, i.label FROM {content_node_field_instance} i INNER JOIN {content_node_field} f ON i.field_name = f.field_name;");
       while ($row = db_fetch_object($result)) {
-        // Only deal with fields that have options widgets (facets don't make sense otherwise), or fields that have specific mappings.
-        if (isset($mappings[$row->field_type]) && !empty($mappings[$row->field_type]['widget_types'][$row->widget_type])) {
-          $row->index_type = $mappings[$row->field_type]['index_type'];
-          $row->callback = $mappings[$row->field_type]['callback'];
+        // Only deal with fields that have option widgets (facets don't make sense otherwise), or fields that have specific mappings.
+        if ((isset($mappings[$row->field_type][$row->widget_type]) && !isset($fields[$row->field_name])) || isset($mappings['per-field'][$row->field_name])) {
+          if (isset($mappings['per-field'][$row->field_name])) {
+            $row->index_type = $mappings['per-field'][$row->field_name]['index_type'];
+            $row->callback = $mappings['per-field'][$row->field_name]['callback'];
+          }
+          else {
+            $row->index_type = $mappings[$row->field_type][$row->widget_type]['index_type'];
+            $row->callback = $mappings[$row->field_type][$row->widget_type]['callback'];
+          }
           $row->multiple = (bool) $row->multiple;
           $row->name = 'cck_' . $row->field_name;
           $fields[$row->field_name] = (array) $row;
@@ -991,7 +1109,7 @@ function apachesolr_cck_fields() {
 function apachesolr_theme() {
   return array(
     'apachesolr_facet_item' => array(
-      'arguments' => array('name' => NULL, 'count' => NULL, 'path' => NULL, 'querystring' => '', 'active' => FALSE, 'unclick_link' => NULL, 'num_found' => NULL),
+      'arguments' => array('name' => NULL, 'count' => NULL, 'path' => NULL, 'querystring' => '', 'active' => FALSE, 'unclick_link' => NULL, 'num_found' => NULL, 'options' => NULL),
     ),
     'apachesolr_unclick_link' => array(
       'arguments' => array('url' => NULL, 'querystring' => ''),
@@ -1008,26 +1126,46 @@ function apachesolr_theme() {
   );
 }
 
-function theme_apachesolr_facet_item($name, $count, $path, $querystring = '', $active = FALSE, $unclick_link = NULL, $num_found = NULL) {
-  $attributes = array();
+function theme_apachesolr_facet_item($name, $count, $path, $querystring = '', $active = FALSE, $unclick_link = NULL, $num_found = NULL, $options = array()) {
+
   if ($active) {
-    $attributes['class'] = 'active';
+    if (isset($options['attributes']['class'])) {
+      $options['attributes']['class'] .= ' active';
+    }
+    else {
+      $options['attributes']['class'] = 'active';
+    }
   }
   if ($unclick_link) {
-    return $unclick_link . ' '. check_plain($name);
+    if (empty($options['html'])) {
+      $name = check_plain($name);
+    }
+    return $unclick_link . ' '. $name;
   }
   else {
-    return apachesolr_l($name ." ($count)",  $path, array('attributes' => $attributes, 'query' => $querystring));
+    $options['query'] = $querystring;
+    return apachesolr_l($name ." ($count)",  $path, $options);
   }
 }
 
+/**
+ * A replacement for l() - very similar but doesn't add the 'active' class.
+ *
+ * @see http://api.drupal.org/api/function/l/6 for parameters and options.
+ *
+ * @return
+ *   an HTML string containing a link to the given path.
+ */
 function apachesolr_l($text, $path, $options = array()) {
   // Merge in defaults.
   $options += array(
     'attributes' => array(),
+    'html' => FALSE,
   );
+  // Don't need this, and just to be safe.
+  unset($options['attributes']['title']);
 
-  return '<a href="'. check_url(url($path, $options)) .'"'. drupal_attributes($options['attributes']) .'>'. check_plain($text) .'</a>';
+  return '<a href="'. check_url(url($path, $options)) .'"'. drupal_attributes($options['attributes']) .'>'. ($options['html'] ? $text : check_plain($text)) .'</a>';
 }
 
 
@@ -1069,5 +1207,120 @@ function theme_apachesolr_facet_list($items, $display_limit = 0) {
 
 function theme_apachesolr_sort_list($items) {
   return theme('item_list', $items);
+}
+
+/**
+ * The interface for all 'query' objects.
+ */
+interface Drupal_Solr_Query_Interface {
+  /**
+   * Checks to see if a specific filter is already present.
+   *
+   * @param string $field
+   * the facet field to check
+   *
+   * @param string $value
+   * The facet value to check against
+   */
+  function has_filter($field, $value);
+  
+  /**
+   * Remove a filter from the query
+   *
+   * @param string $field
+   * the facet field to remove
+   *
+   * @param string $value
+   * The facet value to remove
+   * This value can be NULL
+   */
+  function remove_filter($field, $value = NULL);
+  
+  /**
+   * Add a filter to a query
+   *
+   * @param string $field
+   *   the facet field to apply to this query
+   *
+   * @param string value
+   *   the value of the facet to apply
+   *
+   * @param boolean $exclude
+   *   Optional paramter.  If TRUE, the filter will be negative,
+   *   meaning that matching values will be excluded from the
+   *   result set.
+   */
+  function add_filter($field, $value, $exclude = FALSE);
+  
+  /**
+   * Return the search path (including the search keywords).
+   */
+  function get_path();
+  
+  /**
+   * Return any query string for use in the l function.
+   *
+   * @see l()
+   */
+  function get_url_querystring();
+  
+  /**
+   * return the basic string query
+   */
+  function get_query_basic();
+  
+  /**
+   * Set the solrsort.
+   *
+   * @param string raw string to set the sort to
+   */
+  function set_solrsort($sortstring);
+  
+  /**
+   * Return an array of all filters.
+   */
+  function get_filters($name = NULL);
+  
+  /**
+   * Add a subquery to the query.
+   *
+   * @param Drupal_Solr_Query_Interface $query
+   *   The query to add to the orginal query - may have keywords or filters.
+   *
+   * @param string $fq_operator
+   *   The operator to use within the filter part of the subquery
+   *
+   * @param string $q_operator
+   *   The operator to use in joining the subquery to
+   *   the main keywords.  Note - this is unlikely to work
+   *   with the Dismax handler when the main query is only
+   *   keywords.
+   */
+  function add_subquery(Drupal_Solr_Query_Interface $query, $fq_operator = 'OR', $q_operator = 'AND');
+  
+  /**
+   * return the sorts that are provided by the query object
+   *
+   * @return array all the sorts provided
+   */
+  function get_available_sorts();
+  
+  /**
+   * Remove a specific subquery
+   *
+   * @param Drupal_Solr_Query_Interface $query
+   * the query to remove
+   */
+  function remove_subquery(Drupal_Solr_Query_Interface $query);
+  
+  /**
+   * remove all subqueries
+   */
+  function remove_subqueries();
+  
+  /**
+   * make a sort available
+   */
+  function set_available_sort($field, $sort);
 }
 

@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.6 2009/03/20 23:40:07 pwolanin Exp $ */
+/* $Id: README.txt,v 1.7 2009/04/30 18:54:02 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -32,11 +32,10 @@ From the apachesolr module directory, run this command:
 
 svn checkout -r6 http://solr-php-client.googlecode.com/svn/trunk/ SolrPhpClient
 
-Note that revision 6 is the currently tested and suggested revision. If you
-do not have svn, you may download the 2009-03-11 version of the library from
-http://code.google.com/p/solr-php-client/downloads/list
+Note that revision 6 is the currently tested and suggested revision. 
 Make sure that the final directory is named SolrPhpClient under the apachesolr
-module directory.
+module directory.  Note: the 2009-03-11 version of the library from the 
+googlecode page is r5 and will not work with beta6+.
 
 Download Solr trunk (candidate 1.4.x build) from a nightly build or build it
 from svn.  http://people.apache.org/builds/lucene/solr/nightly/
@@ -107,13 +106,66 @@ site address.
 Developers
 --------------
 
-Exposed Hooks:
+Exposed Hooks in 6.x:
 
-@param &$document Apache_Solr_Document
-@param $node StdClass
+hook_apachesolr_modify_query(&$query, &$params, $caller);
+
+  Any module performing a search should call apachesolr_modify_query($query, $params, 'modulename'). 
+  That function then invokes this hook. It allows modules to modify the query object and params array. 
+  $caller indicates which module is invoking the hook.
+
+  Example:
+
+        function my_module_apachesolr_modify_query(&$query, &$params, $caller) {
+          // I only want to see articles by the admin!
+          $query->add_field("uid", 1);         
+        }        
+    
+hook_apachesolr_cck_fields_alter(&$mappings)
+
+  Add or alter index mappings for CCK types.  The default mappings array handles just 
+  text fields with option widgets:
+
+    $mappings['text'] = array(
+      'optionwidgets_select' => array('callback' => '', 'index_type' => 'string'),
+      'optionwidgets_buttons' => array('callback' => '', 'index_type' => 'string')
+    );
+
+  In your _alter hook implementation you can add additional field types such as:
+
+    $mappings['number_integer']['number'] = array('callback' => '', 'index_type' => 'integer');
+
+  You can allso add a mapping for a specific field.  This will take precedence over any
+  mapping for a general field type. A field-specific mapping would look like:
+
+    $mappings['per-field']['field_model_name'] = array('callback' => '', 'index_type' => 'string');
+
+  or
+
+    $mappings['per-field']['field_model_price'] = array('callback' => '', 'index_type' => 'float');
+
+hook_apachesolr_types_exclude($namespace)
+
+  
+  Invoked by apachesolr.module when generating a list of nodes to index for a given
+  namespace.  Return an array of node types to be excldued from indexing for that namespace 
+  (e.g. 'apachesolr_search'). This is used by apachesolr_search module to exclude 
+  certain node types from the index.
+
+hook_apachesolr_node_exclude($node, $namespace)
+
+  This is invoked by apachesolr.module for each node to be added to the index - if any module
+  returns TRUE, the node is skipped for indexing. 
+
 hook_apachesolr_update_index(&$document, $node)
 
-This hook is called just before indexing the document.
-It allows you to add fields to the $document object which is sent to Solr.
-For reference on the $document object, see:
-SolrPhpClient/Apache/Solr/Document.php
+  Allows a module to change the contents of the $document object before it is sent to the Solr Server.
+
+hook_apachesolr_search_result_alter(&$doc)
+
+  The is invoked by apachesolr_search.module for each document returned in a search - new in 6.x-beta7
+  as a replacement for the call to hook_nodeapi().
+
+hook_apachesolr_sort_links_alter(&$sort_links)
+
+  Called by the sort link block code. Allows other modules to modify, add or remove sorts.

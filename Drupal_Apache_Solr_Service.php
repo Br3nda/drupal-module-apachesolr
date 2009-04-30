@@ -83,31 +83,85 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
    * Sets $this->stats with the information about the Solr Core form /admin/stats.jsp
    */
   protected function setStats() {
-    if (empty($this->stats)) {
+    $data = $this->getLuke();
+    // Only try to get stats if we have connected to the index.
+    if (empty($this->stats) && isset($data->index->numDocs)) {
       $url = $this->_constructUrl(self::STATS_SERVLET);
-      $this->stats = $this->_sendRawGet($url);
+      $this->stats_cid = "apachesolr:stats:" . md5($url);
+      $cache = cache_get($this->stats_cid);
+      if (isset($cache->data)) {
+        $this->stats = simplexml_load_string($cache->data);
+      }
+      else {
+        $response = $this->_sendRawGet($url);
+        $this->stats = simplexml_load_string($response->getRawResponse());
+        cache_set($this->stats_cid, $response->getRawResponse());
+      }
     }
   }
   
   /**
    * Get information about the Solr Core.
+   *
+   * Returns a Simple XMl document
    */
-  public function getStats($parsed = true) {
+  public function getStats() {
     if (!isset($this->stats)) {
       $this->setStats();
     }
-    if ($parsed) {
-      return simplexml_load_string($this->stats->getRawResponse());
-    }
     return $this->stats;
+  }
+
+  /**
+   * Get summary information about the Solr Core.
+   */
+  public function getStatsSummary() {
+    $stats = $this->getStats();
+    $summary = array(
+     '@pending_docs' => '',
+     '@autocommit_time_seconds' => '',
+     '@autocommit_time' => '',
+     '@deletes_by_id' => '',
+     '@deletes_by_query' => '',
+     '@deletes_total' => '',
+    );
+
+    if (!empty($stats)) {
+      $docs_pending_xpath = $stats->xpath('//stat[@name="docsPending"]');
+      $summary['@pending_docs'] = (int) trim($docs_pending_xpath[0]);
+      $max_time_xpath = $stats->xpath('//stat[@name="autocommit maxTime"]');
+      $max_time = (int) trim(current($max_time_xpath));
+      // Convert to seconds.
+      $summary['@autocommit_time_seconds'] = $max_time / 1000;
+      $summary['@autocommit_time'] = format_interval($max_time / 1000);
+      $deletes_id_xpath = $stats->xpath('//stat[@name="deletesById"]');
+      $summary['@deletes_by_id'] = (int) trim($deletes_id_xpath[0]);
+      $deletes_query_xpath = $stats->xpath('//stat[@name="deletesByQuery"]');
+      $summary['@deletes_by_query'] = (int) trim($deletes_query_xpath[0]);
+      $summary['@deletes_total'] = $summary['@deletes_by_id'] + $summary['@deletes_by_query'];
+    }
+
+    return $summary;
   }
 
   /**
    * Clear cached Solr data.
    */
   public function clearCache() {
+    // Don't clear cached data if the server is unavailable.
+    if (@$this->ping()) {
+      $this->_clearCache();
+    }
+    else {
+      throw new Exception('No Solr instance available when trying to clear the cache.');
+    }
+  }
+
+  protected function _clearCache() {
     cache_clear_all("apachesolr:luke:", 'cache', TRUE);
+    cache_clear_all("apachesolr:stats:", 'cache', TRUE);
     $this->luke = array();
+    $this->stats = NULL;
   }
 
   /**
@@ -117,7 +171,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
    */
   public function commit($optimize = TRUE, $waitFlush = TRUE, $waitSearcher = TRUE, $timeout = 3600) {
     parent::commit($optimize, $waitFlush, $waitSearcher, $timeout);
-    $this->clearCache();
+    $this->_clearCache();
   }
 
   /**
@@ -137,7 +191,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
    */
   public function __construct($host = 'localhost', $port = 8180, $path = '/solr/') {
     parent::__construct($host, $port, $path);
-    $this->luke_cid = "apachesolr:luke:$host:$port:$path";
+    $this->luke_cid = "apachesolr:luke:" . md5($this->_lukeUrl);
     $cache = cache_get($this->luke_cid);
     if (isset($cache->data)) {
       $this->luke = $cache->data;
@@ -196,6 +250,10 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
 
     if (!isset($result->code) || $result->code < 0) {
       $result->code = 0;
+    }
+
+    if (isset($result->error)) {
+      $responses[0] .= ': ' . check_plain($result->error);
     }
 
     if (!isset($result->data)) {

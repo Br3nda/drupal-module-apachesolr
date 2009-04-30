@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.8 2009/03/20 23:40:07 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.9 2009/04/30 18:54:02 pwolanin Exp $
 
 /**
  * @file
@@ -62,12 +62,13 @@ function apachesolr_search_update_index() {
 }
 
 /**
- * Implementation of hook_apachesolr_node_exclude().
+ * Implementation of hook_apachesolr_types_exclude().
  */
-function apachesolr_search_apachesolr_node_exclude($node) {
-  $excluded_types = variable_get('apachesolr_search_excluded_types', array());
-  // Exclude from processing node types we don't want.
-  return !empty($excluded_types[$node->type]);
+function apachesolr_search_apachesolr_types_exclude($namespace) {
+  if ($namespace == 'apachesolr_search') {
+    $excluded_types = variable_get('apachesolr_search_excluded_types', array());
+    return array_filter($excluded_types);
+  }
 }
 
 /**
@@ -89,9 +90,15 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
     case 'search':
 
       try {
+        if (empty($filters) && !empty($_GET['filters'])) {
+          $filters = $_GET['filters'];
+        }
+        if (empty($solrsort) && !empty($_GET['solrsort'])) {
+          $solrsort = $_GET['solrsort'];
+        }
         // This is the object that knows about the query coming from the user.
-        $query = apachesolr_current_query($keys);
-        if (is_null($query)) {
+        $query = apachesolr_drupal_query($keys, $filters, $solrsort, 'search/' . arg(1));
+        if (empty($query)) {
           throw new Exception(t('Could not construct a Solr query in function apachesolr_search_search()'));
         }
 
@@ -128,16 +135,34 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         }
 
         $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
-        // Request all enabled facets.
+        $facet_missing = variable_get('apachesolr_facet_missing', array());
+
         foreach (apachesolr_get_enabled_facets() as $module => $module_facets) {
           foreach($module_facets as $delta => $facet_field) {
-            $params['facet.field'][] = $facet_field;
-            // Facet limits
-            if (isset($facet_query_limits[$module][$delta])) {
-              $params['f.' . $facet_field . '.facet.limit'] = $facet_query_limits[$module][$delta];
+            // TODO: generalize handling of date and range facets.
+            if ($module == 'apachesolr_search' && ($facet_field == 'created' || $facet_field == 'changed')) {
+              list($start, $end, $gap) = apachesolr_search_date_range($query, $facet_field);
+              if ($gap) {
+                $params['facet.date'][] = $facet_field;
+                $params['f.'. $facet_field .'.facet.date.start'] = $start;
+                $params['f.'. $facet_field .'.facet.date.end'] = $end;
+                $params['f.'. $facet_field .'.facet.date.gap'] = $gap;
+              }
+            }
+            else {
+              $params['facet.field'][] = $facet_field;
+              // Facet limits
+              if (isset($facet_query_limits[$module][$delta])) {
+                $params['f.' . $facet_field . '.facet.limit'] = $facet_query_limits[$module][$delta];
+              }
+              // Facet missing
+              if (!empty($facet_missing[$module][$delta])) {
+                $params['f.' . $facet_field . '.facet.missing'] = 'true';
+              }
             }
           }
         }
+
         if (!empty($params['facet.field'])) {
           // Add a default limit for fields where no limit was set.
           $params['facet.limit'] = variable_get('apachesolr_facet_query_limit_default', 20);
@@ -222,7 +247,11 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
             }
           }
         }
-
+        
+        // Cache the built query. Since all the built queries go through
+        // this process, all the hook_invocations will happen later
+        apachesolr_current_query($query);
+        
         // This hook allows modules to modify the query and params objects.
         apachesolr_modify_query($query, $params, 'apachesolr_search');
         if (!$query) {
@@ -245,8 +274,10 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
             }
             $doc->created = strtotime($doc->created);
             $doc->changed = strtotime($doc->changed);
-            $extra += node_invoke_nodeapi($doc, 'search result');
-            $extra['score'] = $doc->score;
+            // Allow modules to alter each document.
+            drupal_alter('apachesolr_search_result', $doc);
+            // Copy code from comment_nodeapi().
+            $extra[] = format_plural($doc->comment_count, '1 comment', '@count comments');
             $results[] = array(
               'link' => url('node/' . $doc->nid),
               'type' => apachesolr_search_get_type($doc->type),
@@ -263,7 +294,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
           // Hook to allow modifications of the retrieved results
           foreach (module_implements('apachesolr_process_results') as $module) {
             $function = $module .'_apachesolr_process_results';
-            call_user_func_array($function, array(&$results));
+            $function($results);
           }
         }
         // Add search terms and filters onto the breadcrumb.
@@ -273,10 +304,38 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       } // try
       catch (Exception $e) {
         watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
-        apachesolr_failure(t('Solr search'), is_null($query) ? $keys : $query->get_query_basic());
+        apachesolr_failure(t('Solr search'), empty($query) ? $keys : $query->get_query_basic());
       }
       break;
   } // switch
+}
+
+function apachesolr_search_date_range($query, $facet_field) {
+  foreach ($query->get_filters($facet_field) as $filter) {
+    // If we had an ISO date library we could use ISO dates
+    // directly.  Instead, we convert to Unix timestamps for comparison.
+    // Only use dates if we are able to parse into timestamps.
+    $start = strtotime($filter['#start']);
+    $end = strtotime($filter['#end']);
+    if ($start && $end && ($start < $end)) {
+        $start_iso = $filter['#start'];
+        $end_iso = $filter['#end'];
+      // Determine the drilldown gap for this range.
+      $gap = apachesolr_date_gap_drilldown(apachesolr_date_find_query_gap($start_iso, $end_iso));
+    }
+  }
+  // If there is no $delta field in query object, get initial
+  // facet.date.* params from the DB and determine the best search
+  // gap to use.  This callback assumes $delta is 'changed' or 'created'.
+  if (!isset($start_iso)) {
+    $start_iso = apachesolr_date_iso(db_result(db_query("SELECT MIN($facet_field) FROM {node} WHERE status = 1")));
+    $end_iso = apachesolr_date_iso(db_result(db_query("SELECT MAX($facet_field) FROM {node} WHERE status = 1")));
+    $gap = apachesolr_date_determine_gap($start_iso, $end_iso);
+  }
+  // Return a query range from the beginning of a gap period to the beginning
+  // of the next gap period.  We ALWAYS generate query ranges of this form
+  // and the apachesolr_date_*() helper functions require it.
+  return array("$start_iso/$gap", "$end_iso+1$gap/$gap", "+1$gap");
 }
 
 /**
@@ -300,6 +359,23 @@ function apachesolr_search_apachesolr_facets() {
     'facet_field' => 'language',
   );
 
+  $facets['changed'] = array(
+    'info' => t('Apache Solr Search: Filter by updated date'),
+    'facet_field' => 'changed',
+  );
+  $facets['created'] = array(
+    'info' => t('Apache Solr Search: Filter by post date'),
+    'facet_field' => 'created',
+  );
+
+  // A book module facet.
+  if (module_exists('book')) {
+    $facets['is_book_bid'] = array(
+      'info' => t('Apache Solr Search: Filter by Book'),
+      'facet_field' => 'is_book_bid',
+    );
+  }
+
   // Get taxonomy vocabulary facets.
   if (module_exists('taxonomy')) {
     $vocabs = taxonomy_get_vocabularies();
@@ -307,7 +383,7 @@ function apachesolr_search_apachesolr_facets() {
       // In this case the delta and facet field are the same.
       $delta = 'im_vid_' . $vid;
       $facets[$delta] = array(
-        'info' => t('Apache Solr Search: Filter by @name', array('@name' => $vocab->name)),
+        'info' => t('Apache Solr Search: Filter by taxonomy @name', array('@name' => $vocab->name)),
         'facet_field' => $delta,
       );
     }
@@ -376,29 +452,30 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
             $terms = array();
 
             foreach ($response->facet_counts->facet_fields->$delta as $tid => $count) {
+              if ($tid == '_empty_') {
+                // TODO - for now we don't handle facet missing.
+                continue;
+              }
               $unclick_link = '';
               unset($active);
               $term = taxonomy_get_term($tid);
               $new_query = clone $query;
-              if ($active = $query->has_field('tid', $tid)) {
+              if ($active = $query->has_filter('tid', $tid)) {
                 $contains_active = TRUE;
-                $new_query->remove_field('tid', $term->tid);
-                $path = 'search/' . arg(1) . '/' . $new_query->get_query_basic();
+                $new_query->remove_filter('tid', $term->tid);
+                $path = $new_query->get_path();
                 $querystring = $new_query->get_url_querystring();
                 $unclick_link = theme('apachesolr_unclick_link', $path, $querystring);
               }
               else {
-                $new_query->add_field('tid', $term->tid);
-                $path = 'search/' . arg(1) . '/' . $new_query->get_query_basic();
+                $new_query->add_filter('tid', $term->tid);
+                $path = $new_query->get_path();
                 $querystring = $new_query->get_url_querystring();
               }
               $countsort = $count == 0 ? '' : 1 / $count;
               // if numdocs == 1 and !active, don't add.
-              if ($response->numFound == 1 && !$active) {
-                // skip
-              }
-              else {
-                $terms[$term->vid][$active ? $countsort . $term->name : 1 + $countsort . $term->name] = theme('apachesolr_facet_item', $term->name, $count, $path, $querystring, $active, $unclick_link, $response->numFound);
+              if ($response->response->numFound > 1 || $active) {
+                $terms[$term->vid][$active ? $countsort . $term->name : 1 + $countsort . $term->name] = theme('apachesolr_facet_item', $term->name, $count, $path, $querystring, $active, $unclick_link, $response->response->numFound);
               }
             }
           }
@@ -417,9 +494,8 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
 
         switch ($delta) {
           case 'currentsearch':
-            $fields = $query->get_fields();
-            $search_keys = $query->get_query_basic();
-            $path = 'search/' . arg(1) . '/' . $search_keys;
+            $fields = $query->get_filters();
+            $path = $query->get_path();
             $options = array();
             if (!$fields) {
               $options['attributes']['class'] = 'active';
@@ -428,25 +504,30 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
             foreach($fields as $field) {
               if ($field['#name']) {
                 $new_query = clone $query;
-                $new_query->remove_field($field['#name'], $field['#value']);
-                $path = 'search/'. arg(1) .'/'. $new_query->get_query_basic();
+                $new_query->remove_filter($field['#name'], $field['#value']);
+                $path = $new_query->get_path();
                 $querystring = $new_query->get_url_querystring();
                 $unclick_link = theme('apachesolr_unclick_link', $path, $querystring);
                 if (! $fielddisplay = theme("apachesolr_breadcrumb_". $field['#name'], $field['#value'])) {
                   $fielddisplay = $field['#value'];
                 }
-                $links[] = theme('apachesolr_facet_item', $fielddisplay, NULL, $path, $querystring, $active, $unclick_link, $response->numFound);
+                $links[] = theme('apachesolr_facet_item', $fielddisplay, NULL, $path, $querystring, $active, $unclick_link, $response->response->numFound);
               }
             }
             $content = theme('apachesolr_currentsearch', $response->response->numFound, $links);
             return array('subject' => t('Current search'), 'content' => $content);
-
+          case 'is_book_bid':
+            return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by book'), 'apachesolr_search_get_book');
           case 'language':
             return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by language'), 'locale_language_name');
            case 'uid':
             return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by author'), 'apachesolr_search_get_username');
           case 'type':
             return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by type'), 'apachesolr_search_get_type');
+          case 'changed':
+            return apachesolr_date_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by modification date'));
+          case 'created':
+            return apachesolr_date_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by post date'));
 
           default:
            if ($fields = apachesolr_cck_fields()) {
@@ -473,6 +554,19 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
         apachesolr_facetcount_save($edit);
       }
       break;
+  }
+}
+
+/**
+ * Callback function for the 'Filter by book' facet block.
+ */
+function apachesolr_search_get_book($facet, &$options) {
+  if (is_numeric($facet)) {
+    return db_result(db_query('SELECT title FROM {node} WHERE nid = %d', $facet));
+  }
+  else {
+    $options['html'] = TRUE;
+    return theme('placeholder', t('Not in any book'));
   }
 }
 
@@ -522,7 +616,7 @@ function apachesolr_search_form_search_form_alter(&$form, $form_state) {
         '#suffix' => '</div>',
         '#type' => 'item',
         '#title' => t('Did you mean'),
-        '#value' => l($new_keywords, 'search/'. arg(1) .'/'. $new_keywords),
+        '#value' => l($new_keywords, $query->get_path($new_keywords)),
       );
     }
   }
@@ -574,6 +668,9 @@ function apachesolr_search_build_spellcheck() {
  */
 function apachesolr_search_theme() {
   return array(
+    'apachesolr_breadcrumb_is_book_bid' => array(
+      'arguments' => array('bid' => NULL),
+    ),
     'apachesolr_breadcrumb_uid' => array(
       'arguments' => array('uid' => NULL),
     ),
@@ -583,6 +680,12 @@ function apachesolr_search_theme() {
     'apachesolr_breadcrumb_type' => array(
       'arguments' => array('type' => NULL),
     ),
+    'apachesolr_breadcrumb_changed' => array(
+      'arguments' => array('type' => NULL),
+    ),
+    'apachesolr_breadcrumb_created' => array(
+      'arguments' => array('type' => NULL),
+    ),
     'apachesolr_currentsearch' => array(
       'arguments' => array('total_found' => NULL, 'links' => NULL),
     ),
@@ -590,6 +693,21 @@ function apachesolr_search_theme() {
       'arguments' => array('doc' => NULL, 'snippets' => NULL),
     ),
   );
+}
+
+function theme_apachesolr_breadcrumb_date_range($range) {
+  if (preg_match('@[\[\{](\S+) TO (\S+)[\]\}]@', $range, $match)) {
+    return apachesolr_date_format_range($match[1], $match[2]);
+  }
+  return $range;
+}
+
+function theme_apachesolr_breadcrumb_changed($range) {
+  return theme_apachesolr_breadcrumb_date_range($range);
+}
+
+function theme_apachesolr_breadcrumb_created($range) {
+  return theme_apachesolr_breadcrumb_date_range($range);
 }
 
 /**
@@ -615,14 +733,26 @@ function theme_apachesolr_breadcrumb_type($type) {
 }
 
 /**
- * Return current search block contents
+ * Return the title of a book.
  */
-function theme_apachesolr_currentsearch($total_found, $links) {
-  return theme_item_list($links, t('Search found @count items', array('@count' => $total_found)));
+function theme_apachesolr_breadcrumb_is_book_bid($bid) {
+  if (is_numeric($bid)) {
+    return db_result(db_query('SELECT title FROM {node} WHERE nid = %d', $bid));
+  }
+  else {
+    return t('Not in any book');
+  }
 }
 
 /**
- * Returns the snipit text for a search entry
+ * Return current search block contents
+ */
+function theme_apachesolr_currentsearch($total_found, $links) {
+  return theme_item_list($links, format_plural($total_found, 'Search found 1 item', 'Search found @count items'));
+}
+
+/**
+ * Theme the highlighted snippet text for a search entry.
  *
  * @param object $doc
  * @param array $snippets
