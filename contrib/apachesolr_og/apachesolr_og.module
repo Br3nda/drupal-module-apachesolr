@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_og.module,v 1.1.2.1 2009/03/25 01:56:01 pwolanin Exp $
+// $Id: apachesolr_og.module,v 1.1.2.2 2009/04/30 17:23:13 pwolanin Exp $
 
 /**
  * @file
@@ -7,17 +7,61 @@
  */
 
 /**
+ * Implementation of hook_menu().
+ */
+function apachesolr_og_menu() {
+  return array(
+    'admin/og/apachesolr_og' => array(
+      'title'            => 'Apache Solr OG configuration ',
+      'description'      => 'Apache Solr OG facet settings for group posts.',
+      'page callback'    => 'drupal_get_form',
+      'page arguments'   => array('apachesolr_og_admin'),
+      'access arguments' => array('administer site configuration'),
+    ),
+  );
+}
+
+/**
+ * Build a settings form.
+ */
+function apachesolr_og_admin() {
+  $form = array();
+  $form['apachesolr_og_groupnode'] = array(
+    '#type' => 'radios',
+    '#title' => t('Is the group node "included" within a group along with that group\'s posts'),
+    '#description' => t('Should group nodes be indexed as belonging to their own group for the purposes of faceting?'),
+    '#options' => array(0 => t('Not included'), 1 => t('Included')),
+    '#default_value' => variable_get('apachesolr_og_groupnode', 0),
+  );
+  $form = system_settings_form($form);
+  $form['#submit'][] = 'apachesolr_og_reindex';
+  return $form;
+}
+
+/**
+ * Submit function to make group nodes as needing re-indexing.
+ */
+function apachesolr_og_reindex() {
+  $result = db_query("SELECT nid FROM {og}");
+  while($og = db_fetch_array($result)) {
+    apachesolr_mark_node($og['nid']);
+  }
+  drupal_set_message(t('All group nodes marked for re-indexing'));
+}
+
+/**
  * Implementation of hook_apachesolr_update_index().
  */
 function apachesolr_og_apachesolr_update_index(&$document, $node) {
-  
+  // Index group posts
   if (!empty($node->og_groups)) {
     foreach ($node->og_groups as $gid) {
       $document->setMultiValue(_apachesolr_og_gid_key(), $gid);
     }
-  }
-  else {
-    $document->setMultiValue(_apachesolr_og_gid_key(), 0);
+  } 
+  elseif (isset($node->og_description) && variable_get('apachesolr_og_groupnode', 0)) {
+    // Index the group node itself as in the group.
+    $document->setMultiValue(_apachesolr_og_gid_key(), $node->nid);
   }
 }
 
@@ -25,6 +69,8 @@ function apachesolr_og_apachesolr_update_index(&$document, $node) {
  * Implementation of hook_apachesolr_modify_query().
  */
 function apachesolr_og_apachesolr_modify_query(&$query, &$params, $caller) {
+  // Fetch the group ID in results - however, this is currently not used.
+  // May be useful for custom theming.
   if ($caller == 'apachesolr_search') {
     $params['fl'] .= ',' . _apachesolr_og_gid_key();
   }
@@ -98,7 +144,9 @@ function apachesolr_og_block($op = 'list', $delta = 0, $edit = array()) {
       // Add the blocks
       $blocks = array();
       foreach ($enabled_facets as $delta => $facet_field) {
-        $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE,);
+        if (isset($facets[$delta])) {
+          $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE,);
+        }
       }
       return $blocks;
 
@@ -129,13 +177,13 @@ function apachesolr_og_block($op = 'list', $delta = 0, $edit = array()) {
 /**
  * Callback function for the 'Filter by group' facet block.
  */
-function apachesolr_og_group_name($facet) {
-  if ($facet == 0) {
-    return t('No group');
+function apachesolr_og_group_name($facet, &$options) {
+  if (!is_numeric($facet)) {
+    $options['html'] = TRUE;
+    return theme('placeholder', t('No group'));
   }
 
-  $sql = 'SELECT title FROM {node} WHERE nid = %d';
-  return db_result(db_query($sql, $facet));
+  return db_result(db_query("SELECT title FROM {node} WHERE nid = %d", $facet));
 }
 
 /**
@@ -154,6 +202,10 @@ function apachesolr_og_theme() {
  * Theme the breadcrumb.
  */
 function theme_apachesolr_breadcrumb_im_og_gid($group_id) {
-  return apachesolr_og_group_name($group_id);
+  if (!is_numeric($group_id)) {
+    return t('No group');
+  }
+
+  return db_result(db_query("SELECT title FROM {node} WHERE nid = %d", $group_id));
 }
 
