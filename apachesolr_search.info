@@ -1,4 +1,4 @@
-; $Id: apachesolr_search.info,v 1.5 2009/04/30 18:54:02 pwolanin Exp $
+; $Id: apachesolr_search.info,v 1.6 2009/04/30 19:02:08 pwolanin Exp $
 name = Apache Solr search
 description = Search with Solr
 dependencies[] = search

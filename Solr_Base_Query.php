@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.7 2009/04/30 18:54:02 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.8 2009/04/30 19:02:08 pwolanin Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 

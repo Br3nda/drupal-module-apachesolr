@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.9 2009/04/30 18:54:02 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.10 2009/04/30 19:02:08 pwolanin Exp $
 
 /**
  * @file

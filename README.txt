@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.7 2009/04/30 18:54:02 pwolanin Exp $ */
+/* $Id: README.txt,v 1.8 2009/04/30 19:02:08 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
