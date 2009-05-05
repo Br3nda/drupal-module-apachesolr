@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.137 2009/05/05 17:43:10 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.138 2009/05/05 19:04:05 pwolanin Exp $
 
 /**
  * @file
@@ -44,6 +44,14 @@ function apachesolr_menu() {
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_LOCAL_TASK,
   );
+  $items['admin/settings/apachesolr/index/delete/confirm'] = array(
+    'title'              => 'Confirm index deletion',
+    'page callback'      => 'drupal_get_form',
+    'page arguments'     => array('apachesolr_delete_index_confirm'),
+    'access arguments'   => array('administer site configuration'),
+    'file'               => 'apachesolr.admin.inc',
+    'type'               => MENU_CALLBACK,
+  );
   $items['admin/reports/apachesolr'] = array(
     'title'              => 'Apache Solr Search index',
     'page callback'      => 'apachesolr_index_report',
@@ -55,6 +63,7 @@ function apachesolr_menu() {
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_DEFAULT_LOCAL_TASK,
   );
+  
   return $items;
 }
 

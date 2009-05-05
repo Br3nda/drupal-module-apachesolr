@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.15 2009/04/30 18:00:00 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.16 2009/05/05 19:04:05 pwolanin Exp $
 
 /**
  * @file
@@ -289,15 +289,13 @@ function apachesolr_delete_index_form() {
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Delete the index'),
-    '#validate' => array('apachesolr_delete_index_validate'),
-    '#submit' => array('apachesolr_delete_index'),
+    '#submit' => array('apachesolr_delete_index_submit'),
   );
-  $form['delete_index'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Confirm index deletion'),
+  $form['delete-desc'] = array(
+    '#type' => 'item',
     '#description' => t('Deletes all of the documents in the Solr index. This is rarely necessary unless your index is corrupt or you have installed a new schema.xml.'),
-    '#default_value' => NULL,
   );
+
   return $form;
 }
 
@@ -310,35 +308,34 @@ function apachesolr_clear_index($form, &$form_state) {
   apachesolr_clear_last_index();
 }
 
+
 /**
- * Validate function for the 'Delete the index' button.
- *
+ * Submit function for the "Delete the index" button
  * @see apachesolr_delete_index_form()
+ * 
  */
-function apachesolr_delete_index_validate($form, &$form_state) {
-  if (!$form_state['values']['delete_index']) {
-    form_set_error('delete_index', t('If you want to delete the Solr index, you must check the confirmation box.'));
-  }
+function apachesolr_delete_index_submit($form, &$form_state) {
+  $form_state['redirect'] = 'admin/settings/apachesolr/index/delete/confirm';
 }
 
 /**
- * Submit function for the 'Delete the index' button.
- *
- * @see apachesolr_delete_index_form()
+ * Confirmation form for 'Delete the index' button
+ * @see apachesolr_delete_index_submit()
  */
-function apachesolr_delete_index() {
+function apachesolr_delete_index_confirm() {
+  $form = array();
+  return confirm_form($form, t('Are you sure you want to delete your search index and start re-indexing?'), 'admin/settings/apachesolr/index', NULL, t('Delete'), t('Cancel'));
+}
+
+/**
+ * Submit function for the 'Delete the index' confirmation form.
+ *
+ * @see apachesolr_delete_index_confirm()
+ */
+function apachesolr_delete_index_confirm_submit($form, &$form_state) {
+  $form_state['redirect'] = 'admin/settings/apachesolr/index';
   try {
-    // Instantiate a new Solr object.
-    $solr = apachesolr_get_solr();
-    $query = '*:*';
-    // Allow other modules to modify the delete query.
-    // For example, use the site hash so that you only delete this site's
-    // content:  $query = 'hash:' . apachesolr_site_hash()
-    drupal_alter('apachesolr_delete_index', $query);
-    $solr->deleteByQuery($query);
-    $solr->commit();
-    apachesolr_clear_last_index();
-    apachesolr_index_updated(time());
+    apachesolr_delete_index();
     // This form can't be seen by anyone without 'administer site configuration'
     // permission, so no need to check perms before displaying a run-cron link.
     drupal_set_message(t('The Solr content index has been erased. You must now !run_cron until your entire site has been re-indexed.', array('!run_cron' => l(t('run cron'), 'admin/reports/status/run-cron', array('query' => array('destination' => 'admin/settings/apachesolr/index'))))));
@@ -346,5 +343,24 @@ function apachesolr_delete_index() {
   catch (Exception $e) {
     watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
   }
+}
+
+/**
+ * Utility function to delete the index and reset all index counters.
+ *
+ * @throws Exception
+ */
+function apachesolr_delete_index() {
+  // Instantiate a new Solr object.
+  $solr = apachesolr_get_solr();
+  $query = '*:*';
+  // Allow other modules to modify the delete query.
+  // For example, use the site hash so that you only delete this site's
+  // content:  $query = 'hash:' . apachesolr_site_hash()
+  drupal_alter('apachesolr_delete_index', $query);
+  $solr->deleteByQuery($query);
+  $solr->commit();
+  apachesolr_clear_last_index();
+  apachesolr_index_updated(time());
 }
 
