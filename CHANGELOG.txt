@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.66 2009/05/05 19:04:04 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.67 2009/05/05 22:02:21 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, 2009-xx-xx
 ------------------------------
+#453182 by pwolanin, use stored path rather than forcing node/$nid.
 #448298 by JacobSingh and pwolanin, use a confirm form for index deletion.
 #454352 by Damien Tournoud, make optimize interval configurable, document variables.
 

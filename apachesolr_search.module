@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.88 2009/04/30 17:38:41 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.89 2009/05/05 22:02:21 pwolanin Exp $
 
 /**
  * @file
@@ -105,7 +105,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         $results = array();
 
         $params = array(
-          'fl' => 'id,nid,title,comment_count,type,created,changed,score,url,uid,name',
+          'fl' => 'id,nid,title,comment_count,type,created,changed,score,path,url,uid,name',
           'rows' => variable_get('apachesolr_rows', 10),
           'facet' => 'true',
           'facet.mincount' => 1,
@@ -279,7 +279,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
             // Copy code from comment_nodeapi().
             $extra[] = format_plural($doc->comment_count, '1 comment', '@count comments');
             $results[] = array(
-              'link' => url('node/' . $doc->nid),
+              'link' => url($doc->path),
               'type' => apachesolr_search_get_type($doc->type),
               'title' => $doc->title,
               'user' => theme('username', $doc),
