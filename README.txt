@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.17 2009/04/30 17:38:40 pwolanin Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.18 2009/05/05 17:43:10 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -88,6 +88,34 @@ is visible in search.
 
 Enable blocks for facets first at Administer > Site configuration > Apache Solr > Enabled filters,
 then position them as you like at Administer > Site building > Blocks.   
+
+Configuration variables
+--------------
+
+The module provides some (hidden) variables that can be used to tweak its
+behavior:
+
+ - apachesolr_luke_limit: the limit (in terms of number of documents in the
+   index) above which the module will not retrieve the number of terms per field
+   when performing LUKE queries (for performance reasons).
+
+ - apachesolr_tags_to_index: the list of HTML tags that the module will index
+   (see apachesolr_add_tags_to_document()).
+
+ - apachesolr_ping_timeout: the timeout (in seconds) after which the module will
+   consider the Apache Solr server unavailable.
+
+ - apachesolr_optimize_interval: the interval (in seconds) between automatic
+   optimizations of the Apache Solr index. Set to 0 to disable.
+
+ - apachesolr_cache_delay: the interval (in seconds) after an update after which
+   the module will requery the Apache Solr for the index structure. Set it to
+   your autocommit delay plus a few seconds.
+
+ - apachesolr_service_class: the Apache_Solr_Service class used for communicating
+   with the Apache Solr server.
+
+ - apachesolr_query_class: the default query class to use.
 
 Troubleshooting
 --------------

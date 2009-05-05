@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.136 2009/04/30 18:00:00 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.137 2009/05/05 17:43:10 pwolanin Exp $
 
 /**
  * @file
@@ -360,25 +360,30 @@ function apachesolr_index_updated($updated = NULL) {
 function apachesolr_cron() {
   try {
     $solr = apachesolr_get_solr();
+
     // Check for unpublished content that wasn't deleted from the index.
     $result = db_query("SELECT n.nid, n.status FROM {apachesolr_search_node} asn INNER JOIN {node} n ON n.nid = asn.nid WHERE asn.status != n.status");
     while ($node = db_fetch_object($result)) {
       _apachesolr_nodeapi_update($node, FALSE);
     }
+
     // Check for deleted content that wasn't deleted from the index.
     $result = db_query("SELECT asn.nid FROM {apachesolr_search_node} asn LEFT JOIN {node} n ON n.nid = asn.nid WHERE n.nid IS NULL");
     while ($node = db_fetch_object($result)) {
       _apachesolr_nodeapi_delete($node, FALSE);
     }
+
+    // Optimize the index (by default once a day).
+    $optimize_interval = variable_get('apachesolr_optimize_interval', 60 * 60 * 24);
     $last = variable_get('apachesolr_last_optimize', 0);
     $time = time();
-    // Make sure to omtimize once per day.
-    if ($time - $last > 60*60*24) {
+    if ($optimize_interval && ($time - $last > $optimize_interval)) {
       $solr->optimize(FALSE, FALSE);
       variable_set('apachesolr_last_optimize', $time);
       apachesolr_index_updated($time);
     }
-    // Only clear the cache if the index changed, but at least once daily.
+
+    // Only clear the cache if the index changed.
     // TODO: clear on some schedule if running multi-site.
     $updated = apachesolr_index_updated();
     if ($updated) {
