@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.89 2009/05/05 22:02:21 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.90 2009/05/06 01:15:35 pwolanin Exp $
 
 /**
  * @file
@@ -500,7 +500,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
             if (!$fields) {
               $options['attributes']['class'] = 'active';
             }
-            $links[] = apachesolr_l($search_keys, $path, $options);
+            $links[] = apachesolr_l($query->get_query_basic(), $path, $options);
             foreach($fields as $field) {
               if ($field['#name']) {
                 $new_query = clone $query;
