@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.138 2009/05/05 19:04:05 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.139 2009/05/06 16:34:19 pwolanin Exp $
 
 /**
  * @file
@@ -1072,6 +1072,14 @@ function apachesolr_index_key($field) {
   }
   $sm = $field['multiple'] ? 'm_' : 's_';
   return $type_prefix . $sm . $field['name'];
+}
+
+/**
+ * Try to map a schema field name to a human-readable description.
+ */
+function apachesolr_field_name_map($field_name) {
+  require_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc'); 
+  return _apachesolr_field_name_map($field_name);
 }
 
 /**
