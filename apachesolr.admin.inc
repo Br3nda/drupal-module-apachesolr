@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.18 2009/05/07 12:08:42 jacobsingh Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.19 2009/05/07 16:05:55 pwolanin Exp $
 
 /**
  * @file
@@ -66,6 +66,13 @@ function apachesolr_settings() {
     '#default_value' => variable_get('apachesolr_set_nodeapi_messages', 1),
     '#options' => array(0 => t('Disabled'), 1 => t('Enabled')),
   );
+  // Add a link to add more mlt blocks.
+  $form['mlt_link'] = array(
+    '#type' => 'item',
+    '#value' => l(t('Add a new content recommendation block'), 'admin/settings/apachesolr/mlt/add_block'),
+    '#description' => format_plural(count(apachesolr_mlt_list_blocks()),  'You currently have 1 block.', 'You currenly have @count blocks.'),
+  );
+
   return system_settings_form($form);
 }
 
@@ -373,7 +380,7 @@ function _apachesolr_field_name_map($field_name) {
   if (!isset($map)) {
     $map = array(
       'body' => t('Body text - the full, rendered content'),
-      'title' => t('Content title'),
+      'title' => t('Title'),
       'name' => t('Author name'),
       'path_alias' => t('Path alias'),
       'taxonomy_names' => t('All taxonomy term names'),
@@ -395,3 +402,206 @@ function _apachesolr_field_name_map($field_name) {
   }
   return isset($map[$field_name]) ? $map[$field_name] : $field_name;
 }
+
+/**
+ * MoreLikeThis administration and utility functions.
+ */
+
+function apachesolr_mlt_add_block_form() {
+  $form = apachesolr_mlt_block_form();
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#weight' => '5',
+  );
+  return $form;
+}
+
+function apachesolr_mlt_add_block_form_submit($form, &$form_state) {
+  apachesolr_mlt_save_block($form_state['values']);
+  drupal_set_message('New content recommendation block created.  Drag it into a region to enable it');
+  $form_state['redirect'] = 'admin/build/block';
+}
+
+/**
+ * Form to edit moreLikeThis block settings.
+ *
+ * @param int $delta If editing, the id of the block to edit.
+ *
+ * @return array The form used for editing.
+ * TODO:
+ *   Add term boost settings.
+ *   Enable the user to specify a query, rather then forcing suggestions based
+ *     on the node id.
+ *
+ */
+function apachesolr_mlt_block_form($delta = NULL) {
+  if (isset($delta)) {
+    $block = apachesolr_mlt_load_block($delta);
+    if (!$block) {
+      return array();
+    }
+  }
+  else{
+    $block = apachesolr_mlt_block_defaults();
+  }
+
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Block Name'),
+    '#description' => t('The block name displayed to site users.'),
+    '#required' => TRUE,
+    '#default_value' => $block['name'],
+    '#weight' => '-2',
+  );
+  $form['num_results'] = array(
+    '#type' => 'select',
+    '#title' => t('Maximum number of related items to display'),
+    '#default_value' => $block['num_results'],
+    '#options' => drupal_map_assoc(array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)),
+    '#weight' => -1,
+    );
+  $form['mlt_fl'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Fields for finding related content'),
+    '#description' => t('Choose the fields to be used in calculating similarity. The default combination of %taxonomy_names and %title will provide relevant results for typical sites.', array("%taxonomy_names" => _apachesolr_field_name_map("taxonomy_names"), "%title" => _apachesolr_field_name_map("title"))),
+    '#options' => apachesolr_mlt_get_fields(),
+    '#required' => TRUE,
+    '#default_value' =>  $block['mlt_fl'],
+  );
+  $form['advanced'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Advanced Configuration'),
+    '#weight' => '1',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $options = drupal_map_assoc(array(1, 2, 3, 4, 5, 6, 7));
+  $form['advanced']['mlt_mintf'] = array(
+    '#type' => 'select',
+    '#title' => t('Minimum Term Frequency'),
+    '#description' => t('A word must appear this many times in any given document before the document is considered relevant for comparison.'),
+    '#default_value' => $block['mlt_mintf'],
+    '#options' => $options,
+  );
+  $form['advanced']['mlt_mindf'] = array(
+    '#type' => 'select',
+    '#title' => t('Minimum Document Frequency'),
+    '#description' => t('A word must occur in at least this many documents before it will be used for similarity comparison.'),
+    '#default_value' => $block['mlt_mindf'],
+    '#options' => $options,
+  );
+  $form['advanced']['mlt_minwl'] = array(
+    '#type' => 'select',
+    '#title' => t('Minimum Word Length'),
+    '#description' => 'You can use this to eliminate short words such as "the" and "it" from similarity comparisons. Words must be at least this number of characters or they will be ignored.',
+    '#default_value' => $block['mlt_minwl'],
+    '#options' => $options,
+  );
+  $form['advanced']['mlt_maxwl'] = array(
+    '#type' => 'select',
+    '#title' => t('Maximum World Length'),
+    '#description' => t('You can use this to eliminate very long words from similarity comparisons. Words of more than this number of characters will be ignored.'),
+    '#default_value' => $block['mlt_maxwl'],
+    '#options' => drupal_map_assoc(array(8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)),
+  );
+  $form['advanced']['mlt_maxqt'] = array(
+    '#type' => 'select',
+    '#title' => t('Maximum number of query terms'),
+    '#description' => t('The maximum number of query terms that will be included in any query. Lower numbers will result in fewer recommendations but will get results faster. If a content recommendation is not returning any recommendations, you can either check more "Comparison fields" checkboxes or increase the maximum number of query terms here.'),
+    '#options' => drupal_map_assoc(array(5, 10, 15, 20, 25, 30, 35, 40, 45, 50)),
+    '#default_value' => $block['mlt_maxqt'],
+  );
+
+  return $form;
+}
+
+/**
+ * Merge supplied settings with the standard defaults..
+ */
+function apachesolr_mlt_block_defaults($block = array()) {
+  return $block + array(
+    'name' => '',
+    'num_results' => '5',
+    'mlt_fl' =>  array(
+      'title' => 'title',
+      'taxonomy_names' => 'taxonomy_names',
+    ),
+    'mlt_mintf' => '1',
+    'mlt_mindf' => '1',
+    'mlt_minwl' => '3',
+    'mlt_maxwl' => '15',
+    'mlt_maxqt' => '30',
+  );
+}
+
+/**
+ * Constructs a list of field names used on the settings form.
+ *
+ * @return array An array containing a the fields in the solr instance.
+ */
+function apachesolr_mlt_get_fields() {
+  $solr = apachesolr_get_solr();
+  $fields = $solr->getFields();
+  $rows = array();
+  foreach ($fields as $field_name => $field) {
+    if ($field->schema{4} == 'V')
+    $rows[$field_name] = _apachesolr_field_name_map($field_name);
+  }
+  ksort($rows);
+  return $rows;
+}
+
+/**
+ * A helper function to save MLT block data.
+ *
+ * If passed a block delta, the function will update block settings. If it is
+ * not passed a block delta, the function will create a new block.
+ *
+ * @param array $block_settings An array containing the settings required to form
+ * a moreLikeThis request.
+ *
+ * @param int $delta The id of the block you wish to update.
+ */
+function apachesolr_mlt_save_block($block_settings = array(), $delta = NULL) {
+  $blocks = variable_get('apachesolr_mlt_blocks', array());
+  if (is_null($delta)) {
+    $count = 0;
+    ksort($blocks);
+    // Construct a new array key.
+    if (end($blocks)) {
+      list(, $count) = explode('-', key($blocks));
+    }
+    $delta = sprintf('mlt-%03d', 1 + $count);
+  }
+  $defaults = apachesolr_mlt_block_defaults();
+  // Remove stray form values.
+  $blocks[$delta] = array_intersect_key($block_settings, $defaults) + $defaults;
+  // Eliminate non-selected fields.
+  $blocks[$delta]['mlt_fl'] = array_filter($blocks[$delta]['mlt_fl']);
+  variable_set('apachesolr_mlt_blocks', $blocks);
+}
+
+function apachesolr_mlt_delete_block_form($form_state, $delta) {
+  if ($block = apachesolr_mlt_load_block($delta)) {
+    $form['delta'] = array(
+      '#type' => 'value',
+      '#value' => $delta
+    );
+
+    return confirm_form($form,
+      t('Are you sure you want to delete the Apache Solr content recommendation block %name?', array('%name' => $block['name'])),
+      'admin/build/block',
+      t('The block will be deleted. This action cannot be undone.'),
+      t('Delete'), t('Cancel'));
+  }
+}
+
+function apachesolr_mlt_delete_block_form_submit($form, &$form_state) {
+  $blocks = variable_get('apachesolr_mlt_blocks', array());
+  unset($blocks[$form_state['values']['delta']]);
+  variable_set('apachesolr_mlt_blocks', $blocks);
+  drupal_set_message(t('The block has been deleted.'));
+  $form_state['redirect'] = 'admin/build/block';
+}
+

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.1.4.15 2009/04/14 00:12:18 pwolanin Exp $
+// $Id: apachesolr.install,v 1.1.4.16 2009/05/07 16:05:55 pwolanin Exp $
 
 /**
  * @file
@@ -12,6 +12,10 @@
 function apachesolr_install() {
   // Create tables.
   drupal_install_schema('apachesolr');
+  // Create one MLT block.
+  require_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
+  apachesolr_mlt_save_block(array('name' => t('More like this')));
+
   drupal_set_message(t('Search is enabled. You\'re site is <a href="!index_settings_link">currently 0% indexed</a>.', array('!index_settings_link' => url('admin/settings/apachesolr/index'))));
 }
 
@@ -79,6 +83,7 @@ function apachesolr_uninstall() {
   variable_del('apachesolr_facet_query_limit_default');  
   variable_del('apachesolr_site_hash');
   variable_del('apachesolr_index_last');
+  variable_del('apachesolr_mlt_blocks');
   // Remove tables.
   drupal_uninstall_schema('apachesolr');
 }
@@ -158,5 +163,26 @@ function apachesolr_update_6003() {
     $time = (int) time();
     $ret[] = update_sql("UPDATE {apachesolr_search_node} SET changed = $time WHERE nid IN (SELECT nid from {book})");
   }
+  return $ret;
+}
+
+/**
+ *  Subsume MLT functionality..
+ */
+function apachesolr_update_6004() {
+  $ret = array();
+  if (db_result(db_query("SELECT status FROM {system} WHERE name = 'apachesolr_mlt'"))) {
+    require_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
+    $result = db_query('SELECT id, data FROM {apachesolr_mlt} ORDER BY id ASC');
+    while ($row = db_fetch_array($result)) {
+      $delta = sprintf('mlt-%03d', $row['id']);
+      apachesolr_mlt_save_block(unserialize($row['data']), $delta);
+      $ret[] = update_sql("UPDATE {blocks} SET module = 'apachesolr', delta = '". $delta ."' WHERE module = 'apachesolr_mlt' AND delta ='". $row['id'] ."'");
+    }
+  }
+  if (db_table_exists("{apachesolr_mlt}")) {
+    $ret[] = update_sql("DROP TABLE {apachesolr_mlt}");
+  }
+  $ret[] = update_sql("DELETE FROM {system} WHERE name = 'apachesolr_mlt'");
   return $ret;
 }
