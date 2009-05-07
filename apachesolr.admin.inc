@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.17 2009/05/06 16:34:19 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.18 2009/05/07 12:08:42 jacobsingh Exp $
 
 /**
  * @file
@@ -338,7 +338,7 @@ function apachesolr_delete_index_confirm_submit($form, &$form_state) {
     apachesolr_delete_index();
     // This form can't be seen by anyone without 'administer site configuration'
     // permission, so no need to check perms before displaying a run-cron link.
-    drupal_set_message(t('The Solr content index has been erased. You must now !run_cron until your entire site has been re-indexed.', array('!run_cron' => l(t('run cron'), 'admin/reports/status/run-cron', array('query' => array('destination' => 'admin/settings/apachesolr/index'))))));
+    drupal_set_message(t('The Apache Solr content index has been erased. You must now !run_cron until your entire site has been re-indexed.', array('!run_cron' => l(t('run cron'), 'admin/reports/status/run-cron', array('query' => array('destination' => 'admin/settings/apachesolr/index'))))));
   }
   catch (Exception $e) {
     watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
