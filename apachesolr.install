@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.1.4.16 2009/05/07 16:05:55 pwolanin Exp $
+// $Id: apachesolr.install,v 1.1.4.17 2009/05/12 21:20:34 pwolanin Exp $
 
 /**
  * @file
@@ -29,9 +29,8 @@ function apachesolr_enable() {
   // Populate table
   db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed)
             SELECT n.nid, n.status, GREATEST(n.created, n.changed, c.last_comment_timestamp) AS changed
-            FROM {node} n LEFT JOIN {apachesolr_search_node} asn ON n.nid = asn.nid
-            LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid
-            WHERE asn.changed IS NULL");
+            FROM {node} n
+            INNER JOIN {node_comment_statistics} c ON n.nid = c.nid");
    // Make sure no nodes end up with a timestamp that's in the future.
    $time = time();
    db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE changed > %d", $time, $time);
@@ -84,6 +83,8 @@ function apachesolr_uninstall() {
   variable_del('apachesolr_site_hash');
   variable_del('apachesolr_index_last');
   variable_del('apachesolr_mlt_blocks');
+  variable_del('apachesolr_cron_limit');
+  variable_del('apachesolr_enabled_facets');
   // Remove tables.
   drupal_uninstall_schema('apachesolr');
 }
@@ -171,7 +172,7 @@ function apachesolr_update_6003() {
  */
 function apachesolr_update_6004() {
   $ret = array();
-  if (db_result(db_query("SELECT status FROM {system} WHERE name = 'apachesolr_mlt'"))) {
+  if (db_table_exists("{apachesolr_mlt}")) {
     require_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
     $result = db_query('SELECT id, data FROM {apachesolr_mlt} ORDER BY id ASC');
     while ($row = db_fetch_array($result)) {
@@ -179,8 +180,6 @@ function apachesolr_update_6004() {
       apachesolr_mlt_save_block(unserialize($row['data']), $delta);
       $ret[] = update_sql("UPDATE {blocks} SET module = 'apachesolr', delta = '". $delta ."' WHERE module = 'apachesolr_mlt' AND delta ='". $row['id'] ."'");
     }
-  }
-  if (db_table_exists("{apachesolr_mlt}")) {
     $ret[] = update_sql("DROP TABLE {apachesolr_mlt}");
   }
   $ret[] = update_sql("DELETE FROM {system} WHERE name = 'apachesolr_mlt'");

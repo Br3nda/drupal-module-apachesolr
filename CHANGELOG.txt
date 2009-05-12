@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.70 2009/05/07 16:05:55 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.71 2009/05/12 21:20:34 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, 2009-xx-xx
 ------------------------------
+#459930 by Scott Reynolds and pwolanin, clean up hook_enable(), uninstall, update_6004
 #453338 by pwolanin and JacobSingh, move mlt functionality into the framework module.
 #365495 by pwolanin, improve admin screens and usability of field weights.
 #454608 by pwolanin, fix current search block.
