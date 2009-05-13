@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.90 2009/05/06 01:15:35 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.91 2009/05/13 15:03:24 pwolanin Exp $
 
 /**
  * @file
@@ -57,8 +57,8 @@ function apachesolr_search_menu() {
  */
 function apachesolr_search_update_index() {
   $cron_limit = variable_get('apachesolr_cron_limit', 50);
-  $result = apachesolr_get_nodes_to_index('apachesolr_search', $cron_limit);
-  apachesolr_index_nodes($result, 'apachesolr_search');
+  $rows = apachesolr_get_nodes_to_index('apachesolr_search', $cron_limit);
+  apachesolr_index_nodes($rows, 'apachesolr_search');
 }
 
 /**

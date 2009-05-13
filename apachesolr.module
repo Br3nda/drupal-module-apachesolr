@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.140 2009/05/07 16:05:55 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.141 2009/05/13 15:03:23 pwolanin Exp $
 
 /**
  * @file
@@ -274,11 +274,16 @@ function _apachesolr_exclude_types($namespace) {
 }
 
 /**
- * Returns a resource from a query based on an indexing namespace.
+ * Returns an array of rows from a query based on an indexing namespace.
  */
 function apachesolr_get_nodes_to_index($namespace, $limit) {
+  $rows = array();
   list($excluded_types, $args, $join_sql, $exclude_sql) = _apachesolr_exclude_types($namespace);
-  return  db_query_range("SELECT asn.nid, asn.changed FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > %d OR (asn.changed = %d AND asn.nid > %d)) AND asn.status = 1 ". $exclude_sql ."ORDER BY asn.changed ASC, asn.nid ASC", $args, 0, $limit);
+  $result = db_query_range("SELECT asn.nid, asn.changed FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > %d OR (asn.changed = %d AND asn.nid > %d)) AND asn.status = 1 ". $exclude_sql ."ORDER BY asn.changed ASC, asn.nid ASC", $args, 0, $limit);
+  while($row = db_fetch_object($result)) {
+    $rows[] = $row;
+  }
+  return $rows;
 }
 
 /**
@@ -288,7 +293,12 @@ function apachesolr_get_nodes_to_index($namespace, $limit) {
  * the timestamp and nid returned.
  * Returns FALSE if no nodes were indexed (none found or error).
  */
-function apachesolr_index_nodes($result, $namespace = '', $callback = 'apachesolr_add_node_document') {
+function apachesolr_index_nodes($rows, $namespace = '', $callback = 'apachesolr_add_node_document') {
+  if (!$rows) {
+    // Nothing to do.
+    return FALSE;
+  }
+
   try {
     // Get the $solr object
     $solr = apachesolr_get_solr();
@@ -306,7 +316,7 @@ function apachesolr_index_nodes($result, $namespace = '', $callback = 'apachesol
   $old_position = apachesolr_get_last_index($namespace);
   $position = $old_position;
 
-  while ($row = db_fetch_object($result)) {
+  foreach ($rows as $row) {
     // Variables to track the last item changed.
     $position['last_change'] = $row->changed;
     $position['last_nid'] = $row->nid;
