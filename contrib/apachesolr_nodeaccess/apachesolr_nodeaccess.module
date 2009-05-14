@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.1.2.9 2009/04/28 23:36:13 pwolanin Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.1.2.10 2009/05/14 20:36:07 pwolanin Exp $
 
 /**
  * Implementation of apachesolr_update_index
@@ -37,6 +37,9 @@ function _apachesolr_nodeaccess_build_subquery($account) {
     throw new Exception('No access');
   }
   $node_access_query = apachesolr_drupal_query();
+  if (empty($node_access_query)) {
+    throw new Exception('No query object in apachesolr_nodeaccess');
+  }
   if (user_access('administer nodes', $account)) {
     // Access all content from the current site, or public content.
     $node_access_query->add_filter('nodeaccess_all', 0);
@@ -65,7 +68,7 @@ function apachesolr_nodeaccess_apachesolr_modify_query(&$query, &$params) {
   }
   catch (Exception $e) {
     $query = NULL;
-    watchdog("apachesolr_nodeaccess", 'User %name (UID:!uid) is not allowed to access any content', array('%name' => $user->name, '!uid' => $user->uid));
+    watchdog("apachesolr_nodeaccess", 'User %name (UID:!uid) cannot search: @message', array('%name' => $user->name, '!uid' => $user->uid, '@message' => $e->getMessage()));
     return;
   }
 

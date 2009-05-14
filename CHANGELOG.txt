@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.72 2009/05/13 15:03:23 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.73 2009/05/14 20:36:06 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxxxx, 2009-xx-xx
 ------------------------------
+#462836 by pwolanin, catch fatal error in _nodeaccess if no solr.
 #461506 by pwolanin, do nothing if there are no nodes to index.
 #459930 by Scott Reynolds and pwolanin, clean up hook_enable(), uninstall, update_6004
 #453338 by pwolanin and JacobSingh, move mlt functionality into the framework module.
