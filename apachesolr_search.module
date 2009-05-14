@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.91 2009/05/13 15:03:24 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.92 2009/05/14 23:10:19 pwolanin Exp $
 
 /**
  * @file
@@ -88,226 +88,242 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
       return apachesolr_index_status('apachesolr_search');
 
     case 'search':
-
+      $filters = isset($_GET['filters']) ? $_GET['filters'] : '';
+      $solrsort = isset($_GET['solrsort']) ? $_GET['solrsort'] : '';
       try {
-        if (empty($filters) && !empty($_GET['filters'])) {
-          $filters = $_GET['filters'];
-        }
-        if (empty($solrsort) && !empty($_GET['solrsort'])) {
-          $solrsort = $_GET['solrsort'];
-        }
-        // This is the object that knows about the query coming from the user.
-        $query = apachesolr_drupal_query($keys, $filters, $solrsort, 'search/' . arg(1));
-        if (empty($query)) {
-          throw new Exception(t('Could not construct a Solr query in function apachesolr_search_search()'));
-        }
-
-        $results = array();
-
-        $params = array(
-          'fl' => 'id,nid,title,comment_count,type,created,changed,score,path,url,uid,name',
-          'rows' => variable_get('apachesolr_rows', 10),
-          'facet' => 'true',
-          'facet.mincount' => 1,
-          'facet.sort' => 'true'
-        );
-
-        /**
-         * Highlighting settings
-         * These settings are set in solrconfig.xml.
-         * See the defaults there.
-         * If you wish to override them, you can via settings.php
-         */
-
-        $params['hl'] = variable_get('apachesolr_hl_active', NULL);
-        $params['hl.fragsize']= variable_get('apachesolr_hl_textsnippetlength', NULL);
-        $params['hl.simple.pre'] = variable_get('apachesolr_hl_pretag', NULL);
-        $params['hl.simple.post'] = variable_get('apachesolr_hl_posttag', NULL);
-        $params['hl.snippets'] = variable_get('apachesolr_hl_numsnippets', NULL);
-        $params['hl.fl'] = variable_get('apachesolr_hl_fieldtohightlight', NULL);
-        // We default to getting snippets from the body.
-        $hl_fl = is_null($params['hl.fl']) ? 'body' : $params['hl.fl'];
-
-        if (variable_get('apachesolr_search_spellcheck', FALSE)) {
-          //Add new parameter to the search request
-          $params['spellcheck.q'] = $query->get_query_basic();
-          $params['spellcheck'] = 'true';
-        }
-
-        $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
-        $facet_missing = variable_get('apachesolr_facet_missing', array());
-
-        foreach (apachesolr_get_enabled_facets() as $module => $module_facets) {
-          foreach($module_facets as $delta => $facet_field) {
-            // TODO: generalize handling of date and range facets.
-            if ($module == 'apachesolr_search' && ($facet_field == 'created' || $facet_field == 'changed')) {
-              list($start, $end, $gap) = apachesolr_search_date_range($query, $facet_field);
-              if ($gap) {
-                $params['facet.date'][] = $facet_field;
-                $params['f.'. $facet_field .'.facet.date.start'] = $start;
-                $params['f.'. $facet_field .'.facet.date.end'] = $end;
-                $params['f.'. $facet_field .'.facet.date.gap'] = $gap;
-              }
-            }
-            else {
-              $params['facet.field'][] = $facet_field;
-              // Facet limits
-              if (isset($facet_query_limits[$module][$delta])) {
-                $params['f.' . $facet_field . '.facet.limit'] = $facet_query_limits[$module][$delta];
-              }
-              // Facet missing
-              if (!empty($facet_missing[$module][$delta])) {
-                $params['f.' . $facet_field . '.facet.missing'] = 'true';
-              }
-            }
-          }
-        }
-
-        if (!empty($params['facet.field'])) {
-          // Add a default limit for fields where no limit was set.
-          $params['facet.limit'] = variable_get('apachesolr_facet_query_limit_default', 20);
-        }
-
-        if (isset($_GET['solrsort'])) {
-          $sort = check_plain($_GET['solrsort']);
-        }
-
-        // Validate sort parameter
-        if (isset($sort) && preg_match('/^([a-z0-9_]+ (asc|desc)(,)?)+$/i', $sort)) {
-          $params['sort'] = $sort;
-        }
-
-        $page = isset($_GET['page']) ? $_GET['page'] : 0;
-        $params['start'] = $page * $params['rows'];
-        // This is the object that does the communication with the solr server.
-        $solr = apachesolr_get_solr();
-
-        // Note - we have query fields set in solrconfig.xml, which will operate when
-        // none are set.
-        $qf = variable_get('apachesolr_search_query_fields', array());
-        $fields = $solr->getFields();
-        if ($qf && $fields) {
-          foreach ($fields as $field_name => $field) {
-            if (!empty($qf[$field_name])) {
-              if ($field_name == 'body') {
-                // Body is the only normed field.
-                $qf[$field_name] *= 40.0;
-              }
-              $params['qf'][] = $field_name . '^'. $qf[$field_name];
-            }
-          }
-        }
-
-        $data = $solr->getLuke();
-        if (isset($data->index->numDocs)) {
-          $total = $data->index->numDocs;
-        }
-        else {
-          $total = db_result(db_query("SELECT COUNT(nid) FROM {node}"));
-        }
-        // For the boost functions for the created timestamp, etc we use the
-        // standard date-biasing function, as suggested (but steeper) at
-        // http://wiki.apache.org/solr/DisMaxRequestHandler
-        // rord() returns 1 for the newset doc, and the number in the index for
-        // the oldest doc.  The function is thus: $total/(rord()*$steepness + $total).
-        $date_settings = variable_get('apachesolr_search_date_boost', '4:200.0');
-        list($date_steepness, $date_boost) = explode(':', $date_settings);
-        if ($date_boost) {
-          $params['bf'][] = "recip(rord(created),$date_steepness,$total,$total)^$date_boost";
-        }
-        // Boost on comment count.
-        $comment_settings = variable_get('apachesolr_search_comment_boost', '0:0');
-        list($comment_steepness, $comment_boost) = explode(':', $comment_settings);
-        if ($comment_boost) {
-          $params['bf'][] = "recip(rord(comment_count),$comment_steepness,$total,$total)^$comment_boost";
-        }
-        // Boost for a more recent comment or node edit.
-        $changed_settings = variable_get('apachesolr_search_changed_boost', '0:0');
-        list($changed_steepness, $changed_boost) = explode(':', $changed_settings);
-        if ($changed_boost) {
-          $params['bf'][] = "recip(rord(last_comment_or_change),$changed_steepness,$total,$total)^$changed_boost";
-        }
-        // Boost for nodes with sticky bit set.
-        $sticky_boost = variable_get('apachesolr_search_sticky_boost', 0);
-        if ($sticky_boost) {
-          $params['bq'][] = "sticky:true^$sticky_boost";
-        }
-        // Boost for nodes with promoted bit set.
-        $promote_boost = variable_get('apachesolr_search_promote_boost', 0);
-        if ($promote_boost) {
-          $params['bq'][] = "promote:true^$promote_boost";
-        }
-        // Modify the weight of results according to the node types.
-        $type_boosts = variable_get('apachesolr_search_type_boosts', array());
-        if (!empty($type_boosts)) {
-          foreach ($type_boosts as $type => $boost) {
-            // Only add a param if the boost is != 0 (i.e. > "Normal").
-            if ($boost) {
-              $params['bq'][] = "type:$type^$boost";
-            }
-          }
-        }
-        
-        // Cache the built query. Since all the built queries go through
-        // this process, all the hook_invocations will happen later
-        apachesolr_current_query($query);
-        
-        // This hook allows modules to modify the query and params objects.
-        apachesolr_modify_query($query, $params, 'apachesolr_search');
-        if (!$query) {
-          return array();
-        }
-
-        $response = $solr->search($query->get_query_basic(), $params['start'], $params['rows'], $params);
-        // The response is cached so that it is accessible to the blocks and anything
-        // else that needs it beyond the initial search.
-        $total = $response->response->numFound;
-        apachesolr_static_response_cache($response);
-        apachesolr_has_searched(TRUE);
-        pager_query("SELECT %d", $params['rows'], 0, NULL, $total);
-        if ($total > 0) {
-          foreach ($response->response->docs as $doc) {
-            $extra = array();
-            $snippet = isset($response->highlighting->{$doc->id}->$hl_fl) ? theme('apachesolr_search_snippets', $doc, $response->highlighting->{$doc->id}->$hl_fl) : '';
-            if (!isset($doc->body)) {
-              $doc->body = $snippet;
-            }
-            $doc->created = strtotime($doc->created);
-            $doc->changed = strtotime($doc->changed);
-            // Allow modules to alter each document.
-            drupal_alter('apachesolr_search_result', $doc);
-            // Copy code from comment_nodeapi().
-            $extra[] = format_plural($doc->comment_count, '1 comment', '@count comments');
-            $results[] = array(
-              'link' => url($doc->path),
-              'type' => apachesolr_search_get_type($doc->type),
-              'title' => $doc->title,
-              'user' => theme('username', $doc),
-              'date' => $doc->created,
-              'node' => $doc,
-              'extra' => $extra,
-              'score' => $doc->score,
-              'snippet' => $snippet,
-            );
-          }
-
-          // Hook to allow modifications of the retrieved results
-          foreach (module_implements('apachesolr_process_results') as $module) {
-            $function = $module .'_apachesolr_process_results';
-            $function($results);
-          }
-        }
-        // Add search terms and filters onto the breadcrumb.
-        drupal_set_breadcrumb(array_merge(menu_get_active_breadcrumb(), $query->get_breadcrumb($_GET['q'])));
+        $results = apachesolr_search_execute($keys, $filters, $solrsort, 'search/' . arg(1));
         return $results;
-
-      } // try
+      }
       catch (Exception $e) {
         watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
-        apachesolr_failure(t('Solr search'), empty($query) ? $keys : $query->get_query_basic());
+        apachesolr_failure(t('Solr search'), $keys);
       }
       break;
   } // switch
+}
+
+/**
+ * Execute a search results based on keyword, filter, and sort strings.
+ *
+ * @throws Exception
+ */
+function apachesolr_search_execute($keys, $filters, $solrsort, $base_path = '') {
+  // Validate sort parameter
+  // TODO: move this to the query class.
+  if (strlen($solrsort) && preg_match('/^([a-z0-9_]+ (asc|desc)(,)?)+$/i', $solrsort)) {
+    $params['sort'] = $solrsort;
+  }
+  else {
+    $solrsort = '';
+    $params = array();
+  }
+  // This is the object that knows about the query coming from the user.
+  $query = apachesolr_drupal_query($keys, $filters, $solrsort, $base_path);
+  if (empty($query)) {
+    throw new Exception(t('Could not construct a Solr query in function apachesolr_search_search()'));
+  }
+  // This is the object that does the communication with the solr server.
+  $solr = apachesolr_get_solr();
+  $params += apachesolr_search_basic_params($query);
+  apachesolr_search_add_facet_params($params, $query);
+  apachesolr_search_add_boost_params($params, $query, $solr);
+
+  $page = isset($_GET['page']) ? $_GET['page'] : 0;
+  $params['start'] = $page * $params['rows'];
+
+  // Cache the built query. Since all the built queries go through
+  // this process, all the hook_invocations will happen later
+  apachesolr_current_query($query);
+
+  // This hook allows modules to modify the query and params objects.
+  apachesolr_modify_query($query, $params, 'apachesolr_search');
+  if (!$query) {
+    return array();
+  }
+  $response = $solr->search($query->get_query_basic(), $params['start'], $params['rows'], $params);
+  // The response is cached so that it is accessible to the blocks and anything
+  // else that needs it beyond the initial search.
+  apachesolr_static_response_cache($response);
+  apachesolr_has_searched(TRUE);
+  // Add search terms and filters onto the breadcrumb.
+  drupal_set_breadcrumb(array_merge(menu_get_active_breadcrumb(), $query->get_breadcrumb()));
+  return apachesolr_process_response($response, $query, $params);
+}
+
+function apachesolr_search_basic_params($query) {
+  $params = array(
+    'fl' => 'id,nid,title,comment_count,type,created,changed,score,path,url,uid,name',
+    'rows' => variable_get('apachesolr_rows', 10),
+    'facet' => 'true',
+    'facet.mincount' => 1,
+    'facet.sort' => 'true'
+  );
+
+  /**
+   * Highlighting settings
+   * These settings are set in solrconfig.xml.
+   * See the defaults there.
+   * If you wish to override them, you can via settings.php
+   */
+
+  $params['hl'] = variable_get('apachesolr_hl_active', NULL);
+  $params['hl.fragsize']= variable_get('apachesolr_hl_textsnippetlength', NULL);
+  $params['hl.simple.pre'] = variable_get('apachesolr_hl_pretag', NULL);
+  $params['hl.simple.post'] = variable_get('apachesolr_hl_posttag', NULL);
+  $params['hl.snippets'] = variable_get('apachesolr_hl_numsnippets', NULL);
+  $params['hl.fl'] = variable_get('apachesolr_hl_fieldtohightlight', NULL);
+
+  if (variable_get('apachesolr_search_spellcheck', FALSE)) {
+    //Add new parameter to the search request
+    $params['spellcheck.q'] = $query->get_query_basic();
+    $params['spellcheck'] = 'true';
+  }
+  return $params;
+}
+
+function apachesolr_search_add_facet_params(&$params, $query) {
+  $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
+  $facet_missing = variable_get('apachesolr_facet_missing', array());
+
+  foreach (apachesolr_get_enabled_facets() as $module => $module_facets) {
+    foreach($module_facets as $delta => $facet_field) {
+      // TODO: generalize handling of date and range facets.
+      if ($module == 'apachesolr_search' && ($facet_field == 'created' || $facet_field == 'changed')) {
+        list($start, $end, $gap) = apachesolr_search_date_range($query, $facet_field);
+        if ($gap) {
+          $params['facet.date'][] = $facet_field;
+          $params['f.'. $facet_field .'.facet.date.start'] = $start;
+          $params['f.'. $facet_field .'.facet.date.end'] = $end;
+          $params['f.'. $facet_field .'.facet.date.gap'] = $gap;
+        }
+      }
+      else {
+        $params['facet.field'][] = $facet_field;
+        // Facet limits
+        if (isset($facet_query_limits[$module][$delta])) {
+          $params['f.' . $facet_field . '.facet.limit'] = $facet_query_limits[$module][$delta];
+        }
+        // Facet missing
+        if (!empty($facet_missing[$module][$delta])) {
+          $params['f.' . $facet_field . '.facet.missing'] = 'true';
+        }
+      }
+    }
+  }
+
+  if (!empty($params['facet.field'])) {
+    // Add a default limit for fields where no limit was set.
+    $params['facet.limit'] = variable_get('apachesolr_facet_query_limit_default', 20);
+  }
+}
+
+function apachesolr_search_add_boost_params(&$params, $query, $solr) {
+  // Note - we have query fields set in solrconfig.xml, which will operate when
+  // none are set.
+  $qf = variable_get('apachesolr_search_query_fields', array());
+  $fields = $solr->getFields();
+  if ($qf && $fields) {
+    foreach ($fields as $field_name => $field) {
+      if (!empty($qf[$field_name])) {
+        if ($field_name == 'body') {
+          // Body is the only normed field.
+          $qf[$field_name] *= 40.0;
+        }
+        $params['qf'][] = $field_name . '^'. $qf[$field_name];
+      }
+    }
+  }
+
+  $data = $solr->getLuke();
+  if (isset($data->index->numDocs)) {
+    $total = $data->index->numDocs;
+  }
+  else {
+    $total = db_result(db_query("SELECT COUNT(nid) FROM {node}"));
+  }
+  // For the boost functions for the created timestamp, etc we use the
+  // standard date-biasing function, as suggested (but steeper) at
+  // http://wiki.apache.org/solr/DisMaxRequestHandler
+  // rord() returns 1 for the newset doc, and the number in the index for
+  // the oldest doc.  The function is thus: $total/(rord()*$steepness + $total).
+  $date_settings = variable_get('apachesolr_search_date_boost', '4:200.0');
+  list($date_steepness, $date_boost) = explode(':', $date_settings);
+  if ($date_boost) {
+    $params['bf'][] = "recip(rord(created),$date_steepness,$total,$total)^$date_boost";
+  }
+  // Boost on comment count.
+  $comment_settings = variable_get('apachesolr_search_comment_boost', '0:0');
+  list($comment_steepness, $comment_boost) = explode(':', $comment_settings);
+  if ($comment_boost) {
+    $params['bf'][] = "recip(rord(comment_count),$comment_steepness,$total,$total)^$comment_boost";
+  }
+  // Boost for a more recent comment or node edit.
+  $changed_settings = variable_get('apachesolr_search_changed_boost', '0:0');
+  list($changed_steepness, $changed_boost) = explode(':', $changed_settings);
+  if ($changed_boost) {
+    $params['bf'][] = "recip(rord(last_comment_or_change),$changed_steepness,$total,$total)^$changed_boost";
+  }
+  // Boost for nodes with sticky bit set.
+  $sticky_boost = variable_get('apachesolr_search_sticky_boost', 0);
+  if ($sticky_boost) {
+    $params['bq'][] = "sticky:true^$sticky_boost";
+  }
+  // Boost for nodes with promoted bit set.
+  $promote_boost = variable_get('apachesolr_search_promote_boost', 0);
+  if ($promote_boost) {
+    $params['bq'][] = "promote:true^$promote_boost";
+  }
+  // Modify the weight of results according to the node types.
+  $type_boosts = variable_get('apachesolr_search_type_boosts', array());
+  if (!empty($type_boosts)) {
+    foreach ($type_boosts as $type => $boost) {
+      // Only add a param if the boost is != 0 (i.e. > "Normal").
+      if ($boost) {
+        $params['bq'][] = "type:$type^$boost";
+      }
+    }
+  }
+}
+
+function apachesolr_process_response($response, $query, $params) {
+  $results = array();
+  // We default to getting snippets from the body.
+  $hl_fl = is_null($params['hl.fl']) ? 'body' : $params['hl.fl'];
+  $total = $response->response->numFound;
+  pager_query("SELECT %d", $params['rows'], 0, NULL, $total);
+  if ($total > 0) {
+    foreach ($response->response->docs as $doc) {
+      $extra = array();
+      $snippet = isset($response->highlighting->{$doc->id}->$hl_fl) ? theme('apachesolr_search_snippets', $doc, $response->highlighting->{$doc->id}->$hl_fl) : '';
+      if (!isset($doc->body)) {
+        $doc->body = $snippet;
+      }
+      $doc->created = strtotime($doc->created);
+      $doc->changed = strtotime($doc->changed);
+      // Allow modules to alter each document.
+      drupal_alter('apachesolr_search_result', $doc);
+      // Copy code from comment_nodeapi().
+      $extra[] = format_plural($doc->comment_count, '1 comment', '@count comments');
+      $results[] = array(
+        'link' => url($doc->path),
+        'type' => apachesolr_search_get_type($doc->type),
+        'title' => $doc->title,
+        'user' => theme('username', $doc),
+        'date' => $doc->created,
+        'node' => $doc,
+        'extra' => $extra,
+        'score' => $doc->score,
+        'snippet' => $snippet,
+      );
+    }
+
+    // Hook to allow modifications of the retrieved results
+    foreach (module_implements('apachesolr_process_results') as $module) {
+      $function = $module .'_apachesolr_process_results';
+      $function($results);
+    }
+  }
+  return $results;
 }
 
 function apachesolr_search_date_range($query, $facet_field) {
