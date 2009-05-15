@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.74 2009/05/14 23:10:19 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.75 2009/05/15 00:17:20 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -6,7 +6,7 @@ Apache Solr integration x.x-x.x, xxxx-xx-xx
 Apache Solr integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
 
-Apache Solr integration 6.x-1.0-xxxxx, 2009-xx-xx
+Apache Solr integration 6.x-1.0-beta10, 2009-05-14
 ------------------------------
 #449414 by pwolanin, aufumy, & Scott Reynolds, refactor apachesolr_search_search().
 #462836 by pwolanin, catch fatal error in _nodeaccess if no solr.
