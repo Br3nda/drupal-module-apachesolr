@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.141 2009/05/13 15:03:23 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.142 2009/05/19 19:56:30 pwolanin Exp $
 
 /**
  * @file
@@ -1384,6 +1384,8 @@ function theme_apachesolr_facet_list($items, $display_limit = 0) {
 }
 
 function theme_apachesolr_sort_list($items) {
+  // theme('item_list') expects a numerically indexed array.
+  $items = array_values($items);
   return theme('item_list', $items);
 }
 
