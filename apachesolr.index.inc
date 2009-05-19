@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.4 2009/04/30 17:38:40 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.5 2009/05/19 19:58:23 pwolanin Exp $
 
 /**
  * @file
@@ -35,7 +35,7 @@ function _apachesolr_strip_decode($text) {
   // Add spaces before stripping tags to avoid running words together.
   $text = filter_xss(str_replace(array('<', '>'), array(' <', '> '), $text), array());
   // Decode entities and then make safe any < or > characters.
-  return htmlspecialchars(html_entity_decode($text, ENT_NOQUOTES, 'UTF-8'), ENT_NOQUOTES, 'UTF-8', FALSE);
+  return htmlspecialchars(html_entity_decode($text, ENT_NOQUOTES, 'UTF-8'), ENT_NOQUOTES, 'UTF-8');
 }
 
 /**
