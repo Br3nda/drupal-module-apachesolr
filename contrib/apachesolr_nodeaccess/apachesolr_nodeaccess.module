@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.1.2.10 2009/05/14 20:36:07 pwolanin Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.1.2.11 2009/06/05 18:05:06 robertDouglass Exp $
 
 /**
  * Implementation of apachesolr_update_index
@@ -129,5 +129,5 @@ function apachesolr_nodeaccess_rebuild_nodeaccess(&$form, $form_state) {
 }
 
 function apachesolr_nodeaccess_enable() {
-  drupal_set_message(t('Your content <a href="@url">must be re-indexed</a> before Apache Solr node access will be functional on searches.', array('@url' => url('admin/settings/apachesolr/index'))), 'error');
+  drupal_set_message(t('Your content <a href="@url">must be re-indexed</a> before Apache Solr node access will be functional on searches.', array('@url' => url('admin/settings/apachesolr/index'))), 'warning');
 }
