@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.142 2009/05/19 19:56:30 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.143 2009/06/08 17:23:36 pwolanin Exp $
 
 /**
  * @file
@@ -1342,7 +1342,10 @@ function apachesolr_l($text, $path, $options = array()) {
   );
   // Don't need this, and just to be safe.
   unset($options['attributes']['title']);
-
+  // Double encode + characters for clean URL Apache quirks.
+  if (variable_get('clean_url', '0')) {
+    $path = str_replace('+', '%2B', $path);
+  }
   return '<a href="'. check_url(url($path, $options)) .'"'. drupal_attributes($options['attributes']) .'>'. ($options['html'] ? $text : check_plain($text)) .'</a>';
 }
 

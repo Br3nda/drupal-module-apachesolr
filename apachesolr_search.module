@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.93 2009/06/05 12:34:36 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.94 2009/06/08 17:23:36 pwolanin Exp $
 
 /**
  * @file
@@ -614,27 +614,42 @@ function apachesolr_search_get_type($facet) {
  */
 function apachesolr_search_form_search_form_alter(&$form, $form_state) {
 
-  if (($form['module']['#value'] == 'apachesolr_search') && variable_get('apachesolr_search_spellcheck', FALSE) && apachesolr_has_searched() && ($response = apachesolr_static_response_cache())) {
-    //Get spellchecker suggestions into an array.
-    $suggestions = get_object_vars($response->spellcheck->suggestions);
-
-    if ($suggestions) {
-      //Get the original query and replace words.
-      $query = apachesolr_current_query();
-
-      foreach($suggestions as $word => $value) {
-        $replacements[$word] = $value->suggestion[0];
+  if ($form['module']['#value'] == 'apachesolr_search') {
+    $form['#submit'][] = 'apachesolr_search_form_search_submit';
+    if (variable_get('apachesolr_search_spellcheck', FALSE) && apachesolr_has_searched() && ($response = apachesolr_static_response_cache())) {
+      //Get spellchecker suggestions into an array.
+      $suggestions = get_object_vars($response->spellcheck->suggestions);
+  
+      if ($suggestions) {
+        //Get the original query and replace words.
+        $query = apachesolr_current_query();
+  
+        foreach($suggestions as $word => $value) {
+          $replacements[$word] = $value->suggestion[0];
+        }
+        $new_keywords = strtr($query->get_query_basic(), $replacements);
+  
+        $form['basic']['suggestion'] = array(
+          '#prefix' => '<div class="spelling-suggestions">',
+          '#suffix' => '</div>',
+          '#type' => 'item',
+          '#title' => t('Did you mean'),
+          '#value' => l($new_keywords, $query->get_path($new_keywords)),
+        );
       }
-      $new_keywords = strtr($query->get_query_basic(), $replacements);
-
-      $form['basic']['suggestion'] = array(
-        '#prefix' => '<div class="spelling-suggestions">',
-        '#suffix' => '</div>',
-        '#type' => 'item',
-        '#title' => t('Did you mean'),
-        '#value' => l($new_keywords, $query->get_path($new_keywords)),
-      );
     }
+  }
+}
+
+/**
+ * Added form submit function to account for Apache mode_rewrite quirks.
+ *
+ * @see apachesolr_search_form_search_form_alter()
+ */
+function apachesolr_search_form_search_submit($form, &$form_state) {
+  if (variable_get('clean_url', '0')) {
+    $keys = str_replace('+', '%2B', $form_state['values']['processed_keys']);
+    $form_state['redirect'] = 'search/'. $form_state['values']['module'] .'/'. $keys;
   }
 }
 
