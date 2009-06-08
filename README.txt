@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.18 2009/05/05 17:43:10 pwolanin Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.19 2009/06/08 01:48:05 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -36,6 +36,30 @@ Note that revision 6 is the currently tested and suggested revision.
 Make sure that the final directory is named SolrPhpClient under the apachesolr
 module directory.  Note: the 2009-03-11 version of the library from the 
 googlecode page is r5 and will not work with beta6+.
+
+If you are maintaing your code base in subversion, you may choose instead to 
+use svn export or svn externals. For an export (writing a copy to your local
+directory without .svn files to track changes) use:
+
+svn export -r6 http://solr-php-client.googlecode.com/svn/trunk/ SolrPhpClient
+
+Instead of checking out, externals can be used too. Externals can be seen as 
+(remote) symlinks in svn. This requires your own project in your own svn ]
+repository, off course. In the apachesolr module directory, issue the command:
+
+svn propedit svn:externals
+
+Your editor will open. Add a line
+
+SolrPhpClient -r6 http://solr-php-client.googlecode.com/svn/trunk/
+
+On exports and checkouts, svn will grab the externals, but it will keep the 
+references on the remote server.
+
+Those without svn, etc may also choose to try the bundled Acquia Search
+download, which includes all the items which are not in Drupal.org CVS due to 
+CVS use policy. See the download link here: 
+http://acquia.com/documentation/acquia-search/activation
 
 Download Solr trunk (candidate 1.4.x build) from a nightly build or build it
 from svn.  http://people.apache.org/builds/lucene/solr/nightly/

@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.77 2009/05/19 19:58:23 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.78 2009/06/08 01:48:05 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxx, xxxx-xx-xx
 ------------------------------
+#480814 by mkalkbrenner and pwolanin, add more detail to logging on errors
 #464758 by pwolanin, 4th param to htmlspecialchars breaks PHP < 5.2.3
 #466328 by pwolanin, fix classes for sort links.
 
