@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.19 2009/06/08 01:48:05 pwolanin Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.20 2009/06/09 14:00:34 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -12,6 +12,9 @@ in your Solr installation.
 This module depends on the search framework in core. However, you may not want
 the core searches and only want Solr search. If that is the case, you want to
 use the Core Searches module in tandem with this module.
+
+When used in combination with core search module, Apache Solr is not the default
+search. Access it via a new tab on the default search page, called "Search"
 
 
 Installation
