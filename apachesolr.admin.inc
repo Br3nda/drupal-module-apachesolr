@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.19 2009/05/07 16:05:55 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.20 2009/06/09 00:41:17 pwolanin Exp $
 
 /**
  * @file
@@ -89,8 +89,8 @@ function apachesolr_index_page() {
     $data = $solr->getLuke();
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
-    drupal_set_message($e->getMessage(), "warning");
+    watchdog('Apache Solr', check_plain($e->getMessage()), NULL, WATCHDOG_ERROR);
+    drupal_set_message(check_plain($e->getMessage()), "warning");
     $data->fields = array();
   }
 
@@ -103,7 +103,7 @@ function apachesolr_index_page() {
       $delete_msg = '<p>' . t('Numer of pending deletions: @deletes_total', $stats_summary) . "</p>\n";
     }
     catch (Exception $e) {
-      watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
+      watchdog('Apache Solr', check_plain($e->getMessage()), NULL, WATCHDOG_ERROR);
     }
     $output .= $delay_msg;
     $pending_msg = $stats_summary['@pending_docs'] ? t('(@pending_docs sent but not yet processed)', $stats_summary) : '';
@@ -127,8 +127,8 @@ function apachesolr_index_report() {
     $data = $solr->getLuke();
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
-    drupal_set_message($e->getMessage(), "warning");
+    watchdog('Apache Solr', check_plain($e->getMessage()), NULL, WATCHDOG_ERROR);
+    drupal_set_message(check_plain($e->getMessage()), "warning");
     $data->fields = array();
   }
 
@@ -148,7 +148,7 @@ function apachesolr_index_report() {
       $output .= '<p>' . t('Number of terms in index: @num', array('@num' => $data->index->numTerms)) . "</p>\n";
     }
     catch (Exception $e) {
-      watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
+      watchdog('Apache Solr', check_plain($e->getMessage()), NULL, WATCHDOG_ERROR);
       $data->fields = array();
     }
   }
@@ -348,7 +348,7 @@ function apachesolr_delete_index_confirm_submit($form, &$form_state) {
     drupal_set_message(t('The Apache Solr content index has been erased. You must now !run_cron until your entire site has been re-indexed.', array('!run_cron' => l(t('run cron'), 'admin/reports/status/run-cron', array('query' => array('destination' => 'admin/settings/apachesolr/index'))))));
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
+    watchdog('Apache Solr', check_plain($e->getMessage()), NULL, WATCHDOG_ERROR);
   }
 }
 

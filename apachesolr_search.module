@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.94 2009/06/08 17:23:36 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.95 2009/06/09 00:41:17 pwolanin Exp $
 
 /**
  * @file
@@ -690,7 +690,7 @@ function apachesolr_search_build_spellcheck() {
     $response = $solr->search('solr', 0, 0, $params);
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', $e->getMessage(), NULL, WATCHDOG_ERROR);
+    watchdog('Apache Solr', check_plain($e->getMessage()), NULL, WATCHDOG_ERROR);
   }
 }
 

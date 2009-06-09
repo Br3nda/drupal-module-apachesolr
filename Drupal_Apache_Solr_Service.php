@@ -209,7 +209,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     $code = (int) $response->getHttpStatus();
     if ($code != 200) {
       $message = $response->getHttpStatusMessage();
-      if ($code >= 400) {
+      if ($code >= 400 && $code != 403 && $code != 404) {
         // Add details, like Solr's exception message.
         $message .= $response->getRawResponse();
       }
@@ -230,7 +230,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     $code = (int) $response->getHttpStatus();
     if ($code != 200) {
       $message = $response->getHttpStatusMessage();
-      if ($code >= 400) {
+      if ($code >= 400 && $code != 403 && $code != 404) {
         // Add details, like Solr's exception message.
         $message .= $response->getRawResponse();
       }
