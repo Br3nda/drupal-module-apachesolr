@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.96 2009/06/09 01:04:39 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.97 2009/06/09 01:12:42 pwolanin Exp $
 
 /**
  * @file
@@ -90,8 +90,9 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
     case 'search':
       $filters = isset($_GET['filters']) ? $_GET['filters'] : '';
       $solrsort = isset($_GET['solrsort']) ? $_GET['solrsort'] : '';
+      $page = isset($_GET['page']) ? $_GET['page'] : 0;
       try {
-        $results = apachesolr_search_execute($keys, $filters, $solrsort, 'search/' . arg(1));
+        $results = apachesolr_search_execute($keys, $filters, $solrsort, 'search/' . arg(1), $page);
         return $results;
       }
       catch (Exception $e) {
@@ -107,7 +108,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
  *
  * @throws Exception
  */
-function apachesolr_search_execute($keys, $filters, $solrsort, $base_path = '') {
+function apachesolr_search_execute($keys, $filters, $solrsort, $base_path = '', $page = 0, $caller = 'apachesolr_search') {
   // Validate sort parameter
   // TODO: move this to the query class.
   if (strlen($solrsort) && preg_match('/^([a-z0-9_]+ (asc|desc)(,)?)+$/i', $solrsort)) {
@@ -128,7 +129,6 @@ function apachesolr_search_execute($keys, $filters, $solrsort, $base_path = '') 
   apachesolr_search_add_facet_params($params, $query);
   apachesolr_search_add_boost_params($params, $query, $solr);
 
-  $page = isset($_GET['page']) ? $_GET['page'] : 0;
   $params['start'] = $page * $params['rows'];
 
   // Cache the built query. Since all the built queries go through
@@ -136,7 +136,7 @@ function apachesolr_search_execute($keys, $filters, $solrsort, $base_path = '') 
   apachesolr_current_query($query);
 
   // This hook allows modules to modify the query and params objects.
-  apachesolr_modify_query($query, $params, 'apachesolr_search');
+  apachesolr_modify_query($query, $params, $caller);
   if (!$query) {
     return array();
   }
