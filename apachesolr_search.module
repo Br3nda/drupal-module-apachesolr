@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.97 2009/06/09 01:12:42 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.98 2009/06/10 12:54:12 jacobsingh Exp $
 
 /**
  * @file
@@ -615,6 +615,20 @@ function apachesolr_search_get_type($facet) {
 function apachesolr_search_form_search_form_alter(&$form, $form_state) {
 
   if ($form['module']['#value'] == 'apachesolr_search') {
+    $filters = isset($_REQUEST['filters']) ? trim($_REQUEST['filters']) : '';
+    $form['apachesolr_search']['#tree'] = TRUE;
+    if ($filters) {
+      $form['apachesolr_search']['retain-filters'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Retain current filters'),
+        '#default_value' => !empty($_GET['retain-filters']), 
+      );
+    }
+    $form['filters'] = array(
+      '#type' => 'hidden',
+      '#default_value' => $filters,
+    );
+
     $form['#submit'][] = 'apachesolr_search_form_search_submit';
     if (variable_get('apachesolr_search_spellcheck', FALSE) && apachesolr_has_searched() && ($response = apachesolr_static_response_cache())) {
       //Get spellchecker suggestions into an array.
@@ -647,9 +661,16 @@ function apachesolr_search_form_search_form_alter(&$form, $form_state) {
  * @see apachesolr_search_form_search_form_alter()
  */
 function apachesolr_search_form_search_submit($form, &$form_state) {
+  $keys = $form_state['values']['processed_keys'];
+  $base = 'search/'. $form_state['values']['module'] . '/';
   if (variable_get('clean_url', '0')) {
-    $keys = str_replace('+', '%2B', $form_state['values']['processed_keys']);
-    $form_state['redirect'] = 'search/'. $form_state['values']['module'] .'/'. $keys;
+    $keys = str_replace('+', '%2B', $keys);
+    $form_state['redirect'] = $base . $keys;
+  }
+  if (!empty($form_state['values']['apachesolr_search']['retain-filters'])) {
+    $query['retain-filters'] = '1';
+    $query['filters'] = $form_state['values']['filters'];
+    $form_state['redirect'] = array($base . $keys, $query);
   }
 }
 
