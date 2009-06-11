@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.34 2009/05/14 23:10:19 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.35 2009/06/11 12:39:05 pwolanin Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -264,13 +264,10 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
   public function get_url_querystring() {
     $querystring = '';
     if ($fq = $this->rebuild_fq(TRUE)) {
-      foreach ($fq as $key => $value) {
-        $fq[$key] = rawurlencode($value);
-      }
-      $querystring = 'filters='. implode('+', $fq);
+      $querystring = 'filters='. rawurlencode(implode(' ', $fq));
     }
     if ($this->solrsort) {
-      $querystring .= ($querystring ? '&' : '') .'solrsort='. $this->solrsort;
+      $querystring .= ($querystring ? '&' : '') .'solrsort='. rawurlencode($this->solrsort);
     }
     return $querystring;
   }
@@ -321,7 +318,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
         $field['#name'] = $this->field_map[$name];
       }
       $progressive_crumb[] = $this->make_filter($field);
-      $options = array('query' => 'filters=' . implode(' ', $progressive_crumb));
+      $options = array('query' => 'filters=' . rawurlencode(implode(' ', $progressive_crumb)));
       if ($themed = theme("apachesolr_breadcrumb_" . $name, $field['#value'], $field['#exclude'])) {
         $breadcrumb[] = l($themed, $base, $options);
       }

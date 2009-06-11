@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.80 2009/06/09 01:12:42 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.81 2009/06/11 12:39:05 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,10 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxx, xxxx-xx-xx
 ------------------------------
+
+Apache Solr integration 6.x-1.0-beta11, 2009-06-11
+------------------------------
+#401046 by pwolanin, revist urlencoding of query strings.
 #467810 by aufumy, Pass in page number and caller to apachesolr_search_execute
 #481838 by JacobSingh and pwolanin, enable plus sign in search when using clean URLs
 #480814 by mkalkbrenner and pwolanin, add more detail to logging on errors
