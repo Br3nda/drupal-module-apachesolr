@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.81 2009/06/11 12:39:05 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.82 2009/06/11 17:07:58 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -11,11 +11,12 @@ Apache Solr integration 6.x-1.0-xxx, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-beta11, 2009-06-11
 ------------------------------
+#348218 by David Lesieur, janusman, and pwolanin, retain filters for next search.
 #401046 by pwolanin, revist urlencoding of query strings.
-#467810 by aufumy, Pass in page number and caller to apachesolr_search_execute
-#481838 by JacobSingh and pwolanin, enable plus sign in search when using clean URLs
-#480814 by mkalkbrenner and pwolanin, add more detail to logging on errors
-#464758 by pwolanin, 4th param to htmlspecialchars breaks PHP < 5.2.3
+#467810 by aufumy, Pass in page number and caller to apachesolr_search_execute.
+#481838 by JacobSingh and pwolanin, enable plus sign in search when using clean URLs.
+#480814 by mkalkbrenner and pwolanin, add more detail to logging on errors.
+#464758 by pwolanin, 4th param to htmlspecialchars breaks PHP < 5.2.3.
 #466328 by pwolanin, fix classes for sort links.
 
 Apache Solr integration 6.x-1.0-beta10, 2009-05-14
