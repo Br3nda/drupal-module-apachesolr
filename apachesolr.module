@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.145 2009/06/09 01:04:38 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.146 2009/06/12 18:16:31 pwolanin Exp $
 
 /**
  * @file
@@ -278,6 +278,9 @@ function _apachesolr_exclude_types($namespace) {
  */
 function apachesolr_get_nodes_to_index($namespace, $limit) {
   $rows = array();
+  if (variable_get('apachesolr_read_only', 0)) {
+    return $rows;
+  }
   list($excluded_types, $args, $join_sql, $exclude_sql) = _apachesolr_exclude_types($namespace);
   $result = db_query_range("SELECT asn.nid, asn.changed FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > %d OR (asn.changed = %d AND asn.nid > %d)) AND asn.status = 1 ". $exclude_sql ."ORDER BY asn.changed ASC, asn.nid ASC", $args, 0, $limit);
   while($row = db_fetch_object($result)) {

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.21 2009/06/09 01:04:38 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.22 2009/06/12 18:16:31 pwolanin Exp $
 
 /**
  * @file
@@ -60,19 +60,30 @@ function apachesolr_settings() {
     '#default_value' => variable_get('apachesolr_failure', 'show_error'),
     '#description' => t('What to display if Apache Solr search is not available.'),
   );
-  $form['apachesolr_set_nodeapi_messages'] = array(
-    '#type' => 'radios',
-    '#title' => t('Extra help messages for administrators'),
-    '#default_value' => variable_get('apachesolr_set_nodeapi_messages', 1),
-    '#options' => array(0 => t('Disabled'), 1 => t('Enabled')),
-  );
   // Add a link to add more mlt blocks.
   $form['mlt_link'] = array(
     '#type' => 'item',
     '#value' => l(t('Add a new content recommendation block'), 'admin/settings/apachesolr/mlt/add_block'),
     '#description' => format_plural(count(apachesolr_mlt_list_blocks()),  'You currently have 1 block.', 'You currenly have @count blocks.'),
   );
-
+  $form['advanced'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Advanced Configuration'),
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE,
+  );
+  $form['advanced']['apachesolr_set_nodeapi_messages'] = array(
+    '#type' => 'radios',
+    '#title' => t('Extra help messages for administrators'),
+    '#default_value' => variable_get('apachesolr_set_nodeapi_messages', 1),
+    '#options' => array(0 => t('Disabled'), 1 => t('Enabled')),
+  );
+  $form['advanced']['apachesolr_read_only'] = array(
+    '#type' => 'radios',
+    '#title' => t('Read-only index'),
+    '#default_value' => variable_get('apachesolr_read_only', 0),
+    '#options' => array(0 => t('Both update and search (normal)'), 1 => t('Only search (read-only)')),
+  );
   return system_settings_form($form);
 }
 

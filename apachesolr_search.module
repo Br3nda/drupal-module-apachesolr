@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.98 2009/06/10 12:54:12 jacobsingh Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.99 2009/06/12 18:16:31 pwolanin Exp $
 
 /**
  * @file
@@ -13,6 +13,9 @@
 function apachesolr_search_help($section) {
   switch ($section) {
     case 'admin/settings/apachesolr/index':
+      if (variable_get('apachesolr_read_only', 0)) {
+        return t('Operating in read-only mode; updates are disabled.');
+      }
       $remaining = 0;
       $total = 0;
       // Collect the stats

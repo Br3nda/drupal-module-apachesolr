@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.82 2009/06/11 17:07:58 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.83 2009/06/12 18:16:31 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxx, xxxx-xx-xx
 ------------------------------
+#489654 by JacobSingh, and pwolanin, allow users to set their index as "read only".
 
 Apache Solr integration 6.x-1.0-beta11, 2009-06-11
 ------------------------------
