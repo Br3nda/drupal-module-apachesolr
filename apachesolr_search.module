@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.99 2009/06/12 18:16:31 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.100 2009/06/12 18:26:34 pwolanin Exp $
 
 /**
  * @file
@@ -55,6 +55,16 @@ function apachesolr_search_menu() {
   return $items;
 }
 
+ /**
+ * Implementation of hook_menu_alter().
+ */
+function apachesolr_search_menu_alter(&$menu) {
+  if (isset($menu['search/apachesolr_search/%menu_tail'])) {
+    $menu['search']['page callback'] = 'apachesolr_search_view';
+    $menu['search/apachesolr_search/%menu_tail']['page callback'] = 'apachesolr_search_view';
+  }
+}
+
 /**
  * Implementation of hook_update_index().
  */
@@ -107,6 +117,48 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
 }
 
 /**
+ * Re-implementation of search_view().
+ */
+function apachesolr_search_view($type = NULL) {
+  // Search form submits with POST but redirects to GET.
+  $results = '';
+  if (!isset($_POST['form_id'])) {
+    if (empty($type)) {
+      // Note: search/X can not be a default tab because it would take on the
+      // path of its parent (search). It would prevent remembering keywords when
+      // switching tabs. This is why we drupal_goto to it from the parent instead.
+      drupal_goto('search/apachesolr_search');
+    }
+    $keys = trim(search_get_keys());
+    $filters = '';
+    if ($type == 'apachesolr_search' && isset($_GET['filters'])) {
+      $filters = trim($_GET['filters']);
+    }
+    // Only perform search if there is non-whitespace search term or filters:
+    if ($keys || $filters) {
+      // Log the search keys:
+      $log = $keys;
+      if ($filters) {
+        $log .= 'filters='. $filters;
+      }
+      watchdog('search', '%keys (@type).', array('%keys' => $log, '@type' => t('Search')), WATCHDOG_NOTICE, l(t('results'), 'search/'. $type .'/'. $keys));
+    
+      // Collect the search results:
+      $results = search_data($keys, $type);
+    
+      if ($results) {
+        $results = theme('box', t('Search results'), $results);
+      }
+      else {
+        $results = theme('box', t('Your search yielded no results'), search_help('search#noresults', drupal_help_arg()));
+      }
+    }
+  }
+  // Construct the search form.
+  return drupal_get_form('search_form', NULL, $keys, $type) . $results;
+}
+
+/**
  * Execute a search results based on keyword, filter, and sort strings.
  *
  * @throws Exception
@@ -129,6 +181,14 @@ function apachesolr_search_execute($keys, $filters, $solrsort, $base_path = '', 
   // This is the object that does the communication with the solr server.
   $solr = apachesolr_get_solr();
   $params += apachesolr_search_basic_params($query);
+  if ($keys) {
+    $params += apachesolr_search_highlighting_params($query);
+    $params += apachesolr_search_spellcheck_params($query);
+  }
+  else {
+    // No highlighting, use the teaser as a snippet.
+    $params['fl'] .= ',teaser';
+  }
   apachesolr_search_add_facet_params($params, $query);
   apachesolr_search_add_boost_params($params, $query, $solr);
 
@@ -143,6 +203,13 @@ function apachesolr_search_execute($keys, $filters, $solrsort, $base_path = '', 
   if (!$query) {
     return array();
   }
+  
+  if ('' == $keys) {
+    // Move the fq params to the q.alt for better performance.
+    $params['q.alt'] = implode(' ', $params['fq']);
+    unset($params['fq']);
+  }
+
   $response = $solr->search($query->get_query_basic(), $params['start'], $params['rows'], $params);
   // The response is cached so that it is accessible to the blocks and anything
   // else that needs it beyond the initial search.
@@ -161,21 +228,28 @@ function apachesolr_search_basic_params($query) {
     'facet.mincount' => 1,
     'facet.sort' => 'true'
   );
+  return $params;
+}
 
-  /**
-   * Highlighting settings
-   * These settings are set in solrconfig.xml.
-   * See the defaults there.
-   * If you wish to override them, you can via settings.php
-   */
-
+/**
+ * Add highlighting settings to the search params.
+ *
+ * These settings are set in solrconfig.xml.
+ * See the defaults there.
+ * If you wish to override them, you can via settings.php
+ */
+function apachesolr_search_highlighting_params($query) {
   $params['hl'] = variable_get('apachesolr_hl_active', NULL);
   $params['hl.fragsize']= variable_get('apachesolr_hl_textsnippetlength', NULL);
   $params['hl.simple.pre'] = variable_get('apachesolr_hl_pretag', NULL);
   $params['hl.simple.post'] = variable_get('apachesolr_hl_posttag', NULL);
   $params['hl.snippets'] = variable_get('apachesolr_hl_numsnippets', NULL);
   $params['hl.fl'] = variable_get('apachesolr_hl_fieldtohightlight', NULL);
+  return $params;
+}
 
+function apachesolr_search_spellcheck_params($query) {
+  $params = array();
   if (variable_get('apachesolr_search_spellcheck', FALSE)) {
     //Add new parameter to the search request
     $params['spellcheck.q'] = $query->get_query_basic();
@@ -297,7 +371,18 @@ function apachesolr_process_response($response, $query, $params) {
   if ($total > 0) {
     foreach ($response->response->docs as $doc) {
       $extra = array();
-      $snippet = isset($response->highlighting->{$doc->id}->$hl_fl) ? theme('apachesolr_search_snippets', $doc, $response->highlighting->{$doc->id}->$hl_fl) : '';
+
+      // Find the nicest available snippet.
+      if (isset($response->highlighting->{$doc->id}->$hl_fl)) {
+        $snippet = theme('apachesolr_search_snippets', $doc, $response->highlighting->{$doc->id}->$hl_fl);
+      }
+      elseif (isset($doc->teaser)) {
+        $snippet = theme('apachesolr_search_snippets', $doc, array(truncate_utf8($doc->teaser, 256, TRUE)));
+      }
+      else {
+        $snippet = '';
+      }
+
       if (!isset($doc->body)) {
         $doc->body = $snippet;
       }
@@ -619,9 +704,9 @@ function apachesolr_search_form_search_form_alter(&$form, $form_state) {
 
   if ($form['module']['#value'] == 'apachesolr_search') {
     $filters = isset($_REQUEST['filters']) ? trim($_REQUEST['filters']) : '';
-    $form['apachesolr_search']['#tree'] = TRUE;
+    $form['basic']['apachesolr_search']['#tree'] = TRUE;
     if ($filters) {
-      $form['apachesolr_search']['retain-filters'] = array(
+      $form['basic']['apachesolr_search']['retain-filters'] = array(
         '#type' => 'checkbox',
         '#title' => t('Retain current filters'),
         '#default_value' => !empty($_GET['retain-filters']), 
@@ -632,7 +717,7 @@ function apachesolr_search_form_search_form_alter(&$form, $form_state) {
       '#default_value' => $filters,
     );
 
-    $form['#submit'][] = 'apachesolr_search_form_search_submit';
+    $form['#submit'] = array('apachesolr_search_form_search_submit');
     if (variable_get('apachesolr_search_spellcheck', FALSE) && apachesolr_has_searched() && ($response = apachesolr_static_response_cache())) {
       //Get spellchecker suggestions into an array.
       $suggestions = get_object_vars($response->spellcheck->suggestions);
@@ -664,16 +749,19 @@ function apachesolr_search_form_search_form_alter(&$form, $form_state) {
  * @see apachesolr_search_form_search_form_alter()
  */
 function apachesolr_search_form_search_submit($form, &$form_state) {
-  $keys = $form_state['values']['processed_keys'];
-  $base = 'search/'. $form_state['values']['module'] . '/';
+  $fv = $form_state['values'];
+  $keys = $fv['processed_keys'];
+  $query = '';
+  $base = 'search/'. $fv['module'] . '/';
   if (variable_get('clean_url', '0')) {
     $keys = str_replace('+', '%2B', $keys);
-    $form_state['redirect'] = $base . $keys;
   }
-  if (!empty($form_state['values']['apachesolr_search']['retain-filters'])) {
-    $query['retain-filters'] = '1';
-    $query['filters'] = $form_state['values']['filters'];
-    $form_state['redirect'] = array($base . $keys, $query);
+  if (!empty($fv['apachesolr_search']['retain-filters']) && $fv['filters']) {
+    $query = 'filters=' . rawurlencode($fv['filters']) . '&retain-filters=1';
+  }
+  $form_state['redirect'] = array($base . $keys, $query);
+  if ($keys == '' && $query == '') {
+    form_set_error('keys', t('Please enter some keywords.'));
   }
 }
 
@@ -814,5 +902,6 @@ function theme_apachesolr_currentsearch($total_found, $links) {
  *
  */
 function theme_apachesolr_search_snippets($doc, $snippets) {
-  return implode(' ... ', $snippets);
+  return implode(' ... ', $snippets) .' ...';
 }
+
