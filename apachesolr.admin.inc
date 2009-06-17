@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.22 2009/06/12 18:16:31 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.23 2009/06/17 20:29:11 pwolanin Exp $
 
 /**
  * @file
@@ -520,7 +520,7 @@ function apachesolr_mlt_block_form($delta = NULL) {
     '#type' => 'select',
     '#title' => t('Maximum number of query terms'),
     '#description' => t('The maximum number of query terms that will be included in any query. Lower numbers will result in fewer recommendations but will get results faster. If a content recommendation is not returning any recommendations, you can either check more "Comparison fields" checkboxes or increase the maximum number of query terms here.'),
-    '#options' => drupal_map_assoc(array(5, 10, 15, 20, 25, 30, 35, 40, 45, 50)),
+    '#options' => drupal_map_assoc(array(3, 5, 7, 10, 12, 15, 20, 25, 30, 35, 40)),
     '#default_value' => $block['mlt_maxqt'],
   );
 
@@ -542,7 +542,7 @@ function apachesolr_mlt_block_defaults($block = array()) {
     'mlt_mindf' => '1',
     'mlt_minwl' => '3',
     'mlt_maxwl' => '15',
-    'mlt_maxqt' => '30',
+    'mlt_maxqt' => '20',
   );
 }
 

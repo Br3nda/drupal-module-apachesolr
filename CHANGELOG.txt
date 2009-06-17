@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.84 2009/06/12 18:26:34 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.85 2009/06/17 20:29:11 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxx, xxxx-xx-xx
 ------------------------------
+#490076 by pwolanin, spellcheck more popular, maxqt to 20, limit search time.
 #358166 by David Lesieur, janusman, cptnCauliflower, and pwolanin, search for just facet(s).
 #489654 by JacobSingh, and pwolanin, allow users to set their index as "read only".
 
