@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.23 2009/04/07 10:34:50 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.24 2009/06/17 22:13:34 robertDouglass Exp $
 
 /**
  * @file
@@ -113,26 +113,6 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
           return array();
         }
 
-        /**
-         * This hook allows modules to modify the query are params objects.
-         *
-         * Example:
-         *
-         *<code>
-         * function my_module_apachesolr_modify_query(&$query,&$params) {
-         *   // I only want to see articles by the admin!
-         *   $query->add_field("uid" => "1");
-         * 
-         * }
-         * </code>
-         */
-        foreach (module_implements('apachesolr_modify_query') as $module) {
-          $function_name = "{$module}_apachesolr_modify_query";
-          $function_name($query, $params);
-        }
-        if (!$query) {
-          return array();
-        }
 
         $hash = md5(url(NULL, NULL, NULL, TRUE));
         $query->add_field('hash', $hash);
