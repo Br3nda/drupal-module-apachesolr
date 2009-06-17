@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.100 2009/06/12 18:26:34 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.101 2009/06/17 23:16:19 pwolanin Exp $
 
 /**
  * @file
@@ -678,12 +678,10 @@ function apachesolr_search_get_book($facet, &$options) {
  * Callback function for the 'Filter by name' facet block.
  */
 function apachesolr_search_get_username($facet) {
-  if ($facet == 0) {
-    return variable_get('anonymous', t('Anonymous'));
+  if (is_numeric($facet)) {
+    return theme('apachesolr_breadcrumb_uid', $facet);
   }
-  else {
-    return db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $facet));
-  }
+  return '';
 }
 
 /**
@@ -857,7 +855,12 @@ function theme_apachesolr_breadcrumb_created($range) {
  * Return the username from $uid
  */
 function theme_apachesolr_breadcrumb_uid($uid) {
-  return apachesolr_search_get_username($uid);
+  if ($uid == 0) {
+    return variable_get('anonymous', t('Anonymous'));
+  }
+  else {
+    return db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $uid));
+  }
 }
 
 /**
