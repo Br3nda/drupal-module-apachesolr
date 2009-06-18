@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.146 2009/06/12 18:16:31 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.147 2009/06/18 18:32:36 pwolanin Exp $
 
 /**
  * @file
@@ -588,7 +588,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
           $sort_links[$type] = array(
             'name' => $sort['name'],
             'path' => $path,
-            'querystring' => $new_query->get_url_querystring(),
+            'options' => array('query' => $new_query->get_url_querystring()),
             'active' => $active,
             'direction' => $direction
           );
@@ -596,7 +596,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
         // Allow other modules to add or remove sorts.
         drupal_alter('apachesolr_sort_links', $sort_links);
         foreach ($sort_links as $type => $link) {
-          $themed_links[$type] = theme('apachesolr_sort_link', $link['name'], $link['path'], $link['querystring'], $link['active'], $link['direction']);
+          $themed_links[$type] = theme('apachesolr_sort_link', $link['name'], $link['path'], $link['options'], $link['active'], $link['direction']);
         }
         return array('subject' => t('Sort by'),
                      'content' => theme('apachesolr_sort_list', $themed_links));
@@ -653,18 +653,16 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
         // '*' sorts before all numbers.
         $sortpre = '*';
         $new_query->remove_filter($facet_field, $facet);
-
-        $path = $new_query->get_path();
-        $querystring = $new_query->get_url_querystring();
-        $unclick_link = theme('apachesolr_unclick_link', $path, $querystring);
+        $options['query'] = $new_query->get_url_querystring();
+        $link = theme('apachesolr_unclick_link', $facet_text, $new_query->get_path(), $options);
       }
       else {
         $new_query->add_filter($facet_field, $facet, $exclude);
-        $path = $new_query->get_path();
-        $querystring = $new_query->get_url_querystring();
+        $options['query'] = $new_query->get_url_querystring();
+        $link = theme('apachesolr_facet_link', $facet_text, $new_query->get_path(), $options, $count, $active, $response->response->numFound);
       }
       if ($count || $active) {
-        $items[$sortpre . '*' . $facet_text] = theme('apachesolr_facet_item', $facet_text, $count, $path, $querystring, $active, $unclick_link, $response->response->numFound, $options);
+        $items[$sortpre . '*' . $facet_text] = $link;
       }
     }
     // Unless a facet is active only display 2 or more.
@@ -690,18 +688,17 @@ function apachesolr_date_facet_block($response, $query, $module, $delta, $facet_
 
   $new_query = clone $query;
   foreach (array_reverse($new_query->get_filters($facet_field)) as $filter) {
+    $options = array();
     // Iteratively remove the date facets.
     $new_query->remove_filter($facet_field, $filter['#value']);
-    $path = $new_query->get_path();
-    $querystring = $new_query->get_url_querystring();
-    $unclick_link = theme('apachesolr_unclick_link', $path, $querystring);
     if ($facet_callback && function_exists($facet_callback)) {
-      $facet_text = $facet_callback($filter['#start']);
+      $facet_text = $facet_callback($filter['#start'], $options);
     }
     else {
       $facet_text = apachesolr_date_format_iso_by_gap(apachesolr_date_find_query_gap($filter['#start'], $filter['#end']), $filter['#start']);
     }
-    array_unshift($items, theme('apachesolr_facet_item', $facet_text, 0, $path, $querystring, TRUE, $unclick_link));
+    $options['query'] = $new_query->get_url_querystring();
+    array_unshift($items, theme('apachesolr_unclick_link', $facet_text, $new_query->get_path(), $options));
   }
   // Add links for additional date filters.
   if (!empty($response->facet_counts->facet_dates->$facet_field)) {
@@ -725,22 +722,21 @@ function apachesolr_date_facet_block($response, $query, $module, $delta, $facet_
     $range_end[$prev_facet] = $end;
 
     foreach ($field as $facet => $count) {
+      $options = array();
       // Solr sends this back if it's empty.
       if ($facet == '_empty_' || $count == 0) {
         continue;
       }
       if ($facet_callback && function_exists($facet_callback)) {
-        $facet_text = $facet_callback($facet);
+        $facet_text = $facet_callback($facet, $options);
       }
       else {
         $facet_text = apachesolr_date_format_iso_by_gap(substr($gap, 2), $facet);
       }
       $new_query = clone $query;
       $new_query->add_filter($facet_field, '['. $facet .' TO '. $range_end[$facet] .']');
-      $path = $new_query->get_path();
-      $querystring = $new_query->get_url_querystring();
-
-      $items[] = theme('apachesolr_facet_item', $facet_text, $count, $path, $querystring, FALSE, '', $response->response->numFound);
+      $options['query'] = $new_query->get_url_querystring();
+      $items[] = theme('apachesolr_facet_link', $facet_text, $new_query->get_path(), $options, $count, FALSE, $response->response->numFound);
     }
   }
   if (count($items) > 0) {
@@ -1183,21 +1179,39 @@ function apachesolr_cck_fields() {
  */
 function apachesolr_theme() {
   return array(
-    'apachesolr_facet_item' => array(
-      'arguments' => array('name' => NULL, 'count' => NULL, 'path' => NULL, 'querystring' => '', 'active' => FALSE, 'unclick_link' => NULL, 'num_found' => NULL, 'options' => NULL),
+    /**
+     * Returns a link for a facet term with the # of results clicking it will yeild (count)
+     */
+    'apachesolr_facet_link' => array(
+      'arguments' => array('facet_text' => NULL, 'path' => NULL, 'options' => NULL, 'count' => NULL, 'active' => FALSE, 'num_found' => NULL),
     ),
+    /**
+     * Returns a link to remove a facet filter from the current search.
+     */
     'apachesolr_unclick_link' => array(
-      'arguments' => array('url' => NULL, 'querystring' => ''),
+      'arguments' => array('facet_text' => NULL, 'path' => NULL, 'options' => NULL),
     ),
+    /**
+     * Returns a list of links from the above functions (apachesolr_facet_item and apachesolr_unclick_link)
+     */
     'apachesolr_facet_list' => array(
       'arguments' => array('items' => NULL),
     ),
+    /**
+     * Returns a list of links generated by apachesolr_sort_link
+     */
     'apachesolr_sort_list' => array(
       'arguments' => array('items' => NULL),
     ),
+    /**
+     * Returns a link which can be used to search the results.
+     */
     'apachesolr_sort_link' => array(
-      'arguments' => array('text' => NULL, 'path' => NULL, 'querystring' => '', 'active' => FALSE, 'direction' => ''),
+      'arguments' => array('text' => NULL, 'path' => NULL, 'options' => NULL, 'active' => FALSE, 'direction' => ''),
     ),
+    /**
+     * Returns a list of results (docs) in content recommendation block
+     */
     'apachesolr_mlt_recommendation_block' => array(
       'arguments' => array('docs' => NULL),
     ),
@@ -1307,7 +1321,7 @@ function theme_apachesolr_mlt_recommendation_block($docs) {
   return theme('item_list', $links);
 }
 
-function theme_apachesolr_facet_item($name, $count, $path, $querystring = '', $active = FALSE, $unclick_link = NULL, $num_found = NULL, $options = array()) {
+function theme_apachesolr_facet_link($facet_text, $path, $options = array(), $count, $active = FALSE, $num_found = NULL) {
 
   if ($active) {
     if (isset($options['attributes']['class'])) {
@@ -1317,16 +1331,7 @@ function theme_apachesolr_facet_item($name, $count, $path, $querystring = '', $a
       $options['attributes']['class'] = 'active';
     }
   }
-  if ($unclick_link) {
-    if (empty($options['html'])) {
-      $name = check_plain($name);
-    }
-    return $unclick_link . ' '. $name;
-  }
-  else {
-    $options['query'] = $querystring;
-    return apachesolr_l($name ." ($count)",  $path, $options);
-  }
+  return apachesolr_l($facet_text ." ($count)",  $path, $options);
 }
 
 /**
@@ -1353,20 +1358,32 @@ function apachesolr_l($text, $path, $options = array()) {
 }
 
 
-function theme_apachesolr_unclick_link($path, $querystring = '') {
-  return apachesolr_l("(-)", $path, array('query' => $querystring));
+function theme_apachesolr_unclick_link($facet_text, $path, $options = array()) {
+  $options['query'] = $querystring;
+  if (empty($options['html'])) {
+    $facet_text = check_plain($facet_text);
+  }
+  else {
+    // Don't pass this option as TRUE into apachesolr_l().
+    unset($options['html']);
+  }
+  return apachesolr_l("(-)", $path, $options) . ' '. $facet_text;
 }
 
-function theme_apachesolr_sort_link($text, $path, $querystring = '', $active = FALSE, $direction = '') {
+function theme_apachesolr_sort_link($text, $path, $options = array(), $active = FALSE, $direction = '') {
   $icon = '';
-  $attributes = array();
   if ($direction) {
     $icon = ' '. theme('tablesort_indicator', $direction);
   }
   if ($active) {
-    $attributes['class'] = 'active';
+    if (isset($options['attributes']['class'])) {
+      $options['attributes']['class'] .= ' active';
+    }
+    else {
+      $options['attributes']['class'] = 'active';
+    }
   }
-  return $icon . apachesolr_l($text, $path, array('attributes' => $attributes, 'query' => $querystring));
+  return $icon . apachesolr_l($text, $path, $options);
 }
 
 function theme_apachesolr_facet_list($items, $display_limit = 0) {

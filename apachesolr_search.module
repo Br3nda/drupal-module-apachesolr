@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.102 2009/06/18 08:00:16 jacobsingh Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.103 2009/06/18 18:32:36 pwolanin Exp $
 
 /**
  * @file
@@ -573,6 +573,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
             $terms = array();
 
             foreach ($response->facet_counts->facet_fields->$delta as $tid => $count) {
+              $options = array();
               if ($tid == '_empty_') {
                 // TODO - for now we don't handle facet missing.
                 continue;
@@ -584,19 +585,18 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
               if ($active = $query->has_filter('tid', $tid)) {
                 $contains_active = TRUE;
                 $new_query->remove_filter('tid', $term->tid);
-                $path = $new_query->get_path();
-                $querystring = $new_query->get_url_querystring();
-                $unclick_link = theme('apachesolr_unclick_link', $path, $querystring);
+                $options['query'] = $new_query->get_url_querystring();
+                $link = theme('apachesolr_unclick_link', $term->name, $new_query->get_path(), $options);
               }
               else {
                 $new_query->add_filter('tid', $term->tid);
-                $path = $new_query->get_path();
-                $querystring = $new_query->get_url_querystring();
+                $options['query'] = $new_query->get_url_querystring();
+                $link = theme('apachesolr_facet_link', $term->name, $new_query->get_path(), $options, $count, $active, $response->response->numFound);
               }
               $countsort = $count == 0 ? '' : 1 / $count;
               // if numdocs == 1 and !active, don't add.
               if ($response->response->numFound > 1 || $active) {
-                $terms[$term->vid][$active ? $countsort . $term->name : 1 + $countsort . $term->name] = theme('apachesolr_facet_item', $term->name, $count, $path, $querystring, $active, $unclick_link, $response->response->numFound);
+                $terms[$term->vid][$active ? $countsort . $term->name : 1 + $countsort . $term->name] = $link;
               }
             }
           }
@@ -626,13 +626,12 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
               if ($field['#name']) {
                 $new_query = clone $query;
                 $new_query->remove_filter($field['#name'], $field['#value']);
-                $path = $new_query->get_path();
-                $querystring = $new_query->get_url_querystring();
-                $unclick_link = theme('apachesolr_unclick_link', $path, $querystring);
-                if (! $fielddisplay = theme("apachesolr_breadcrumb_". $field['#name'], $field['#value'])) {
+                $options['query'] = $new_query->get_url_querystring();
+                $fielddisplay = theme("apachesolr_breadcrumb_". $field['#name'], $field['#value']);
+                if (!$fielddisplay) {
                   $fielddisplay = $field['#value'];
                 }
-                $links[] = theme('apachesolr_facet_item', $fielddisplay, NULL, $path, $querystring, $active, $unclick_link, $response->response->numFound);
+                $links[] = theme('apachesolr_unclick_link', $fielddisplay, $new_query->get_path(), $querystring);
               }
             }
             $content = theme('apachesolr_currentsearch', $response->response->numFound, $links);
