@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.35 2009/06/11 12:39:05 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.36 2009/06/18 20:45:36 pwolanin Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -181,7 +181,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
   public function has_filter($name, $value) {
     foreach ($this->fields as $pos => $values) {
-      if (!empty($values['#name']) && !empty($values['#value']) && $values['#name'] == $name && $values['#value'] == $value) {
+      if (isset($values['#name']) && isset($values['#value']) && $values['#name'] == $name && $values['#value'] == $value) {
         return TRUE;
       }
     }
