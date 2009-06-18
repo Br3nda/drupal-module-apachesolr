@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.21 2009/06/11 12:39:05 pwolanin Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.22 2009/06/18 18:34:24 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -223,3 +223,11 @@ hook_apachesolr_search_result_alter(&$doc)
 hook_apachesolr_sort_links_alter(&$sort_links)
 
   Called by the sort link block code. Allows other modules to modify, add or remove sorts.
+
+
+Themers
+----------------
+
+See inline docs in apachesolr_theme and apachesolr_search_theme functions 
+within apachesolr.module and apachesolr_search.module.
+
