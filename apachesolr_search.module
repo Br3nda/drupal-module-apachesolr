@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.101 2009/06/17 23:16:19 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.102 2009/06/18 08:00:16 jacobsingh Exp $
 
 /**
  * @file
@@ -62,6 +62,23 @@ function apachesolr_search_menu_alter(&$menu) {
   if (isset($menu['search/apachesolr_search/%menu_tail'])) {
     $menu['search']['page callback'] = 'apachesolr_search_view';
     $menu['search/apachesolr_search/%menu_tail']['page callback'] = 'apachesolr_search_view';
+  }
+  if (variable_get('apachesolr_search_make_default', 0)) {
+    if (isset($menu['search/node/%menu_tail'])) {
+      // Hide the node search tab.
+      $menu['search/node/%menu_tail']['type'] = MENU_CALLBACK;
+      unset($menu['search/node/%menu_tail']['title callback'], $menu['search/node/%menu_tail']['title arguments']);
+      $menu['search/node/%menu_tail']['title'] = 'Search';
+    }
+    if (isset($menu['search/apachesolr_search/%menu_tail'])) {
+      // Alter the solr search tab
+      $menu['search/apachesolr_search/%menu_tail']['weight'] = -10;
+      unset($menu['search/apachesolr_search/%menu_tail']['title callback'], $menu['search/apachesolr_search/%menu_tail']['title arguments']);
+      $menu['search/apachesolr_search/%menu_tail']['title'] = 'Content';
+    }
+    if (isset($menu['search'])) {
+      $menu['search']['page arguments'] = array('apachesolr_search');
+    }
   }
 }
 
@@ -696,7 +713,55 @@ function apachesolr_search_get_type($facet) {
 /**
  * Implementation of hook_form_[form_id]_alter().
  *
- * This adds spelling suggestions to the search form.
+ * This adds the 0 option to the search admin form.
+ */
+function apachesolr_search_form_search_admin_settings_alter(&$form, $form_state) {
+  $form['indexing_throttle']['search_cron_limit']['#options']['0'] = '0';
+  ksort($form['indexing_throttle']['search_cron_limit']['#options']);
+}
+
+/**
+ * Implementation of hook_form_[form_id]_alter().
+ */
+function apachesolr_search_form_search_theme_form_alter(&$form, $form_state) {
+  apachesolr_search_form_search_block_form_alter($form, $form_state);
+}
+
+/**
+ * Implementation of hook_form_[form_id]_alter().
+ */
+function apachesolr_search_form_search_block_form_alter(&$form, $form_state) {
+  if (variable_get('apachesolr_search_make_default', 0)) {
+    if (!isset($form['#submit'])) {
+      $form['#submit'] = array('apachesolr_search_search_box_form_submit');
+    }
+    else {
+      $key = array_search('search_box_form_submit', $form['#submit']);
+      if ($key !== FALSE) {
+        // Replace the search module's function.
+        $form['#submit'][$key] = 'apachesolr_search_search_box_form_submit';
+      }
+    }
+  }
+}
+
+/**
+ * Process a block search form submission.
+ */
+function apachesolr_search_search_box_form_submit($form, &$form_state) {
+  $form_id = $form['form_id']['#value'];
+  $keys = $form_state['values'][$form_id];
+  // Handle Apache webserver clean URL quirks.
+  if (variable_get('clean_url', '0')) {
+    $keys = str_replace('+', '%2B', $keys);
+  }
+  $form_state['redirect'] = 'search/apachesolr_search/'. trim($keys);
+}
+
+/**
+ * Implementation of hook_form_[form_id]_alter().
+ *
+ * This adds spelling suggestions, retain filters to the search form.
  */
 function apachesolr_search_form_search_form_alter(&$form, $form_state) {
 
@@ -766,9 +831,20 @@ function apachesolr_search_form_search_submit($form, &$form_state) {
 /**
  * Implementation of hook_form_[form_id]_alter().
  *
- * This adds spelling suggestions to the search form.
+ * This adds options to the apachesolr admin form.
  */
 function apachesolr_search_form_apachesolr_settings_alter(&$form, $form_state) {
+  $form['advanced']['apachesolr_search_make_default'] = array(
+    '#type' => 'radios',
+    '#title' => t('Make Apache Solr Search the default'),
+    '#default_value' => variable_get('apachesolr_search_make_default', 0),
+    '#options' => array(0 => t('Disabled'), 1 => t('Enabled')),
+    '#description' => t('Hides core node search, and makes the search block submit to Apache Solr Search'),
+  );
+  $form['advanced']['apachesolr_search_default_previous'] = array(
+    '#type' => 'value',
+    '#value' => variable_get('apachesolr_search_make_default', 0),
+  );
   $form['apachesolr_search_spellcheck'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable spellchecker and suggestions'),
@@ -777,10 +853,23 @@ function apachesolr_search_form_apachesolr_settings_alter(&$form, $form_state) {
   );
 
   $form['#submit'][] = 'apachesolr_search_build_spellcheck';
+  $form['#submit'][] = 'apachesolr_search_make_default_submit';
   // Move buttons to the bottom.
   $buttons = $form['buttons'];
   unset($form['buttons']);
   $form['buttons'] = $buttons;
+}
+
+/**
+ * Form submit funtion - do a menu rebuild if needed.
+ *
+ * @see apachesolr_search_form_apachesolr_settings_alter()
+ */
+function apachesolr_search_make_default_submit($form, &$form_state) {
+  if ($form_state['values']['apachesolr_search_default_previous'] != variable_get('apachesolr_search_make_default', 0)) {
+    // Take account of path changes
+    menu_rebuild();
+  }
 }
 
 /**
