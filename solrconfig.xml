@@ -466,7 +466,7 @@
      </str>
      <int name="ps">15</int>
      <!-- Abort any searches longer than 4 seconds -->
-     <int name="timeAllowed">4000</int>
+     <!-- <int name="timeAllowed">4000</int>  -->
      <str name="mm">
         2&lt;-35%
      </str>
@@ -511,7 +511,7 @@
       <str name="mlt.maxqt">20</str>
       <str name="mlt.match.include">false</str>
       <!-- Abort any searches longer than 1.5 seconds -->
-      <int name="timeAllowed">1500</int>
+      <!-- <int name="timeAllowed">1500</int> -->
     </lst>
   </requestHandler>
 
