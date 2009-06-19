@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.147 2009/06/18 18:32:36 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.148 2009/06/19 20:31:58 pwolanin Exp $
 
 /**
  * @file
@@ -1359,7 +1359,6 @@ function apachesolr_l($text, $path, $options = array()) {
 
 
 function theme_apachesolr_unclick_link($facet_text, $path, $options = array()) {
-  $options['query'] = $querystring;
   if (empty($options['html'])) {
     $facet_text = check_plain($facet_text);
   }
