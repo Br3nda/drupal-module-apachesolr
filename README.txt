@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.22 2009/06/18 18:34:24 pwolanin Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.23 2009/06/21 20:11:45 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -214,6 +214,8 @@ hook_apachesolr_node_exclude($node, $namespace)
 hook_apachesolr_update_index(&$document, $node)
 
   Allows a module to change the contents of the $document object before it is sent to the Solr Server.
+  To add a new field to the document, you should generally use one of the pre-defined dynamic fields. 
+  Follow the naming conventions for the type of data being added based on the schema.xml file.
 
 hook_apachesolr_search_result_alter(&$doc)
 
