@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.103 2009/06/18 18:32:36 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.104 2009/06/22 19:13:13 pwolanin Exp $
 
 /**
  * @file
@@ -631,7 +631,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
                 if (!$fielddisplay) {
                   $fielddisplay = $field['#value'];
                 }
-                $links[] = theme('apachesolr_unclick_link', $fielddisplay, $new_query->get_path(), $querystring);
+                $links[] = theme('apachesolr_unclick_link', $fielddisplay, $new_query->get_path(), $options);
               }
             }
             $content = theme('apachesolr_currentsearch', $response->response->numFound, $links);
