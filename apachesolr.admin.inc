@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.24 2009/06/18 08:01:15 jacobsingh Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.25 2009/06/23 01:32:32 pwolanin Exp $
 
 /**
  * @file
@@ -82,9 +82,10 @@ function apachesolr_settings() {
   );
   $form['advanced']['apachesolr_read_only'] = array(
     '#type' => 'radios',
-    '#title' => t('Read-only index'),
+    '#title' => t('Index write access'),
     '#default_value' => variable_get('apachesolr_read_only', 0),
-    '#options' => array(0 => t('Both update and search (normal)'), 1 => t('Only search (read-only)')),
+    '#options' => array(0 => t('Read and write (normal)'), 1 => t('Read only')),
+    '#description' => t('<em>Read only</em> stops this site from sending updates to your search index. Useful for development sites.'),
   );
   return system_settings_form($form);
 }
