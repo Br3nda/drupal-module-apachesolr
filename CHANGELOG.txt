@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.90 2009/06/19 20:31:58 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.91 2009/06/29 23:35:07 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxx, xxxx-xx-xx
 ------------------------------
+#472600 by janusman, JacobSingh, and pwolanin, optionally hijack taxonomy pages.
 #496650 by mkalkbrenner, make unclick links work after #463900.
 #495258 comment out timeAllowed params (partial roll-back of #490076)
 #495012 by pwolanin, fix Anonymous user and other 0-value facets.

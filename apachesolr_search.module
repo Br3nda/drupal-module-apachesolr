@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.104 2009/06/22 19:13:13 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.105 2009/06/29 23:35:07 pwolanin Exp $
 
 /**
  * @file
@@ -76,8 +76,12 @@ function apachesolr_search_menu_alter(&$menu) {
       unset($menu['search/apachesolr_search/%menu_tail']['title callback'], $menu['search/apachesolr_search/%menu_tail']['title arguments']);
       $menu['search/apachesolr_search/%menu_tail']['title'] = 'Content';
     }
-    if (isset($menu['search'])) {
-      $menu['search']['page arguments'] = array('apachesolr_search');
+  }
+  if (variable_get('apachesolr_search_taxonomy_links', 0)) {
+    if (isset($menu['taxonomy/term/%'])) {
+      $menu['taxonomy/term/%']['page callback'] = 'apachesolr_search_taxonomy_term_page';
+      $menu['taxonomy/term/%']['file path'] = drupal_get_path('module', 'apachesolr_search');
+      $menu['taxonomy/term/%']['file'] = 'apachesolr.taxonomy.inc';
     }
   }
 }
@@ -220,7 +224,7 @@ function apachesolr_search_execute($keys, $filters, $solrsort, $base_path = '', 
   if (!$query) {
     return array();
   }
-  
+
   if ('' == $keys) {
     // Move the fq params to the q.alt for better performance.
     $params['q.alt'] = implode(' ', $params['fq']);
@@ -763,24 +767,33 @@ function apachesolr_search_search_box_form_submit($form, &$form_state) {
  * This adds spelling suggestions, retain filters to the search form.
  */
 function apachesolr_search_form_search_form_alter(&$form, $form_state) {
-
   if ($form['module']['#value'] == 'apachesolr_search') {
-    $filters = isset($_REQUEST['filters']) ? trim($_REQUEST['filters']) : '';
+    $form['#submit'] = array('apachesolr_search_form_search_submit');
+    // No other modification make sense unless a query is active.
+    // Note - this means that the query must always be run before
+    // calling drupal_get_form('search_form').
+    $apachesolr_has_searched = apachesolr_has_searched();
+
+    $querystring = '';
+    if ($apachesolr_has_searched) {
+      $query = apachesolr_current_query();
+      $querystring = $query->get_url_querystring();
+    }
+
     $form['basic']['apachesolr_search']['#tree'] = TRUE;
-    if ($filters) {
+    $form['basic']['apachesolr_search']['querystring'] = array(
+      '#type' => 'hidden',
+      '#default_value' => $querystring,
+    );
+    if ($querystring || isset($form_state['post']['apachesolr_search']['retain-filters'])) {
       $form['basic']['apachesolr_search']['retain-filters'] = array(
         '#type' => 'checkbox',
         '#title' => t('Retain current filters'),
-        '#default_value' => !empty($_GET['retain-filters']), 
+        '#default_value' => (int) isset($_GET['retain-filters']), 
       );
     }
-    $form['filters'] = array(
-      '#type' => 'hidden',
-      '#default_value' => $filters,
-    );
 
-    $form['#submit'] = array('apachesolr_search_form_search_submit');
-    if (variable_get('apachesolr_search_spellcheck', FALSE) && apachesolr_has_searched() && ($response = apachesolr_static_response_cache())) {
+    if (variable_get('apachesolr_search_spellcheck', FALSE) && $apachesolr_has_searched && ($response = apachesolr_static_response_cache())) {
       //Get spellchecker suggestions into an array.
       $suggestions = get_object_vars($response->spellcheck->suggestions);
   
@@ -813,16 +826,16 @@ function apachesolr_search_form_search_form_alter(&$form, $form_state) {
 function apachesolr_search_form_search_submit($form, &$form_state) {
   $fv = $form_state['values'];
   $keys = $fv['processed_keys'];
-  $query = '';
+  $querystring = '';
   $base = 'search/'. $fv['module'] . '/';
   if (variable_get('clean_url', '0')) {
     $keys = str_replace('+', '%2B', $keys);
   }
-  if (!empty($fv['apachesolr_search']['retain-filters']) && $fv['filters']) {
-    $query = 'filters=' . rawurlencode($fv['filters']) . '&retain-filters=1';
+  if (!empty($fv['apachesolr_search']['retain-filters']) && $fv['apachesolr_search']['querystring']) {
+    $querystring = $fv['apachesolr_search']['querystring'] . '&retain-filters';
   }
-  $form_state['redirect'] = array($base . $keys, $query);
-  if ($keys == '' && $query == '') {
+  $form_state['redirect'] = array($base . $keys, $querystring);
+  if ($keys == '' && $querystring == '') {
     form_set_error('keys', t('Please enter some keywords.'));
   }
 }
@@ -844,6 +857,18 @@ function apachesolr_search_form_apachesolr_settings_alter(&$form, $form_state) {
     '#type' => 'value',
     '#value' => variable_get('apachesolr_search_make_default', 0),
   );
+  $form['advanced']['apachesolr_search_taxonomy_links'] = array(
+    '#type' => 'radios',
+    '#title' => t('Use Apache Solr for taxonomy links'),
+    '#default_value' => variable_get('apachesolr_search_taxonomy_links', 0),
+    '#description' => t('Note: Vocabularies that need this behavior need to be checked off on the <a href="@enabled_filters_url">enabled filters</a> settings page', array('@enabled_filters_url' => url('settings/apachesolr/enabled-filters'))),
+    '#options' => array(0 => t('Disabled'), 1 => t('Enabled')),
+  );
+  $form['advanced']['apachesolr_search_taxonomy_previous'] = array(
+    '#type' => 'value',
+    '#value' => variable_get('apachesolr_search_taxonomy_links', 0),
+  );
+
   $form['apachesolr_search_spellcheck'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable spellchecker and suggestions'),
@@ -865,7 +890,9 @@ function apachesolr_search_form_apachesolr_settings_alter(&$form, $form_state) {
  * @see apachesolr_search_form_apachesolr_settings_alter()
  */
 function apachesolr_search_make_default_submit($form, &$form_state) {
-  if ($form_state['values']['apachesolr_search_default_previous'] != variable_get('apachesolr_search_make_default', 0)) {
+  // We use variable_get() instead of the form values so as to also handle reset to defaults.
+  if ($form_state['values']['apachesolr_search_default_previous'] != variable_get('apachesolr_search_make_default', 0) ||
+      $form_state['values']['apachesolr_search_taxonomy_previous'] != variable_get('apachesolr_search_make_default', 0)) {
     // Take account of path changes
     menu_rebuild();
   }

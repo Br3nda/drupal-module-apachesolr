@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.36 2009/06/18 20:45:36 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.37 2009/06/29 23:35:07 pwolanin Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -111,7 +111,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
    *   may come from search_get_keys().
    *
    * @param $filterstring
-   *   Key and value pairs that are applied as a filter query.
+   *   Key and value pairs that are applied as filter queries.
    *
    * @param $sortstring
    *   Visible string telling solr how to sort - added to output querystring.
@@ -133,7 +133,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
   function __clone() {
     $this->id = ++self::$idCount;
   }
-
+  
   public function add_filter($field, $value, $exclude = FALSE) {
     $this->fields[] = array('#exclude' => $exclude, '#name' => $field, '#value' => trim($value));
   }
@@ -235,6 +235,10 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
   public function set_solrsort($sortstring) {
     $this->solrsort = trim($sortstring);
+  }
+
+  public function get_solrsort() {
+    return $this->solrsort;
   }
 
   public function get_available_sorts() {
