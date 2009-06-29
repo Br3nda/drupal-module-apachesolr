@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.6 2009/04/30 19:02:08 pwolanin Exp $
+// $Id: apachesolr.install,v 1.7 2009/06/29 23:23:07 pwolanin Exp $
 
 /**
  * @file
@@ -12,6 +12,10 @@
 function apachesolr_install() {
   // Create tables.
   drupal_install_schema('apachesolr');
+  // Create one MLT block.
+  require_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
+  apachesolr_mlt_save_block(array('name' => t('More like this')));
+
   drupal_set_message(t('Search is enabled. You\'re site is <a href="!index_settings_link">currently 0% indexed</a>.', array('!index_settings_link' => url('admin/settings/apachesolr/index'))));
 }
 
@@ -25,9 +29,8 @@ function apachesolr_enable() {
   // Populate table
   db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed)
             SELECT n.nid, n.status, GREATEST(n.created, n.changed, c.last_comment_timestamp) AS changed
-            FROM {node} n LEFT JOIN {apachesolr_search_node} asn ON n.nid = asn.nid
-            LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid
-            WHERE asn.changed IS NULL");
+            FROM {node} n
+            INNER JOIN {node_comment_statistics} c ON n.nid = c.nid");
    // Make sure no nodes end up with a timestamp that's in the future.
    $time = time();
    db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE changed > %d", $time, $time);
@@ -79,6 +82,9 @@ function apachesolr_uninstall() {
   variable_del('apachesolr_facet_query_limit_default');  
   variable_del('apachesolr_site_hash');
   variable_del('apachesolr_index_last');
+  variable_del('apachesolr_mlt_blocks');
+  variable_del('apachesolr_cron_limit');
+  variable_del('apachesolr_enabled_facets');
   // Remove tables.
   drupal_uninstall_schema('apachesolr');
 }
@@ -158,5 +164,24 @@ function apachesolr_update_6003() {
     $time = (int) time();
     $ret[] = update_sql("UPDATE {apachesolr_search_node} SET changed = $time WHERE nid IN (SELECT nid from {book})");
   }
+  return $ret;
+}
+
+/**
+ *  Subsume MLT functionality..
+ */
+function apachesolr_update_6004() {
+  $ret = array();
+  if (db_table_exists("{apachesolr_mlt}")) {
+    require_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
+    $result = db_query('SELECT id, data FROM {apachesolr_mlt} ORDER BY id ASC');
+    while ($row = db_fetch_array($result)) {
+      $delta = sprintf('mlt-%03d', $row['id']);
+      apachesolr_mlt_save_block(unserialize($row['data']), $delta);
+      $ret[] = update_sql("UPDATE {blocks} SET module = 'apachesolr', delta = '". $delta ."' WHERE module = 'apachesolr_mlt' AND delta ='". $row['id'] ."'");
+    }
+    $ret[] = update_sql("DROP TABLE {apachesolr_mlt}");
+  }
+  $ret[] = update_sql("DELETE FROM {system} WHERE name = 'apachesolr_mlt'");
   return $ret;
 }

@@ -172,8 +172,8 @@
          maxTime - oldest uncommited update (in ms) is this long ago
     -->
     <autoCommit> 
-      <maxDocs>500</maxDocs>
-      <maxTime>240000</maxTime> 
+      <maxDocs>2000</maxDocs>
+      <maxTime>120000</maxTime> 
     </autoCommit>
 
 
@@ -465,6 +465,8 @@
         body^2.0
      </str>
      <int name="ps">15</int>
+     <!-- Abort any searches longer than 4 seconds -->
+     <!-- <int name="timeAllowed">4000</int>  -->
      <str name="mm">
         2&lt;-35%
      </str>
@@ -488,7 +490,7 @@
     <!-- By default, don't spell check -->
       <str name="spellcheck">false</str>
     <!-- Defaults for the spell checker when used -->
-      <str name="spellcheck.onlyMorePopular">false</str>
+      <str name="spellcheck.onlyMorePopular">true</str>
       <str name="spellcheck.extendedResults">false</str>
       <!--  The number of suggestions to return -->
       <str name="spellcheck.count">1</str>
@@ -506,9 +508,11 @@
       <str name="mlt.mindf">1</str>
       <str name="mlt.minwl">3</str>
       <str name="mlt.maxwl">15</str>
-      <str name="mlt.maxqt">30</str>
+      <str name="mlt.maxqt">20</str>
       <str name="mlt.match.include">false</str>
-   </lst>
+      <!-- Abort any searches longer than 1.5 seconds -->
+      <!-- <int name="timeAllowed">1500</int> -->
+    </lst>
   </requestHandler>
 
 

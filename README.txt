@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.8 2009/04/30 19:02:08 pwolanin Exp $ */
+/* $Id: README.txt,v 1.9 2009/06/29 23:23:06 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -13,6 +13,8 @@ This module depends on the search framework in core. However, you may not want
 the core searches and only want Solr search. If that is the case, you want to
 use the Core Searches module in tandem with this module.
 
+When used in combination with core search module, Apache Solr is not the default
+search. Access it via a new tab on the default search page, called "Search".
 
 Installation
 ------------
@@ -36,6 +38,30 @@ Note that revision 6 is the currently tested and suggested revision.
 Make sure that the final directory is named SolrPhpClient under the apachesolr
 module directory.  Note: the 2009-03-11 version of the library from the 
 googlecode page is r5 and will not work with beta6+.
+
+If you are maintaing your code base in subversion, you may choose instead to 
+use svn export or svn externals. For an export (writing a copy to your local
+directory without .svn files to track changes) use:
+
+svn export -r6 http://solr-php-client.googlecode.com/svn/trunk/ SolrPhpClient
+
+Instead of checking out, externals can be used too. Externals can be seen as 
+(remote) symlinks in svn. This requires your own project in your own svn ]
+repository, off course. In the apachesolr module directory, issue the command:
+
+svn propedit svn:externals
+
+Your editor will open. Add a line
+
+SolrPhpClient -r6 http://solr-php-client.googlecode.com/svn/trunk/
+
+On exports and checkouts, svn will grab the externals, but it will keep the 
+references on the remote server.
+
+Those without svn, etc may also choose to try the bundled Acquia Search
+download, which includes all the items which are not in Drupal.org CVS due to 
+CVS use policy. See the download link here: 
+http://acquia.com/documentation/acquia-search/activation
 
 Download Solr trunk (candidate 1.4.x build) from a nightly build or build it
 from svn.  http://people.apache.org/builds/lucene/solr/nightly/
@@ -88,6 +114,34 @@ is visible in search.
 
 Enable blocks for facets first at Administer > Site configuration > Apache Solr > Enabled filters,
 then position them as you like at Administer > Site building > Blocks.   
+
+Configuration variables
+--------------
+
+The module provides some (hidden) variables that can be used to tweak its
+behavior:
+
+ - apachesolr_luke_limit: the limit (in terms of number of documents in the
+   index) above which the module will not retrieve the number of terms per field
+   when performing LUKE queries (for performance reasons).
+
+ - apachesolr_tags_to_index: the list of HTML tags that the module will index
+   (see apachesolr_add_tags_to_document()).
+
+ - apachesolr_ping_timeout: the timeout (in seconds) after which the module will
+   consider the Apache Solr server unavailable.
+
+ - apachesolr_optimize_interval: the interval (in seconds) between automatic
+   optimizations of the Apache Solr index. Set to 0 to disable.
+
+ - apachesolr_cache_delay: the interval (in seconds) after an update after which
+   the module will requery the Apache Solr for the index structure. Set it to
+   your autocommit delay plus a few seconds.
+
+ - apachesolr_service_class: the Apache_Solr_Service class used for communicating
+   with the Apache Solr server.
+
+ - apachesolr_query_class: the default query class to use.
 
 Troubleshooting
 --------------
@@ -160,6 +214,8 @@ hook_apachesolr_node_exclude($node, $namespace)
 hook_apachesolr_update_index(&$document, $node)
 
   Allows a module to change the contents of the $document object before it is sent to the Solr Server.
+  To add a new field to the document, you should generally use one of the pre-defined dynamic fields. 
+  Follow the naming conventions for the type of data being added based on the schema.xml file.
 
 hook_apachesolr_search_result_alter(&$doc)
 
@@ -169,3 +225,11 @@ hook_apachesolr_search_result_alter(&$doc)
 hook_apachesolr_sort_links_alter(&$sort_links)
 
   Called by the sort link block code. Allows other modules to modify, add or remove sorts.
+
+
+Themers
+----------------
+
+See inline docs in apachesolr_theme and apachesolr_search_theme functions 
+within apachesolr.module and apachesolr_search.module.
+

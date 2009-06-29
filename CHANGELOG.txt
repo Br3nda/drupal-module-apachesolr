@@ -1,10 +1,45 @@
-// $Id: CHANGELOG.txt,v 1.3 2009/04/30 19:02:08 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.4 2009/06/29 23:23:06 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+
+Apache Solr integration 6.x-1.0-xxx, xxxx-xx-xx
+------------------------------
+#496650 by mkalkbrenner, make unclick links work after #463900.
+#495258 comment out timeAllowed params (partial roll-back of #490076)
+#495012 by pwolanin, fix Anonymous user and other 0-value facets.
+#463900 by pwolanin and JacobSingh, facet theme function clean-up.
+#405206 by pwolanin, allow Apache Solr to be the default, let core search index 0 nodes.
+#453310 by pwolanin, allow easier theming of username display.
+#490076 by pwolanin, spellcheck more popular, maxqt to 20, limit search time.
+#358166 by David Lesieur, janusman, cptnCauliflower, and pwolanin, search for just facet(s).
+#489654 by JacobSingh, and pwolanin, allow users to set their index as "read only".
+
+Apache Solr integration 6.x-1.0-beta11, 2009-06-11
+------------------------------
+#348218 by David Lesieur, janusman, and pwolanin, retain filters for next search.
+#401046 by pwolanin, revist urlencoding of query strings.
+#467810 by aufumy, Pass in page number and caller to apachesolr_search_execute.
+#481838 by JacobSingh and pwolanin, enable plus sign in search when using clean URLs.
+#480814 by mkalkbrenner and pwolanin, add more detail to logging on errors.
+#464758 by pwolanin, 4th param to htmlspecialchars breaks PHP < 5.2.3.
+#466328 by pwolanin, fix classes for sort links.
+
+Apache Solr integration 6.x-1.0-beta10, 2009-05-14
+------------------------------
+#449414 by pwolanin, aufumy, & Scott Reynolds, refactor apachesolr_search_search().
+#462836 by pwolanin, catch fatal error in _nodeaccess if no solr.
+#461506 by pwolanin, do nothing if there are no nodes to index.
+#459930 by Scott Reynolds and pwolanin, clean up hook_enable(), uninstall, update_6004
+#453338 by pwolanin and JacobSingh, move mlt functionality into the framework module.
+#365495 by pwolanin, improve admin screens and usability of field weights.
+#454608 by pwolanin, fix current search block.
+#453182 by pwolanin, use stored path rather than forcing node/$nid.
+#448298 by JacobSingh and pwolanin, use a confirm form for index deletion.
+#454352 by Damien Tournoud, make optimize interval configurable, document variables.
 
 Apache Solr integration 6.x-1.0-beta9, 2009-04-30
 ------------------------------
