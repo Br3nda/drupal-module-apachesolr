@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.25 2009/06/23 01:32:32 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.26 2009/06/30 10:57:24 robertDouglass Exp $
 
 /**
  * @file
@@ -167,7 +167,7 @@ function apachesolr_index_report() {
     }
   }
 
-  $fields = (array)$data->fields;  
+  $fields = (array)$data->fields;
   if ($fields) {
     $output .= '<p>' . t('Number of fields in index: @num', array('@num' => count($fields))) . "</p>\n";
     $rows = array();
@@ -333,7 +333,7 @@ function apachesolr_clear_index($form, &$form_state) {
 /**
  * Submit function for the "Delete the index" button
  * @see apachesolr_delete_index_form()
- * 
+ *
  */
 function apachesolr_delete_index_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/settings/apachesolr/index/delete/confirm';
@@ -410,7 +410,7 @@ function _apachesolr_field_name_map($field_name) {
       $map['im_vid_'. $vocab->vid] = t('Taxonomy term IDs from the %name vocabulary', array('%name' => $vocab->name));
     }
     foreach (apachesolr_cck_fields() as $name => $field) {
-      $map[apachesolr_index_key($field)] = t('CCK @type field %label', array('@type' => $field['index_type'], '%name' => $field['label'])); 
+      $map[apachesolr_index_key($field)] = t('CCK @type field %label', array('@type' => $field['index_type'], '%name' => $field['label']));
     }
     drupal_alter('apachesolr_field_name_map', $map);
   }

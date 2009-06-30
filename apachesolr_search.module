@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.105 2009/06/29 23:35:07 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.106 2009/06/30 10:57:24 robertDouglass Exp $
 
 /**
  * @file
@@ -163,10 +163,10 @@ function apachesolr_search_view($type = NULL) {
         $log .= 'filters='. $filters;
       }
       watchdog('search', '%keys (@type).', array('%keys' => $log, '@type' => t('Search')), WATCHDOG_NOTICE, l(t('results'), 'search/'. $type .'/'. $keys));
-    
+
       // Collect the search results:
       $results = search_data($keys, $type);
-    
+
       if ($results) {
         $results = theme('box', t('Search results'), $results);
       }
@@ -789,23 +789,23 @@ function apachesolr_search_form_search_form_alter(&$form, $form_state) {
       $form['basic']['apachesolr_search']['retain-filters'] = array(
         '#type' => 'checkbox',
         '#title' => t('Retain current filters'),
-        '#default_value' => (int) isset($_GET['retain-filters']), 
+        '#default_value' => (int) isset($_GET['retain-filters']),
       );
     }
 
     if (variable_get('apachesolr_search_spellcheck', FALSE) && $apachesolr_has_searched && ($response = apachesolr_static_response_cache())) {
       //Get spellchecker suggestions into an array.
       $suggestions = get_object_vars($response->spellcheck->suggestions);
-  
+
       if ($suggestions) {
         //Get the original query and replace words.
         $query = apachesolr_current_query();
-  
+
         foreach($suggestions as $word => $value) {
           $replacements[$word] = $value->suggestion[0];
         }
         $new_keywords = strtr($query->get_query_basic(), $replacements);
-  
+
         $form['basic']['suggestion'] = array(
           '#prefix' => '<div class="spelling-suggestions">',
           '#suffix' => '</div>',

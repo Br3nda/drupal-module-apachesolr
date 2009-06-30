@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.149 2009/06/29 23:35:07 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.150 2009/06/30 10:57:24 robertDouglass Exp $
 
 /**
  * @file
@@ -784,7 +784,7 @@ function apachesolr_date_find_query_gap($start_iso, $end_iso) {
 
 /**
  * Format an ISO date string based on the gap used to generate it.
- * 
+ *
  * This function assumes that gaps less than one day will be displayed
  * in a search context in which a larger containing gap including a
  * day is already displayed.  So, HOUR, MINUTE, and SECOND gaps only
@@ -1003,7 +1003,7 @@ function apachesolr_has_searched($searched = NULL) {
  */
 function apachesolr_get_solr($host = NULL, $port = NULL, $path = NULL) {
   static $solr_cache;
-  
+
   if (empty($host)) {
     $host = variable_get('apachesolr_host', 'localhost');
   }
@@ -1060,7 +1060,7 @@ function apachesolr_static_response_cache($response = NULL) {
 function apachesolr_drupal_query($keys = '', $filters = '', $solrsort = '', $base_path = '') {
   list($module, $class) = variable_get('apachesolr_query_class', array('apachesolr', 'Solr_Base_Query'));
   include_once drupal_get_path('module', $module) .'/'. $class .'.php';
-  
+
   try {
     $query = new $class(apachesolr_get_solr(), $keys, $filters, $solrsort, $base_path);
   }
@@ -1068,7 +1068,7 @@ function apachesolr_drupal_query($keys = '', $filters = '', $solrsort = '', $bas
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
     $query = NULL;
   }
-  
+
   return $query;
 }
 
@@ -1127,7 +1127,7 @@ function apachesolr_index_key($field) {
  * Try to map a schema field name to a human-readable description.
  */
 function apachesolr_field_name_map($field_name) {
-  require_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc'); 
+  require_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
   return _apachesolr_field_name_map($field_name);
 }
 
@@ -1268,7 +1268,7 @@ function apachesolr_mlt_suggestions($settings, $id) {
       $docs = (array) end($response->response);
       return $docs;
     }
-  } 
+  }
   catch ( Exception $e ) {
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR );
   }
@@ -1425,7 +1425,7 @@ interface Drupal_Solr_Query_Interface {
    * The facet value to check against
    */
   function has_filter($field, $value);
-  
+
   /**
    * Remove a filter from the query
    *
@@ -1437,7 +1437,7 @@ interface Drupal_Solr_Query_Interface {
    * This value can be NULL
    */
   function remove_filter($field, $value = NULL);
-  
+
   /**
    * Add a filter to a query
    *
@@ -1453,24 +1453,24 @@ interface Drupal_Solr_Query_Interface {
    *   result set.
    */
   function add_filter($field, $value, $exclude = FALSE);
-  
+
   /**
    * Return the search path (including the search keywords).
    */
   function get_path();
-  
+
   /**
    * Return any query string for use in the l function.
    *
    * @see l()
    */
   function get_url_querystring();
-  
+
   /**
    * return the basic string query
    */
   function get_query_basic();
-  
+
   /**
    * Set the solrsort.
    *
@@ -1487,7 +1487,7 @@ interface Drupal_Solr_Query_Interface {
    * Return an array of all filters.
    */
   function get_filters($name = NULL);
-  
+
   /**
    * Add a subquery to the query.
    *
@@ -1504,14 +1504,14 @@ interface Drupal_Solr_Query_Interface {
    *   keywords.
    */
   function add_subquery(Drupal_Solr_Query_Interface $query, $fq_operator = 'OR', $q_operator = 'AND');
-  
+
   /**
    * return the sorts that are provided by the query object
    *
    * @return array all the sorts provided
    */
   function get_available_sorts();
-  
+
   /**
    * Remove a specific subquery
    *
@@ -1519,12 +1519,12 @@ interface Drupal_Solr_Query_Interface {
    * the query to remove
    */
   function remove_subquery(Drupal_Solr_Query_Interface $query);
-  
+
   /**
    * remove all subqueries
    */
   function remove_subqueries();
-  
+
   /**
    * make a sort available
    */

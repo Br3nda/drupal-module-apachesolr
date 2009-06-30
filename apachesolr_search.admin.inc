@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.18 2009/06/09 01:04:39 pwolanin Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.19 2009/06/30 10:57:24 robertDouglass Exp $
 
 /**
  * @file
@@ -43,7 +43,7 @@ function apachesolr_search_bias_form($form_state) {
   $changed_settings = variable_get('apachesolr_search_changed_boost', '0:0');
   $sticky_boost = variable_get('apachesolr_search_sticky_boost', '0');
   $promote_boost = variable_get('apachesolr_search_promote_boost', '0');
-  
+
   $options = array(
     '10:2000.0' => '10',
     '8:1000.0' => '9',
@@ -119,7 +119,7 @@ function apachesolr_search_settings_form($form_state, $fields) {
   $qf = variable_get('apachesolr_search_query_fields', array());
   $weights = drupal_map_assoc(array('21.0', '13.0', '8.0', '5.0', '3.0', '2.0', '1.0', '0.8', '0.5', '0.3', '0.2', '0.1'));
   $weights['0'] = t('Omit');
-  // Note - we have default values set in solrconfig.xml, which will operate when 
+  // Note - we have default values set in solrconfig.xml, which will operate when
   // none are set.
   $defaults = array(
     'body' => '1.0',
@@ -221,7 +221,7 @@ function apachesolr_search_type_boost_form($form_state) {
 
 /**
  * Submit callback for apachesolr_search_type_boost_form().
- * 
+ *
  * This is called before system_settings_form_submit().
  */
 function apachesolr_search_type_boost_form_submit($form_id, &$form_state) {
