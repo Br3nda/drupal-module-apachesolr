@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.92 2009/07/01 22:04:53 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.93 2009/07/01 22:43:50 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,7 +8,8 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr integration 6.x-1.0-xxx, xxxx-xx-xx
 ------------------------------
-#505652 by bdurbin add apachesolr-showhide class to Show more link.
+#503644 by pwolanin and Jeremy, make sure we strip ctrl chars last, add logging.
+#505652 by bdurbin, add apachesolr-showhide class to Show more link.
 #472600 by janusman, JacobSingh, and pwolanin, optionally hijack taxonomy pages.
 #496650 by mkalkbrenner, make unclick links work after #463900.
 #495258 comment out timeAllowed params (partial roll-back of #490076)

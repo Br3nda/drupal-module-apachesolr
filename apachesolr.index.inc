@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.5 2009/05/19 19:58:23 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6 2009/07/01 22:43:50 pwolanin Exp $
 
 /**
  * @file
@@ -28,14 +28,13 @@ function apachesolr_strip_ctl_chars($text) {
  * Strip html tags and also control characters that cause Jetty/Solr to fail.
  */
 function apachesolr_clean_text($text) {
-  return _apachesolr_strip_decode(preg_replace('@[\x00-\x08\x0B\x0C\x0E-\x1F]@', ' ', $text));
-}
-
-function _apachesolr_strip_decode($text) {
   // Add spaces before stripping tags to avoid running words together.
   $text = filter_xss(str_replace(array('<', '>'), array(' <', '> '), $text), array());
   // Decode entities and then make safe any < or > characters.
-  return htmlspecialchars(html_entity_decode($text, ENT_NOQUOTES, 'UTF-8'), ENT_NOQUOTES, 'UTF-8');
+  $text = htmlspecialchars(html_entity_decode($text, ENT_NOQUOTES, 'UTF-8'), ENT_NOQUOTES, 'UTF-8');
+  // We must strip low bytes second in case there was an encoded
+  // low-byte character.
+  return apachesolr_strip_ctl_chars($text);
 }
 
 /**
@@ -88,7 +87,7 @@ function apachesolr_node_to_document($nid, $namespace) {
     if (!empty($node->language)) {
       $document->language = $node->language;
     }
-    $document->body = _apachesolr_strip_decode($text);
+    $document->body = apachesolr_clean_text($text);
     $document->type  = $node->type;
     $document->type_name = apachesolr_strip_ctl_chars(node_get_types('name', $node));
     $document->created = apachesolr_date_iso($node->created);
