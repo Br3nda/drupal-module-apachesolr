@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.107 2009/06/30 15:10:47 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.108 2009/07/01 22:57:55 pwolanin Exp $
 
 /**
  * @file
@@ -38,7 +38,7 @@ function apachesolr_search_menu() {
   $items['admin/settings/apachesolr/query-fields'] = array(
     'title'            => 'Search fields',
     'page callback'    => 'apachesolr_search_settings_page',
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('administer search'),
     'weight'           => 1,
     'type'             => MENU_LOCAL_TASK,
     'file'             => 'apachesolr_search.admin.inc',
@@ -46,7 +46,7 @@ function apachesolr_search_menu() {
   $items['admin/settings/apachesolr/content-bias'] = array(
     'title'            => 'Content bias settings',
     'page callback'    => 'apachesolr_boost_settings_page',
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('administer search'),
     'weight'           => 1,
     'type'             => MENU_LOCAL_TASK,
     'file'             => 'apachesolr_search.admin.inc',

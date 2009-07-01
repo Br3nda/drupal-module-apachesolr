@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.151 2009/07/01 22:43:50 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.152 2009/07/01 22:57:55 pwolanin Exp $
 
 /**
  * @file
@@ -17,13 +17,13 @@ function apachesolr_menu() {
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_settings'),
     'access callback'    => 'user_access',
-    'access arguments'   => array('administer site configuration'),
+    'access arguments'   => array('administer search'),
     'file'               => 'apachesolr.admin.inc',
   );
   $items['admin/settings/apachesolr/settings'] = array(
     'title'              => 'Settings',
     'weight'             => -10,
-    'access arguments'   => array('administer site configuration'),
+    'access arguments'   => array('administer search'),
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_DEFAULT_LOCAL_TASK,
   );
@@ -32,14 +32,14 @@ function apachesolr_menu() {
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_enabled_facets_form'),
     'weight'             => -7,
-    'access arguments'   => array('administer site configuration'),
+    'access arguments'   => array('administer search'),
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_LOCAL_TASK,
   );
   $items['admin/settings/apachesolr/index'] = array(
     'title'              => 'Search index',
     'page callback'      => 'apachesolr_index_page',
-    'access arguments'   => array('administer site configuration'),
+    'access arguments'   => array('administer search'),
     'weight'             => -8,
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_LOCAL_TASK,
@@ -48,7 +48,7 @@ function apachesolr_menu() {
     'title'              => 'Confirm index deletion',
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_delete_index_confirm'),
-    'access arguments'   => array('administer site configuration'),
+    'access arguments'   => array('administer search'),
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_CALLBACK,
   );
@@ -470,7 +470,7 @@ function _apachesolr_nodeapi_delete($node, $set_message = TRUE) {
   if (apachesolr_delete_node_from_index($node)) {
     // There was no exception, so delete from the table.
     db_query("DELETE FROM {apachesolr_search_node} WHERE nid = %d", $node->nid);
-    if ($set_message && user_access('administer site configuration') && variable_get('apachesolr_set_nodeapi_messages', 1)) {
+    if ($set_message && user_access('administer search') && variable_get('apachesolr_set_nodeapi_messages', 1)) {
       apachesolr_set_stats_message('Deleted content will be removed from the Apache Solr search index in approximately @autocommit_time.');
     }
   }
@@ -485,7 +485,7 @@ function _apachesolr_nodeapi_update($node, $set_message = TRUE) {
     if (apachesolr_delete_node_from_index($node)) {
       // There was no exception, so update the table.
       db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
-      if ($set_message && user_access('administer site configuration') && variable_get('apachesolr_set_nodeapi_messages', 1)) {
+      if ($set_message && user_access('administer search') && variable_get('apachesolr_set_nodeapi_messages', 1)) {
         apachesolr_set_stats_message('Unpublished content will be removed from the Apache Solr search index in approximately @autocommit_time.');
       }
     }
@@ -1406,7 +1406,7 @@ function theme_apachesolr_facet_list($items, $display_limit = 0) {
     }
   }
   $admin_link = '';
-  if (user_access('administer site configuration')) {
+  if (user_access('administer search')) {
     $admin_link = l(t('Configure enabled filters'), 'admin/settings/apachesolr/enabled-filters');
   }
   return theme('item_list', $items) . $admin_link;
