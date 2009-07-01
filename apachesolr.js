@@ -2,7 +2,7 @@ $(document).ready(function() {
 
   $('.apachesolr-hidden-facet').hide();
   
-  $('<a href="#"></a>').text(Drupal.t('Show more')).click(function() {
+  $('<a href="#" class="apachesolr-showhide"></a>').text(Drupal.t('Show more')).click(function() {
 
     if ($(this).prev().find('.apachesolr-hidden-facet:visible').length == 0) {
       $(this).prev().find('.apachesolr-hidden-facet').show();
