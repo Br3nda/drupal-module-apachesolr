@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.27 2009/07/01 22:57:55 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28 2009/07/02 09:11:09 robertDouglass Exp $
 
 /**
  * @file
@@ -70,7 +70,7 @@ function apachesolr_settings() {
   );
   $form['advanced'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Advanced Configuration'),
+    '#title' => t('Advanced configuration'),
     '#collapsed' => TRUE,
     '#collapsible' => TRUE,
   );
@@ -295,7 +295,7 @@ function apachesolr_delete_index_form() {
   $form = array();
   $form['markup'] = array(
     '#prefix' => '<h3>',
-    '#value' => t('Search Index Controls'),
+    '#value' => t('Index controls'),
     '#suffix' => '</h3>',
   );
   $form['reindex'] = array(
@@ -395,6 +395,7 @@ function _apachesolr_field_name_map($field_name) {
     $map = array(
       'body' => t('Body text - the full, rendered content'),
       'title' => t('Title'),
+      'teaser' => t('Teaser'),
       'name' => t('Author name'),
       'path_alias' => t('Path alias'),
       'taxonomy_names' => t('All taxonomy term names'),
@@ -462,7 +463,7 @@ function apachesolr_mlt_block_form($delta = NULL) {
 
   $form['name'] = array(
     '#type' => 'textfield',
-    '#title' => t('Block Name'),
+    '#title' => t('Block name'),
     '#description' => t('The block name displayed to site users.'),
     '#required' => TRUE,
     '#default_value' => $block['name'],
@@ -485,7 +486,7 @@ function apachesolr_mlt_block_form($delta = NULL) {
   );
   $form['advanced'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Advanced Configuration'),
+    '#title' => t('Advanced configuration'),
     '#weight' => '1',
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
@@ -493,28 +494,28 @@ function apachesolr_mlt_block_form($delta = NULL) {
   $options = drupal_map_assoc(array(1, 2, 3, 4, 5, 6, 7));
   $form['advanced']['mlt_mintf'] = array(
     '#type' => 'select',
-    '#title' => t('Minimum Term Frequency'),
+    '#title' => t('Minimum term frequency'),
     '#description' => t('A word must appear this many times in any given document before the document is considered relevant for comparison.'),
     '#default_value' => $block['mlt_mintf'],
     '#options' => $options,
   );
   $form['advanced']['mlt_mindf'] = array(
     '#type' => 'select',
-    '#title' => t('Minimum Document Frequency'),
+    '#title' => t('Minimum document frequency'),
     '#description' => t('A word must occur in at least this many documents before it will be used for similarity comparison.'),
     '#default_value' => $block['mlt_mindf'],
     '#options' => $options,
   );
   $form['advanced']['mlt_minwl'] = array(
     '#type' => 'select',
-    '#title' => t('Minimum Word Length'),
+    '#title' => t('Minimum word length'),
     '#description' => 'You can use this to eliminate short words such as "the" and "it" from similarity comparisons. Words must be at least this number of characters or they will be ignored.',
     '#default_value' => $block['mlt_minwl'],
     '#options' => $options,
   );
   $form['advanced']['mlt_maxwl'] = array(
     '#type' => 'select',
-    '#title' => t('Maximum World Length'),
+    '#title' => t('Maximum word length'),
     '#description' => t('You can use this to eliminate very long words from similarity comparisons. Words of more than this number of characters will be ignored.'),
     '#default_value' => $block['mlt_maxwl'],
     '#options' => drupal_map_assoc(array(8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)),
