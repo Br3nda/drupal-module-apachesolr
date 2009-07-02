@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.110 2009/07/02 08:50:46 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111 2009/07/02 21:58:34 pwolanin Exp $
 
 /**
  * @file
@@ -219,7 +219,7 @@ function apachesolr_search_execute($keys, $filters, $solrsort, $base_path = '', 
     return array();
   }
 
-  if ('' == $keys) {
+  if (('' == $keys) && isset($params['fq'])) {
     // Move the fq params to the q.alt for better performance.
     $params['q.alt'] = implode(' ', $params['fq']);
     unset($params['fq']);
