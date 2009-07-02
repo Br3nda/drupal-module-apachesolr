@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.39 2009/07/02 05:51:34 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.40 2009/07/02 08:50:46 robertDouglass Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -117,7 +117,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
    *   Key and value pairs that are applied as filter queries.
    *
    * @param $sortstring
-   *   Visible string telling solr how to sort - added to output querystring.
+   *   Visible string telling solr how to sort - added to GET query params.
    *
    * @param $base_path
    *   The search base path (without the keywords) for this query.
@@ -293,19 +293,19 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
   /**
    * Return filters and sort in a form suitable for a query param to url().
    */
-  public function get_url_querystring() {
-    $querystring = '';
+   public function get_url_queryvalues() {
+    $queryvalues = array();
     if ($fq = $this->rebuild_fq(TRUE)) {
-      $querystring = 'filters='. rawurlencode(implode(' ', $fq));
+      $queryvalues['filters'] = implode(' ', $fq);
     }
     $solrsort = $this->solrsort;
     if ($solrsort && ($solrsort['#name'] != 'score' || $solrsort['#direction'] != 'asc')) {
       if (isset($this->field_map[$solrsort['#name']])) {
         $solrsort['#name'] = $this->field_map[$solrsort['#name']];
       }
-      $querystring .= ($querystring ? '&' : '') .'solrsort='. rawurlencode($solrsort['#name'] .' '. $solrsort['#direction']);
+      $queryvalues['solrsort'] = $solrsort['#name'] .' '. $solrsort['#direction'];
     }
-    return $querystring;
+    return $queryvalues;
   }
 
   public function get_fq() {

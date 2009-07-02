@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.153 2009/07/02 05:51:34 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.154 2009/07/02 08:50:46 robertDouglass Exp $
 
 /**
  * @file
@@ -598,7 +598,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
           $sort_links[$name] = array(
             'title' => $sort['title'],
             'path' => $path,
-            'options' => array('query' => $new_query->get_url_querystring()),
+            'options' => array('query' => $new_query->get_url_queryvalues()),
             'active' => $active,
             'direction' => $direction,
           );
@@ -663,12 +663,12 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
         // '*' sorts before all numbers.
         $sortpre = '*';
         $new_query->remove_filter($facet_field, $facet);
-        $options['query'] = $new_query->get_url_querystring();
+        $options['query'] = $new_query->get_url_queryvalues();
         $link = theme('apachesolr_unclick_link', $facet_text, $new_query->get_path(), $options);
       }
       else {
         $new_query->add_filter($facet_field, $facet, $exclude);
-        $options['query'] = $new_query->get_url_querystring();
+        $options['query'] = $new_query->get_url_queryvalues();
         $link = theme('apachesolr_facet_link', $facet_text, $new_query->get_path(), $options, $count, $active, $response->response->numFound);
       }
       if ($count || $active) {
@@ -707,7 +707,7 @@ function apachesolr_date_facet_block($response, $query, $module, $delta, $facet_
     else {
       $facet_text = apachesolr_date_format_iso_by_gap(apachesolr_date_find_query_gap($filter['#start'], $filter['#end']), $filter['#start']);
     }
-    $options['query'] = $new_query->get_url_querystring();
+    $options['query'] = $new_query->get_url_queryvalues();
     array_unshift($items, theme('apachesolr_unclick_link', $facet_text, $new_query->get_path(), $options));
   }
   // Add links for additional date filters.
@@ -745,7 +745,7 @@ function apachesolr_date_facet_block($response, $query, $module, $delta, $facet_
       }
       $new_query = clone $query;
       $new_query->add_filter($facet_field, '['. $facet .' TO '. $range_end[$facet] .']');
-      $options['query'] = $new_query->get_url_querystring();
+      $options['query'] = $new_query->get_url_queryvalues();
       $items[] = theme('apachesolr_facet_link', $facet_text, $new_query->get_path(), $options, $count, FALSE, $response->response->numFound);
     }
   }
@@ -1342,7 +1342,6 @@ function theme_apachesolr_mlt_recommendation_block($docs) {
 }
 
 function theme_apachesolr_facet_link($facet_text, $path, $options = array(), $count, $active = FALSE, $num_found = NULL) {
-
   if ($active) {
     if (isset($options['attributes']['class'])) {
       $options['attributes']['class'] .= ' active';
@@ -1355,7 +1354,10 @@ function theme_apachesolr_facet_link($facet_text, $path, $options = array(), $co
 }
 
 /**
- * A replacement for l() - very similar but doesn't add the 'active' class.
+ * A replacement for l()
+ *  - doesn't add the 'active' class
+ *  - retains all $_GET parameters that ApacheSolr may not be aware of
+ *  - if set, $options['query'] MUST be an array
  *
  * @see http://api.drupal.org/api/function/l/6 for parameters and options.
  *
@@ -1367,13 +1369,20 @@ function apachesolr_l($text, $path, $options = array()) {
   $options += array(
     'attributes' => array(),
     'html' => FALSE,
+    'query' => array(),
   );
+
   // Don't need this, and just to be safe.
   unset($options['attributes']['title']);
   // Double encode + characters for clean URL Apache quirks.
   if (variable_get('clean_url', '0')) {
     $path = str_replace('+', '%2B', $path);
   }
+
+  // Retain GET parameters that ApacheSolr knows nothing about.
+  $get = array_diff_key($_GET, array('q' => 1, 'page' => 1, 'filters' => 1, 'solrsort' => 1, 'retain-filters' => 1));
+  $options['query'] += $get;
+
   return '<a href="'. check_url(url($path, $options)) .'"'. drupal_attributes($options['attributes']) .'>'. ($options['html'] ? $text : check_plain($text)) .'</a>';
 }
 
@@ -1480,11 +1489,11 @@ interface Drupal_Solr_Query_Interface {
   function get_path();
 
   /**
-   * Return any query string for use in the l function.
+   * Return an array of parameters for use in the l function.
    *
    * @see l()
    */
-  function get_url_querystring();
+  function get_url_queryvalues();
 
   /**
    * return the basic string query
