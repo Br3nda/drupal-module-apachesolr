@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.108 2009/07/01 22:57:55 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.109 2009/07/02 05:51:34 pwolanin Exp $
 
 /**
  * @file
@@ -185,20 +185,14 @@ function apachesolr_search_view($type = NULL) {
  * @throws Exception
  */
 function apachesolr_search_execute($keys, $filters, $solrsort, $base_path = '', $page = 0, $caller = 'apachesolr_search') {
-  // Validate sort parameter
-  // TODO: move this to the query class.
-  if (strlen($solrsort) && preg_match('/^([a-z0-9_]+ (asc|desc)(,)?)+$/i', $solrsort)) {
-    $params['sort'] = $solrsort;
-  }
-  else {
-    $solrsort = '';
-    $params = array();
-  }
+
+  $params = array();
   // This is the object that knows about the query coming from the user.
   $query = apachesolr_drupal_query($keys, $filters, $solrsort, $base_path);
   if (empty($query)) {
     throw new Exception(t('Could not construct a Solr query in function apachesolr_search_search()'));
   }
+
   // This is the object that does the communication with the solr server.
   $solr = apachesolr_get_solr();
   $params += apachesolr_search_basic_params($query);
@@ -832,7 +826,7 @@ function apachesolr_search_form_search_submit($form, &$form_state) {
     $keys = str_replace('+', '%2B', $keys);
   }
   if (!empty($fv['apachesolr_search']['retain-filters']) && $fv['apachesolr_search']['querystring']) {
-    $querystring = $fv['apachesolr_search']['querystring'] . '&retain-filters';
+    $querystring = $fv['apachesolr_search']['querystring'] . '&retain-filters=1';
   }
   $form_state['redirect'] = array($base . $keys, $querystring);
   if ($keys == '' && $querystring == '') {

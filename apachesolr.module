@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.152 2009/07/01 22:57:55 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.153 2009/07/02 05:51:34 pwolanin Exp $
 
 /**
  * @file
@@ -575,35 +575,38 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
         $query = apachesolr_current_query();
         $sorts = $query->get_available_sorts();
 
-        $solrsorts = array();
-        $sort_parameter = $query->get_solrsort();
-        foreach (explode(',', $sort_parameter) as $solrsort) {
-          $parts = explode(' ', $solrsort);
-          if (!empty($parts[0]) && !empty($parts[1])) {
-            $solrsorts[$parts[0]] = $parts[1];
-          }
-        }
+        // Get the current sort as an array.
+        $solrsort = $query->get_solrsort();
 
         $sort_links = array();
         $path = $query->get_path();
         $new_query = clone $query;
-        foreach ($sorts as $type => $sort) {
-          $new_sort = isset($solrsorts[$type]) ? $solrsorts[$type] == 'asc' ? 'desc' : 'asc' : $sort['default'];
-          $new_query->set_solrsort($type == "relevancy" ? '' : "{$type} {$new_sort}");
-          $active = isset($solrsorts[$type]) || ($type == "relevancy" && !$solrsorts);
-          $direction = isset($solrsorts[$type]) ? $solrsorts[$type] : '';
-          $sort_links[$type] = array(
-            'name' => $sort['name'],
+        $toggle = array('asc' => 'desc', 'desc' => 'asc');
+        foreach ($sorts as $name => $sort) {
+          $active = $solrsort['#name'] == $name;
+          $direction = '';
+          $new_direction = $sort['default'];
+          if ($name == 'score') {
+            // We only sort by ascending score.
+            $new_direction = 'asc';
+          }
+          elseif ($active) {
+            $direction = $solrsort['#direction'];
+            $new_direction = $toggle[$solrsort['#direction']];
+          }
+          $new_query->set_solrsort($name, $new_direction);
+          $sort_links[$name] = array(
+            'title' => $sort['title'],
             'path' => $path,
             'options' => array('query' => $new_query->get_url_querystring()),
             'active' => $active,
-            'direction' => $direction
+            'direction' => $direction,
           );
         }
         // Allow other modules to add or remove sorts.
         drupal_alter('apachesolr_sort_links', $sort_links);
-        foreach ($sort_links as $type => $link) {
-          $themed_links[$type] = theme('apachesolr_sort_link', $link['name'], $link['path'], $link['options'], $link['active'], $link['direction']);
+        foreach ($sort_links as $name => $link) {
+          $themed_links[$name] = theme('apachesolr_sort_link', $link['title'], $link['path'], $link['options'], $link['active'], $link['direction']);
         }
         return array('subject' => t('Sort by'),
                      'content' => theme('apachesolr_sort_list', $themed_links));
@@ -977,9 +980,19 @@ function apachesolr_modify_query(&$query, &$params, $caller) {
     $function_name = $module . '_apachesolr_modify_query';
     $function_name($query, $params, $caller);
   }
+  // TODO: The query object should hold all the params.
   // Add array of fq parameters.
   if ($query && ($fq = $query->get_fq())) {
     $params['fq'] = $fq;
+  }
+  // Add sort if present.
+  if ($query) {
+    $sort = $query->get_solrsort();
+    $sortstring = $sort['#name'] .' '. $sort['#direction'];
+    // We don't bother telling Solr to do its default sort.
+    if ($sortstring != 'score asc') {
+      $params['sort'] = $sortstring;
+    }
   }
 }
 
@@ -1481,12 +1494,19 @@ interface Drupal_Solr_Query_Interface {
   /**
    * Set the solrsort.
    *
-   * @param string raw string to set the sort to
+   * @param $field
+   *  The name of a field in the solr index that's an allowed sort.
+   *
+   * @param $direction
+   *  'asc' or 'desc'
    */
-  function set_solrsort($sortstring);
+  function set_solrsort($field, $direction);
 
   /**
    * Get the solrsort.
+   *
+   * Returns the non-urlencode, non-aliased sort field and direction.
+   * as an array keyed with '#name' and '#direction'.
    */
   function get_solrsort();
 
