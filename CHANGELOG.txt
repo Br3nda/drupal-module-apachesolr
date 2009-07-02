@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.97 2009/07/02 08:53:36 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.98 2009/07/02 09:13:07 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -6,7 +6,7 @@ Apache Solr integration x.x-x.x, xxxx-xx-xx
 Apache Solr integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
 
-Apache Solr integration 6.x-1.0-xxx, xxxx-xx-xx
+Apache Solr integration 6.x-1.0-RC1, 2009-07-02
 ------------------------------
 #502976 by pwolanin, Scott Reynolds, robertDouglass facet links and form submissions respect non ApacheSolr $_GET parameters. Note that this changes the interface API: get_url_querystring is now get_url_queryvalues and returns and array instead of a string.
 #507708 by pwolanin, fix sort parameters to use field aliases, validate in query object.
