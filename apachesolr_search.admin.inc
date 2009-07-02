@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.19 2009/06/30 10:57:24 robertDouglass Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.20 2009/07/02 22:00:33 pwolanin Exp $
 
 /**
  * @file
@@ -119,8 +119,8 @@ function apachesolr_search_settings_form($form_state, $fields) {
   $qf = variable_get('apachesolr_search_query_fields', array());
   $weights = drupal_map_assoc(array('21.0', '13.0', '8.0', '5.0', '3.0', '2.0', '1.0', '0.8', '0.5', '0.3', '0.2', '0.1'));
   $weights['0'] = t('Omit');
-  // Note - we have default values set in solrconfig.xml, which will operate when
-  // none are set.
+  // Note - we have default values set in solrconfig.xml, which will operate
+  // when none are set.  That's the preferred state.
   $defaults = array(
     'body' => '1.0',
     'title' => '5.0',
@@ -136,7 +136,6 @@ function apachesolr_search_settings_form($form_state, $fields) {
     $qf = $defaults;
   }
   if ($fields) {
-
     $form['apachesolr_search_query_fields'] = array(
       '#type' => 'fieldset',
       '#title' => t('Field biases'),
@@ -146,15 +145,20 @@ function apachesolr_search_settings_form($form_state, $fields) {
       '#description' => t('Specify here which fields are more important when searching. Give a field a greater numeric value to make it more important. If you omit a field, it will not be searched.'),
     );
     foreach ($fields as $field_name => $field) {
-      $form['apachesolr_search_query_fields'][$field_name] = array(
-        '#access' => $field->type == 'text',
-        '#type' => 'select',
-        '#options' => $weights,
-        '#title' => apachesolr_field_name_map($field_name),
-        '#default_value' => isset($qf[$field_name]) ? $qf[$field_name] : '0',
-      );
+      // Only indexed feids are searchable.
+      if ($field->schema{1} == 'I') {
+        // By default we only show text fields.  Use hook_form_alter to change.
+        $form['apachesolr_search_query_fields'][$field_name] = array(
+          '#access' => $field->type == 'text',
+          '#type' => 'select',
+          '#options' => $weights,
+          '#title' => apachesolr_field_name_map($field_name),
+          '#default_value' => isset($qf[$field_name]) ? $qf[$field_name] : '0',
+        );
+      }
     }
-    // Make sure all the default fields are included, even if they have no indexed content.
+    // Make sure all the default fields are included, even if they have
+    // no indexed content.
     foreach ($defaults as $field_name => $weight) {
       $form['apachesolr_search_query_fields'][$field_name] = array(
         '#type' => 'select',
