@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111 2009/07/02 21:58:34 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.1 2009/07/14 12:31:45 robertDouglass Exp $
 
 /**
  * @file
@@ -142,7 +142,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
  */
 function apachesolr_search_view($type = NULL) {
   // Search form submits with POST but redirects to GET.
-  $results = '';
+  $content = '';
   if (!isset($_POST['form_id'])) {
     if (empty($type)) {
       // Note: search/X can not be a default tab because it would take on the
@@ -165,18 +165,101 @@ function apachesolr_search_view($type = NULL) {
       watchdog('search', '%keys (@type).', array('%keys' => $log, '@type' => t('Search')), WATCHDOG_NOTICE, l(t('results'), 'search/'. $type .'/'. $keys));
 
       // Collect the search results:
-      $results = search_data($keys, $type);
+      $content = search_data($keys, $type);
 
-      if ($results) {
-        $results = theme('box', t('Search results'), $results);
+      if ($content) {
+        $content = theme('box', t('Search results'), $content);
       }
       else {
-        $results = theme('box', t('Your search yielded no results'), search_help('search#noresults', drupal_help_arg()));
+        $content = theme('box', t('Your search yielded no results'), search_help('search#noresults', drupal_help_arg()));
+      }
+    } else if ($type != 'node') {
+      // Ignore $type == node. Since we override the menu path to search to point
+      // to this function, we have to count on core searches coming in here, too.
+
+      // Show search form and browse-by blocks.
+      $blocks = apachesolr_search_browse('', '', '', 'search/' . $type);
+      if (count($blocks) > 0) {
+        $content = theme('apachesolr_browse_blocks', $blocks);
       }
     }
   }
   // Construct the search form.
-  return drupal_get_form('search_form', NULL, $keys, $type) . $results;
+  return drupal_get_form('search_form', NULL, $keys, $type) . $content;
+}
+
+/**
+ * Execute an empty search (match all documents) and show a listing of all enabled facets.
+ */
+function apachesolr_search_browse($keys = '', $filters = '', $solrsort = '', $base_path = '') {
+  global $user, $theme_key;
+  $query = apachesolr_drupal_query($keys, $filters, $solrsort, $base_path);
+  $params = array(
+    'start' => 0,
+    'rows' => 0,
+    'facet' => 'true',
+    'facet.mincount' => 1,
+    'facet.sort' => 'true'
+  );
+  apachesolr_search_add_facet_params($params, $query);
+  $solr = apachesolr_get_solr();
+  apachesolr_current_query($query);
+  $response = $solr->search('', $params['start'], $params['rows'], $params);
+  if (empty($response)) {
+    return;
+  }
+  apachesolr_static_response_cache($response);
+  apachesolr_has_searched(TRUE);
+
+  // Get blocks for all enabled filters
+  $blocks = array();
+  $rids = array_keys($user->roles);
+  foreach (apachesolr_get_enabled_facets() as $module => $module_facets) {
+    foreach($module_facets as $delta => $facet_field) {
+      if ($delta == 'currentsearch') {
+        continue;
+      }
+      if (count((array)$response->facet_counts->facet_fields->$facet_field) > 0) {
+        // This bit is modeled on block.modul, block_list().
+        $result = db_query(db_rewrite_sql("SELECT DISTINCT b.* FROM {blocks} b
+          LEFT JOIN {blocks_roles} r ON b.module = r.module AND b.delta = r.delta
+          WHERE b.module = '%s' AND b.delta = '%s' AND b.theme = '%s' AND b.status = 1
+            AND (r.rid IN (". db_placeholders($rids) .") OR r.rid IS NULL) LIMIT 0,1", 'b', 'bid'), array_merge(array($module, $delta, $theme_key), $rids));
+        $block = db_fetch_object($result);
+        $hook_block = (object)module_invoke($module, 'block', 'view', $delta);
+        $block->content = $hook_block->content;
+        $block->subject = str_replace(t('Filter by '), t('Browse by '), $hook_block->subject);
+        // We can safely assume these values, since we're taking over the block display.
+        $block->visibility = TRUE;
+        $block->enabled = TRUE;
+        // This hook is made up. It should be in Drupal core, and it is quite useful.
+        // Including it here because it has saved the day on projects.
+        drupal_alter('block', $block);
+        if ($block->enabled && $block->visibility) {
+          $blocks["{$module}_{$delta}"] = $block;
+        }
+      }
+    }
+  }
+  apachesolr_has_searched(FALSE);
+  usort($blocks, create_function('$a, $b', 'return $a->weight - $b->weight;'));
+  return $blocks;
+}
+
+/**
+ * Theming function that shows a groups of blocks so users can start a search from a filter.
+ *
+ * @param $blocks an array of block objects.
+ */
+function theme_apachesolr_browse_blocks($blocks) {
+  $result = "<div class='apachesolr_browse_block'><h2>" . t('Browse available categories') .'</h2>';
+  $result .= '<p>' . t('Pick a category to launch a search.') . '</p>';
+  foreach ($blocks as $facet_field => $block) {
+    $result .= theme('block', $block);
+  }
+  $result .= '</div>';
+
+  return $result;
 }
 
 /**
@@ -835,9 +918,10 @@ function apachesolr_search_form_search_submit($form, &$form_state) {
     $get['retain-filters'] = '1';
   }
   $form_state['redirect'] = array($base . $keys, $get);
-  if ($keys == '' && !$queryvalues) {
-    form_set_error('keys', t('Please enter some keywords.'));
-  }
+  // TODO decide if we want to make the facet blocks in the well an option.
+//  if ($keys == '' && !$queryvalues) {
+//    form_set_error('keys', t('Please enter some keywords.'));
+//  }
 }
 
 /**
@@ -942,6 +1026,9 @@ function apachesolr_search_theme() {
     'apachesolr_breadcrumb_created' => array(
       'arguments' => array('type' => NULL),
     ),
+    'apachesolr_browse_blocks' => array(
+      'arguments' => array('blocks' => NULL),
+    ),
     'apachesolr_currentsearch' => array(
       'arguments' => array('total_found' => NULL, 'links' => NULL),
     ),
@@ -1022,4 +1109,3 @@ function theme_apachesolr_currentsearch($total_found, $links) {
 function theme_apachesolr_search_snippets($doc, $snippets) {
   return implode(' ... ', $snippets) .' ...';
 }
-
