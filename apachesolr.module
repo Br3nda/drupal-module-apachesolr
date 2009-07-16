@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155 2009/07/02 09:11:09 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.156 2009/07/16 13:13:49 robertDouglass Exp $
 
 /**
  * @file
@@ -43,6 +43,14 @@ function apachesolr_menu() {
     'weight'             => -8,
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_LOCAL_TASK,
+  );
+  $items['admin/settings/apachesolr/index/clear/confirm'] = array(
+    'title'              => 'Confirm the re-indexing of all content',
+    'page callback'      => 'drupal_get_form',
+    'page arguments'     => array('apachesolr_clear_index_confirm'),
+    'access arguments'   => array('administer search'),
+    'file'               => 'apachesolr.admin.inc',
+    'type'               => MENU_CALLBACK,
   );
   $items['admin/settings/apachesolr/index/delete/confirm'] = array(
     'title'              => 'Confirm index deletion',

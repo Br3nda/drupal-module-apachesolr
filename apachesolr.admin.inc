@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.29 2009/07/16 04:17:08 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.30 2009/07/16 13:13:49 robertDouglass Exp $
 
 /**
  * @file
@@ -301,7 +301,7 @@ function apachesolr_delete_index_form() {
   $form['reindex'] = array(
     '#type' => 'submit',
     '#value' => t('Re-index all content'),
-    '#submit' => array('apachesolr_clear_index'),
+    '#submit' => array('apachesolr_clear_index_submit'),
   );
   $form['reindex-desc'] = array(
     '#type' => 'item',
@@ -321,11 +321,39 @@ function apachesolr_delete_index_form() {
 }
 
 /**
- * Submit function for the 'Re-index all content' button.
+ * Submit function for the "Re-index all content" button.
  *
  * @see apachesolr_delete_index_form()
  */
 function apachesolr_clear_index($form, &$form_state) {
+  return apachesolr_comfirm_clear_index($form, $form_state);
+}
+
+/**
+ * Submit function for the "Re-index all content" button
+ * @see apachesolr_delete_index_form()
+ *
+ */
+function apachesolr_clear_index_submit($form, &$form_state) {
+  $form_state['redirect'] = 'admin/settings/apachesolr/index/clear/confirm';
+}
+
+/**
+ * Confirmation form for "Re-index all content" button
+ * @see apachesolr_clear_index_submit()
+ */
+function apachesolr_clear_index_confirm() {
+  $form = array();
+  return confirm_form($form, t('Are you sure you want to re-index?'), 'admin/settings/apachesolr/index', NULL, t('Re-index'), t('Cancel'));
+}
+
+/**
+ * Submit function for the "Re-index all content" confirmation form.
+ *
+ * @see apachesolr_clear_index_confirm()
+ */
+function apachesolr_clear_index_confirm_submit($form, &$form_state) {
+  $form_state['redirect'] = 'admin/settings/apachesolr/index';
   apachesolr_clear_last_index();
 }
 
@@ -340,7 +368,7 @@ function apachesolr_delete_index_submit($form, &$form_state) {
 }
 
 /**
- * Confirmation form for 'Delete the index' button
+ * Confirmation form for "Delete the index" button
  * @see apachesolr_delete_index_submit()
  */
 function apachesolr_delete_index_confirm() {
@@ -349,7 +377,7 @@ function apachesolr_delete_index_confirm() {
 }
 
 /**
- * Submit function for the 'Delete the index' confirmation form.
+ * Submit function for the "Delete the index" confirmation form.
  *
  * @see apachesolr_delete_index_confirm()
  */
