@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.1 2009/07/14 12:31:45 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.2 2009/07/23 17:37:12 robertDouglass Exp $
 
 /**
  * @file
@@ -348,7 +348,7 @@ function apachesolr_search_highlighting_params($query) {
 
 function apachesolr_search_spellcheck_params($query) {
   $params = array();
-  if (variable_get('apachesolr_search_spellcheck', FALSE)) {
+  if (variable_get('apachesolr_search_spellcheck', TRUE)) {
     //Add new parameter to the search request
     $params['spellcheck.q'] = $query->get_query_basic();
     $params['spellcheck'] = 'true';
@@ -874,7 +874,7 @@ function apachesolr_search_form_search_form_alter(&$form, $form_state) {
       );
     }
 
-    if (variable_get('apachesolr_search_spellcheck', FALSE) && $apachesolr_has_searched && ($response = apachesolr_static_response_cache())) {
+    if (variable_get('apachesolr_search_spellcheck', TRUE) && $apachesolr_has_searched && ($response = apachesolr_static_response_cache())) {
       //Get spellchecker suggestions into an array.
       $suggestions = get_object_vars($response->spellcheck->suggestions);
 
@@ -956,7 +956,7 @@ function apachesolr_search_form_apachesolr_settings_alter(&$form, $form_state) {
   $form['apachesolr_search_spellcheck'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable spellchecker and suggestions'),
-    '#default_value' => variable_get('apachesolr_search_spellcheck', FALSE),
+    '#default_value' => variable_get('apachesolr_search_spellcheck', TRUE),
     '#description' => t('Enable spellchecker and get word suggestions. Also known as the "Did you mean ... ?" feature.'),
   );
 

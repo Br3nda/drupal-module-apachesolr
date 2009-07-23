@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.6 2009/07/23 17:31:04 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.7 2009/07/23 17:37:12 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#528888 by robertDouglass turn spellchecker on by default
 #528596 part 1 by robertDouglass add JS enabled checkboxes to facet and unclick links
 #525918 by robertDouglass be more forceful when reindexing; rebuild the apachesolr_search_node table completely.
 #528516 by robertDouglass add apachesolr-facet and apachesolr-unclick CSS classes to unclick and facet links.
