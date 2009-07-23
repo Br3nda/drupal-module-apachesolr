@@ -1,3 +1,5 @@
+// $Id: apachesolr.js,v 1.1.2.3 2009/07/23 10:14:19 robertDouglass Exp $
+
 $(document).ready(function() {
 
   $('.apachesolr-hidden-facet').hide();
