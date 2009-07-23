@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.101 2009/07/16 13:13:49 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.102 2009/07/23 14:00:58 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#525918 by robertDouglass more forceful redindex; apachesolr_search_node table now completely rebuilt upon redindex.
 #515682 by robertDouglass, add confirmation form to re-index button.
 #509526 by pwolanin, {apachesolr_search_node} table should be rebuilt when index is deleted.
 #508364 by pwolanin, Don't offer non-indexed fields as search options.

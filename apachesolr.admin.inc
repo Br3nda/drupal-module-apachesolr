@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.30 2009/07/16 13:13:49 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.31 2009/07/23 14:00:58 robertDouglass Exp $
 
 /**
  * @file
@@ -354,7 +354,7 @@ function apachesolr_clear_index_confirm() {
  */
 function apachesolr_clear_index_confirm_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/settings/apachesolr/index';
-  apachesolr_clear_last_index();
+  apachesolr_rebuild_index_table();
 }
 
 
@@ -411,8 +411,7 @@ function apachesolr_delete_index() {
   $solr->deleteByQuery($query);
   $solr->commit();
   // Rebuild our node-tracking table.
-  module_load_include('install', 'apachesolr');
-  apachesolr_enable();
+  apachesolr_rebuild_index_table();
   apachesolr_index_updated(time());
 }
 

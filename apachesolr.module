@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.157 2009/07/23 10:59:20 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.158 2009/07/23 14:00:58 robertDouglass Exp $
 
 /**
  * @file
@@ -238,7 +238,6 @@ function apachesolr_node_type($op, $info) {
  */
 function apachesolr_index_status($namespace) {
   list($excluded_types, $args, $join_sql, $exclude_sql) = _apachesolr_exclude_types($namespace);
-
   $total = db_result(db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE asn.status = 1 " . $exclude_sql, $excluded_types));
   $remaining = db_result(db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > %d OR (asn.changed = %d AND asn.nid > %d)) AND asn.status = 1 "  . $exclude_sql, $args));
   return array('remaining' => $remaining, 'total' => $total);
@@ -264,6 +263,24 @@ function apachesolr_clear_last_index($namespace = '') {
   else {
     variable_del('apachesolr_index_last');
   }
+}
+
+/**
+ * Truncate and rebuild the apachesolr_search_node table, reset the apachesolr_index_last variable.
+ * This is the most complete way to force reindexing, or to build the indexing table for the
+ * first time.
+ */
+function apachesolr_rebuild_index_table() {
+  db_query("DELETE FROM {apachesolr_search_node}");
+  // Populate table
+  db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed)
+            SELECT n.nid, n.status, GREATEST(n.created, n.changed, c.last_comment_timestamp) AS changed
+            FROM {node} n
+            LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid");
+   // Make sure no nodes end up with a timestamp that's in the future.
+   $time = time();
+   db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE changed > %d", $time, $time);
+   apachesolr_clear_last_index();
 }
 
 function _apachesolr_exclude_types($namespace) {
