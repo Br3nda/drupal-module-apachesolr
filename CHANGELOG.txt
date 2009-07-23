@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.2 2009/07/16 13:14:51 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.3 2009/07/23 10:12:19 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#528484 by robertDouglass switch to Drupal.behaviors in apachesolr.js
 #515682 by robertDouglass, add confirmation form to re-index button.
 #509526 by pwolanin, {apachesolr_search_node} table should be rebuilt when index is deleted.
 #457826 by janusman, robertDouglass - show browsable facet blocks in the search well when no search term is present to allow browsing. Hello 6.2 branch of ApacheSolr :D
