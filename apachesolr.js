@@ -1,3 +1,5 @@
+// $ ID$
+
 Drupal.behaviors.apachesolr = function(context) {
   $('.apachesolr-hidden-facet').hide();
   $('<a href="#" class="apachesolr-showhide"></a>').text(Drupal.t('Show more')).click(function() {
