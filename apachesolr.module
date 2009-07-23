@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.156 2009/07/16 13:13:49 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.157 2009/07/23 10:59:20 robertDouglass Exp $
 
 /**
  * @file
@@ -1208,7 +1208,7 @@ function apachesolr_cck_fields() {
 function apachesolr_theme() {
   return array(
     /**
-     * Returns a link for a facet term with the # of results clicking it will yeild (count)
+     * Returns a link for a facet term, with the number (count) of results for that term
      */
     'apachesolr_facet_link' => array(
       'arguments' => array('facet_text' => NULL, 'path' => NULL, 'options' => NULL, 'count' => NULL, 'active' => FALSE, 'num_found' => NULL),
