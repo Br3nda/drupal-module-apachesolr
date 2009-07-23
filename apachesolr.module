@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.1 2009/07/16 13:14:51 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.2 2009/07/23 10:34:49 robertDouglass Exp $
 
 /**
  * @file
@@ -1350,14 +1350,11 @@ function theme_apachesolr_mlt_recommendation_block($docs) {
 }
 
 function theme_apachesolr_facet_link($facet_text, $path, $options = array(), $count, $active = FALSE, $num_found = NULL) {
+  $options['attributes']['class'][] = 'apachesolr-facet';
   if ($active) {
-    if (isset($options['attributes']['class'])) {
-      $options['attributes']['class'] .= ' active';
-    }
-    else {
-      $options['attributes']['class'] = 'active';
-    }
+    $options['attributes']['class'][] = 'active';
   }
+  $options['attributes']['class'] = implode(' ', $options['attributes']['class']);
   return apachesolr_l($facet_text ." ($count)",  $path, $options);
 }
 
@@ -1394,7 +1391,6 @@ function apachesolr_l($text, $path, $options = array()) {
   return '<a href="'. check_url(url($path, $options)) .'"'. drupal_attributes($options['attributes']) .'>'. ($options['html'] ? $text : check_plain($text)) .'</a>';
 }
 
-
 function theme_apachesolr_unclick_link($facet_text, $path, $options = array()) {
   if (empty($options['html'])) {
     $facet_text = check_plain($facet_text);
@@ -1403,6 +1399,7 @@ function theme_apachesolr_unclick_link($facet_text, $path, $options = array()) {
     // Don't pass this option as TRUE into apachesolr_l().
     unset($options['html']);
   }
+  $options['attributes']['class'] = 'apachesolr-unclick';
   return apachesolr_l("(-)", $path, $options) . ' '. $facet_text;
 }
 

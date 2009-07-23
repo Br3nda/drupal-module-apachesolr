@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.3 2009/07/23 10:12:19 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.4 2009/07/23 10:34:49 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#528516 by robertDouglass add apachesolr-facet and apachesolr-unclick CSS classes to unclick and facet links.
 #528484 by robertDouglass switch to Drupal.behaviors in apachesolr.js
 #515682 by robertDouglass, add confirmation form to re-index button.
 #509526 by pwolanin, {apachesolr_search_node} table should be rebuilt when index is deleted.
