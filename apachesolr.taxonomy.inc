@@ -1,11 +1,13 @@
 <?php
-// $Id: apachesolr.taxonomy.inc,v 1.1.2.2 2009/06/29 23:35:07 pwolanin Exp $
+// $Id: apachesolr.taxonomy.inc,v 1.1.2.3 2009/07/24 22:02:37 janusman Exp $
 
 /**
  * Overrides taxonomy/term/X links
  */
 function apachesolr_search_taxonomy_term_page($str_tids = '', $depth = 0, $op = 'page') {
 
+  drupal_add_feed(url('taxonomy/term/' . $str_tids . '/' . $depth . '/feed'), 'RSS - '. $title);
+  
   $vids_to_override = apachesolr_get_enabled_facets('apachesolr_search');
 
   $terms = taxonomy_terms_parse_string($str_tids);
