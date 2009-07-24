@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.1.4.20 2009/07/23 14:00:58 robertDouglass Exp $
+// $Id: apachesolr.install,v 1.1.4.21 2009/07/24 17:37:43 robertDouglass Exp $
 
 /**
  * @file
@@ -16,7 +16,7 @@ function apachesolr_install() {
   require_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
   apachesolr_mlt_save_block(array('name' => t('More like this')));
 
-  drupal_set_message(t('Search is enabled. You\'re site is <a href="!index_settings_link">currently 0% indexed</a>.', array('!index_settings_link' => url('admin/settings/apachesolr/index'))));
+  drupal_set_message(t('Search is enabled. Your site is <a href="!index_settings_link">currently 0% indexed</a>.', array('!index_settings_link' => url('admin/settings/apachesolr/index'))));
 }
 
 /**
