@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.5 2009/07/23 17:31:04 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.6 2009/07/28 13:53:37 robertDouglass Exp $
 
 /**
  * @file
@@ -1408,8 +1408,18 @@ function apachesolr_l($text, $path, $options = array()) {
   return '<a href="'. check_url(url($path, $options)) .'"'. drupal_attributes($options['attributes']) .'>'. ($options['html'] ? $text : check_plain($text)) .'</a>';
 }
 
+function apachesolr_js() {
+  static $settings;
+  // Only add the js stuff once.
+  if (empty($settings)) {
+    $settings['apachesolr_facetstyle'] = variable_get('apachesolr_facetstyle', 'checkboxes');
+    drupal_add_js($settings, 'setting');
+    drupal_add_js(drupal_get_path('module', 'apachesolr') . '/apachesolr.js');
+  }
+}
+
 function theme_apachesolr_unclick_link($facet_text, $path, $options = array()) {
-  drupal_add_js(drupal_get_path('module', 'apachesolr') . '/apachesolr.js');
+  apachesolr_js();
   if (empty($options['html'])) {
     $facet_text = check_plain($facet_text);
   }
@@ -1438,7 +1448,7 @@ function theme_apachesolr_sort_link($text, $path, $options = array(), $active = 
 }
 
 function theme_apachesolr_facet_list($items, $display_limit = 0) {
-  drupal_add_js(drupal_get_path('module', 'apachesolr') . '/apachesolr.js');
+  apachesolr_js();
   // theme('item_list') expects a numerically indexed array.
   $items = array_values($items);
   // If there is a limit and the facet count is over the limit, hide the rest.

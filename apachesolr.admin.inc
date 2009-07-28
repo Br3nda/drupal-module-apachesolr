@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.28.2.3 2009/07/23 10:38:05 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28.2.4 2009/07/28 13:53:37 robertDouglass Exp $
 
 /**
  * @file
@@ -51,6 +51,12 @@ function apachesolr_settings() {
     '#default_value' => variable_get('apachesolr_rows', 10),
     '#options' => $options,
     '#description' => t('The number of results that will be shown per page.'),
+  );
+  $form['apachesolr_facetstyle'] = array(
+    '#type' => 'radios',
+    '#title' => t('Style of facet links'),
+    '#default_value' => variable_get('apachesolr_facetstyle', 'checkboxes'),
+    '#options' => array('links' => t('Links only'), 'checkboxes' => t('Links with checkboxes')),
   );
   $form['apachesolr_failure'] = array(
     '#type' => 'select',

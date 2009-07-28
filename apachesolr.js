@@ -1,4 +1,4 @@
-// $Id: apachesolr.js,v 1.1.2.2.2.4 2009/07/23 17:31:04 robertDouglass Exp $
+// $Id: apachesolr.js,v 1.1.2.2.2.5 2009/07/28 13:53:37 robertDouglass Exp $
 
 Drupal.behaviors.apachesolr = function(context) {
   $('.apachesolr-hidden-facet').hide();
@@ -14,10 +14,12 @@ Drupal.behaviors.apachesolr = function(context) {
     return false;
   }).appendTo($('.block-apachesolr_search:has(.apachesolr-hidden-facet), .block-apachesolr:has(.apachesolr-hidden-facet)'));
   
-  // Find all facet links and give them a checkbox
-  $('.apachesolr-facet', context).each(Drupal.apachesolr.addCheckbox);
-  // Find all unclick links and turn them into checkboxes
-  $('.apachesolr-unclick', context).each(Drupal.apachesolr.makeCheckbox);
+  if (Drupal.settings.apachesolr_facetstyle == 'checkboxes') {
+    // Find all facet links and give them a checkbox
+    $('.apachesolr-facet', context).each(Drupal.apachesolr.addCheckbox);
+    // Find all unclick links and turn them into checkboxes
+    $('.apachesolr-unclick', context).each(Drupal.apachesolr.makeCheckbox);
+  }
 }
 
 Drupal.apachesolr = {}
