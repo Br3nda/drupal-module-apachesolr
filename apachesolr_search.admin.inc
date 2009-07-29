@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.20 2009/07/02 22:00:33 pwolanin Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.21 2009/07/29 18:27:48 pwolanin Exp $
 
 /**
  * @file
@@ -146,7 +146,7 @@ function apachesolr_search_settings_form($form_state, $fields) {
     );
     foreach ($fields as $field_name => $field) {
       // Only indexed feids are searchable.
-      if ($field->schema{1} == 'I') {
+      if ($field->schema{0} == 'I') {
         // By default we only show text fields.  Use hook_form_alter to change.
         $form['apachesolr_search_query_fields'][$field_name] = array(
           '#access' => $field->type == 'text',
