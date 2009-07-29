@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_og.module,v 1.1.2.4 2009/07/01 22:57:55 pwolanin Exp $
+// $Id: apachesolr_og.module,v 1.1.2.5 2009/07/29 18:49:02 pwolanin Exp $
 
 /**
  * @file
@@ -167,9 +167,9 @@ function apachesolr_og_block($op = 'list', $delta = 0, $edit = array()) {
       break;
 
     case 'configure':
-      return apachesolr_facetcount_form($delta);
+      return apachesolr_facetcount_form('apachesolr_og', $delta);
     case 'save':
-      apachesolr_facetcount_save($delta, $edit);
+      apachesolr_facetcount_save($edit);
       break;
   }
 }
