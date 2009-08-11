@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.24 2009/06/30 21:00:51 pwolanin Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.25 2009/08/11 22:36:39 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -49,7 +49,7 @@ Instead of checking out, externals can be used too. Externals can be seen as
 (remote) symlinks in svn. This requires your own project in your own svn ]
 repository, off course. In the apachesolr module directory, issue the command:
 
-svn propedit svn:externals
+svn propedit svn:externals .
 
 Your editor will open. Add a line
 
