@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.3 2009/08/13 10:50:25 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.4 2009/08/13 22:06:46 robertDouglass Exp $
 
 /**
  * @file
@@ -702,7 +702,12 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
             if (!$fields) {
               $options['attributes']['class'] = 'active';
             }
-            $links[] = apachesolr_l($query->get_query_basic(), $path, $options);
+            // If current search has keys, offer current search without them
+            if ($keys = $query->get_query_basic()) {
+              $new_query = clone $query;
+              $new_query->set_keys("");
+              $links[] = theme('apachesolr_unclick_link', $keys, $new_query->get_path(), array('query' => $new_query->get_url_queryvalues()));
+            }
             foreach($fields as $field) {
               if ($field['#name']) {
                 $new_query = clone $query;
