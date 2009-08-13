@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.2 2009/07/23 17:37:12 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.3 2009/08/13 10:50:25 robertDouglass Exp $
 
 /**
  * @file
@@ -549,31 +549,31 @@ function apachesolr_search_apachesolr_facets() {
   $facets = array();
 
   $facets['type'] = array(
-    'info' => t('Apache Solr Search: Filter by content type'),
+    'info' => t('Node attribute: Filter by content type'),
     'facet_field' => 'type',
   );
   $facets['uid'] = array(
-    'info' => t('Apache Solr Search: Filter by author'),
+    'info' => t('Node attribute: Filter by author'),
     'facet_field' => 'uid',
   );
   $facets['language'] = array(
-    'info' => t('Apache Solr Search: Filter by language'),
+    'info' => t('Node attribute: Filter by language'),
     'facet_field' => 'language',
   );
 
   $facets['changed'] = array(
-    'info' => t('Apache Solr Search: Filter by updated date'),
+    'info' => t('Node attribute: Filter by updated date'),
     'facet_field' => 'changed',
   );
   $facets['created'] = array(
-    'info' => t('Apache Solr Search: Filter by post date'),
+    'info' => t('Node attribute: Filter by post date'),
     'facet_field' => 'created',
   );
 
   // A book module facet.
   if (module_exists('book')) {
     $facets['is_book_bid'] = array(
-      'info' => t('Apache Solr Search: Filter by Book'),
+      'info' => t('Book: Filter by Book'),
       'facet_field' => 'is_book_bid',
     );
   }
@@ -585,7 +585,7 @@ function apachesolr_search_apachesolr_facets() {
       // In this case the delta and facet field are the same.
       $delta = 'im_vid_' . $vid;
       $facets[$delta] = array(
-        'info' => t('Apache Solr Search: Filter by taxonomy @name', array('@name' => $vocab->name)),
+        'info' => t('Taxonomy vocabulary: Filter by taxonomy @name', array('@name' => $vocab->name)),
         'facet_field' => $delta,
       );
     }
@@ -598,7 +598,7 @@ function apachesolr_search_apachesolr_facets() {
       // $delta can only be 32 chars, and the CCK field name may be this
       // long also, so we cannot add anything to it.
       $facets[$field['field_name']] = array(
-        'info' => t('Apache Solr Search: Filter by @field', array('@field' => $field['label'])),
+        'info' => t('CCK field: Filter by @field', array('@field' => $field['label'])),
         'facet_field' => apachesolr_index_key($field),
       );
     }

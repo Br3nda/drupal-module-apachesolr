@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.9 2009/07/28 16:37:31 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.10 2009/08/13 10:50:25 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#548102 by robertDouglass change wording on enabled filters page to improve usability.
 #529606 by Damien Tournoud update schema.xml with WhitespaceTokenizerFactory and SnowballPorterFilterFactory. Note that you need to stop solr, replace schema.xml, delete your index, and re-index your site.
 #528002 by janusman, Add RSS discovery to taxonomy hijack page
 #528888 by robertDouglass turn spellchecker on by default
