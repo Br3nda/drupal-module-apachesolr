@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.20 2009/07/02 22:00:33 pwolanin Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.20.2.1 2009/08/13 11:09:59 robertDouglass Exp $
 
 /**
  * @file
@@ -243,7 +243,7 @@ function apachesolr_search_type_boost_form_submit($form_id, &$form_state) {
     if (!empty($new_excluded_types[$type])) {
       $solr = apachesolr_get_solr();
       $solr->deleteByQuery("type:$type");
-      apachesolr_index_updated(time());
+      apachesolr_index_set_last_updated(time());
     }
   }
 

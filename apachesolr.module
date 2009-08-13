@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.6 2009/07/28 13:53:37 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.7 2009/08/13 11:09:59 robertDouglass Exp $
 
 /**
  * @file
@@ -360,7 +360,7 @@ function apachesolr_index_nodes($rows, $namespace = '', $callback = 'apachesolr_
         $solr->addDocuments($docs);
       }
       // Set the timestamp to indicate an index update.
-      apachesolr_index_updated(time());
+      apachesolr_index_set_last_updated(time());
     }
     catch (Exception $e) {
       $nids = array();
@@ -397,7 +397,7 @@ function apachesolr_delete_node_from_index($node) {
   try {
     $solr = apachesolr_get_solr();
     $solr->deleteById(apachesolr_document_id($node->nid));
-    apachesolr_index_updated(time());
+    apachesolr_index_set_last_updated(time());
     return TRUE;
   }
   catch (Exception $e) {
@@ -407,17 +407,24 @@ function apachesolr_delete_node_from_index($node) {
 }
 
 /**
- * Helper function to keep track of when the index has been updated.
+ * Set the timestamp of the last index update
+ * @param $updated
+ *   A timestamp or zero. If zero, the variable is deleted.
  */
-function apachesolr_index_updated($updated = NULL) {
-  if (isset($updated)) {
-    if ($updated) {
-      variable_set('apachesolr_index_updated', (int) $updated);
-    }
-    else {
-      variable_del('apachesolr_index_updated');
-    }
+function apachesolr_index_set_last_updated($updated = 0) {
+  if ($updated) {
+    variable_set('apachesolr_index_updated', (int) $updated);
   }
+  else {
+    variable_del('apachesolr_index_updated');
+  }
+}
+
+/**
+ * Get the timestamp of the last index update.
+ * @return integer (timestamp)
+ */
+function apachesolr_index_get_last_updated() {
   return variable_get('apachesolr_index_updated', 0);
 }
 
@@ -447,12 +454,12 @@ function apachesolr_cron() {
     if ($optimize_interval && ($time - $last > $optimize_interval)) {
       $solr->optimize(FALSE, FALSE);
       variable_set('apachesolr_last_optimize', $time);
-      apachesolr_index_updated($time);
+      apachesolr_index_set_last_updated($time);
     }
 
     // Only clear the cache if the index changed.
     // TODO: clear on some schedule if running multi-site.
-    $updated = apachesolr_index_updated();
+    $updated = apachesolr_index_get_last_updated();
     if ($updated) {
       $solr->clearCache();
       // Re-populate the luke cache.
@@ -460,7 +467,7 @@ function apachesolr_cron() {
       // TODO: an admin interface for setting this.  Assume for now 5 minutes.
       if ($time - $updated >= variable_get('apachesolr_cache_delay', 300)) {
         // Clear the updated flag.
-        apachesolr_index_updated(FALSE);
+        apachesolr_index_set_last_updated(0);
       }
     }
   }

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.28.2.4 2009/07/28 13:53:37 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28.2.5 2009/08/13 11:09:59 robertDouglass Exp $
 
 /**
  * @file
@@ -103,7 +103,7 @@ function apachesolr_index_page() {
   try {
     $solr = apachesolr_get_solr();
     // TODO: possibly clear this every page view if we are running multi-site.
-    if (apachesolr_index_updated()) {
+    if (apachesolr_index_get_last_updated()) {
       $solr->clearCache();
     }
     $data = $solr->getLuke();
@@ -141,7 +141,7 @@ function apachesolr_index_report() {
   try {
     $solr = apachesolr_get_solr();
     // TODO: possibly clear this every page view if we are running multi-site.
-    if (apachesolr_index_updated()) {
+    if (apachesolr_index_get_last_updated()) {
       $solr->clearCache();
     }
     $data = $solr->getLuke();
@@ -418,7 +418,7 @@ function apachesolr_delete_index() {
   $solr->commit();
   // Rebuild our node-tracking table.
   apachesolr_rebuild_index_table();
-  apachesolr_index_updated(time());
+  apachesolr_index_set_last_updated(time());
 }
 
 /**

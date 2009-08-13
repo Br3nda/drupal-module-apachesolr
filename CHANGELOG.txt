@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.11 2009/08/13 11:03:07 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.12 2009/08/13 11:09:59 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#525980 by robertDouglass Clarify the API of apachesolr_index_updated.
 #530196 by pwolanin, fix facecount form function calls in apachesolr_og.
 #548102 by robertDouglass change wording on enabled filters page to improve usability.
 #529606 by Damien Tournoud update schema.xml with WhitespaceTokenizerFactory and SnowballPorterFilterFactory. Note that you need to stop solr, replace schema.xml, delete your index, and re-index your site.
