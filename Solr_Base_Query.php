@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.40 2009/07/02 08:50:46 robertDouglass Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.40.2.1 2009/08/13 14:58:34 robertDouglass Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -211,6 +211,23 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     $this->field_map = array();
     // We have to re-parse the filters.
     $this->parse_filters();
+  }
+  
+  /**
+   * Set keywords in this query.
+   *
+   * @param $keys
+   *   New keywords
+   */
+  function set_keys($keys) {
+    $this->keys = $keys;
+  }
+  
+  /**
+   * Get this query's keywords.
+   */
+  function get_keys() {
+    return $this->keys;
   }
 
   /**

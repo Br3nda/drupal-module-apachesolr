@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.14 2009/08/13 12:16:49 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.15 2009/08/13 14:58:34 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#545094 by loganfsmyth add getter and setter methods for a query's keys.
 #530910 by Damien Tournoud fix offset problem in field settings administration.
 #526344 by drunken monkey Remove apachesolr_read_only check from Drupal_ Apache_Solr_Service::_sendRawPost().
 #525980 by robertDouglass Clarify the API of apachesolr_index_updated.
