@@ -221,12 +221,9 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
   /**
    * Central method for making a post operation against this Solr Server
    *
-   * @see Apache_Solr_Service::_sendRawGet()
+   * @see Apache_Solr_Service::_sendRawPost()
    */
   protected function _sendRawPost($url, $rawPost, $timeout = FALSE, $contentType = 'text/xml; charset=UTF-8') {
-    if (variable_get('apachesolr_read_only', 0)) {
-      throw new Exception('Operating in read-only mode; updates are disabled.');
-    }
     $request_headers = array('Content-Type' => $contentType);
     list ($data, $headers) = $this->_makeHttpRequest($url, 'POST', $request_headers, $rawPost, $timeout);
     $response = new Apache_Solr_Response($data, $headers, $this->_createDocuments, $this->_collapseSingleValueArrays);
