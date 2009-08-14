@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.8 2009/08/13 15:54:00 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.9 2009/08/14 16:18:09 robertDouglass Exp $
 
 /**
  * @file
@@ -1409,7 +1409,8 @@ function apachesolr_l($text, $path, $options = array()) {
   }
 
   // Retain GET parameters that ApacheSolr knows nothing about.
-  $get = array_diff_key($_GET, array('q' => 1, 'page' => 1, 'filters' => 1, 'solrsort' => 1, 'retain-filters' => 1));
+  $query = apachesolr_current_query();
+  $get = array_diff_key($_GET, array('q' => 1, 'page' => 1), $options['query'], $query->get_url_queryvalues());
   $options['query'] += $get;
 
   return '<a href="'. check_url(url($path, $options)) .'"'. drupal_attributes($options['attributes']) .'>'. ($options['html'] ? $text : check_plain($text)) .'</a>';
