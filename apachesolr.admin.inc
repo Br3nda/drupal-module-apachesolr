@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.31 2009/07/23 14:00:58 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.32 2009/08/15 07:33:02 robertDouglass Exp $
 
 /**
  * @file
@@ -21,12 +21,14 @@ function apachesolr_settings() {
     '#title' => t('Solr host name'),
     '#default_value' => variable_get('apachesolr_host', 'localhost'),
     '#description' => t('Host name of your Solr server, e.g. <code>localhost</code> or <code>example.com</code>.'),
+    '#required' => TRUE,
   );
   $form['apachesolr_port'] = array(
     '#type' => 'textfield',
     '#title' => t('Solr port'),
     '#default_value' => variable_get('apachesolr_port', '8983'),
     '#description' => t('Port on which the Solr server listens. The Jetty example server is 8983, while Tomcat is 8080 by default.'),
+    '#required' => TRUE,
   );
   $form['apachesolr_path'] = array(
     '#type' => 'textfield',
@@ -88,6 +90,17 @@ function apachesolr_settings() {
     '#description' => t('<em>Read only</em> stops this site from sending updates to your search index. Useful for development sites.'),
   );
   return system_settings_form($form);
+}
+
+/**
+ * Validation function for the apachesolr_settings form.
+ */
+function apachesolr_settings_validate($form, &$form_state) {
+  $port = $form_state['values']['apachesolr_port'];
+  // TODO: Port range should be 0-65535, but 0 crashes apachesolr
+  if (!ctype_digit($port) || $port < 1 || $port > 65535) {
+    form_set_error('apachesolr_port', t('The port has to be an integer between 1 and 65535.'));
+  }
 }
 
 /**
