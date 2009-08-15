@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.17 2009/08/14 16:18:09 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.18 2009/08/15 07:31:20 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#543226 by drunken monkey validate port on settings form.
 #502976 by Scott Reynolds followup to Other GET parameters ignored by Apache Solr Facet Blocks
 #473554 by janusman Add an "unclick" link to search keys
 #545094 by loganfsmyth add getter and setter methods for a query's keys.
