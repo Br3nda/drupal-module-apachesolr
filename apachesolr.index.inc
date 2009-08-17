@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6 2009/07/01 22:43:50 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.2.1 2009/08/17 17:28:14 robertDouglass Exp $
 
 /**
  * @file
@@ -117,8 +117,8 @@ function apachesolr_node_to_document($nid, $namespace) {
     foreach ($cck_fields as $key => $cck_info) {
       if (isset($node->$key)) {
         // Got a CCK field. See if it is to be indexed.
-        $function = $cck_info['callback'];
-        if ($cck_info['callback'] && function_exists($function)) {
+        $function = $cck_info['indexing callback'];
+        if ($cck_info['indexing callback'] && function_exists($function)) {
           $field = $function($node, $key);
         }
         else {
@@ -128,6 +128,8 @@ function apachesolr_node_to_document($nid, $namespace) {
         foreach ($field as $value) {
           // Don't index NULLs or empty strings
           // We can use 'value' rather than 'safe' since we strip tags and later check_plain().
+          // Furthermore, what is being indexed is the KEY for the CCK value. It will need
+          // a trip through content_format() later to display the value.
           if (isset($value['value']) && strlen($value['value'])) {
             if ($cck_info['multiple']) {
               $document->setMultiValue($index_key, apachesolr_clean_text($value['value']));
@@ -234,4 +236,3 @@ function apachesolr_add_tags_to_document(&$document, $text) {
     }
   }
 }
-

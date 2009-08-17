@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.40.2.1 2009/08/13 14:58:34 robertDouglass Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.40.2.2 2009/08/17 17:28:14 robertDouglass Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -137,8 +137,8 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     $this->id = ++self::$idCount;
   }
 
-  public function add_filter($field, $value, $exclude = FALSE) {
-    $this->fields[] = array('#exclude' => $exclude, '#name' => $field, '#value' => trim($value));
+  public function add_filter($field, $value, $exclude = FALSE, $callbacks = array()) {
+    $this->fields[] = array('#exclude' => $exclude, '#name' => $field, '#value' => trim($value), '#callbacks' => $callbacks);
   }
 
   /**
@@ -212,7 +212,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     // We have to re-parse the filters.
     $this->parse_filters();
   }
-  
+
   /**
    * Set keywords in this query.
    *
@@ -222,7 +222,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
   function set_keys($keys) {
     $this->keys = $keys;
   }
-  
+
   /**
    * Get this query's keywords.
    */
@@ -372,7 +372,9 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
       }
       $progressive_crumb[] = $this->make_filter($field);
       $options = array('query' => 'filters=' . rawurlencode(implode(' ', $progressive_crumb)));
-      if ($themed = theme("apachesolr_breadcrumb_" . $name, $field['#value'], $field['#exclude'])) {
+      $breadcrumb_name = "apachesolr_breadcrumb_" . $name;
+      drupal_alter('apachesolr_theme_breadcrumb', $breadcrumb_name);
+      if ($themed = theme($breadcrumb_name, $field)) {
         $breadcrumb[] = l($themed, $base, $options);
       }
       else {
