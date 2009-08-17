@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.1.2.11 2009/06/05 18:05:06 robertDouglass Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.1.2.11.2.1 2009/08/17 17:33:54 robertDouglass Exp $
 
 /**
  * Implementation of apachesolr_update_index
@@ -61,7 +61,10 @@ function _apachesolr_nodeaccess_build_subquery($account) {
 /**
  * Implementation of hook_apachesolr_modify_query().
  */
-function apachesolr_nodeaccess_apachesolr_modify_query(&$query, &$params) {
+function apachesolr_nodeaccess_apachesolr_modify_query(&$query, &$params, $caller = 'apachesolr_search') {
+  if ($caller == 'apachesolr_views_query') {
+    return;
+  }
   global $user;
   try {
     $subquery = _apachesolr_nodeaccess_build_subquery($user);
