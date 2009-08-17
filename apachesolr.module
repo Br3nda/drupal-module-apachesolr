@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.9 2009/08/14 16:18:09 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.10 2009/08/17 10:36:29 robertDouglass Exp $
 
 /**
  * @file
@@ -124,18 +124,11 @@ function apachesolr_requirements($phase) {
     $host = variable_get('apachesolr_host', 'localhost');
     $port = variable_get('apachesolr_port', 8983);
     $path = variable_get('apachesolr_path', '/solr');
-    $ping = FALSE;
-    try {
-      $solr = apachesolr_get_solr();
-      $ping = @$solr->ping(variable_get('apachesolr_ping_timeout', 4));
-      // If there is no $solr object, there is no server available, so don't continue.
-      if (!$ping) {
-        throw new Exception(t('No Solr instance available when checking requirements.'));
-      }
+    $ping = apachesolr_server_status($host, $port, $path);
+    if (!$ping) {
+      watchdog('Apache Solr', 'No Solr instance available when checking requirements.', array(), WATCHDOG_ERROR);
     }
-    catch (Exception $e) {
-      watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
-    }
+
     $value =  $ping ? $t('Your site has contacted the Apache Solr server.') : $t('Your site was unable to contact the Apache Solr server.');
     $severity = $ping ? 0: 2;
     $description = theme('item_list', array($t('Host: %host', array('%host' => $host)),
@@ -1078,6 +1071,33 @@ function apachesolr_get_solr($host = NULL, $port = NULL, $path = NULL) {
     }
   }
   return $solr_cache[$host][$port][$path];
+}
+
+/**
+ * Checks if a specific Apache Solr server is available.
+ *
+ * @return boolean TRUE if the server can be pinged, FALSE otherwise.
+ */
+function apachesolr_server_status($host = NULL, $port = NULL, $path = NULL) {
+  if (empty($host)) {
+    $host = variable_get('apachesolr_host', 'localhost');
+  }
+  if (empty($port)) {
+    $port = variable_get('apachesolr_port', '8983');
+  }
+  if (empty($path)) {
+    $path = variable_get('apachesolr_path', '/solr');
+  }
+
+  $ping = FALSE;
+  try {
+    $solr = apachesolr_get_solr($host, $port, $path);
+    $ping = @$solr->ping(variable_get('apachesolr_ping_timeout', 4));
+  }
+  catch (Exception $e) {
+    watchdog('Apache Solr', check_plain($e->getMessage()), NULL, WATCHDOG_ERROR);
+  }
+  return $ping;
 }
 
 /**
