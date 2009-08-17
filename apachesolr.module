@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.12 2009/08/17 17:28:14 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.13 2009/08/17 18:45:46 robertDouglass Exp $
 
 /**
  * @file
@@ -649,6 +649,64 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
         apachesolr_mlt_save_block($edit, $delta);
       }
       break;
+  }
+}
+
+/**
+ * Implementation of hook_form_[form_id]_alter().
+ *
+ * Hide the core 'title' field in favor of our 'name' field.
+ *
+ * Add a checkbox to enable type-specific visibility.
+ */
+function apachesolr_form_block_admin_configure_alter(&$form, $form_state) {
+  // Hide the core title field.
+  if ($form['module']['#value'] == 'apachesolr' && $form['delta']['#value'] != 'sort') {
+    $form['block_settings']['title']['#access'] = FALSE;
+  }
+
+  // Add a type-specific visibility checkbox.
+  $module = $form['module']['#value'];
+  $delta = $form['delta']['#value'];
+  $enabled_facets = apachesolr_get_enabled_facets();
+
+  // If this block isn't enabled as a facet, get out of here.
+  if (!isset($enabled_facets[$module][$delta])) {
+    return;
+  }
+
+  $facet_info = module_invoke($module, 'apachesolr_facets');
+
+  // If this facet doesn't define any content type array, get out of here.
+  if (!isset($facet_info[$delta]['content types'])) {
+    return;
+  }
+
+  $settings = variable_get('apachesolr_type_filter', array());
+  // Set up some variables for the verbiage of the form element.
+  $count = count($facet_info[$delta]['content types']);
+  $types = format_plural($count, t('type'), t('types'));
+  $are = format_plural($count, t('is'), t('are'));
+  $content_types = implode(', ', $facet_info[$delta]['content types']) . '.';
+  $form['block_settings']['apachesolr_type_filter'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show this block only when the type filter is selected for: %content_types',  array('%content_types' => $content_types)),
+    '#default_value' => isset($settings[$module][$delta]) ? $settings[$module][$delta] : FALSE,
+    '#description' => t('This filter is relevant only for specific content types. Check this to display the block only when the type filter has been selected for one of the relevant content types.'),
+    '#weight' => 11,
+  );
+  // Add a submit handler to save the value.
+  $form['#validate'][] = 'apachesolr_block_admin_configure_submit';
+}
+
+function apachesolr_block_admin_configure_submit($form, &$form_state) {
+  if (isset($form_state['values']['apachesolr_type_filter'])) {
+    $settings = variable_get('apachesolr_type_filter', array());
+    $module = $form_state['values']['module'];
+    $delta = $form_state['values']['delta'];
+    unset($settings[$module][$delta]);
+    $settings[$module][$delta] = $form_state['values']['apachesolr_type_filter'];
+    variable_set('apachesolr_type_filter', $settings);
   }
 }
 
@@ -1384,17 +1442,6 @@ function apachesolr_form_block_admin_display_form_alter(&$form) {
     if ((strpos($key, "apachesolr_mlt-") === 0) && $block['module']['#value'] == 'apachesolr') {
       $form[$key]['delete'] = array('#value' => l(t('delete'), 'admin/settings/apachesolr/mlt/delete_block/'. $block['delta']['#value']));
     }
-  }
-}
-
-/**
- * Implementation of hook_form_[form_id]_alter().
- *
- * Hide the core 'title' field in favor of our 'name' field..
- */
-function apachesolr_form_block_admin_configure_alter(&$form, $form_state) {
-  if ($form['module']['#value'] == 'apachesolr' && $form['delta']['#value'] != 'sort') {
-    $form['block_settings']['title']['#access'] = FALSE;
   }
 }
 

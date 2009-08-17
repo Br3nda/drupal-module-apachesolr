@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.5 2009/08/17 17:28:15 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.6 2009/08/17 18:45:46 robertDouglass Exp $
 
 /**
  * @file
@@ -575,6 +575,7 @@ function apachesolr_search_apachesolr_facets() {
     $facets['is_book_bid'] = array(
       'info' => t('Book: Filter by Book'),
       'facet_field' => 'is_book_bid',
+      'content types' => variable_get('book_allowed_types', array('book')),
     );
   }
 
@@ -587,6 +588,7 @@ function apachesolr_search_apachesolr_facets() {
       $facets[$delta] = array(
         'info' => t('Taxonomy vocabulary: Filter by taxonomy @name', array('@name' => $vocab->name)),
         'facet_field' => $delta,
+        'content types' => $vocab->nodes,
       );
     }
   }
@@ -600,6 +602,7 @@ function apachesolr_search_apachesolr_facets() {
       $facets[$field['field_name']] = array(
         'info' => t('CCK field: Filter by @field', array('@field' => $field['label'])),
         'facet_field' => apachesolr_index_key($field),
+        'content types' => $field['content types'],
       );
     }
   }
@@ -640,6 +643,27 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
         $facets = apachesolr_get_enabled_facets('apachesolr_search');
         if (empty($facets[$delta]) && ($delta != 'currentsearch')) {
           return;
+        }
+
+        // This code makes a decision whether to show this block or not.
+        // If the block is configured to heed type hierarcy then it looks
+        // to see if a suitable type filter has been chosen. If not,
+        // the function returns.
+        $type_filters = variable_get('apachesolr_type_filter', array());
+        if (isset($type_filters['apachesolr_search'][$delta]) && $type_filters['apachesolr_search'][$delta] == TRUE) {
+          $facet_info = module_invoke('apachesolr_search', 'apachesolr_facets');
+          if (isset($facet_info[$delta]['content types'])) {
+            $has_filter = $query->get_filters($facet_info[$delta]['facet_field']);
+            $show = count($has_filter);
+            foreach ($facet_info[$delta]['content types'] as $content_type) {
+              if ($query->has_filter('type', $content_type)) {
+                $show = TRUE;
+              }
+            }
+            if (!$show) {
+              return;
+            }
+          }
         }
 
         // Get information needed by the taxonomy blocks about limits.
