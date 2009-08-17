@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.10 2009/08/17 10:36:29 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.11 2009/08/17 11:37:10 robertDouglass Exp $
 
 /**
  * @file
@@ -1224,10 +1224,10 @@ function apachesolr_cck_fields() {
       // $mappings['per-field']['field_model_price'] = array('callback' => '', 'index_type' => 'float');
       // Allow other modules to add or alter mappings.
       drupal_alter('apachesolr_cck_fields', $mappings);
-      $result = db_query("SELECT  i.field_name, f.multiple, f.type AS field_type, i.widget_type, i.label FROM {content_node_field_instance} i INNER JOIN {content_node_field} f ON i.field_name = f.field_name;");
+      $result = db_query("SELECT  i.field_name, f.multiple, f.type AS field_type, i.widget_type, i.label, i.type_name AS content_type FROM {content_node_field_instance} i INNER JOIN {content_node_field} f ON i.field_name = f.field_name;");
       while ($row = db_fetch_object($result)) {
         // Only deal with fields that have option widgets (facets don't make sense otherwise), or fields that have specific mappings.
-        if ((isset($mappings[$row->field_type][$row->widget_type]) && !isset($fields[$row->field_name])) || isset($mappings['per-field'][$row->field_name])) {
+        if ((isset($mappings[$row->field_type][$row->widget_type]) ||  isset($mappings['per-field'][$row->field_name]))) {
           if (isset($mappings['per-field'][$row->field_name])) {
             $row->index_type = $mappings['per-field'][$row->field_name]['index_type'];
             $row->callback = $mappings['per-field'][$row->field_name]['callback'];
@@ -1238,7 +1238,9 @@ function apachesolr_cck_fields() {
           }
           $row->multiple = (bool) $row->multiple;
           $row->name = 'cck_' . $row->field_name;
-          $fields[$row->field_name] = (array) $row;
+          $fields[$row->field_name] = array_merge((array) $fields[$row->field_name], (array) $row);
+          $fields[$row->field_name]['content types'][] = $row->content_type;
+          unset($fields[$row->field_name]['content_type']);
         }
       }
     }
