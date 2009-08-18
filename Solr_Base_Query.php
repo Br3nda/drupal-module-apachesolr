@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.40.2.2 2009/08/17 17:28:14 robertDouglass Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.40.2.3 2009/08/18 11:03:12 robertDouglass Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -374,7 +374,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
       $options = array('query' => 'filters=' . rawurlencode(implode(' ', $progressive_crumb)));
       $breadcrumb_name = "apachesolr_breadcrumb_" . $name;
       drupal_alter('apachesolr_theme_breadcrumb', $breadcrumb_name);
-      if ($themed = theme($breadcrumb_name, $field)) {
+      if ($themed = theme($breadcrumb_name, $field['#value'])) {
         $breadcrumb[] = l($themed, $base, $options);
       }
       else {

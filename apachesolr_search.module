@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.6 2009/08/17 18:45:46 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.7 2009/08/18 11:03:12 robertDouglass Exp $
 
 /**
  * @file
@@ -739,7 +739,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
                 $options['query'] = $new_query->get_url_queryvalues();
                 $breadcrumb_name = "apachesolr_breadcrumb_" . $field['#name'];
                 drupal_alter('apachesolr_theme_breadcrumb', $breadcrumb_name);
-                $fielddisplay = theme($breadcrumb_name, $field);
+                $fielddisplay = theme($breadcrumb_name, $field['#value']);
                 if (!$fielddisplay) {
                   $fielddisplay = $field['#value'];
                 }
