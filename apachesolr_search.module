@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.7 2009/08/18 11:03:12 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.8 2009/08/23 16:38:43 robertDouglass Exp $
 
 /**
  * @file
@@ -712,7 +712,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
             $limit = isset($initial_limits['apachesolr_search'][$delta]) ? $initial_limits['apachesolr_search'][$delta] : $limit_default;
             return array(
               'subject' => t('Filter by @name', array('@name' => $vocab->name)),
-              'content' => theme('apachesolr_facet_list', $terms[$vid], $limit),
+              'content' => theme('apachesolr_facet_list', $terms[$vid], $limit, $delta),
             );
           }
           return;
