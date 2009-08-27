@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.9 2009/08/27 13:16:28 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.10 2009/08/27 20:07:02 robertDouglass Exp $
 
 /**
  * @file
@@ -722,7 +722,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
                 $options['query'] = $new_query->get_url_queryvalues();
                 $breadcrumb_name = "apachesolr_breadcrumb_" . $field['#name'];
                 drupal_alter('apachesolr_theme_breadcrumb', $breadcrumb_name);
-                $fielddisplay = theme($breadcrumb_name, $field['#value']);
+                $fielddisplay = theme($breadcrumb_name, $field);
                 if (!$fielddisplay) {
                   $fielddisplay = $field['#value'];
                 }
@@ -1102,7 +1102,8 @@ function theme_apachesolr_breadcrumb_created($range) {
 /**
  * Return the username from $uid
  */
-function theme_apachesolr_breadcrumb_uid($uid) {
+function theme_apachesolr_breadcrumb_uid($field) {
+  $uid = $field['#value'];
   if ($uid == 0) {
     return variable_get('anonymous', t('Anonymous'));
   }
@@ -1114,7 +1115,8 @@ function theme_apachesolr_breadcrumb_uid($uid) {
 /**
  * Return the term name from $tid.
  */
-function theme_apachesolr_breadcrumb_tid($tid) {
+function theme_apachesolr_breadcrumb_tid($field) {
+  $tid = $field['#value'];
   $term = taxonomy_get_term($tid);
   return $term->name;
 }
@@ -1122,7 +1124,8 @@ function theme_apachesolr_breadcrumb_tid($tid) {
 /**
  * Return the human readable text for a content type.
  */
-function theme_apachesolr_breadcrumb_type($type) {
+function theme_apachesolr_breadcrumb_type($field) {
+  $type = $field['#value'];
   return node_get_types('name', $type);
 }
 
