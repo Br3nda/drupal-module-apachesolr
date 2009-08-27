@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.15 2009/08/27 13:16:28 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.16 2009/08/27 16:50:30 robertDouglass Exp $
 
 /**
  * @file
@@ -1318,10 +1318,6 @@ function apachesolr_cck_fields() {
           'index_type' => 'string',
         ),
       );
-      // A field-specific mapping would look like:
-      // $mappings['per-field']['field_model_name'] = array('callback' => '', 'index_type' => 'string');
-      // or
-      // $mappings['per-field']['field_model_price'] = array('callback' => '', 'index_type' => 'float');
       // Allow other modules to add or alter mappings.
       drupal_alter('apachesolr_cck_fields', $mappings);
       $result = db_query("SELECT  i.field_name, f.multiple, f.type AS field_type, i.widget_type, i.label, i.type_name AS content_type FROM {content_node_field_instance} i INNER JOIN {content_node_field} f ON i.field_name = f.field_name;");
