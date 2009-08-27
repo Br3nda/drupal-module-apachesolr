@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.8 2009/08/23 16:38:43 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.9 2009/08/27 13:16:28 robertDouglass Exp $
 
 /**
  * @file
@@ -645,25 +645,8 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
           return;
         }
 
-        // This code makes a decision whether to show this block or not.
-        // If the block is configured to heed type hierarcy then it looks
-        // to see if a suitable type filter has been chosen. If not,
-        // the function returns.
-        $type_filters = variable_get('apachesolr_type_filter', array());
-        if (isset($type_filters['apachesolr_search'][$delta]) && $type_filters['apachesolr_search'][$delta] == TRUE) {
-          $facet_info = module_invoke('apachesolr_search', 'apachesolr_facets');
-          if (isset($facet_info[$delta]['content types'])) {
-            $has_filter = $query->get_filters($facet_info[$delta]['facet_field']);
-            $show = count($has_filter);
-            foreach ($facet_info[$delta]['content types'] as $content_type) {
-              if ($query->has_filter('type', $content_type)) {
-                $show = TRUE;
-              }
-            }
-            if (!$show) {
-              return;
-            }
-          }
+        if (!apachesolr_block_visibility($query, 'apachesolr_search', $delta)) {
+          return;
         }
 
         // Get information needed by the taxonomy blocks about limits.

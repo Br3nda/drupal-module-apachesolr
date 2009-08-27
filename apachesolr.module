@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.14 2009/08/23 16:38:43 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.15 2009/08/27 13:16:28 robertDouglass Exp $
 
 /**
  * @file
@@ -650,6 +650,42 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
       }
       break;
   }
+}
+
+/**
+ * This code makes a decision whether to show a block or not.
+ * @param $query
+ *   The current query object.
+ * @param string $module
+ *   The module's name to whom this block belongs.
+ * @param string $delta
+ *   The delta string the identifies the block within $module.
+ * @return boolean
+ *   Whether the block should be visible. Other factors, like
+ *   the block system's visibility settings, apply as well.
+ */
+function apachesolr_block_visibility($query, $module, $delta) {
+  // TYPE HIERARCHY.
+  // If the block is configured to heed type hierarcy then it looks
+  // to see if a suitable type filter has been chosen. If not,
+  // the function returns.
+  $type_filters = variable_get('apachesolr_type_filter', array());
+  if (isset($type_filters['apachesolr_search'][$delta]) && $type_filters['apachesolr_search'][$delta] == TRUE) {
+    $facet_info = module_invoke('apachesolr_search', 'apachesolr_facets');
+    if (isset($facet_info[$delta]['content types'])) {
+      $has_filter = $query->get_filters($facet_info[$delta]['facet_field']);
+      $show = count($has_filter);
+      foreach ($facet_info[$delta]['content types'] as $content_type) {
+        if ($query->has_filter('type', $content_type)) {
+          $show = TRUE;
+        }
+      }
+      if (!$show) {
+        return FALSE;
+      }
+    }
+  }
+  return TRUE;
 }
 
 /**
