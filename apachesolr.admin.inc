@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.28.2.6 2009/08/15 07:31:20 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28.2.7 2009/08/28 17:21:02 robertDouglass Exp $
 
 /**
  * @file
@@ -102,10 +102,12 @@ function apachesolr_settings() {
  * Validation function for the apachesolr_settings form.
  */
 function apachesolr_settings_validate($form, &$form_state) {
-  $port = $form_state['values']['apachesolr_port'];
-  // TODO: Port range should be 0-65535, but 0 crashes apachesolr
-  if (!ctype_digit($port) || $port < 1 || $port > 65535) {
-    form_set_error('apachesolr_port', t('The port has to be an integer between 1 and 65535.'));
+  if (isset($form['apachesolr_port'])) {
+    $port = $form_state['values']['apachesolr_port'];
+    // TODO: Port range should be 0-65535, but 0 crashes apachesolr
+    if (!ctype_digit($port) || $port < 1 || $port > 65535) {
+      form_set_error('apachesolr_port', t('The port has to be an integer between 1 and 65535.'));
+    }
   }
 }
 
