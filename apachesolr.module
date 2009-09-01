@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.17 2009/08/27 20:07:02 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.18 2009/09/01 09:46:44 robertDouglass Exp $
 
 /**
  * @file
@@ -48,6 +48,14 @@ function apachesolr_menu() {
     'title'              => 'Confirm the re-indexing of all content',
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_clear_index_confirm'),
+    'access arguments'   => array('administer search'),
+    'file'               => 'apachesolr.admin.inc',
+    'type'               => MENU_CALLBACK,
+  );
+  $items['admin/settings/apachesolr/index/batch/confirm'] = array(
+    'title'              => 'Confirm the batch re-indexing of all content',
+    'page callback'      => 'drupal_get_form',
+    'page arguments'     => array('apachesolr_batch_index_confirm'),
     'access arguments'   => array('administer search'),
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_CALLBACK,

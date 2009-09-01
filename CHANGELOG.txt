@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.24 2009/08/23 16:38:43 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.25 2009/09/01 09:46:44 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#456420 by anarchivist, janusman, robertDouglass Reindex using Batch API.
 #551510 by Scott Reynolds Add in ability to theme different facet blocks differently.
 #551620 by robertDouglass Type dependent facet blocks.
 #549664 by Scott Reynolds Ignore node_access for Solr Views queries.
