@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.18 2009/09/01 09:46:44 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.19 2009/09/07 13:14:07 robertDouglass Exp $
 
 /**
  * @file
@@ -677,9 +677,10 @@ function apachesolr_block_visibility($query, $module, $delta) {
   // If the block is configured to heed type hierarcy then it looks
   // to see if a suitable type filter has been chosen. If not,
   // the function returns.
+  // This variable is not static cached because variable_get() already does that.
   $type_filters = variable_get('apachesolr_type_filter', array());
-  if (isset($type_filters['apachesolr_search'][$delta]) && $type_filters['apachesolr_search'][$delta] == TRUE) {
-    $facet_info = module_invoke('apachesolr_search', 'apachesolr_facets');
+  if (isset($type_filters[$module][$delta]) && $type_filters[$module][$delta] == TRUE) {
+    $facet_info = module_invoke($module, 'apachesolr_facets');
     if (isset($facet_info[$delta]['content types'])) {
       $has_filter = $query->get_filters($facet_info[$delta]['facet_field']);
       $show = count($has_filter);
