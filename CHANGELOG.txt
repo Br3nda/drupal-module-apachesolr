@@ -1,10 +1,12 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.25 2009/09/01 09:46:44 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.26 2009/09/08 14:03:45 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#570476 by robertDouglass add initial Drush support with commands drush solr delete index and drush solr reindex.
+#570476 by robertDouglass allow for deleting or reindexing single content types.
 #456420 by anarchivist, janusman, robertDouglass Reindex using Batch API.
 #551510 by Scott Reynolds Add in ability to theme different facet blocks differently.
 #551620 by robertDouglass Type dependent facet blocks.
