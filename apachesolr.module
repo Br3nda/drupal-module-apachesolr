@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.21 2009/09/09 20:11:39 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.22 2009/09/10 13:45:47 robertDouglass Exp $
 
 /**
  * @file
@@ -1344,9 +1344,25 @@ function apachesolr_cck_fields() {
           'display callback' => 'apachesolr_cck_nodereference_field_callback',
           'index_type' => 'integer',
         ),
+        'nodereference_select' => array(
+          'display callback' => 'apachesolr_cck_nodereference_field_callback',
+          'index_type' => 'integer',
+        ),
+        'nodereference_autocomplete' => array(
+          'display callback' => 'apachesolr_cck_nodereference_field_callback',
+          'index_type' => 'integer',
+        ),
       );
       $mappings['userreference'] = array(
         'userreference_buttons' => array(
+          'display callback' => 'apachesolr_cck_userreference_field_callback',
+          'index_type' => 'integer',
+        ),
+        'userreference_select' => array(
+          'display callback' => 'apachesolr_cck_userreference_field_callback',
+          'index_type' => 'integer',
+        ),
+        'userreference_autocomplete' => array(
           'display callback' => 'apachesolr_cck_userreference_field_callback',
           'index_type' => 'integer',
         ),
