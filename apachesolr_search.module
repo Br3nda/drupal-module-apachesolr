@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.13 2009/09/11 11:09:14 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.14 2009/09/13 13:44:42 robertDouglass Exp $
 
 /**
  * @file
@@ -276,13 +276,22 @@ function theme_apachesolr_browse_blocks($blocks) {
 /**
  * Execute a search results based on keyword, filter, and sort strings.
  *
+ * @param $keys
+ * @param $filterstring
+ * @param $solrsort
+ * @param $base_path
+ *   For constructing filter and sort links. Leave empty unless the links need to point somewhere
+ *   other than the base path of the current request.
+ * @param integer $page
+ *   For pagination.
+ * @param $caller
+ * @return Apache_Solr_Response $response
  * @throws Exception
  */
-function apachesolr_search_execute($keys, $filters, $solrsort, $base_path = '', $page = 0, $caller = 'apachesolr_search') {
-
+function apachesolr_search_execute($keys, $filterstring, $solrsort, $base_path = '', $page = 0, $caller = 'apachesolr_search') {
   $params = array();
   // This is the object that knows about the query coming from the user.
-  $query = apachesolr_drupal_query($keys, $filters, $solrsort, $base_path);
+  $query = apachesolr_drupal_query($keys, $filterstring, $solrsort, $base_path);
   if (empty($query)) {
     throw new Exception(t('Could not construct a Solr query in function apachesolr_search_search()'));
   }
