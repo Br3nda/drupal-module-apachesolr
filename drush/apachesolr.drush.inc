@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.drush.inc,v 1.1.2.1 2009/09/08 14:03:45 robertDouglass Exp $
+// $Id: apachesolr.drush.inc,v 1.1.2.2 2009/09/13 12:35:31 robertDouglass Exp $
 
 /**
  * @file
@@ -29,18 +29,25 @@ function apachesolr_drush_command() {
     // the name of the function implementing your command.
     'callback' => 'apachesolr_drush_solr_delete_index',
     // a short description of your command
-    'description' => "Deletes the content from the index. Can take content types as parameters.",
+    'description' => dt('Deletes the content from the index. Can take content types as parameters.'),
     'arguments' => array(
-      'types' => 'Optional. A space delimited list of content types to be deleted from the index.',
+      'types' => dt('Optional. A space delimited list of content types to be deleted from the index.'),
     ),
   );
   $items['solr reindex'] = array(
     // the name of the function implementing your command.
     'callback' => 'apachesolr_drush_solr_reindex',
     // a short description of your command
-    'description' => "Marks content for reindexing. Can take content types as parameters.",
+    'description' => dt('Marks content for reindexing. Can take content types as parameters.'),
     'arguments' => array(
-      'types' => 'Optional. A space delimited list of content types to be marked for reindexing.',
+      'types' => dt('Optional. A space delimited list of content types to be marked for reindexing.'),
+    ),
+  );
+  $items['solr phpclient'] = array(
+    'callback' => 'apachesolr_drush_solr_phpclient',
+    'description' => dt('Downloads the required SolrPhpClient from googlecode.com.'),
+    'arguments' => array(
+      'path' => dt('Optional. A path to the apachesolr module. If omitted Drush will use the default location.'),
     ),
   );
   return $items;
@@ -64,6 +71,8 @@ function apachesolr_drush_help($section) {
       return dt("Used without parameters, this command deletes the entire Solr index. Used with parameters for content type, it deletes just the content types that are specified. After the index has been deleted, all content will be indexed again on future cron runs.");
     case 'drush:solr reindex':
       return dt("Used without parameters, this command marks all of the content in the Solr index for reindexing. Used with paramters for content type, it marks just the content types that are specified. Reindexing is different than deleting as the content is still searchable while it is in queue to be reindexed. Reindexing is done on future cron runs.");
+    case 'drush:solr phpclient':
+      return dt("Downloads the SolrPhpClient libraray from googlecode.com. Include the optional path to an apachesolr module installation if you have more than one, or if the module is not yet enabled.");
   }
 }
 
@@ -104,4 +113,19 @@ function apachesolr_drush_solr_reindex() {
   }
 }
 
-
+function apachesolr_drush_solr_phpclient() {
+  $args = func_get_args();
+  if ($args[0]) {
+    $path = $args[0];
+  }
+  else {
+    $path = drupal_get_path('module', 'apachesolr');
+  }
+  drush_op('chdir', $path);
+  if (drush_shell_exec('svn export -r6 http://solr-php-client.googlecode.com/svn/trunk/ SolrPhpClient')) {
+    drush_log(dt('SolrPhpClient has been downloaded to @path', array('@path' => $path)), 'success');
+  }
+  else {
+    drush_log(dt('Drush was unable to download the SolrPhpClient to @path', array('@path' => $path)), 'error');
+  }
+}
