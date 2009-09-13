@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.15 2009/09/13 14:14:04 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.16 2009/09/13 14:15:13 robertDouglass Exp $
 
 /**
  * @file
@@ -289,7 +289,6 @@ function theme_apachesolr_browse_blocks($blocks) {
  * @throws Exception
  */
 function apachesolr_search_execute($keys, $filterstring, $solrsort, $base_path = '', $page = 0, $caller = 'apachesolr_search') {
-  dsm($keys);
   $params = array();
   // This is the object that knows about the query coming from the user.
   $query = apachesolr_drupal_query($keys, $filterstring, $solrsort, $base_path);
