@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.drush.inc,v 1.1.2.2 2009/09/13 12:35:31 robertDouglass Exp $
+// $Id: apachesolr.drush.inc,v 1.1.2.3 2009/09/13 14:14:04 robertDouglass Exp $
 
 /**
  * @file
@@ -50,6 +50,13 @@ function apachesolr_drush_command() {
       'path' => dt('Optional. A path to the apachesolr module. If omitted Drush will use the default location.'),
     ),
   );
+  $items['solr search'] = array(
+    'callback' => 'apachesolr_drush_solr_search',
+    'description' => dt('Search the site for keywords using Apache Solr'),
+    'arguments' => array(
+      'keywords' => dt('One or more keywords, separated by spaces.'),
+    ),
+  );
   return $items;
 }
 
@@ -73,6 +80,8 @@ function apachesolr_drush_help($section) {
       return dt("Used without parameters, this command marks all of the content in the Solr index for reindexing. Used with paramters for content type, it marks just the content types that are specified. Reindexing is different than deleting as the content is still searchable while it is in queue to be reindexed. Reindexing is done on future cron runs.");
     case 'drush:solr phpclient':
       return dt("Downloads the SolrPhpClient libraray from googlecode.com. Include the optional path to an apachesolr module installation if you have more than one, or if the module is not yet enabled.");
+    case 'drush:solr search':
+      return dt('Executes a search against the site\'s Apache Solr search index and returns the restults.');
   }
 }
 
@@ -127,5 +136,16 @@ function apachesolr_drush_solr_phpclient() {
   }
   else {
     drush_log(dt('Drush was unable to download the SolrPhpClient to @path', array('@path' => $path)), 'error');
+  }
+}
+
+function apachesolr_drush_solr_search() {
+  $args = func_get_args();
+  $keys = implode(' ', $args);
+  foreach(apachesolr_search_execute($keys) as $result) {
+    $output = 'node/' . $result['node']->nid . ' ' . dt('by @name (user/@uid)', array('@name' => $result['user'], '@uid' => $result['node']->uid)) . "\n";
+    $output .= dt('title: ') .  $result['title'] . "\n";
+    $output .= preg_replace('/[\s]+/', ' ', strip_tags($result['snippet'])) . "\n\n";
+    drush_print($output);
   }
 }
