@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.40.2.4 2009/08/27 20:07:02 robertDouglass Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.40.2.5 2009/09/15 13:29:39 robertDouglass Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -313,8 +313,11 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
    public function get_url_queryvalues() {
     $queryvalues = array();
     if ($fq = $this->rebuild_fq(TRUE)) {
-      $queryvalues['filters'] = implode(' ', $fq);
+      foreach ($fq as $delta => $values) {
+        $queryvalues['filters'] .= ' ' . implode(' ', $values);
+      }
     }
+    $queryvalues['filters'] = trim($queryvalues['filters']);
     $solrsort = $this->solrsort;
     if ($solrsort && ($solrsort['#name'] != 'score' || $solrsort['#direction'] != 'asc')) {
       if (isset($this->field_map[$solrsort['#name']])) {
@@ -436,7 +439,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
       if ($aliases && isset($this->field_map[$field['#name']])) {
         $field['#name'] = $this->field_map[$field['#name']];
       }
-      $fq[] = $this->make_filter($field);
+      $fq[$field['#name']][] = $this->make_filter($field);
     }
     foreach ($this->subqueries as $id => $data) {
       $subfq = $data['#query']->rebuild_fq($aliases);

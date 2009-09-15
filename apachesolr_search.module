@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.16 2009/09/13 14:15:13 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.17 2009/09/15 13:29:39 robertDouglass Exp $
 
 /**
  * @file
@@ -307,7 +307,7 @@ function apachesolr_search_execute($keys, $filterstring, $solrsort, $base_path =
     // No highlighting, use the teaser as a snippet.
     $params['fl'] .= ',teaser';
   }
-  apachesolr_search_add_facet_params($params, $query);
+  $has_or = apachesolr_search_add_facet_params($params, $query);
   apachesolr_search_add_boost_params($params, $query, $solr);
 
   $params['start'] = $page * $params['rows'];
@@ -322,12 +322,11 @@ function apachesolr_search_execute($keys, $filterstring, $solrsort, $base_path =
     return array();
   }
 
-  if (('' == $keys) && isset($params['fq'])) {
+  if (!$has_or && ('' == $keys) && isset($params['fq'])) {
     // Move the fq params to the q.alt for better performance.
     $params['q.alt'] = implode(' ', $params['fq']);
     unset($params['fq']);
   }
-
   $response = $solr->search($query->get_query_basic(), $params['start'], $params['rows'], $params);
   // The response is cached so that it is accessible to the blocks and anything
   // else that needs it beyond the initial search.
@@ -379,6 +378,8 @@ function apachesolr_search_spellcheck_params($query) {
 function apachesolr_search_add_facet_params(&$params, $query) {
   $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
   $facet_missing = variable_get('apachesolr_facet_missing', array());
+  $facet_info = apachesolr_get_facet_definitions();
+  $ors = array();
 
   foreach (apachesolr_get_enabled_facets() as $module => $module_facets) {
     foreach($module_facets as $delta => $facet_field) {
@@ -393,7 +394,10 @@ function apachesolr_search_add_facet_params(&$params, $query) {
         }
       }
       else {
-        $params['facet.field'][] = $facet_field;
+        if ($facet_info[$module][$delta]['operator'] == 'OR') {
+          $ors[$delta] = $delta;
+        }
+        $params['facet.field'][$delta][] = $facet_field;
         // Facet limits
         if (isset($facet_query_limits[$module][$delta])) {
           $params['f.' . $facet_field . '.facet.limit'] = $facet_query_limits[$module][$delta];
@@ -409,7 +413,23 @@ function apachesolr_search_add_facet_params(&$params, $query) {
   if (!empty($params['facet.field'])) {
     // Add a default limit for fields where no limit was set.
     $params['facet.limit'] = variable_get('apachesolr_facet_query_limit_default', 20);
+    if ($facet_fields = $params['facet.field']) {
+      foreach ($facet_fields as $delta => $values) {
+        $ex = $ff = '';
+        $op = 'AND';
+
+        if (in_array($delta, $ors)) {
+          $ex = "{!ex=$delta}";
+          $op = 'OR';
+        }
+        $ff = implode(" $op ", $params['facet.field'][$delta]);
+        $params['facet.field'][] = $ex . $ff;
+
+        unset($params['facet.field'][$delta]);
+      }
+    }
   }
+  return count($ors);
 }
 
 function apachesolr_search_add_boost_params(&$params, $query, $solr) {
@@ -567,7 +587,6 @@ function apachesolr_search_date_range($query, $facet_field) {
  */
 function apachesolr_search_apachesolr_facets() {
   $facets = array();
-
   $facets['type'] = array(
     'info' => t('Node attribute: Filter by content type'),
     'facet_field' => 'type',
@@ -681,7 +700,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
             $terms = array();
 
             foreach ($response->facet_counts->facet_fields->$delta as $tid => $count) {
-              $options = array();
+              $options = array('delta' => $delta);
               if ($tid == '_empty_') {
                 // TODO - for now we don't handle facet missing.
                 continue;

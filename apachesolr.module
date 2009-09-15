@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.22 2009/09/10 13:45:47 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.23 2009/09/15 13:29:39 robertDouglass Exp $
 
 /**
  * @file
@@ -692,11 +692,11 @@ function apachesolr_block_visibility($query, $module, $delta) {
   // This variable is not static cached because variable_get() already does that.
   $type_filters = variable_get('apachesolr_type_filter', array());
   if (isset($type_filters[$module][$delta]) && $type_filters[$module][$delta] == TRUE) {
-    $facet_info = module_invoke($module, 'apachesolr_facets');
-    if (isset($facet_info[$delta]['content types'])) {
-      $has_filter = $query->get_filters($facet_info[$delta]['facet_field']);
+    $facet_info = apachesolr_get_facet_definitions();
+    if (isset($facet_info[$module][$delta]['content types'])) {
+      $has_filter = $query->get_filters($facet_info[$module][$delta]['facet_field']);
       $show = count($has_filter);
-      foreach ($facet_info[$delta]['content types'] as $content_type) {
+      foreach ($facet_info[$module][$delta]['content types'] as $content_type) {
         if ($query->has_filter('type', $content_type)) {
           $show = TRUE;
         }
@@ -707,6 +707,23 @@ function apachesolr_block_visibility($query, $module, $delta) {
     }
   }
   return TRUE;
+}
+
+function apachesolr_get_facet_definitions() {
+  static $definitions;
+  if (is_null($definitions)) {
+    $operator_settings = variable_get('apachesolr_operator', array());
+    foreach (module_implements('apachesolr_facets') as $module) {
+      $facets = module_invoke($module, 'apachesolr_facets');
+      foreach ($facets as $delta => $info) {
+        $definitions[$module][$delta] = $info;
+        if(isset($definitions[$module][$delta])) {
+          $definitions[$module][$delta]['operator'] = $operator_settings[$module][$delta];
+        }
+      }
+    }
+  }
+  return $definitions;
 }
 
 /**
@@ -732,25 +749,31 @@ function apachesolr_form_block_admin_configure_alter(&$form, $form_state) {
     return;
   }
 
-  $facet_info = module_invoke($module, 'apachesolr_facets');
+  $facet_info = apachesolr_get_facet_definitions();
 
-  // If this facet doesn't define any content type array, get out of here.
-  if (!isset($facet_info[$delta]['content types'])) {
-    return;
+  if (isset($facet_info[$module][$delta]['content types'])) {
+    $type_filter_settings = variable_get('apachesolr_type_filter', array());
+    // Set up some variables for the verbiage of the form element.
+    $count = count($facet_info[$module][$delta]['content types']);
+    $types = format_plural($count, t('type'), t('types'));
+    $are = format_plural($count, t('is'), t('are'));
+    $content_types = implode(', ', $facet_info[$module][$delta]['content types']) . '.';
+    $form['block_settings']['apachesolr_type_filter'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Show this block only when the type filter is selected for: %content_types',  array('%content_types' => $content_types)),
+      '#default_value' => isset($type_filter_settings[$module][$delta]) ? $type_filter_settings[$module][$delta] : FALSE,
+      '#description' => t('This filter is relevant only for specific content types. Check this to display the block only when the type filter has been selected for one of the relevant content types.'),
+      '#weight' => 11,
+    );
   }
-
-  $settings = variable_get('apachesolr_type_filter', array());
-  // Set up some variables for the verbiage of the form element.
-  $count = count($facet_info[$delta]['content types']);
-  $types = format_plural($count, t('type'), t('types'));
-  $are = format_plural($count, t('is'), t('are'));
-  $content_types = implode(', ', $facet_info[$delta]['content types']) . '.';
-  $form['block_settings']['apachesolr_type_filter'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Show this block only when the type filter is selected for: %content_types',  array('%content_types' => $content_types)),
-    '#default_value' => isset($settings[$module][$delta]) ? $settings[$module][$delta] : FALSE,
-    '#description' => t('This filter is relevant only for specific content types. Check this to display the block only when the type filter has been selected for one of the relevant content types.'),
-    '#weight' => 11,
+  $operator_settings = variable_get('apachesolr_operator', array());
+  $form['block_settings']['apachesolr_operator'] = array(
+    '#type' => 'radios',
+    '#title' => t('Operator to use for facets'),
+    '#options' => drupal_map_assoc(array('AND', 'OR')),
+    '#default_value' => isset($operator_settings[$module][$delta]) ? $operator_settings[$module][$delta] : 'AND',
+    '#description' => t('AND filters are exclusive. OR filters are inclusive. Selecting more AND filters narrows the result set. Selecting more OR filters widens the result set.'),
+    '#weight' => 12,
   );
   // Add a submit handler to save the value.
   $form['#validate'][] = 'apachesolr_block_admin_configure_submit';
@@ -758,12 +781,20 @@ function apachesolr_form_block_admin_configure_alter(&$form, $form_state) {
 
 function apachesolr_block_admin_configure_submit($form, &$form_state) {
   if (isset($form_state['values']['apachesolr_type_filter'])) {
-    $settings = variable_get('apachesolr_type_filter', array());
+    $type_filter_settings = variable_get('apachesolr_type_filter', array());
     $module = $form_state['values']['module'];
     $delta = $form_state['values']['delta'];
-    unset($settings[$module][$delta]);
-    $settings[$module][$delta] = $form_state['values']['apachesolr_type_filter'];
-    variable_set('apachesolr_type_filter', $settings);
+    unset($type_filter_settings[$module][$delta]);
+    $type_filter_settings[$module][$delta] = $form_state['values']['apachesolr_type_filter'];
+    variable_set('apachesolr_type_filter', $type_filter_settings);
+  }
+  if (isset($form_state['values']['apachesolr_operator'])) {
+    $operator_settings = variable_get('apachesolr_operator', array());
+    $module = $form_state['values']['module'];
+    $delta = $form_state['values']['delta'];
+    unset($operator_settings[$module][$delta]);
+    $operator_settings[$module][$delta] = $form_state['values']['apachesolr_operator'];
+    variable_set('apachesolr_operator', $operator_settings);
   }
 }
 
@@ -1115,15 +1146,14 @@ function apachesolr_facetcount_save($edit) {
  * }
  */
 function apachesolr_modify_query(&$query, &$params, $caller) {
-
-  foreach (module_implements('apachesolr_modify_query') as $module) {
-    $function_name = $module . '_apachesolr_modify_query';
-    $function_name($query, $params, $caller);
-  }
   // TODO: The query object should hold all the params.
   // Add array of fq parameters.
   if ($query && ($fq = $query->get_fq())) {
-    $params['fq'] = $fq;
+    foreach ($fq as $delta => $values) {
+      foreach ($values as $value) {
+        $params['fq'][$delta][] = $value;
+      }
+    }
   }
   // Add sort if present.
   if ($query) {
@@ -1132,6 +1162,37 @@ function apachesolr_modify_query(&$query, &$params, $caller) {
     // We don't bother telling Solr to do its default sort.
     if ($sortstring != 'score asc') {
       $params['sort'] = $sortstring;
+    }
+  }
+  $ors = array();
+  $facet_info = apachesolr_get_facet_definitions();
+  foreach ($facet_info as $infos) {
+    foreach($infos as $delta => $facet) {
+      if ($facet['operator'] == 'OR') {
+        $ors[] = $delta;
+      }
+    }
+  }
+  foreach (module_implements('apachesolr_modify_query') as $module) {
+    $function_name = $module . '_apachesolr_modify_query';
+    $function_name($query, $params, $caller);
+  }
+  if ($filter_queries = $params['fq']) {
+    foreach ($filter_queries as $delta => $value) {
+      $fq = $tag = '';
+      $op = 'AND';
+      // CCK facet field block deltas are not the same as their Solr index field names.
+      $cck_delta = '';
+      if (strpos($delta, '_cck_')) {
+        $cck_delta = trim(drupal_substr($delta, 7, drupal_strlen($delta)));
+      }
+      if (in_array($delta, $ors) || in_array($cck_delta, $ors)) {
+        $tag = "{!tag=$delta}";
+        $op = 'OR';
+      }
+      $fq = implode(" $op ", $params['fq'][$delta]);
+      $params['fq'][] = $tag . $fq;
+      unset($params['fq'][$delta]);
     }
   }
 }
