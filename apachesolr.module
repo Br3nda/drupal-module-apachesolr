@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.160 2009/08/14 16:26:10 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161 2009/09/15 14:11:23 robertDouglass Exp $
 
 /**
  * @file
@@ -1361,7 +1361,7 @@ function theme_apachesolr_mlt_recommendation_block($docs) {
   $links = array();
   foreach ($docs as $result) {
     // Suitable for single-site mode.
-    $links[] = l($result->title, $result->path);
+    $links[] = l($result->title, $result->path, array('html' => TRUE));
   }
   return theme('item_list', $links);
 }
