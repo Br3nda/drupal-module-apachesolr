@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.17 2009/09/15 13:29:39 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.18 2009/09/15 14:00:02 robertDouglass Exp $
 
 /**
  * @file
@@ -383,28 +383,32 @@ function apachesolr_search_add_facet_params(&$params, $query) {
 
   foreach (apachesolr_get_enabled_facets() as $module => $module_facets) {
     foreach($module_facets as $delta => $facet_field) {
-      // TODO: generalize handling of date and range facets.
-      if ($module == 'apachesolr_search' && ($facet_field == 'created' || $facet_field == 'changed')) {
-        list($start, $end, $gap) = apachesolr_search_date_range($query, $facet_field);
-        if ($gap) {
-          $params['facet.date'][] = $facet_field;
-          $params['f.'. $facet_field .'.facet.date.start'] = $start;
-          $params['f.'. $facet_field .'.facet.date.end'] = $end;
-          $params['f.'. $facet_field .'.facet.date.gap'] = $gap;
+      // Checking the block visibility saves us from adding facet fields to the query
+      // which won't be used.
+      if (apachesolr_block_visibility($query, $module, $delta)) {
+        // TODO: generalize handling of date and range facets.
+        if ($module == 'apachesolr_search' && ($facet_field == 'created' || $facet_field == 'changed')) {
+          list($start, $end, $gap) = apachesolr_search_date_range($query, $facet_field);
+          if ($gap) {
+            $params['facet.date'][] = $facet_field;
+            $params['f.'. $facet_field .'.facet.date.start'] = $start;
+            $params['f.'. $facet_field .'.facet.date.end'] = $end;
+            $params['f.'. $facet_field .'.facet.date.gap'] = $gap;
+          }
         }
-      }
-      else {
-        if ($facet_info[$module][$delta]['operator'] == 'OR') {
-          $ors[$delta] = $delta;
-        }
-        $params['facet.field'][$delta][] = $facet_field;
-        // Facet limits
-        if (isset($facet_query_limits[$module][$delta])) {
-          $params['f.' . $facet_field . '.facet.limit'] = $facet_query_limits[$module][$delta];
-        }
-        // Facet missing
-        if (!empty($facet_missing[$module][$delta])) {
-          $params['f.' . $facet_field . '.facet.missing'] = 'true';
+        else {
+          if ($facet_info[$module][$delta]['operator'] == 'OR') {
+            $ors[$delta] = $delta;
+          }
+          $params['facet.field'][$delta][] = $facet_field;
+          // Facet limits
+          if (isset($facet_query_limits[$module][$delta])) {
+            $params['f.' . $facet_field . '.facet.limit'] = $facet_query_limits[$module][$delta];
+          }
+          // Facet missing
+          if (!empty($facet_missing[$module][$delta])) {
+            $params['f.' . $facet_field . '.facet.missing'] = 'true';
+          }
         }
       }
     }
