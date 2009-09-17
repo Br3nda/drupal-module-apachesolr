@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.25 2009/09/17 14:24:05 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.26 2009/09/17 15:19:43 robertDouglass Exp $
 
 /**
  * @file
@@ -330,11 +330,25 @@ function apachesolr_get_nodes_to_index($namespace, $limit) {
 /**
  * Function to handle the indexing of nodes.
  *
- * The calling function must supply a name space or track/store
- * the timestamp and nid returned.
+ * The calling function must supply a namespace.
  * Returns FALSE if no nodes were indexed (none found or error).
  */
-function apachesolr_index_nodes($rows, $namespace = '', $callback = 'apachesolr_node_to_document') {
+/**
+ * Handles the indexing of nodes.
+ *
+ * @param array $rows
+ *   Each $row in $rows must have:
+ *   $row->nid
+ *   $row->changed
+ * @param string $namespace
+ *   Usually the calling module. Is used as a clue for other modules
+ *   when they decide whether to create extra $documents, and is used
+ *   to track the last_index timestamp.
+ * @return timestamp $position
+ *   Either a timestamp representing the last value of apachesolr_get_last_index
+ *   to be indexed, or FALSE if indexing failed.
+ */
+function apachesolr_index_nodes($rows, $namespace) {
   if (!$rows) {
     // Nothing to do.
     return FALSE;
@@ -357,13 +371,20 @@ function apachesolr_index_nodes($rows, $namespace = '', $callback = 'apachesolr_
   $old_position = apachesolr_get_last_index($namespace);
   $position = $old_position;
 
+  // Invoke hook_apachesolr_document_handlers to find out what modules build $documents
+  // from nodes in this namespace.
+  $callbacks = module_invoke_all('apachesolr_document_handlers', 'node', $namespace);
+  $callbacks = array_filter($callbacks, 'function_exists');
+
   foreach ($rows as $row) {
     // Variables to track the last item changed.
     $position['last_change'] = $row->changed;
     $position['last_nid'] = $row->nid;
     // Build node. Set reset = TRUE to avoid static caching of all nodes that get indexed.
     if ($node = node_load($row->nid, NULL, TRUE)) {
-      $documents[] = $callback($node, $namespace);
+      foreach ($callbacks as $callback) {
+        $documents[] = $callback($node, $namespace);
+      }
     }
   }
 

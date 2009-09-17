@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.20 2009/09/17 14:06:45 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.21 2009/09/17 15:19:43 robertDouglass Exp $
 
 /**
  * @file
@@ -204,6 +204,25 @@ function apachesolr_search_view($type = NULL) {
   }
   // Construct the search form.
   return drupal_get_form('search_form', NULL, $keys, $type) . $content;
+}
+
+/**
+ * Implementation of hook_apachesolr_document_handlers.
+ *
+ * @param string $type
+ *   Entity type. 'node', 'comment', and so forth. Used to evaluate whether this module
+ *   should be interested in creating documents.
+ * @param string $namespace
+ *   Usually the name of the module that is initiating indexing. In this case
+ *   we want to register a handler if the namespace is 'apachesolr_search'.
+ * @return array $handlers
+ *   An array of strings that are function names. Each function returns a $document from
+ *   an entity (of type $type).
+ */
+function apachesolr_search_apachesolr_document_handlers($type, $namespace) {
+  if ($type == 'node' && $namespace == 'apachesolr_search') {
+    return array('apachesolr_node_to_document');
+  }
 }
 
 /**
