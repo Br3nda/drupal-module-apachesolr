@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.2.3 2009/09/17 14:24:05 robertDouglass Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.2.4 2009/09/17 14:25:06 robertDouglass Exp $
 
 /**
  * @file
@@ -29,7 +29,7 @@ function apachesolr_clean_text($text) {
 }
 
 /**
- * Given a node ID, return a document representing that node.
+ * Given a node, return a document representing that node.
  */
 function apachesolr_node_to_document($node, $namespace) {
   $document = FALSE;
