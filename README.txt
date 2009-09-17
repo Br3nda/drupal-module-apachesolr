@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.24.2.1 2009/08/11 22:37:18 pwolanin Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.24.2.2 2009/09/17 15:54:10 robertDouglass Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -142,6 +142,9 @@ behavior:
    with the Apache Solr server.
 
  - apachesolr_query_class: the default query class to use.
+ 
+ - apachesolr_index_comments_with_node: TRUE | FALSE. Whether to index comments
+   along with each node.
 
 Troubleshooting
 --------------

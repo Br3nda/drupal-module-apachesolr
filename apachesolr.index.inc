@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.2.4 2009/09/17 14:25:06 robertDouglass Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.2.5 2009/09/17 15:54:10 robertDouglass Exp $
 
 /**
  * @file
@@ -52,7 +52,19 @@ function apachesolr_node_to_document($node, $namespace) {
     $text = $node->body;
 
     // Fetch extra data normally not visible, including comments.
-    $extra = node_invoke_nodeapi($node, 'update index');
+    // We do this manually (with module_implements instead of node_invoke_nodeapi)
+    // because we want a keyed array to come back. Only in this way can we decide
+    // whether to index comments or not.
+    foreach (module_implements('nodeapi') as $module) {
+      if ($output = module_invoke($module, 'nodeapi', $node, 'update index')) {
+        $extra[$module] = $output;
+      }
+
+    }
+    if (!variable_get('apachesolr_index_comments_with_node', TRUE)) {
+      unset($extra['comment']);
+    }
+
     $text .= "\n\n" . implode(' ', $extra);
     $text = apachesolr_strip_ctl_chars($text);
 
