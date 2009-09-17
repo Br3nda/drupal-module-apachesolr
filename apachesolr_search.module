@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.18 2009/09/15 14:00:02 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.19 2009/09/17 13:26:47 robertDouglass Exp $
 
 /**
  * @file
@@ -87,9 +87,9 @@ function apachesolr_search_menu_alter(&$menu) {
 }
 
 /**
- * Implementation of hook_update_index().
+ * Implementation of hook_cron(). Indexes nodes.
  */
-function apachesolr_search_update_index() {
+function apachesolr_search_cron() {
   $cron_limit = variable_get('apachesolr_cron_limit', 50);
   $rows = apachesolr_get_nodes_to_index('apachesolr_search', $cron_limit);
   apachesolr_index_nodes($rows, 'apachesolr_search');
@@ -165,7 +165,7 @@ function apachesolr_search_view($type = NULL) {
       watchdog('search', '%keys (@type).', array('%keys' => $log, '@type' => t('Search')), WATCHDOG_NOTICE, l(t('results'), 'search/'. $type .'/'. $keys));
 
       // Collect the search results:
-      $content = search_data($keys, $type);
+      $content = apachesolr_search_search('search', $keys);
 
       if ($content) {
         $content = theme('box', t('Search results'), $content);
