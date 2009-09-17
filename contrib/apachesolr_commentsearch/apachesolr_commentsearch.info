@@ -1,0 +1,7 @@
+; $Id: apachesolr_commentsearch.info,v 1.1.2.1 2009/09/17 21:32:44 robertDouglass Exp $
+name = Apache Solr comment search
+description = Treats comments as a content type allowing you to search them separately.
+dependencies[] = apachesolr_search
+package = Apache Solr
+core = "6.x"
+php = 5.1.4

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.22 2009/09/17 17:14:06 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.23 2009/09/17 21:32:44 robertDouglass Exp $
 
 /**
  * @file
@@ -171,7 +171,7 @@ function apachesolr_search_view($type = NULL) {
           return module_invoke($type, 'search_page', $content);
         }
         else {
-          return theme('search_results', $content, $type);
+          return drupal_get_form('search_form', NULL, $keys, $type) . theme('search_results', $content, $type);
         }
       }
 
@@ -362,7 +362,7 @@ function apachesolr_search_execute($keys, $filterstring, $solrsort, $base_path =
   apachesolr_has_searched(TRUE);
   // Add search terms and filters onto the breadcrumb.
   drupal_set_breadcrumb(array_merge(menu_get_active_breadcrumb(), $query->get_breadcrumb()));
-  return apachesolr_process_response($response, $query, $params);
+  return apachesolr_search_process_response($response, $query, $params);
 }
 
 function apachesolr_search_basic_params($query) {
@@ -532,7 +532,7 @@ function apachesolr_search_add_boost_params(&$params, $query, $solr) {
   }
 }
 
-function apachesolr_process_response($response, $query, $params) {
+function apachesolr_search_process_response($response, $query, $params) {
   $results = array();
   // We default to getting snippets from the body.
   $hl_fl = is_null($params['hl.fl']) ? 'body' : $params['hl.fl'];
@@ -558,10 +558,10 @@ function apachesolr_process_response($response, $query, $params) {
       }
       $doc->created = strtotime($doc->created);
       $doc->changed = strtotime($doc->changed);
-      // Allow modules to alter each document.
-      drupal_alter('apachesolr_search_result', $doc);
-      // Copy code from comment_nodeapi().
-      $extra[] = format_plural($doc->comment_count, '1 comment', '@count comments');
+      $extra = array();
+      $extra['comments'] = format_plural($doc->comment_count, '1 comment', '@count comments');
+      // Allow modules to alter each document and its extra information.
+      drupal_alter('apachesolr_search_result', $doc, $extra);
       $results[] = array(
         'link' => url($doc->path),
         'type' => apachesolr_search_get_type($doc->type),
@@ -871,7 +871,12 @@ function apachesolr_search_get_username($facet) {
  * Callback function for the 'Filter by type' facet block.
  */
 function apachesolr_search_get_type($facet) {
-  $type = node_get_types('name', $facet);
+  if ($type = node_get_types('name', $facet)) {
+
+  }
+  else if ($facet == 'comment') {
+    $type = t('Comment');
+  }
   // A disabled or missing node type returns FALSE.
   return ($type === FALSE) ? $facet : $type;
 }

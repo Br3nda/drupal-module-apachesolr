@@ -1,0 +1,159 @@
+<?php
+
+
+/**
+ * Implementation of hook_apachesolr_document_handlers.
+ *
+ * @param string $type
+ *   Entity type. 'node', 'comment', and so forth. Used to evaluate whether this module
+ *   should be interested in creating documents.
+ * @param string $namespace
+ *   Usually the name of the module that is initiating indexing. In this case
+ *   we want to register a handler if the namespace is 'apachesolr_search'.
+ * @return array $handlers
+ *   An array of strings that are function names. Each function returns a $document from
+ *   an entity (of type $type).
+ */
+function apachesolr_commentsearch_apachesolr_document_handlers($type, $namespace) {
+  if ($type == 'node' && $namespace == 'apachesolr_search') {
+    return array('apachesolr_commentsearch_node_to_comments');
+  }
+}
+
+function apachesolr_commentsearch_node_to_comments($node, $namespace) {
+  $documents = array();
+  $result = db_query("SELECT c.*, u.name AS registered_name FROM {comments} c INNER JOIN {users} u ON c.uid = u.uid WHERE c.nid = %d", $node->nid);
+  while ($comment = db_fetch_object($result)) {
+    $text = check_markup($comment->comment, $comment->format, FALSE);
+    $text = apachesolr_strip_ctl_chars($text);
+
+    $document = new Apache_Solr_Document();
+    $document->id = apachesolr_document_id($comment->cid, 'comment');
+    $document->is_cid = $comment->cid;
+    $document->site = url(NULL, array('absolute' => TRUE));
+    $document->hash = apachesolr_site_hash();
+    $document->nid = $comment->nid;
+    $document->uid = $comment->uid;
+    $document->title = apachesolr_clean_text($comment->subject);
+    $document->status = $node->status;
+    if (!empty($node->language)) {
+      $document->language = $node->language;
+    }
+    $document->body = apachesolr_clean_text($text);
+    $document->type = 'comment';
+    $document->type_name = 'Comment';
+    $document->created = apachesolr_date_iso($node->created);
+    $document->changed = apachesolr_date_iso($node->changed);
+    $last_change = (isset($node->last_comment_timestamp) && $node->last_comment_timestamp > $node->changed) ? $node->last_comment_timestamp : $node->changed;
+    $document->last_comment_or_change = apachesolr_date_iso($last_change);
+    $document->name = apachesolr_strip_ctl_chars($comment->name);
+    $path = "node/{$node->nid}";
+    $document->url = url($path, array('absolute' => TRUE, 'fragment' => "comment-{$comment->cid}"));
+    $document->path = $path;
+    $documents[] = $document;
+  }
+  return $documents;
+}
+
+function apachesolr_commentsearch_apachesolr_modify_query(&$query, &$params, $caller) {
+  $params['fl'] .= ',is_cid';
+}
+
+function apachesolr_commentsearch_apachesolr_process_results(&$results) {
+  foreach ($results as $pos => $result) {
+    if (isset($results[$pos]['extra']['comments'])) {
+      unset($results[$pos]['extra']['comments']);
+      unset($results[$pos]['extra']['cid']);
+    }
+  }
+}
+
+function apachesolr_commentsearch_apachesolr_search_result_alter(&$doc, &$extra) {
+  if ($doc->type == 'comment') {
+    $nid = $doc->nid;
+    $extra['cid'] = $doc->is_cid;
+    $node = node_load($nid);
+    $query = apachesolr_commentsearch_page_count(comment_num_all($nid), $node, $doc->is_cid);
+    $doc->path = url($doc->path, array('absolute' => TRUE, 'fragment' => "comment-{$doc->is_cid}", 'query' => $query));
+  }
+}
+
+function apachesolr_commentsearch_apachesolr_theme_breadcrumb_alter(&$breadcrumb_name) {
+  $breadcrumb_name = 'apachesolr_commentsearch_breadcrumb_type';
+}
+
+/**
+ * Return the human readable text for a content type.
+ */
+function theme_apachesolr_commentsearch_breadcrumb_type($field) {
+  $type = $field['#value'];
+  if ($type == 'comment') {
+    return t('Comment');
+  }
+  return node_get_types('name', $type);
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function apachesolr_commentsearch_theme() {
+  return array(
+    'apachesolr_commentsearch_breadcrumb_type' => array(
+      'arguments' => array('field' => NULL),
+    ),
+  );
+}
+
+/**
+ * Calculate page number for first new comment.
+ *
+ * @param $num_comments
+ *   Number of comments.
+ * @param $node
+ *   The node to whom the comments belong.
+ * @param $cid
+ *   The cid of the comment we're looking for.
+ * @return
+ *   "page=X" if the page number is greater than zero; NULL otherwise.
+ */
+function apachesolr_commentsearch_page_count($num_comments, $node, $cid) {
+  $comments_per_page = _comment_get_display_setting('comments_per_page', $node);
+  $mode = _comment_get_display_setting('mode', $node);
+  $order = _comment_get_display_setting('sort', $node);
+  $pagenum = NULL;
+  $flat = in_array($mode, array(COMMENT_MODE_FLAT_COLLAPSED, COMMENT_MODE_FLAT_EXPANDED));
+  if ($num_comments <= $comments_per_page || ($flat && $order == COMMENT_ORDER_NEWEST_FIRST)) {
+    // Only one page of comments or flat forum and newest first.
+    // First new comment will always be on first page.
+    $pageno = 0;
+  }
+  else {
+    if ($flat) {
+      // Flat comments and oldest first.
+      $count = $num_comments;
+    }
+    else {
+      // Threaded comments. See the documentation for comment_render().
+      if ($order == COMMENT_ORDER_NEWEST_FIRST) {
+        // Newest first: find the last thread with new comment
+        $result = db_query('(SELECT cid, thread FROM {comments} WHERE nid = %d  AND status = 0 ORDER BY timestamp DESC) ORDER BY thread', $node->nid);
+      }
+      else {
+        // Oldest first: find the first thread with new comment
+        $result = db_query('(SELECT thread FROM {comments} WHERE nid = %d  AND status = 0 ORDER BY timestamp DESC) ORDER BY SUBSTRING(thread, 1, (LENGTH(thread) - 1))', $node->nid);
+      }
+      $count = 0;
+      while ($row = db_fetch_object($result)) {
+        $count++;
+        if ($row->cid == $cid) {
+          break;
+        }
+      }
+    }
+    $pageno =  $count / $comments_per_page;
+  }
+  if ($pageno >= 1) {
+    $pagenum = "page=". intval($pageno);
+  }
+  return $pagenum;
+}
