@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.24 2009/09/15 14:10:25 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.25 2009/09/17 14:24:05 robertDouglass Exp $
 
 /**
  * @file
@@ -334,7 +334,7 @@ function apachesolr_get_nodes_to_index($namespace, $limit) {
  * the timestamp and nid returned.
  * Returns FALSE if no nodes were indexed (none found or error).
  */
-function apachesolr_index_nodes($rows, $namespace = '', $callback = 'apachesolr_add_node_document') {
+function apachesolr_index_nodes($rows, $namespace = '', $callback = 'apachesolr_node_to_document') {
   if (!$rows) {
     // Nothing to do.
     return FALSE;
@@ -361,7 +361,10 @@ function apachesolr_index_nodes($rows, $namespace = '', $callback = 'apachesolr_
     // Variables to track the last item changed.
     $position['last_change'] = $row->changed;
     $position['last_nid'] = $row->nid;
-    $callback($documents, $row->nid, $namespace);
+    // Build node. Set reset = TRUE to avoid static caching of all nodes that get indexed.
+    if ($node = node_load($row->nid, NULL, TRUE)) {
+      $documents[] = $callback($node, $namespace);
+    }
   }
 
   if (count($documents)) {
