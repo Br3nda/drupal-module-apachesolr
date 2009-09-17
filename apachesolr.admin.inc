@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.28.2.9 2009/09/08 14:03:45 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28.2.10 2009/09/17 17:14:06 robertDouglass Exp $
 
 /**
  * @file
@@ -216,7 +216,7 @@ function apachesolr_index_report() {
  * @return
  *   A signed integer that indicates which of the specified facets should come first.
  */
-function _apachesolr_sort_facets($a, $b) {
+function apachesolr_sort_facets($a, $b) {
   return strcasecmp($a['info'], $b['info']);
 }
 
@@ -250,7 +250,7 @@ function apachesolr_enabled_facets_form() {
   $module_list = array();
   foreach (module_implements('apachesolr_facets') as $module) {
     $module_facets[$module] = module_invoke($module, 'apachesolr_facets');
-    uasort($module_facets[$module], '_apachesolr_sort_facets');
+    uasort($module_facets[$module], 'apachesolr_sort_facets');
     $module_list[$module] = $module;
   }
 
@@ -474,39 +474,6 @@ function apachesolr_delete_index($type = NULL) {
 }
 
 /**
- * Try to map a schema field name to a human-readable description.
- */
-function _apachesolr_field_name_map($field_name) {
-  static $map;
-
-  if (!isset($map)) {
-    $map = array(
-      'body' => t('Body text - the full, rendered content'),
-      'title' => t('Title'),
-      'teaser' => t('Teaser'),
-      'name' => t('Author name'),
-      'path_alias' => t('Path alias'),
-      'taxonomy_names' => t('All taxonomy term names'),
-      'tags_h1' => t('Body text inside H1 tags'),
-      'tags_h2_h3' => t('Body text inside H2 or H3 tags'),
-      'tags_h4_h5_h6' => t('Body text inside H4, H4, or H6 tags'),
-      'tags_inline' => t('Body text in inline tags like EM or STRONG'),
-      'tags_a' => t('Body text inside links (A tags)'),
-      'tid' => t('Taxonomy term IDs'),
-    );
-    foreach(taxonomy_get_vocabularies() as $vocab) {
-      $map['ts_vid_'. $vocab->vid .'_names'] = t('Taxonomy term names only from the %name vocabulary', array('%name' => $vocab->name));
-      $map['im_vid_'. $vocab->vid] = t('Taxonomy term IDs from the %name vocabulary', array('%name' => $vocab->name));
-    }
-    foreach (apachesolr_cck_fields() as $name => $field) {
-      $map[apachesolr_index_key($field)] = t('CCK @type field %label', array('@type' => $field['index_type'], '%name' => $field['label']));
-    }
-    drupal_alter('apachesolr_field_name_map', $map);
-  }
-  return isset($map[$field_name]) ? $map[$field_name] : $field_name;
-}
-
-/**
  * MoreLikeThis administration and utility functions.
  */
 
@@ -567,7 +534,7 @@ function apachesolr_mlt_block_form($delta = NULL) {
   $form['mlt_fl'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Fields for finding related content'),
-    '#description' => t('Choose the fields to be used in calculating similarity. The default combination of %taxonomy_names and %title will provide relevant results for typical sites.', array("%taxonomy_names" => _apachesolr_field_name_map("taxonomy_names"), "%title" => _apachesolr_field_name_map("title"))),
+    '#description' => t('Choose the fields to be used in calculating similarity. The default combination of %taxonomy_names and %title will provide relevant results for typical sites.', array("%taxonomy_names" => apachesolr_field_name_map("taxonomy_names"), "%title" => apachesolr_field_name_map("title"))),
     '#options' => apachesolr_mlt_get_fields(),
     '#required' => TRUE,
     '#default_value' =>  $block['mlt_fl'],
@@ -649,7 +616,7 @@ function apachesolr_mlt_get_fields() {
   $rows = array();
   foreach ($fields as $field_name => $field) {
     if ($field->schema{4} == 'V')
-    $rows[$field_name] = _apachesolr_field_name_map($field_name);
+    $rows[$field_name] = apachesolr_field_name_map($field_name);
   }
   ksort($rows);
   return $rows;

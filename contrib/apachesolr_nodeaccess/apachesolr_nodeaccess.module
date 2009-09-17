@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.1.2.11.2.1 2009/08/17 17:33:54 robertDouglass Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.1.2.11.2.2 2009/09/17 17:14:06 robertDouglass Exp $
 
 /**
  * Implementation of apachesolr_update_index
@@ -32,7 +32,7 @@ function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node) {
  *
  * @param $account an account to get grants for and build a solr query
  */
-function _apachesolr_nodeaccess_build_subquery($account) {
+function apachesolr_nodeaccess_build_subquery($account) {
   if (!user_access('access content', $account)) {
     throw new Exception('No access');
   }
@@ -67,7 +67,7 @@ function apachesolr_nodeaccess_apachesolr_modify_query(&$query, &$params, $calle
   }
   global $user;
   try {
-    $subquery = _apachesolr_nodeaccess_build_subquery($user);
+    $subquery = apachesolr_nodeaccess_build_subquery($user);
   }
   catch (Exception $e) {
     $query = NULL;

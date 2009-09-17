@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.test,v 1.1.2.2 2009/04/12 03:16:31 pwolanin Exp $
+// $Id: apachesolr_nodeaccess.test,v 1.1.2.2.2.1 2009/09/17 17:14:06 robertDouglass Exp $
 
 class DrupalApacheSolrNodeAccess extends DrupalWebTestCase {
   function getInfo() {
@@ -87,7 +87,7 @@ class DrupalApacheSolrNodeAccess extends DrupalWebTestCase {
     $query = apachesolr_current_query();
     $params = array();
 
-    $subquery = _apachesolr_nodeaccess_build_subquery($basic_user);
+    $subquery = apachesolr_nodeaccess_build_subquery($basic_user);
 
     $roles = array_keys($basic_user->roles);
     $assigned_role = end($roles);

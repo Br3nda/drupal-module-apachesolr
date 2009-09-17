@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_og.module,v 1.1.2.4.2.2 2009/08/27 20:07:02 robertDouglass Exp $
+// $Id: apachesolr_og.module,v 1.1.2.4.2.3 2009/09/17 17:14:06 robertDouglass Exp $
 
 /**
  * @file
@@ -56,12 +56,12 @@ function apachesolr_og_apachesolr_update_index(&$document, $node) {
   // Index group posts
   if (!empty($node->og_groups)) {
     foreach ($node->og_groups as $gid) {
-      $document->setMultiValue(_apachesolr_og_gid_key(), $gid);
+      $document->setMultiValue(apachesolr_og_gid_key(), $gid);
     }
   }
   elseif (isset($node->og_description) && variable_get('apachesolr_og_groupnode', 0)) {
     // Index the group node itself as in the group.
-    $document->setMultiValue(_apachesolr_og_gid_key(), $node->nid);
+    $document->setMultiValue(apachesolr_og_gid_key(), $node->nid);
   }
 }
 
@@ -72,7 +72,7 @@ function apachesolr_og_apachesolr_modify_query(&$query, &$params, $caller) {
   // Fetch the group ID in results - however, this is currently not used.
   // May be useful for custom theming.
   if ($caller == 'apachesolr_search') {
-    $params['fl'] .= ',' . _apachesolr_og_gid_key();
+    $params['fl'] .= ',' . apachesolr_og_gid_key();
   }
 }
 
@@ -80,7 +80,7 @@ function apachesolr_og_apachesolr_modify_query(&$query, &$params, $caller) {
  * Implementation of hook_apachesolr_process_results().
  */
 function apachesolr_og_apachesolr_process_results(&$results) {
-  $key = _apachesolr_og_gid_key();
+  $key = apachesolr_og_gid_key();
   $groups = array();
   foreach ($results as $idx => $r) {
     if (!is_array($r['node']->$key)) {
@@ -111,7 +111,7 @@ function apachesolr_og_apachesolr_process_results(&$results) {
 /**
  * Apachesolr index name for Organic group id
  */
-function _apachesolr_og_gid_key() {
+function apachesolr_og_gid_key() {
   $group_id = array(
     'name'       => 'og_gid',
     'multiple'   => TRUE,
@@ -125,7 +125,7 @@ function _apachesolr_og_gid_key() {
  * Implementation of hook_apachesolr_facets().
  */
 function apachesolr_og_apachesolr_facets() {
-  $key = _apachesolr_og_gid_key();
+  $key = apachesolr_og_gid_key();
   $facets[$key] = array(
     'info' => t('Apache Solr OG: Filter by Organic Group'),
     'facet_field' => $key,
@@ -152,7 +152,7 @@ function apachesolr_og_block($op = 'list', $delta = 0, $edit = array()) {
 
     case 'view':
       if (apachesolr_has_searched()) {
-        if ($delta != _apachesolr_og_gid_key()) {
+        if ($delta != apachesolr_og_gid_key()) {
           return;
         }
 
@@ -189,7 +189,7 @@ function apachesolr_og_group_name($facet, &$options) {
 /**
  * Implementation of hook_theme().
  *
- * The breadcrumb function assumes that _apachesolr_og_gid_key() returns im_og_gid
+ * The breadcrumb function assumes that apachesolr_og_gid_key() returns im_og_gid
  * If that changes, modify the theme name appropriately
  */
 function apachesolr_og_theme() {

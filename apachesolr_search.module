@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.21 2009/09/17 15:19:43 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.22 2009/09/17 17:14:06 robertDouglass Exp $
 
 /**
  * @file
@@ -326,6 +326,7 @@ function apachesolr_search_execute($keys, $filterstring, $solrsort, $base_path =
   // This is the object that does the communication with the solr server.
   $solr = apachesolr_get_solr();
   $params += apachesolr_search_basic_params($query);
+
   if ($keys) {
     $params += apachesolr_search_highlighting_params($query);
     $params += apachesolr_search_spellcheck_params($query);
