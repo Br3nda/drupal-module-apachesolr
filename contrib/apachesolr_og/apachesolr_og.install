@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_og.install,v 1.1.2.2 2009/04/30 17:23:13 pwolanin Exp $
+// $Id: apachesolr_og.install,v 1.1.2.2.4.1 2009/09/22 15:26:16 claudiucristea Exp $
 
 /**
  * Implementation of hook_install().
@@ -21,7 +21,7 @@ function apachesolr_og_enable() {
 /**
  * Re-index so as to use new missing field query.
  */
-function apachesolr_og_update_6000() {
+function apachesolr_og_update_5000() {
   $ret = array();
   apachesolr_clear_last_index();
   $ret[] = array('success' => TRUE, 'query' => 'Called function apachesolr_clear_last_index(). All content will be re-indexed');

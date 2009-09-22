@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.1.2.11 2009/06/05 18:05:06 robertDouglass Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.1.2.11.4.1 2009/09/22 15:26:16 claudiucristea Exp $
 
 /**
  * Implementation of apachesolr_update_index
@@ -68,7 +68,7 @@ function apachesolr_nodeaccess_apachesolr_modify_query(&$query, &$params) {
   }
   catch (Exception $e) {
     $query = NULL;
-    watchdog("apachesolr_nodeaccess", 'User %name (UID:!uid) cannot search: @message', array('%name' => $user->name, '!uid' => $user->uid, '@message' => $e->getMessage()));
+    watchdog("apachesolr_nodeaccess", t('User %name (UID:!uid) cannot search: @message', array('%name' => $user->name, '!uid' => $user->uid, '@message' => $e->getMessage())));
     return;
   }
 
@@ -110,9 +110,9 @@ function apachesolr_nodeaccess_node_access_records($node) {
 /**
  * Implementation of hook_form_alter().
  */
-function apachesolr_nodeaccess_form_alter(&$form, $form_state, $form_id) {
+function apachesolr_nodeaccess_form_alter($form_id, &$form) {
   if ($form_id == 'node_configure_rebuild_confirm') {
-    $form['#submit'][] = 'apachesolr_nodeaccess_rebuild_nodeaccess';
+    $form['#submit']['apachesolr_nodeaccess_rebuild_nodeaccess'] = array();
   }
 }
 
@@ -122,7 +122,7 @@ function apachesolr_nodeaccess_form_alter(&$form, $form_state, $form_id) {
  * This is unfortunate because not every node is going to be affected, but
  * there is little we can do.
  */
-function apachesolr_nodeaccess_rebuild_nodeaccess(&$form, $form_state) {
+function apachesolr_nodeaccess_rebuild_nodeaccess($form_id, &$form) {
   drupal_set_message(t('Solr search index will be rebuilt.'));
   node_access_needs_rebuild(TRUE);
   apachesolr_clear_last_index();

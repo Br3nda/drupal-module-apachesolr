@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_og.module,v 1.1.2.5 2009/07/29 18:49:02 pwolanin Exp $
+// $Id: apachesolr_og.module,v 1.1.2.5.2.1 2009/09/22 15:26:16 claudiucristea Exp $
 
 /**
  * @file
@@ -9,16 +9,19 @@
 /**
  * Implementation of hook_menu().
  */
-function apachesolr_og_menu() {
-  return array(
-    'admin/og/apachesolr_og' => array(
-      'title'            => 'Apache Solr OG configuration ',
-      'description'      => 'Apache Solr OG facet settings for group posts.',
-      'page callback'    => 'drupal_get_form',
-      'page arguments'   => array('apachesolr_og_admin'),
-      'access arguments' => array('administer search'),
-    ),
-  );
+function apachesolr_og_menu($may_cache) {
+  $items = array();
+  if ($may_cache) {
+    $items[] = array(
+      'path'                =>  'admin/og/apachesolr_og',
+      'title'               =>  t('Apache Solr OG configuration'),
+      'description'         =>  t('Apache Solr OG facet settings for group posts.'),
+      'callback'            =>  'drupal_get_form',
+      'callback arguments'  =>  array('apachesolr_og_admin'),
+      'access'              =>  user_access('administer search'),
+    );
+  }
+  return $items;
 }
 
 /**
@@ -34,7 +37,7 @@ function apachesolr_og_admin() {
     '#default_value' => variable_get('apachesolr_og_groupnode', 0),
   );
   $form = system_settings_form($form);
-  $form['#submit'][] = 'apachesolr_og_reindex';
+  $form['#submit']['apachesolr_og_reindex'] = array();
   return $form;
 }
 
@@ -145,7 +148,7 @@ function apachesolr_og_block($op = 'list', $delta = 0, $edit = array()) {
       $blocks = array();
       foreach ($enabled_facets as $delta => $facet_field) {
         if (isset($facets[$delta])) {
-          $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE,);
+          $blocks[$delta] = $facets[$delta] /* From D6: + array('cache' => BLOCK_CACHE_PER_PAGE,) */;
         }
       }
       return $blocks;
@@ -184,18 +187,6 @@ function apachesolr_og_group_name($facet, &$options) {
   }
 
   return db_result(db_query("SELECT title FROM {node} WHERE nid = %d", $facet));
-}
-
-/**
- * Implementation of hook_theme().
- *
- * The breadcrumb function assumes that _apachesolr_og_gid_key() returns im_og_gid
- * If that changes, modify the theme name appropriately
- */
-function apachesolr_og_theme() {
-  return array(
-    'apachesolr_breadcrumb_im_og_gid' => array('arguments' => array('group_id' => NULL)),
-  );
 }
 
 /**

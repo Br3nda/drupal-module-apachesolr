@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.25 2009/08/11 22:36:39 pwolanin Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.25.2.1 2009/09/22 15:26:15 claudiucristea Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -160,7 +160,7 @@ site address.
 Developers
 --------------
 
-Exposed Hooks in 6.x:
+Exposed Hooks in 5.x:
 
 hook_apachesolr_modify_query(&$query, &$params, $caller);
 

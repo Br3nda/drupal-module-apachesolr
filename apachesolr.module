@@ -1,90 +1,98 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161 2009/09/15 14:11:23 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.1 2009/09/22 15:26:15 claudiucristea Exp $
 
 /**
  * @file
  *   Integration with the Apache Solr search application.
  */
 
+include_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.d6.inc');
+include_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
+
 /**
  * Implementation of hook_menu().
  */
-function apachesolr_menu() {
+function apachesolr_menu($may_cache) {
   $items = array();
-  $items['admin/settings/apachesolr'] = array(
-    'title'              => 'Apache Solr',
-    'description'        => 'Administer Apache Solr.',
-    'page callback'      => 'drupal_get_form',
-    'page arguments'     => array('apachesolr_settings'),
-    'access callback'    => 'user_access',
-    'access arguments'   => array('administer search'),
-    'file'               => 'apachesolr.admin.inc',
-  );
-  $items['admin/settings/apachesolr/settings'] = array(
-    'title'              => 'Settings',
-    'weight'             => -10,
-    'access arguments'   => array('administer search'),
-    'file'               => 'apachesolr.admin.inc',
-    'type'               => MENU_DEFAULT_LOCAL_TASK,
-  );
-  $items['admin/settings/apachesolr/enabled-filters'] = array(
-    'title'              => 'Enabled filters',
-    'page callback'      => 'drupal_get_form',
-    'page arguments'     => array('apachesolr_enabled_facets_form'),
-    'weight'             => -7,
-    'access arguments'   => array('administer search'),
-    'file'               => 'apachesolr.admin.inc',
-    'type'               => MENU_LOCAL_TASK,
-  );
-  $items['admin/settings/apachesolr/index'] = array(
-    'title'              => 'Search index',
-    'page callback'      => 'apachesolr_index_page',
-    'access arguments'   => array('administer search'),
-    'weight'             => -8,
-    'file'               => 'apachesolr.admin.inc',
-    'type'               => MENU_LOCAL_TASK,
-  );
-  $items['admin/settings/apachesolr/index/clear/confirm'] = array(
-    'title'              => 'Confirm the re-indexing of all content',
-    'page callback'      => 'drupal_get_form',
-    'page arguments'     => array('apachesolr_clear_index_confirm'),
-    'access arguments'   => array('administer search'),
-    'file'               => 'apachesolr.admin.inc',
-    'type'               => MENU_CALLBACK,
-  );
-  $items['admin/settings/apachesolr/index/delete/confirm'] = array(
-    'title'              => 'Confirm index deletion',
-    'page callback'      => 'drupal_get_form',
-    'page arguments'     => array('apachesolr_delete_index_confirm'),
-    'access arguments'   => array('administer search'),
-    'file'               => 'apachesolr.admin.inc',
-    'type'               => MENU_CALLBACK,
-  );
-  $items['admin/reports/apachesolr'] = array(
-    'title'              => 'Apache Solr search index',
-    'page callback'      => 'apachesolr_index_report',
-    'access arguments'   => array('access site reports'),
-    'file'               => 'apachesolr.admin.inc',
-  );
-  $items['admin/reports/apachesolr/index'] = array(
-    'title'              => 'Search index',
-    'file'               => 'apachesolr.admin.inc',
-    'type'               => MENU_DEFAULT_LOCAL_TASK,
-  );
-  $items['admin/settings/apachesolr/mlt/add_block'] = array(
-    'page callback'      => 'drupal_get_form',
-    'page arguments'     => array('apachesolr_mlt_add_block_form'),
-    'access arguments'   => array('administer search'),
-    'file'               => 'apachesolr.admin.inc',
-    'type'               => MENU_CALLBACK,
-  );
-  $items['admin/settings/apachesolr/mlt/delete_block/%'] = array(
-    'page callback'      => 'drupal_get_form',
-    'page arguments'     => array('apachesolr_mlt_delete_block_form', 5),
-    'access arguments'   => array('administer search'),
-    'file'               => 'apachesolr.admin.inc',
-    'type'               => MENU_CALLBACK,
-  );
+  if ($may_cache) {
+    $items[] = array(
+      'path'                => 'admin/settings/apachesolr',
+      'title'               => t('Apache Solr'),
+      'description'         => t('Administer Apache Solr.'),
+      'callback'            => 'drupal_get_form',
+      'callback arguments'  => 'apachesolr_settings',
+      'access'              => user_access('administer search'),
+    );
+    $items[] = array(
+      'path'                => 'admin/settings/apachesolr/settings',
+      'title'               => t('Settings'),
+      'weight'              => -10,
+      'access'              => user_access('administer search'),
+      'type'                => MENU_DEFAULT_LOCAL_TASK,
+    );
+    $items[] = array(
+      'path'                => 'admin/settings/apachesolr/enabled-filters',
+      'title'               => t('Enabled filters'),
+      'callback'            => 'drupal_get_form',
+      'callback arguments'  => 'apachesolr_enabled_facets_form',
+      'weight'              => -7,
+      'access'              => user_access('administer search'),
+      'type'                => MENU_LOCAL_TASK,
+    );
+    $items[] = array(
+      'path'                => 'admin/settings/apachesolr/index',
+      'title'               => t('Search index'),
+      'callback'            => 'apachesolr_index_page',
+      'access'              => user_access('administer search'),
+      'weight'              => -8,
+      'type'                => MENU_LOCAL_TASK,
+    );
+    $items[] = array(
+      'path'                => 'admin/settings/apachesolr/index/clear/confirm',
+      'title'               => t('Confirm the re-indexing of all content'),
+      'callback'            => 'drupal_get_form',
+      'callback arguments'  => 'apachesolr_clear_index_confirm',
+      'access'              => user_access('administer search'),
+      'type'                => MENU_CALLBACK,
+    );
+    $items[] = array(
+      'path'                => 'admin/settings/apachesolr/index/delete/confirm',
+      'title'               => t('Confirm index deletion'),
+      'callback'            => 'drupal_get_form',
+      'callback arguments'  => 'apachesolr_delete_index_confirm',
+      'access'              => user_access('administer search'),
+      'type'                => MENU_CALLBACK,
+    );
+    $items[] = array(
+      'path'                => 'admin/logs/apachesolr',
+      'title'               => t('Apache Solr search index'),
+      'callback'            => 'apachesolr_index_report',
+      'access'              => user_access('access site reports'),
+    );
+    $items[] = array(
+      'path'                => 'admin/logs/apachesolr/index',
+      'title'               => t('Search index'),
+      'type'                => MENU_DEFAULT_LOCAL_TASK,
+    );
+    $items[] = array(
+      'path'                => 'admin/settings/apachesolr/mlt/add_block',
+      'callback'            => 'drupal_get_form',
+      'callback arguments'  => 'apachesolr_mlt_add_block_form',
+      'access'              => user_access('administer search'),
+      'type'                => MENU_CALLBACK,
+    );
+  }
+  else {
+    if (arg(0) == 'admin' && arg(1) == 'settings' && arg(2) == 'apachesolr' && arg(3) == 'mlt' && arg(4) == 'delete_block' && arg(5)) {
+      $items[] = array(
+        'path'                => 'admin/settings/apachesolr/mlt/delete_block/'. arg(5),
+        'callback'            => 'drupal_get_form',
+        'callback arguments'  => array('apachesolr_mlt_delete_block_form', arg(5)),
+        'access'              => user_access('administer search'),
+        'type'                => MENU_CALLBACK,
+      );
+    }
+  }
   return $items;
 }
 
@@ -134,7 +142,7 @@ function apachesolr_requirements($phase) {
       }
     }
     catch (Exception $e) {
-      watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+      watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), WATCHDOG_ERROR);
     }
     $value =  $ping ? $t('Your site has contacted the Apache Solr server.') : $t('Your site was unable to contact the Apache Solr server.');
     $severity = $ping ? 0: 2;
@@ -234,7 +242,7 @@ function apachesolr_node_type($op, $info) {
 }
 
 /**
- * Helper function for modules implmenting hook_search's 'status' op.
+ * Helper function for modules implementing hook_search's 'status' op.
  */
 function apachesolr_index_status($namespace) {
   list($excluded_types, $args, $join_sql, $exclude_sql) = _apachesolr_exclude_types($namespace);
@@ -336,7 +344,7 @@ function apachesolr_index_nodes($rows, $namespace = '', $callback = 'apachesolr_
     }
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), WATCHDOG_ERROR);
     return FALSE;
   }
   include_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.index.inc') ;
@@ -353,7 +361,7 @@ function apachesolr_index_nodes($rows, $namespace = '', $callback = 'apachesolr_
 
   if (count($documents)) {
     try {
-      watchdog('Apache Solr', 'Adding @count documents.', array('@count' => count($documents)));
+      watchdog('Apache Solr', t('Adding @count documents.', array('@count' => count($documents))));
       // Chunk the adds by 20s
       $docs_chunk = array_chunk($documents, 20);
       foreach ($docs_chunk as $docs) {
@@ -369,8 +377,7 @@ function apachesolr_index_nodes($rows, $namespace = '', $callback = 'apachesolr_
           $nids[] = $doc->nid;
         }
       }
-      watchdog('Apache Solr', 'Indexing failed on one of the following nodes: @nids <br /> !message',
-               array('@nids' => implode(', ', $nids), '!message' => nl2br(strip_tags($e->getMessage()))), WATCHDOG_ERROR);
+      watchdog('Apache Solr', t('Indexing failed on one of the following nodes: @nids <br /> !message', array('@nids' => implode(', ', $nids), '!message' => nl2br(strip_tags($e->getMessage())))), WATCHDOG_ERROR);
       return FALSE;
     }
   }
@@ -401,7 +408,7 @@ function apachesolr_delete_node_from_index($node) {
     return TRUE;
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), WATCHDOG_ERROR);
     return FALSE;
   }
 }
@@ -465,7 +472,7 @@ function apachesolr_cron() {
     }
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())) . ' in apachesolr_cron', NULL, WATCHDOG_ERROR);
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())) .' in apachesolr_cron', WATCHDOG_ERROR);
   }
 }
 
@@ -532,7 +539,7 @@ function apachesolr_set_stats_message($text, $type = 'status', $repeat = FALSE) 
     drupal_set_message(t($text, $stats_summary), $type, FALSE);
   }
   catch (Exception $e) {
-    watchdog('apachesolr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    watchdog('apachesolr', nl2br(check_plain($e->getMessage())), WATCHDOG_ERROR);
   }
 }
 
@@ -566,12 +573,13 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
       // Add the sort block.
       $blocks['sort'] = array(
         'info' => t('Apache Solr Core: Sorting'),
-        'cache' => BLOCK_CACHE_PER_PAGE,
+        /* From D6: 'cache' => BLOCK_CACHE_PER_PAGE, */
       );
       return $blocks;
 
     case 'view':
-      if ($delta != 'sort' && ($node = menu_get_object()) && (!arg(2) || arg(2) == 'view')) {
+      // From D6: if ($delta != 'sort' && ($node = menu_get_object()) && (!arg(2) || arg(2) == 'view')) {
+      if ($delta != 'sort' && (arg(0) == 'node'&& is_numeric(arg(1)) && $node = node_load(arg(1))) && (!arg(2) || arg(2) == 'view')) {
         $suggestions = array();
         // Determine whether the user can view the current node.
         if (!isset($access)) {
@@ -584,7 +592,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
             $suggestions['subject'] = check_plain($block['name']);
             $suggestions['content'] = theme('apachesolr_mlt_recommendation_block', $docs);
             if (user_access('administer search')) {
-               $suggestions['content'] .= l(t('Configure this block'),'admin/build/block/configure/apachesolr/' . $delta, array('attributes' => array('class' => 'apachesolr-mlt-admin-link')));
+               $suggestions['content'] .= l(t('Configure this block'),'admin/build/block/configure/apachesolr/'. $delta, array('class' => 'apachesolr-mlt-admin-link'));
             }
           }
         }
@@ -655,7 +663,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
 /**
  * Helper function for displaying a facet block.
  */
-function apachesolr_facet_block($response, $query, $module, $delta, $facet_field, $filter_by, $facet_callback = FALSE) {
+function apachesolr_facet_block($response, $query, $module, $delta, $facet_field, $filter_by, $facet_callback = FALSE, $facet_callback_arguments = NULL) {
   if (!empty($response->facet_counts->facet_fields->$facet_field)) {
     $contains_active = FALSE;
     $items = array();
@@ -678,7 +686,10 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
       }
 
       if ($facet_callback && function_exists($facet_callback)) {
-        $facet_text = $facet_callback($facet, $options);
+        if (isset($facet_callback_arguments) && is_array($facet_callback_arguments)) {
+          $callback_options = array_merge($options, $facet_callback_arguments);
+        }
+        $facet_text = $facet_callback($facet, $callback_options);
       }
       $unclick_link = '';
       $active = FALSE;
@@ -1066,7 +1077,7 @@ function apachesolr_get_solr($host = NULL, $port = NULL, $path = NULL) {
       $solr_cache[$host][$port][$path] = new $class($host, $port, $path);
     }
     catch (Exception $e) {
-      watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+      watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), WATCHDOG_ERROR);
       return;
     }
   }
@@ -1110,7 +1121,7 @@ function apachesolr_drupal_query($keys = '', $filters = '', $solrsort = '', $bas
     $query = new $class(apachesolr_get_solr(), $keys, $filters, $solrsort, $base_path);
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), WATCHDOG_ERROR);
     $query = NULL;
   }
 
@@ -1188,8 +1199,8 @@ function apachesolr_cck_fields() {
     if (module_exists('content')) {
       // A single default mapping for all text fields.
       $mappings['text'] = array(
-        'optionwidgets_select' => array('callback' => '', 'index_type' => 'string'),
-        'optionwidgets_buttons' => array('callback' => '', 'index_type' => 'string')
+        'options_select' => array('callback' => '', 'index_type' => 'string'),
+        'options_buttons' => array('callback' => '', 'index_type' => 'string')
       );
       // A field-specific mapping would look like:
       // $mappings['per-field']['field_model_name'] = array('callback' => '', 'index_type' => 'string');
@@ -1197,9 +1208,10 @@ function apachesolr_cck_fields() {
       // $mappings['per-field']['field_model_price'] = array('callback' => '', 'index_type' => 'float');
       // Allow other modules to add or alter mappings.
       drupal_alter('apachesolr_cck_fields', $mappings);
-      $result = db_query("SELECT  i.field_name, f.multiple, f.type AS field_type, i.widget_type, i.label FROM {content_node_field_instance} i INNER JOIN {content_node_field} f ON i.field_name = f.field_name;");
+      $result = db_query("SELECT i.field_name, f.multiple, f.type AS field_type, i.widget_type, i.label FROM {node_field_instance} i INNER JOIN {node_field} f ON i.field_name = f.field_name;");
       while ($row = db_fetch_object($result)) {
-        // Only deal with fields that have option widgets (facets don't make sense otherwise), or fields that have specific mappings.
+        // Only deal with fields that have option widgets (facets
+        // don't make sense otherwise), or fields that have specific mappings.
         if ((isset($mappings[$row->field_type][$row->widget_type]) && !isset($fields[$row->field_name])) || isset($mappings['per-field'][$row->field_name])) {
           if (isset($mappings['per-field'][$row->field_name])) {
             $row->index_type = $mappings['per-field'][$row->field_name]['index_type'];
@@ -1217,50 +1229,6 @@ function apachesolr_cck_fields() {
     }
   }
   return $fields;
-}
-
-/**
- * Implementation of hook_theme().
- */
-function apachesolr_theme() {
-  return array(
-    /**
-     * Returns a link for a facet term, with the number (count) of results for that term
-     */
-    'apachesolr_facet_link' => array(
-      'arguments' => array('facet_text' => NULL, 'path' => NULL, 'options' => NULL, 'count' => NULL, 'active' => FALSE, 'num_found' => NULL),
-    ),
-    /**
-     * Returns a link to remove a facet filter from the current search.
-     */
-    'apachesolr_unclick_link' => array(
-      'arguments' => array('facet_text' => NULL, 'path' => NULL, 'options' => NULL),
-    ),
-    /**
-     * Returns a list of links from the above functions (apachesolr_facet_item and apachesolr_unclick_link)
-     */
-    'apachesolr_facet_list' => array(
-      'arguments' => array('items' => NULL),
-    ),
-    /**
-     * Returns a list of links generated by apachesolr_sort_link
-     */
-    'apachesolr_sort_list' => array(
-      'arguments' => array('items' => NULL),
-    ),
-    /**
-     * Returns a link which can be used to search the results.
-     */
-    'apachesolr_sort_link' => array(
-      'arguments' => array('text' => NULL, 'path' => NULL, 'options' => NULL, 'active' => FALSE, 'direction' => ''),
-    ),
-    /**
-     * Returns a list of results (docs) in content recommendation block
-     */
-    'apachesolr_mlt_recommendation_block' => array(
-      'arguments' => array('docs' => NULL),
-    ),
-  );
 }
 
 /**
@@ -1315,29 +1283,27 @@ function apachesolr_mlt_suggestions($settings, $id) {
     }
   }
   catch ( Exception $e ) {
-    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR );
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), WATCHDOG_ERROR );
   }
 }
 
 /**
- * Implementation of hook_form_[form_id]_alter
+ * Implementation of hook_form_alter
  */
-function apachesolr_form_block_admin_display_form_alter(&$form) {
-  foreach ($form as $key => $block) {
-    if ((strpos($key, "apachesolr_mlt-") === 0) && $block['module']['#value'] == 'apachesolr') {
-      $form[$key]['delete'] = array('#value' => l(t('delete'), 'admin/settings/apachesolr/mlt/delete_block/'. $block['delta']['#value']));
-    }
-  }
-}
-
-/**
- * Implementation of hook_form_[form_id]_alter().
- *
- * Hide the core 'title' field in favor of our 'name' field..
- */
-function apachesolr_form_block_admin_configure_alter(&$form, $form_state) {
-  if ($form['module']['#value'] == 'apachesolr' && $form['delta']['#value'] != 'sort') {
-    $form['block_settings']['title']['#access'] = FALSE;
+function apachesolr_form_alter($form_id, &$form) {
+  switch ($form_id) {
+    case 'block_admin_display_form':
+      foreach ($form as $key => $block) {
+        if ((strpos($key, "apachesolr_mlt-") === 0) && $block['module']['#value'] == 'apachesolr') {
+          $form[$key]['delete'] = array('#value' => l(t('delete'), 'admin/settings/apachesolr/mlt/delete_block/'. $block['delta']['#value']));
+        }
+      }
+    break;
+    case 'block_admin_configure':
+      if ($form['module']['#value'] == 'apachesolr' && $form['delta']['#value'] != 'sort') {
+        $form['block_settings']['title']['#access'] = FALSE;
+      }
+    break;
   }
 }
 
@@ -1405,8 +1371,9 @@ function apachesolr_l($text, $path, $options = array()) {
   $query = apachesolr_current_query();
   $get = array_diff_key($_GET, array('q' => 1, 'page' => 1), $options['query'], $query->get_url_queryvalues());
   $options['query'] += $get;
-
-  return '<a href="'. check_url(url($path, $options)) .'"'. drupal_attributes($options['attributes']) .'>'. ($options['html'] ? $text : check_plain($text)) .'</a>';
+  $options_query = drupal_query_string_encode($options['query']);
+  
+  return '<a href="'. check_url(url($path, $options_query)) .'"'. drupal_attributes($options['attributes']) .'>'. ($options['html'] ? $text : check_plain($text)) .'</a>';
 }
 
 function theme_apachesolr_unclick_link($facet_text, $path, $options = array()) {
@@ -1589,4 +1556,3 @@ interface Drupal_Solr_Query_Interface {
    */
   function set_available_sort($field, $sort);
 }
-

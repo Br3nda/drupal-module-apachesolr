@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.install,v 1.1.2.5 2009/04/14 00:12:18 pwolanin Exp $
+// $Id: apachesolr_search.install,v 1.1.2.5.4.1 2009/09/22 15:26:15 claudiucristea Exp $
 
 /**
  * @file
@@ -17,7 +17,7 @@ function apachesolr_search_uninstall() {
 /**
  * Update to namespace tracking.
  */
-function apachesolr_search_update_6000() {
+function apachesolr_search_update_5000() {
   $change = variable_get('apachesolr_search_last_change', 0);
   $nid = variable_get('apachesolr_search_last_nid', 0);
   if ($change || $nid) {
@@ -33,7 +33,7 @@ function apachesolr_search_update_6000() {
 /**
  * Update to block deltas.
  */
-function apachesolr_search_update_6001() {
+function apachesolr_search_update_5001() {
   $ret = array();
   if ($fields = apachesolr_cck_fields()) {
      foreach ($fields as $name => $field) {
@@ -49,7 +49,7 @@ function apachesolr_search_update_6001() {
 /**
  * Update mis-named variables.
  */
-function apachesolr_search_update_6002() {
+function apachesolr_search_update_5002() {
   $ret = array();
   $date_settings = variable_get('apacehsolr_search_date_boost', '');
   $comment_settings = variable_get('apacehsolr_search_comment_boost', '');
@@ -67,7 +67,7 @@ function apachesolr_search_update_6002() {
 /**
  * Enable facet missing for books.
  */
-function apachesolr_search_update_6003() {
+function apachesolr_search_update_5003() {
   $ret = array();
   $facet_missing = variable_get('apachesolr_facet_missing', array());
   $facet_missing['apachesolr_search']['is_book_bid'] = 1;

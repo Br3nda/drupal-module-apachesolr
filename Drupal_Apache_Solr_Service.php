@@ -58,7 +58,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     if (empty($this->luke[$num_terms])) {
       $url = $this->_constructUrl(self::LUKE_SERVLET, array('numTerms' => "$num_terms", 'wt' => self::SOLR_WRITER));
       $this->luke[$num_terms] = $this->_sendRawGet($url);
-      cache_set($this->luke_cid, $this->luke);
+      cache_set($this->luke_cid, 'cache', serialize($this->luke));
     }
   }
 
@@ -88,14 +88,14 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     if (empty($this->stats) && isset($data->index->numDocs)) {
       $url = $this->_constructUrl(self::STATS_SERVLET);
       $this->stats_cid = "apachesolr:stats:" . md5($url);
-      $cache = cache_get($this->stats_cid);
+      $cache = cache_get($this->stats_cid, 'cache');
       if (isset($cache->data)) {
-        $this->stats = simplexml_load_string($cache->data);
+        $this->stats = simplexml_load_string(unserialize($cache->data));
       }
       else {
         $response = $this->_sendRawGet($url);
         $this->stats = simplexml_load_string($response->getRawResponse());
-        cache_set($this->stats_cid, $response->getRawResponse());
+        cache_set($this->stats_cid, 'cache', serialize($response->getRawResponse()));
       }
     }
   }
@@ -192,9 +192,9 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
   public function __construct($host = 'localhost', $port = 8180, $path = '/solr/') {
     parent::__construct($host, $port, $path);
     $this->luke_cid = "apachesolr:luke:" . md5($this->_lukeUrl);
-    $cache = cache_get($this->luke_cid);
+    $cache = cache_get($this->luke_cid, 'cache');
     if (isset($cache->data)) {
-      $this->luke = $cache->data;
+      $this->luke = unserialize($cache->data);
     }
   }
 
@@ -232,7 +232,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     $response = new Apache_Solr_Response($data, $headers, $this->_createDocuments, $this->_collapseSingleValueArrays);
     $code = (int) $response->getHttpStatus();
     if ($code != 200) {
-      $message = $response->getHttpStatusMessage();
+      $message = $response->getHttpStatusMessage(); 
       if ($code >= 400 && $code != 403 && $code != 404) {
         // Add details, like Solr's exception message.
         $message .= $response->getRawResponse();

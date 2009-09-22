@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_image.module,v 1.1.2.1.2.4 2009/02/09 14:12:23 pwolanin Exp $
+// $Id: apachesolr_image.module,v 1.1.2.1.2.4.4.1 2009/09/22 15:26:15 claudiucristea Exp $
 
 /**
  * Implementation of hook_apachesolr_update_index().
@@ -47,17 +47,6 @@ function apachesolr_image_apachesolr_process_results(&$results) {
 
 function theme_apachesolr_image_snippet($item){
  return '<span class="apachesolr-image-result">'. theme('image', $item['node']->ss_image_relative, $item['title'], $item['title'], array('align' => 'left')) .'</span>'. $item['snippet'] . '<br clear="all"/>';
-}
-
-/**
- * Implementation of hook_theme().
- */
-function apachesolr_image_theme() {
-  return array(
-    'apachesolr_image_snippet' => array(
-      'arguments' => array('item' => NULL),
-    ),
-  );
 }
 
 /**

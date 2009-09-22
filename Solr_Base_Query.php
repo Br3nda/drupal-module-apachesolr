@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.40 2009/07/02 08:50:46 robertDouglass Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.40.4.1 2009/09/22 15:26:15 claudiucristea Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -354,12 +354,12 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
         $field['#name'] = $this->field_map[$name];
       }
       $progressive_crumb[] = $this->make_filter($field);
-      $options = array('query' => 'filters=' . rawurlencode(implode(' ', $progressive_crumb)));
+      $options_query = 'filters=' . rawurlencode(implode(' ', $progressive_crumb));
       if ($themed = theme("apachesolr_breadcrumb_" . $name, $field['#value'], $field['#exclude'])) {
-        $breadcrumb[] = l($themed, $base, $options);
+        $breadcrumb[] = l($themed, $base, array(), $options_query);
       }
       else {
-        $breadcrumb[] = l($field['#value'], $base, $options);
+        $breadcrumb[] = l($field['#value'], $base, array(), $options_query);
       }
     }
     // The last breadcrumb is the current page, so it shouldn't be a link.

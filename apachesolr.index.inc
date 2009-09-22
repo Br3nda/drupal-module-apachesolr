@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6 2009/07/01 22:43:50 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.4.1 2009/09/22 15:26:15 claudiucristea Exp $
 
 /**
  * @file
@@ -73,7 +73,7 @@ function apachesolr_node_to_document($nid, $namespace) {
 
     $document = new Apache_Solr_Document();
     $document->id = apachesolr_document_id($node->nid);
-    $document->site = url(NULL, array('absolute' => TRUE));
+    $document->site = url(NULL, NULL, NULL, TRUE);
     $document->hash = apachesolr_site_hash();
     $document->nid = $node->nid;
     $document->uid = $node->uid;
@@ -98,7 +98,7 @@ function apachesolr_node_to_document($nid, $namespace) {
     $document->name = apachesolr_strip_ctl_chars($node->name);
 
     $path = 'node/' . $node->nid;
-    $document->url = url($path, array('absolute' => TRUE));
+    $document->url = url($path, NULL, NULL, TRUE);
     $document->path = $path;
     // Path aliases can have important information about the content.
     // Add them to the index as well.

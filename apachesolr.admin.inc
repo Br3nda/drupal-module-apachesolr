@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.32 2009/08/15 07:33:02 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.32.2.1 2009/09/22 15:26:15 claudiucristea Exp $
 
 /**
  * @file
@@ -95,8 +95,8 @@ function apachesolr_settings() {
 /**
  * Validation function for the apachesolr_settings form.
  */
-function apachesolr_settings_validate($form, &$form_state) {
-  $port = $form_state['values']['apachesolr_port'];
+function apachesolr_settings_validate($form_id, $form_values) {
+  $port = $form_values['apachesolr_port'];
   // TODO: Port range should be 0-65535, but 0 crashes apachesolr
   if (!ctype_digit($port) || $port < 1 || $port > 65535) {
     form_set_error('apachesolr_port', t('The port has to be an integer between 1 and 65535.'));
@@ -116,7 +116,7 @@ function apachesolr_index_page() {
     $data = $solr->getLuke();
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), WATCHDOG_ERROR);
     drupal_set_message(nl2br(check_plain($e->getMessage())), "warning");
     $data->fields = array();
   }
@@ -130,14 +130,14 @@ function apachesolr_index_page() {
       $delete_msg = '<p>' . t('Numer of pending deletions: @deletes_total', $stats_summary) . "</p>\n";
     }
     catch (Exception $e) {
-      watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+      watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), WATCHDOG_ERROR);
     }
     $output .= $delay_msg;
     $pending_msg = $stats_summary['@pending_docs'] ? t('(@pending_docs sent but not yet processed)', $stats_summary) : '';
     $output .= '<p>' . t('Number of documents in index: @num !pending', array('@num' => $data->index->numDocs, '!pending' => $pending_msg)) . "</p>\n";
     $output .= $delete_msg;
   }
-  $output .= '<p>' . l(t('View more details on the search index contents'), 'admin/reports/apachesolr') . "</p>\n";
+  $output .= '<p>' . l(t('View more details on the search index contents'), 'admin/logs/apachesolr') . "</p>\n";
   // Display the Delete Index form.
   $output .= drupal_get_form('apachesolr_delete_index_form');
 
@@ -154,7 +154,7 @@ function apachesolr_index_report() {
     $data = $solr->getLuke();
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), WATCHDOG_ERROR);
     drupal_set_message(nl2br(check_plain($e->getMessage())), "warning");
     $data->fields = array();
   }
@@ -175,7 +175,7 @@ function apachesolr_index_report() {
       $output .= '<p>' . t('Number of terms in index: @num', array('@num' => $data->index->numTerms)) . "</p>\n";
     }
     catch (Exception $e) {
-      watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+      watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), WATCHDOG_ERROR);
       $data->fields = array();
     }
   }
@@ -220,13 +220,13 @@ function _apachesolr_sort_facets($a, $b) {
  *
  * @see apachesolr_enabled_facets_form()
  */
-function apachesolr_enabled_facets_form_submit($form, &$form_state) {
+function apachesolr_enabled_facets_form_submit($form_id, $form_values) {
   $enabled = array();
-  foreach ($form_state['values']['apachesolr_enabled_facets'] as $module => $facets) {
+  foreach ($form_values['apachesolr_enabled_facets'] as $module => $facets) {
     $enabled[$module] = array_filter($facets);
   }
   variable_set('apachesolr_enabled_facets', $enabled);
-  drupal_set_message($form_state['values']['submit_message'], 'warning');
+  drupal_set_message($form_values['submit_message'], 'warning');
 }
 
 /**
@@ -252,13 +252,10 @@ function apachesolr_enabled_facets_form() {
     '#type' => 'item',
     '#value' => t('You can use this screen to select which search filter blocks should be created by enabling the corresponding filters on this page. For performance reasons, you should only enable filters that you intend to have available to users on the search page.  After selecting which filter blocks to create, you will be sent to the blocks page where you can choose which of those blocks should be enabled when your users search by placing each block in a region.'),
   );
-  if ($module_list) {
-    $placeholders = implode(', ', array_fill(0, count($module_list), "'%s'"));
-    $result = db_query("SELECT name, info FROM {system} WHERE name IN (". $placeholders .") AND type = 'module'", $module_list);
-    while ($item = db_fetch_array($result)) {
-      $module_list[$item['name']] = unserialize($item['info']);
-    }
+  foreach ($module_list as $module => $name) {
+    $module_list[$module] = _module_parse_info_file(drupal_get_path('module', $module) .'/'. $module .'.info');
   }
+
   foreach($module_facets as $module => $facets) {
     $form['apachesolr_enabled_facets'][$module] = array(
       '#type' => 'fieldset',
@@ -314,7 +311,6 @@ function apachesolr_delete_index_form() {
   $form['reindex'] = array(
     '#type' => 'submit',
     '#value' => t('Re-index all content'),
-    '#submit' => array('apachesolr_clear_index_submit'),
   );
   $form['reindex-desc'] = array(
     '#type' => 'item',
@@ -323,7 +319,6 @@ function apachesolr_delete_index_form() {
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Delete the index'),
-    '#submit' => array('apachesolr_delete_index_submit'),
   );
   $form['delete-desc'] = array(
     '#type' => 'item',
@@ -338,17 +333,9 @@ function apachesolr_delete_index_form() {
  *
  * @see apachesolr_delete_index_form()
  */
-function apachesolr_clear_index($form, &$form_state) {
-  return apachesolr_comfirm_clear_index($form, $form_state);
-}
-
-/**
- * Submit function for the "Re-index all content" button
- * @see apachesolr_delete_index_form()
- *
- */
-function apachesolr_clear_index_submit($form, &$form_state) {
-  $form_state['redirect'] = 'admin/settings/apachesolr/index/clear/confirm';
+// CANNOT UNDERSTAND WHERE IS USED THIS... !!!!
+function apachesolr_clear_index($form_id, $form_values) {
+  return apachesolr_confirm_clear_index($form_id, $form_values);
 }
 
 /**
@@ -365,19 +352,23 @@ function apachesolr_clear_index_confirm() {
  *
  * @see apachesolr_clear_index_confirm()
  */
-function apachesolr_clear_index_confirm_submit($form, &$form_state) {
-  $form_state['redirect'] = 'admin/settings/apachesolr/index';
+function apachesolr_clear_index_confirm_submit($form_id, $form_values) {
   apachesolr_rebuild_index_table();
+  return 'admin/settings/apachesolr/index';
 }
 
-
 /**
- * Submit function for the "Delete the index" button
+ * Submit handler for apachesolr_delete_index_form()
  * @see apachesolr_delete_index_form()
  *
  */
-function apachesolr_delete_index_submit($form, &$form_state) {
-  $form_state['redirect'] = 'admin/settings/apachesolr/index/delete/confirm';
+function apachesolr_delete_index_form_submit($form_id, $form_values) {
+  if ($form_values['op'] == t('Delete the index')) {
+    return 'admin/settings/apachesolr/index/delete/confirm';
+  }
+  elseif ($form_values['op'] == t('Re-index all content')) {
+    return 'admin/settings/apachesolr/index/clear/confirm';
+  }
 }
 
 /**
@@ -394,18 +385,18 @@ function apachesolr_delete_index_confirm() {
  *
  * @see apachesolr_delete_index_confirm()
  */
-function apachesolr_delete_index_confirm_submit($form, &$form_state) {
-  $form_state['redirect'] = 'admin/settings/apachesolr/index';
+function apachesolr_delete_index_confirm_submit($form_id, $form_values) {
   try {
     apachesolr_delete_index();
     // This form can't be seen by anyone without 'administer search'
     // permission, so no need to check perms before displaying a run-cron link.
-    drupal_set_message(t('The Apache Solr content index has been erased. You must now !run_cron until your entire site has been re-indexed.', array('!run_cron' => l(t('run cron'), 'admin/reports/status/run-cron', array('query' => array('destination' => 'admin/settings/apachesolr/index'))))));
+    drupal_set_message(t('The Apache Solr content index has been erased. You must now !run_cron until your entire site has been re-indexed.', array('!run_cron' => l(t('run cron'), 'admin/reports/status/run-cron', array(), 'destination=admin/settings/apachesolr/index'))));
 
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), WATCHDOG_ERROR);
   }
+  return 'admin/settings/apachesolr/index';
 }
 
 /**
@@ -454,7 +445,7 @@ function _apachesolr_field_name_map($field_name) {
       $map['im_vid_'. $vocab->vid] = t('Taxonomy term IDs from the %name vocabulary', array('%name' => $vocab->name));
     }
     foreach (apachesolr_cck_fields() as $name => $field) {
-      $map[apachesolr_index_key($field)] = t('CCK @type field %label', array('@type' => $field['index_type'], '%name' => $field['label']));
+      $map[apachesolr_index_key($field)] = t('CCK @type field !label', array('@type' => $field['index_type'], '!name' => $field['label']));
     }
     drupal_alter('apachesolr_field_name_map', $map);
   }
@@ -475,10 +466,10 @@ function apachesolr_mlt_add_block_form() {
   return $form;
 }
 
-function apachesolr_mlt_add_block_form_submit($form, &$form_state) {
-  apachesolr_mlt_save_block($form_state['values']);
-  drupal_set_message('New content recommendation block created.  Drag it into a region to enable it');
-  $form_state['redirect'] = 'admin/build/block';
+function apachesolr_mlt_add_block_form_submit($form_id, $form_values) {
+  apachesolr_mlt_save_block($form_values);
+  drupal_set_message('New content recommendation block created. Drag it into a region to enable it');
+  return 'admin/build/block';
 }
 
 /**
@@ -640,7 +631,7 @@ function apachesolr_mlt_save_block($block_settings = array(), $delta = NULL) {
   variable_set('apachesolr_mlt_blocks', $blocks);
 }
 
-function apachesolr_mlt_delete_block_form($form_state, $delta) {
+function apachesolr_mlt_delete_block_form($delta) {
   if ($block = apachesolr_mlt_load_block($delta)) {
     $form['delta'] = array(
       '#type' => 'value',
@@ -655,11 +646,10 @@ function apachesolr_mlt_delete_block_form($form_state, $delta) {
   }
 }
 
-function apachesolr_mlt_delete_block_form_submit($form, &$form_state) {
+function apachesolr_mlt_delete_block_form_submit($form_id, $form_values) {
   $blocks = variable_get('apachesolr_mlt_blocks', array());
-  unset($blocks[$form_state['values']['delta']]);
+  unset($blocks[$form_values['delta']]);
   variable_set('apachesolr_mlt_blocks', $blocks);
   drupal_set_message(t('The block has been deleted.'));
-  $form_state['redirect'] = 'admin/build/block';
+  return 'admin/build/block';
 }
-
