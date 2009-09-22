@@ -1,7 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.112 2009/09/15 14:11:23 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.112.2.1 2009/09/22 15:41:19 claudiucristea Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
+
+Apache Solr integration 5.x-2.x, 2009-09-22
+------------------------------
+#557152 by claudiu.cristea Backporting 6.x-1.x to 5.x-2.x
 
 Apache Solr integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
