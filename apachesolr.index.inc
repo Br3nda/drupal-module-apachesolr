@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6 2009/07/01 22:43:50 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.7 2009/09/23 10:13:51 robertDouglass Exp $
 
 /**
  * @file
@@ -55,6 +55,7 @@ function apachesolr_node_to_document($nid, $namespace) {
     if (!empty($exclude)) {
       $build_document = FALSE;
     }
+    $extra = array();
   }
 
   if ($build_document) {
