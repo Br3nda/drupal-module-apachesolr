@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.4.1 2009/09/22 15:26:15 claudiucristea Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.4.2 2009/09/23 10:27:03 robertDouglass Exp $
 
 /**
  * @file
@@ -67,7 +67,12 @@ function apachesolr_node_to_document($nid, $namespace) {
     $text = $node->body;
 
     // Fetch extra data normally not visible, including comments.
-    $extra = node_invoke_nodeapi($node, 'update index');
+	$extra = array();
+	foreach (module_implements('nodeapi') as $module) {
+	  if ($output = module_invoke($module, 'nodeapi', $node, 'update index')) {
+	    $extra[$module] = $output;
+	  }
+	}
     $text .= "\n\n" . implode(' ', $extra);
     $text = apachesolr_strip_ctl_chars($text);
 
