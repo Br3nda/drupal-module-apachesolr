@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111 2009/07/02 21:58:34 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.112 2009/09/23 10:00:36 robertDouglass Exp $
 
 /**
  * @file
@@ -207,7 +207,6 @@ function apachesolr_search_execute($keys, $filters, $solrsort, $base_path = '', 
   apachesolr_search_add_facet_params($params, $query);
   apachesolr_search_add_boost_params($params, $query, $solr);
 
-  $params['start'] = $page * $params['rows'];
 
   // Cache the built query. Since all the built queries go through
   // this process, all the hook_invocations will happen later
@@ -215,6 +214,8 @@ function apachesolr_search_execute($keys, $filters, $solrsort, $base_path = '', 
 
   // This hook allows modules to modify the query and params objects.
   apachesolr_modify_query($query, $params, $caller);
+  $params['start'] = $page * $params['rows'];
+
   if (!$query) {
     return array();
   }
