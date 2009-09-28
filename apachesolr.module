@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.52 2009/04/07 10:34:50 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.53 2009/09/28 22:21:24 damienvancouver Exp $
 
 /**
  * @file
@@ -483,7 +483,7 @@ function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
     case 'delete':
       try {
         $solr =& apachesolr_get_solr(variable_get('apachesolr_host', 'localhost'), variable_get('apachesolr_port', 8983), variable_get('apachesolr_path', '/solr'));
-        $solr->deleteById($node->nid);
+        $solr->deleteById(url('node/' . $node->nid, NULL, NULL, TRUE));
         $solr->commit();
       }
       catch (Exception $e) {
