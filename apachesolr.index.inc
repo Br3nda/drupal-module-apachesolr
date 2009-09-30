@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.2.6 2009/09/23 10:13:24 robertDouglass Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.2.7 2009/09/30 08:15:21 robertDouglass Exp $
 
 /**
  * @file
@@ -57,7 +57,7 @@ function apachesolr_node_to_document($node, $namespace) {
     // whether to index comments or not.
     $extra = array();
     foreach (module_implements('nodeapi') as $module) {
-      if ($output = module_invoke($module, 'nodeapi', $node, 'update index')) {
+      if ($output = module_invoke($module, 'nodeapi', $node, 'update index', FALSE, FALSE)) {
         $extra[$module] = $output;
       }
 
