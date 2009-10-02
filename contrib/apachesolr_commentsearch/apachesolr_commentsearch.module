@@ -56,7 +56,9 @@ function apachesolr_commentsearch_node_to_comments($node, $namespace) {
 }
 
 function apachesolr_commentsearch_apachesolr_modify_query(&$query, &$params, $caller) {
-  $params['fl'] .= ',is_cid';
+  $fls = array_filter(explode(',', $params['fl']));
+  $fls[] = 'is_cid';
+  $params['fl'] =  implode(',', $fls);
 }
 
 function apachesolr_commentsearch_apachesolr_process_results(&$results) {
