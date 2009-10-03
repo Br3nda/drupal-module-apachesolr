@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.39 2009/09/30 08:15:20 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.40 2009/10/03 16:11:11 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#591278 by robertDouglass fix bug that was preventing hook_apachesolr_modify_query from working correctly.
 #590982 by swentel fix warnings on indexing.
 #554136 by emackn, Jaza make results-per-page alterable.
 #580764 by robertDougalss Add a new contrib module that allows searching on just comments.

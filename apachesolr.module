@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.28 2009/09/17 21:32:44 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.29 2009/10/03 16:11:11 robertDouglass Exp $
 
 /**
  * @file
@@ -1176,6 +1176,13 @@ function apachesolr_facetcount_save($edit) {
  * }
  */
 function apachesolr_modify_query(&$query, &$params, $caller) {
+  // Call the hooks first because otherwise any modifications to the
+  // $query object don't end up in the $params.
+  foreach (module_implements('apachesolr_modify_query') as $module) {
+    $function_name = $module . '_apachesolr_modify_query';
+    $function_name($query, $params, $caller);
+  }
+
   // TODO: The query object should hold all the params.
   // Add array of fq parameters.
   if ($query && ($fq = $query->get_fq())) {
@@ -1203,10 +1210,7 @@ function apachesolr_modify_query(&$query, &$params, $caller) {
       }
     }
   }
-  foreach (module_implements('apachesolr_modify_query') as $module) {
-    $function_name = $module . '_apachesolr_modify_query';
-    $function_name($query, $params, $caller);
-  }
+
   if ($filter_queries = $params['fq']) {
     foreach ($filter_queries as $delta => $value) {
       $fq = $tag = '';
@@ -1949,4 +1953,3 @@ interface Drupal_Solr_Query_Interface {
    */
   function set_available_sort($field, $sort);
 }
-
