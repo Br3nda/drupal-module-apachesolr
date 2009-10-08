@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.1 2009/09/22 15:26:15 claudiucristea Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.2 2009/10/08 11:40:28 claudiucristea Exp $
 
 /**
  * @file
@@ -100,9 +100,11 @@ function apachesolr_search_menu_alter(&$menu) {
  * Implementation of hook_update_index().
  */
 function apachesolr_search_update_index() {
-  $cron_limit = variable_get('apachesolr_cron_limit', 50);
-  $rows = apachesolr_get_nodes_to_index('apachesolr_search', $cron_limit);
-  apachesolr_index_nodes($rows, 'apachesolr_search');
+  if (!variable_get('apachesolr_disallow_indexing', FALSE)) {
+    $cron_limit = variable_get('apachesolr_cron_limit', 50);
+    $rows = apachesolr_get_nodes_to_index('apachesolr_search', $cron_limit);
+    apachesolr_index_nodes($rows, 'apachesolr_search');
+  }
 }
 
 /**
@@ -635,7 +637,9 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
                 $new_query = clone $query;
                 $new_query->remove_filter($field['#name'], $field['#value']);
                 $options['query'] = $new_query->get_url_queryvalues();
-                $fielddisplay = theme("apachesolr_breadcrumb_". $field['#name'], $field['#value']);
+                $breadcrumb_name = 'apachesolr_breadcrumb_'. $field['#name'];
+                drupal_alter('apachesolr_theme_breadcrumb', $breadcrumb_name);
+                $fielddisplay = theme($breadcrumb_name, $field);
                 if (!$fielddisplay) {
                   $fielddisplay = $field['#value'];
                 }
@@ -662,7 +666,8 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
               foreach ($fields as $name => $field) {
                 if ($field['field_name'] == $delta) {
                   $index_key = apachesolr_index_key($field);
-                  return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $index_key, t('Filter by @field', array('@field' => $field['label'])), 'apachesolr_search_get_cck_text', array('field' => $delta));
+                  $callback = isset($field['display_callback']) ? $field['display_callback'] : FALSE;
+                  return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $index_key, t('Filter by @field', array('@field' => $field['label'])), $callback);
                 }
               }
             }
@@ -714,23 +719,6 @@ function apachesolr_search_get_type($facet) {
   $type = node_get_types('name', $facet);
   // A disabled or missing node type returns FALSE.
   return ($type === FALSE) ? $facet : $type;
-}
-
-/**
- * Callback function for the 'Filter by @field' facet block.
- */
-function apachesolr_search_get_cck_text($facet, $options) {
-  static $info;
-  if (!isset($info)) {
-    $info = _content_type_info();
-    $info = $info['fields'];
-  }
-  $field = $info[$options['field']];
-  
-  // Clone the $facet. Do not allow altering.
-  $facet_text = $facet;
-  drupal_alter('apachesolr_search_get_cck_text', $facet_text, $facet, $field, $options);
-  return $facet_text;
 }
 
 /**
@@ -930,6 +918,34 @@ function apachesolr_search_build_spellcheck($form_id, $form_values) {
   }
 }
 
+/**
+ * Alters the function used to theme breadcrumbs
+ * @param string $fieldname
+ *
+ */
+function apachesolr_search_apachesolr_theme_breadcrumb_alter(&$fieldname) {
+  $matches = preg_split('/_cck_/', $fieldname);
+  if (isset($matches[1])) {
+    $fieldname = 'apachesolr_breadcrumb_cck';
+  }
+}
+
+function theme_apachesolr_breadcrumb_cck($field) {
+  $matches = preg_split('/_cck_/', $field['#name']);
+  if (isset($matches[1])) {
+    $mappings = apachesolr_cck_fields();
+    if (isset($mappings[$matches[1]]['display_callback'])) {
+      $function = $mappings[$matches[1]]['display_callback'];
+      if (function_exists($function)) {
+        $facet = $field['#value'];
+        $options = array('delta' => $matches[1]);
+        return $function($facet, $options);
+      }
+    }
+  }
+  return $field['#value'];
+}
+
 function theme_apachesolr_breadcrumb_date_range($range) {
   if (preg_match('@[\[\{](\S+) TO (\S+)[\]\}]@', $range, $match)) {
     return apachesolr_date_format_range($match[1], $match[2]);
@@ -948,7 +964,8 @@ function theme_apachesolr_breadcrumb_created($range) {
 /**
  * Return the username from $uid
  */
-function theme_apachesolr_breadcrumb_uid($uid) {
+function theme_apachesolr_breadcrumb_uid($field) {
+  $uid = $field['#value'];
   if ($uid == 0) {
     return variable_get('anonymous', t('Anonymous'));
   }
@@ -960,7 +977,8 @@ function theme_apachesolr_breadcrumb_uid($uid) {
 /**
  * Return the term name from $tid.
  */
-function theme_apachesolr_breadcrumb_tid($tid) {
+function theme_apachesolr_breadcrumb_tid($field) {
+  $tid = $field['#value'];
   $term = taxonomy_get_term($tid);
   return $term->name;
 }
@@ -968,7 +986,8 @@ function theme_apachesolr_breadcrumb_tid($tid) {
 /**
  * Return the human readable text for a content type.
  */
-function theme_apachesolr_breadcrumb_type($type) {
+function theme_apachesolr_breadcrumb_type($field) {
+  $type = $field['#value'];
   return node_get_types('name', $type);
 }
 

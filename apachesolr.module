@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161.2.1 2009/09/22 15:26:15 claudiucristea Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.2 2009/10/08 11:40:28 claudiucristea Exp $
 
 /**
  * @file
@@ -663,13 +663,13 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
 /**
  * Helper function for displaying a facet block.
  */
-function apachesolr_facet_block($response, $query, $module, $delta, $facet_field, $filter_by, $facet_callback = FALSE, $facet_callback_arguments = NULL) {
+function apachesolr_facet_block($response, $query, $module, $delta, $facet_field, $filter_by, $facet_callback = FALSE) {
   if (!empty($response->facet_counts->facet_fields->$facet_field)) {
     $contains_active = FALSE;
     $items = array();
     foreach ($response->facet_counts->facet_fields->$facet_field as $facet => $count) {
       $sortpre = 1000000 - $count;
-      $options = array();
+      $options = array('delta' => $delta);
       $exclude = FALSE;
       // Solr sends this back if it's empty.
       if ($facet == '_empty_') {
@@ -686,10 +686,7 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
       }
 
       if ($facet_callback && function_exists($facet_callback)) {
-        if (isset($facet_callback_arguments) && is_array($facet_callback_arguments)) {
-          $callback_options = array_merge($options, $facet_callback_arguments);
-        }
-        $facet_text = $facet_callback($facet, $callback_options);
+        $facet_text = $facet_callback($facet, $options);
       }
       $unclick_link = '';
       $active = FALSE;
@@ -1199,8 +1196,16 @@ function apachesolr_cck_fields() {
     if (module_exists('content')) {
       // A single default mapping for all text fields.
       $mappings['text'] = array(
-        'options_select' => array('callback' => '', 'index_type' => 'string'),
-        'options_buttons' => array('callback' => '', 'index_type' => 'string')
+        'options_select' => array(
+          'indexing callback' => '',
+          'display callback' => 'apachesolr_cck_text_field_callback',
+          'index_type' => 'string',
+        ),
+        'options_buttons' => array(
+          'indexing callback' => '',
+          'display callback' => 'apachesolr_cck_text_field_callback',
+          'index_type' => 'string',
+        ),
       );
       // A field-specific mapping would look like:
       // $mappings['per-field']['field_model_name'] = array('callback' => '', 'index_type' => 'string');
@@ -1208,27 +1213,82 @@ function apachesolr_cck_fields() {
       // $mappings['per-field']['field_model_price'] = array('callback' => '', 'index_type' => 'float');
       // Allow other modules to add or alter mappings.
       drupal_alter('apachesolr_cck_fields', $mappings);
-      $result = db_query("SELECT i.field_name, f.multiple, f.type AS field_type, i.widget_type, i.label FROM {node_field_instance} i INNER JOIN {node_field} f ON i.field_name = f.field_name;");
+      $result = db_query("SELECT i.field_name, f.multiple, f.type AS field_type, i.widget_type, i.label, i.type_name AS content_type FROM {node_field_instance} i INNER JOIN {node_field} f ON i.field_name = f.field_name;");
       while ($row = db_fetch_object($result)) {
         // Only deal with fields that have option widgets (facets
         // don't make sense otherwise), or fields that have specific mappings.
-        if ((isset($mappings[$row->field_type][$row->widget_type]) && !isset($fields[$row->field_name])) || isset($mappings['per-field'][$row->field_name])) {
+        if ((isset($mappings[$row->field_type][$row->widget_type]) ||  isset($mappings['per-field'][$row->field_name]))) {
           if (isset($mappings['per-field'][$row->field_name])) {
             $row->index_type = $mappings['per-field'][$row->field_name]['index_type'];
-            $row->callback = $mappings['per-field'][$row->field_name]['callback'];
+            $row->indexing_callback = $mappings['per-field'][$row->field_name]['indexing callback'];
+            $row->display_callback = $mappings['per-field'][$row->field_name]['display callback'];
           }
           else {
             $row->index_type = $mappings[$row->field_type][$row->widget_type]['index_type'];
-            $row->callback = $mappings[$row->field_type][$row->widget_type]['callback'];
+            $row->indexing_callback = $mappings[$row->field_type][$row->widget_type]['indexing callback'];
+            $row->display_callback = $mappings[$row->field_type][$row->widget_type]['display callback'];
           }
           $row->multiple = (bool) $row->multiple;
+          // It's important that we put the 'cck_' here because several points in the later processing
+          // depend on it to route program flow to cck specific handlers.
           $row->name = 'cck_' . $row->field_name;
-          $fields[$row->field_name] = (array) $row;
+          $fields[$row->field_name] = array_merge((array) $fields[$row->field_name], (array) $row);
+          $fields[$row->field_name]['content types'][] = $row->content_type;
+          unset($fields[$row->field_name]['content_type']);
         }
       }
     }
   }
   return $fields;
+}
+
+/**
+ * Use the content.module's content_format() to format the
+ * field based on its value ($facet).
+ *
+ *  @param $facet string
+ *    The indexed value
+ *  @param $options
+ *    An array of options including the hook_block $delta.
+ */
+function apachesolr_cck_text_field_callback($facet, $options) {
+  // If CCK module is not present return the plain facet.
+  if (!module_exists('content')) {
+    return $facet;
+  }
+  
+  // Cached $field_info holds the CCK infos for needed fields
+  static $field_info;
+  if (!isset($field_info[$options['delta']])) {
+    $field_info[$options['delta']] = content_fields($options['delta']);
+  }
+  
+  // Clone the $facet. Do not allow altering.
+  $facet_text = $facet;
+  
+  // Format the native CCK types and open
+  // the unknown content-types to custom modules
+  
+  // CCK Number or Text
+  if (($field_info[$options['delta']]['type'] == 'number' && module_exists('number')) || ($field_info[$options['delta']]['type'] == 'text' && module_exists('text'))) {
+    return content_format($options['delta'], array('value' => $facet));
+  }
+  // Nodereference content type
+  elseif ($field_info[$options['delta']]['type'] == 'nodereference' && module_exists('nodereference')) {
+    // Add also the 'plain' formatter. Otherwise the entire hyperlink will be returned.
+    return content_format($options['delta'], array('nid' => $facet), 'plain');
+  }
+  // Userreference content type
+  elseif ($field_info[$options['delta']]['type'] == 'userreference' && module_exists('userreference')) {
+    // Add also the 'plain' formatter. Otherwise the entire hyperlink will be returned.
+    return content_format($options['delta'], array('uid' => $facet), 'plain');
+  }
+
+  // Not a native CCK type... Modules can alter the $facet_text
+  $options['field_info'] = $field_info[$options['delta']];
+  drupal_alter('apachesolr_cck_text_field', $facet_text, $facet, $options);
+   
+  return $facet_text;
 }
 
 /**
@@ -1372,8 +1432,9 @@ function apachesolr_l($text, $path, $options = array()) {
   $get = array_diff_key($_GET, array('q' => 1, 'page' => 1), $options['query'], $query->get_url_queryvalues());
   $options['query'] += $get;
   $options_query = drupal_query_string_encode($options['query']);
+  $url = $options_query ? url($path, $options_query): url($path);
   
-  return '<a href="'. check_url(url($path, $options_query)) .'"'. drupal_attributes($options['attributes']) .'>'. ($options['html'] ? $text : check_plain($text)) .'</a>';
+  return '<a href="'. check_url($url) .'"'. drupal_attributes($options['attributes']) .'>'. ($options['html'] ? $text : check_plain($text)) .'</a>';
 }
 
 function theme_apachesolr_unclick_link($facet_text, $path, $options = array()) {

@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.40.4.1 2009/09/22 15:26:15 claudiucristea Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.40.4.2 2009/10/08 11:40:28 claudiucristea Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -137,8 +137,8 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     $this->id = ++self::$idCount;
   }
 
-  public function add_filter($field, $value, $exclude = FALSE) {
-    $this->fields[] = array('#exclude' => $exclude, '#name' => $field, '#value' => trim($value));
+  public function add_filter($field, $value, $exclude = FALSE, $callbacks = array()) {
+    $this->fields[] = array('#exclude' => $exclude, '#name' => $field, '#value' => trim($value), '#callbacks' => $callbacks);
   }
 
   /**
@@ -355,7 +355,11 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
       }
       $progressive_crumb[] = $this->make_filter($field);
       $options_query = 'filters=' . rawurlencode(implode(' ', $progressive_crumb));
-      if ($themed = theme("apachesolr_breadcrumb_" . $name, $field['#value'], $field['#exclude'])) {
+      $breadcrumb_name = 'apachesolr_breadcrumb_' . $name;
+      // Modules utilize this alter to consolidate several fields into one
+      // theme function. This is how CCK breadcrumbs are handled.
+      drupal_alter('apachesolr_theme_breadcrumb', $breadcrumb_name);
+      if ($themed = theme($breadcrumb_name, $field)) {
         $breadcrumb[] = l($themed, $base, array(), $options_query);
       }
       else {

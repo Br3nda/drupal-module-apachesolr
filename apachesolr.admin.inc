@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.32.2.1 2009/09/22 15:26:15 claudiucristea Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.32.2.2 2009/10/08 11:40:28 claudiucristea Exp $
 
 /**
  * @file
@@ -308,6 +308,14 @@ function apachesolr_delete_index_form() {
     '#value' => t('Index controls'),
     '#suffix' => '</h3>',
   );
+  $form['toggle_index'] = array(
+    '#type' => 'submit',
+    '#value' => variable_get('apachesolr_disallow_indexing', FALSE) ? t('Start indexer') : t('Pause indexer'),
+  );
+  $form['toggle_index-desc'] = array(
+    '#type' => 'item',
+    '#description' => variable_get('apachesolr_disallow_indexing', FALSE) ? t('The indexer is paused. You can restart it by clicking on this button. The indexing process will start on next cron run.') : t('The indexer is started and it runs on cron. You can pause the indexer by clicking on this button.'),
+  );
   $form['reindex'] = array(
     '#type' => 'submit',
     '#value' => t('Re-index all content'),
@@ -368,6 +376,9 @@ function apachesolr_delete_index_form_submit($form_id, $form_values) {
   }
   elseif ($form_values['op'] == t('Re-index all content')) {
     return 'admin/settings/apachesolr/index/clear/confirm';
+  }
+  elseif (in_array($form_values['op'], array(t('Start indexer'), t('Pause indexer')))) {
+    variable_set('apachesolr_disallow_indexing', !($form_values['op'] == t('Start indexer')));
   }
 }
 

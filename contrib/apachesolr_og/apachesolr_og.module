@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_og.module,v 1.1.2.5.2.1 2009/09/22 15:26:16 claudiucristea Exp $
+// $Id: apachesolr_og.module,v 1.1.2.5.2.2 2009/10/08 11:40:29 claudiucristea Exp $
 
 /**
  * @file
@@ -192,7 +192,8 @@ function apachesolr_og_group_name($facet, &$options) {
 /**
  * Theme the breadcrumb.
  */
-function theme_apachesolr_breadcrumb_im_og_gid($group_id) {
+function theme_apachesolr_breadcrumb_im_og_gid($field) {
+  $group_id = $field['#value'];
   if (!is_numeric($group_id)) {
     return t('No group');
   }
