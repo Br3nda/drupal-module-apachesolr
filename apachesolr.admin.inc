@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.32.2.3 2009/10/08 11:47:24 claudiucristea Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.32.2.4 2009/10/08 19:34:30 claudiucristea Exp $
 
 /**
  * @file
