@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.162 2009/10/08 11:53:57 claudiucristea Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.163 2009/10/08 18:45:56 claudiucristea Exp $
 
 /**
  * @file
@@ -1197,6 +1197,35 @@ function apachesolr_cck_fields() {
           'index_type' => 'string',
         ),
       );
+      $mappings['nodereference'] = array(
+        'nodereference_buttons' => array(
+          'display callback' => 'apachesolr_cck_nodereference_field_callback',
+          'index_type' => 'integer',
+        ),
+        'nodereference_select' => array(
+          'display callback' => 'apachesolr_cck_nodereference_field_callback',
+          'index_type' => 'integer',
+        ),
+        'nodereference_autocomplete' => array(
+          'display callback' => 'apachesolr_cck_nodereference_field_callback',
+          'index_type' => 'integer',
+        ),
+      );
+      $mappings['userreference'] = array(
+        'userreference_buttons' => array(
+          'display callback' => 'apachesolr_cck_userreference_field_callback',
+          'index_type' => 'integer',
+        ),
+        'userreference_select' => array(
+          'display callback' => 'apachesolr_cck_userreference_field_callback',
+          'index_type' => 'integer',
+        ),
+        'userreference_autocomplete' => array(
+          'display callback' => 'apachesolr_cck_userreference_field_callback',
+          'index_type' => 'integer',
+        ),
+      );
+    
       // A field-specific mapping would look like:
       // $mappings['per-field']['field_model_name'] = array('callback' => '', 'index_type' => 'string');
       // or
@@ -1242,43 +1271,48 @@ function apachesolr_cck_fields() {
  *    An array of options including the hook_block $delta.
  */
 function apachesolr_cck_text_field_callback($facet, $options) {
-  // If CCK module is not present return the plain facet.
-  if (!module_exists('content')) {
-    return $facet;
-  }
-  
-  // Cached $field_info holds the CCK infos for needed fields
-  static $field_info;
-  if (!isset($field_info[$options['delta']])) {
-    $field_info[$options['delta']] = content_fields($options['delta']);
-  }
-  
-  // Clone the $facet. Do not allow altering.
-  $facet_text = $facet;
-  
-  // Format the native CCK types and open
-  // the unknown content-types to custom modules
-  
-  // CCK Number or Text
-  if (($field_info[$options['delta']]['type'] == 'number' && module_exists('number')) || ($field_info[$options['delta']]['type'] == 'text' && module_exists('text'))) {
+  if (function_exists('content_format')) {
     return content_format($options['delta'], array('value' => $facet));
   }
-  // Nodereference content type
-  elseif ($field_info[$options['delta']]['type'] == 'nodereference' && module_exists('nodereference')) {
-    // Add also the 'plain' formatter. Otherwise the entire hyperlink will be returned.
+  else {
+    return $facet;
+  }
+}
+
+/**
+ * Use the content.module's content_format() to format the
+ * field based on its nid ($facet).
+ *
+ *  @param $facet string
+ *    The indexed value
+ *  @param $options
+ *    An array of options including the hook_block $delta.
+ */
+function apachesolr_cck_nodereference_field_callback($facet, $options) {
+  if (function_exists('content_format')) {
     return content_format($options['delta'], array('nid' => $facet), 'plain');
   }
-  // Userreference content type
-  elseif ($field_info[$options['delta']]['type'] == 'userreference' && module_exists('userreference')) {
-    // Add also the 'plain' formatter. Otherwise the entire hyperlink will be returned.
+  else {
+    return $facet;
+  }
+}
+
+/**
+ * Use the content.module's content_format() to format the
+ * field based on its uid ($facet).
+ *
+ *  @param $facet string
+ *    The indexed value
+ *  @param $options
+ *    An array of options including the hook_block $delta.
+ */
+function apachesolr_cck_userreference_field_callback($facet, $options) {
+  if (function_exists('content_format')) {
     return content_format($options['delta'], array('uid' => $facet), 'plain');
   }
-
-  // Not a native CCK type... Modules can alter the $facet_text
-  $options['field_info'] = $field_info[$options['delta']];
-  drupal_alter('apachesolr_cck_text_field', $facet_text, $facet, $options);
-   
-  return $facet_text;
+  else {
+    return $facet;
+  }
 }
 
 /**
