@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.115 2009/09/30 08:36:57 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.116 2009/10/08 11:53:57 claudiucristea Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#551582 by claudiu.cristea Add callbacks to lookup values based on key for CCK fields.
 #590982 by swentel fix warnings on indexing.
 #584902 by cpliakas, robertDouglass, make $extra a keyed array and prevent PHP warnings.
 #554136 by emackn, Jaza make results-per-page alterable.
