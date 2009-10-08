@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.163 2009/10/08 18:45:56 claudiucristea Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.164 2009/10/08 18:51:37 claudiucristea Exp $
 
 /**
  * @file
@@ -1188,11 +1188,11 @@ function apachesolr_cck_fields() {
     if (module_exists('content')) {
       // A single default mapping for all text fields.
       $mappings['text'] = array(
-        'optionwidgets_select' => array('indexing callback' => '',
+        'optionwidgets_select' => array('indexing_callback' => '',
           'display callback' => 'apachesolr_cck_text_field_callback',
           'index_type' => 'string',
         ),
-        'optionwidgets_buttons' => array('indexing callback' => '',
+        'optionwidgets_buttons' => array('indexing_callback' => '',
           'display callback' => 'apachesolr_cck_text_field_callback',
           'index_type' => 'string',
         ),
@@ -1238,12 +1238,12 @@ function apachesolr_cck_fields() {
         if ((isset($mappings[$row->field_type][$row->widget_type]) || isset($mappings['per-field'][$row->field_name]))) {
           if (isset($mappings['per-field'][$row->field_name])) {
             $row->index_type = $mappings['per-field'][$row->field_name]['index_type'];
-            $row->indexing_callback = $mappings['per-field'][$row->field_name]['indexing callback'];
+            $row->indexing_callback = $mappings['per-field'][$row->field_name]['indexing_callback'];
             $row->display_callback = $mappings['per-field'][$row->field_name]['display callback'];
           }
           else {
             $row->index_type = $mappings[$row->field_type][$row->widget_type]['index_type'];
-            $row->indexing_callback = $mappings[$row->field_type][$row->widget_type]['indexing callback'];
+            $row->indexing_callback = $mappings[$row->field_type][$row->widget_type]['indexing_callback'];
             $row->display_callback = $mappings[$row->field_type][$row->widget_type]['display callback'];
           }
           $row->multiple = (bool) $row->multiple;
