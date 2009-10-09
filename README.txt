@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.25.2.2 2009/10/08 11:40:28 claudiucristea Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.25.2.3 2009/10/09 06:27:00 claudiucristea Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -225,13 +225,6 @@ hook_apachesolr_search_result_alter(&$doc)
 hook_apachesolr_sort_links_alter(&$sort_links)
 
   Called by the sort link block code. Allows other modules to modify, add or remove sorts.
-
-hook_apachesolr_cck_text_field_alter(&$facet_text, $facet, $options)
-
-  Called from apachesolr_cck_text_field_callback(). Allows modules to alter the $facet_text.
-  This is invoked only for non-native CCK field types (other than: text, number, nodereference,
-  userreference). $facet_text initially contains the $facet value. $options contain various
-  usefull informations like CCK field info ($options['field_info'])
 
 Themers
 ----------------
