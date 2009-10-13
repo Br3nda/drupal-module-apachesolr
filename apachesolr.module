@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.164 2009/10/08 18:51:37 claudiucristea Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.165 2009/10/13 20:43:17 pwolanin Exp $
 
 /**
  * @file
@@ -209,6 +209,8 @@ function apachesolr_comment($edit, $op) {
     case 'delete':
     case 'publish':
     case 'unpublish':
+      // TODO: do we want to skip this if we are excluding comments 
+      // from the index for this node type?
       apachesolr_mark_node($edit['nid']);
       break;
   }
