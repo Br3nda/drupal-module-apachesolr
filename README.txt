@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.25.2.3 2009/10/09 06:27:00 claudiucristea Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.25.2.4 2009/10/13 06:56:23 claudiucristea Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -174,7 +174,23 @@ hook_apachesolr_modify_query(&$query, &$params, $caller);
           // I only want to see articles by the admin!
           $query->add_filter("uid", 1);         
         }        
-    
+
+hook_apachesolr_prepare_query(&$query, &$params, $caller);
+
+  This is pretty much the same as hook_apachesolr_modify_query() but runs earlier
+  and before the query is statically cached. It can e.g. be used to add
+  available sorts to the query.
+
+  Example:
+
+        function my_module_apachesolr_prepare_query(&$query) {
+          // Add a sort on the node ID.
+          $query->set_available_sort('nid', array(
+            'title' => t('Node ID'),
+            'default' => 'asc',
+          ));
+        }
+
 hook_apachesolr_cck_fields_alter(&$mappings)
 
   Add or alter index mappings for CCK types.  The default mappings array handles just 
