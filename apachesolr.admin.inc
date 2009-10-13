@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.32.2.5 2009/10/09 06:27:00 claudiucristea Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.32.2.6 2009/10/13 06:49:33 claudiucristea Exp $
 
 /**
  * @file
@@ -43,7 +43,7 @@ function apachesolr_settings() {
     '#title' => t('Number of items to index per cron run'),
     '#default_value' => variable_get('apachesolr_cron_limit', 50),
     '#options' => $numbers,
-    '#description' => t('The maximum number of items indexed in each pass of a <a href="@cron">cron maintenance task</a>. If necessary, reduce the number of items to prevent timeouts and memory errors while indexing.', array('@cron' => url('admin/reports/status')))
+    '#description' => t('The maximum number of items indexed in each pass of a <a href="@cron">cron maintenance task</a>. If necessary, reduce the number of items to prevent timeouts and memory errors while indexing.', array('@cron' => url('admin/logs/status')))
   );
 
   $options = drupal_map_assoc(array(5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100));
@@ -81,13 +81,6 @@ function apachesolr_settings() {
     '#title' => t('Extra help messages for administrators'),
     '#default_value' => variable_get('apachesolr_set_nodeapi_messages', 1),
     '#options' => array(0 => t('Disabled'), 1 => t('Enabled')),
-  );
-  $form['advanced']['apachesolr_read_only'] = array(
-    '#type' => 'radios',
-    '#title' => t('Index write access'),
-    '#default_value' => variable_get('apachesolr_read_only', 0),
-    '#options' => array(0 => t('Read and write (normal)'), 1 => t('Read only')),
-    '#description' => t('<em>Read only</em> stops this site from sending updates to your search index. Useful for development sites.'),
   );
   return system_settings_form($form);
 }
@@ -310,11 +303,11 @@ function apachesolr_delete_index_form() {
   );
   $form['toggle_index'] = array(
     '#type' => 'submit',
-    '#value' => variable_get('apachesolr_disallow_indexing', FALSE) ? t('Start indexer') : t('Pause indexer'),
+    '#value' => variable_get('apachesolr_read_only', FALSE) ? t('Start indexer') : t('Pause indexer'),
   );
   $form['toggle_index-desc'] = array(
     '#type' => 'item',
-    '#description' => variable_get('apachesolr_disallow_indexing', FALSE) ? t('The indexer is paused. You can restart it by clicking on this button. The indexing process will start on next cron run.') : t('The indexer is started and it runs on cron. You can pause the indexer by clicking on this button.'),
+    '#description' => variable_get('apachesolr_read_only', FALSE) ? t('The indexer is paused. You can restart it by clicking on this button. The indexing process will start on next cron run.') : t('The indexer is started and it runs on cron. You can pause the indexer by clicking on this button.'),
   );
   $form['reindex'] = array(
     '#type' => 'submit',
@@ -378,7 +371,7 @@ function apachesolr_delete_index_form_submit($form_id, $form_values) {
     return 'admin/settings/apachesolr/index/clear/confirm';
   }
   elseif (in_array($form_values['op'], array(t('Start indexer'), t('Pause indexer')))) {
-    variable_set('apachesolr_disallow_indexing', !($form_values['op'] == t('Start indexer')));
+    variable_set('apachesolr_read_only', !($form_values['op'] == t('Start indexer')));
   }
 }
 
@@ -401,7 +394,7 @@ function apachesolr_delete_index_confirm_submit($form_id, $form_values) {
     apachesolr_delete_index();
     // This form can't be seen by anyone without 'administer search'
     // permission, so no need to check perms before displaying a run-cron link.
-    drupal_set_message(t('The Apache Solr content index has been erased. You must now !run_cron until your entire site has been re-indexed.', array('!run_cron' => l(t('run cron'), 'admin/reports/status/run-cron', array(), 'destination=admin/settings/apachesolr/index'))));
+    drupal_set_message(t('The Apache Solr content index has been erased. You must now !run_cron until your entire site has been re-indexed.', array('!run_cron' => l(t('run cron'), 'admin/logs/status/run-cron', array(), 'destination=admin/settings/apachesolr/index'))));
 
   }
   catch (Exception $e) {
