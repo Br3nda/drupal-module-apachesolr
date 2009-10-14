@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.118 2009/10/13 20:43:17 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.119 2009/10/14 13:28:39 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -10,7 +10,6 @@ Apache Solr integration 6.x-1.0-RC3, xxxx-xx-xx
 ------------------------------
 #580404 by pwolanin, allow per-node-type comment exclusion.
 #597174 by Frando, add hook_apachesolr_prepare_query() to enable custom sorts.
-#551582 by claudiu.cristea Add callbacks to lookup values based on key for CCK fields.
 #590982 by swentel fix warnings on indexing.
 #584902 by cpliakas, robertDouglass, make $extra a keyed array and prevent PHP warnings.
 #554136 by emackn, Jaza make results-per-page alterable.
