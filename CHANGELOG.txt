@@ -1,13 +1,14 @@
-// $Id: CHANGELOG.txt,v 1.1.2.119 2009/10/14 13:28:39 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.120 2009/10/14 19:08:19 pwolanin Exp $
 
-Apache Solr integration x.x-x.x, xxxx-xx-xx
+Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
-Apache Solr integration 6.x-1.x, xxxx-xx-xx
+Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
 
-Apache Solr integration 6.x-1.0-RC3, xxxx-xx-xx
+Apache Solr Search Integration 6.x-1.0-RC3, xxxx-xx-xx
 ------------------------------
+#561082 by pwolanin, consolidate Solr delete queries on cron.
 #580404 by pwolanin, allow per-node-type comment exclusion.
 #597174 by Frando, add hook_apachesolr_prepare_query() to enable custom sorts.
 #590982 by swentel fix warnings on indexing.

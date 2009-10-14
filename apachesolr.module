@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.166 2009/10/14 13:28:40 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.167 2009/10/14 19:08:19 pwolanin Exp $
 
 /**
  * @file
@@ -341,7 +341,7 @@ function apachesolr_index_nodes($rows, $namespace = '', $callback = 'apachesolr_
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
     return FALSE;
   }
-  include_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.index.inc') ;
+  include_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.index.inc');
   $documents = array();
   $old_position = apachesolr_get_last_index($namespace);
   $position = $old_position;
@@ -396,6 +396,10 @@ function apachesolr_date_iso($date_timestamp) {
 }
 
 function apachesolr_delete_node_from_index($node) {
+  static $failed = FALSE;
+  if ($failed) {
+    return FALSE;
+  }
   try {
     $solr = apachesolr_get_solr();
     $solr->deleteById(apachesolr_document_id($node->nid));
@@ -404,6 +408,8 @@ function apachesolr_delete_node_from_index($node) {
   }
   catch (Exception $e) {
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    // Don't keep trying queries if they are failing.
+    $failed = TRUE;
     return FALSE;
   }
 }
@@ -427,21 +433,11 @@ function apachesolr_index_updated($updated = NULL) {
  * Implementation of hook_cron().
  */
 function apachesolr_cron() {
+  // Mass update and delete functions are in the include file.
+  include_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.index.inc');
+  apachesolr_cron_check_node_table();
   try {
     $solr = apachesolr_get_solr();
-
-    // Check for unpublished content that wasn't deleted from the index.
-    $result = db_query("SELECT n.nid, n.status FROM {apachesolr_search_node} asn INNER JOIN {node} n ON n.nid = asn.nid WHERE asn.status != n.status");
-    while ($node = db_fetch_object($result)) {
-      _apachesolr_nodeapi_update($node, FALSE);
-    }
-
-    // Check for deleted content that wasn't deleted from the index.
-    $result = db_query("SELECT asn.nid FROM {apachesolr_search_node} asn LEFT JOIN {node} n ON n.nid = asn.nid WHERE n.nid IS NULL");
-    while ($node = db_fetch_object($result)) {
-      _apachesolr_nodeapi_delete($node, FALSE);
-    }
-
     // Optimize the index (by default once a day).
     $optimize_interval = variable_get('apachesolr_optimize_interval', 60 * 60 * 24);
     $last = variable_get('apachesolr_last_optimize', 0);
@@ -491,7 +487,7 @@ function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
 }
 
 /**
- * Helper function for hook_nodeapi() and hook_cron().
+ * Helper function for hook_nodeapi().
  */
 function _apachesolr_nodeapi_delete($node, $set_message = TRUE) {
   if (apachesolr_delete_node_from_index($node)) {
@@ -504,7 +500,7 @@ function _apachesolr_nodeapi_delete($node, $set_message = TRUE) {
 }
 
 /**
- * Helper function for hook_nodeapi() and hook_cron().
+ * Helper function for hook_nodeapi().
  */
 function _apachesolr_nodeapi_update($node, $set_message = TRUE) {
   // Check if the node has gone from published to unpublished.
