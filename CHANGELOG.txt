@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.120 2009/10/14 19:08:19 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.121 2009/10/15 03:47:12 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -6,17 +6,17 @@ Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
 
-Apache Solr Search Integration 6.x-1.0-RC3, xxxx-xx-xx
+Apache Solr Search Integration 6.x-1.0-RC3, 2009-10-15
 ------------------------------
 #561082 by pwolanin, consolidate Solr delete queries on cron.
 #580404 by pwolanin, allow per-node-type comment exclusion.
 #597174 by Frando, add hook_apachesolr_prepare_query() to enable custom sorts.
-#590982 by swentel fix warnings on indexing.
+#590982 by swentel, fix warnings on indexing.
 #584902 by cpliakas, robertDouglass, make $extra a keyed array and prevent PHP warnings.
 #554136 by emackn, Jaza make results-per-page alterable.
 #557382 by Josh Waihi, Scott Reynolds mlt blocks were double encoding titles.
 #543226 by drunken monkey validate port on settings form.
-#502976 by Scott Reynolds followup to Other GET parameters ignored by Apache Solr Facet Blocks
+#502976 by Scott Reynolds, followup to Other GET parameters ignored by Apache Solr Facet Blocks.
 
 Apache Solr integration 6.x-1.0-RC2, 2009-07-29
 ------------------------------
