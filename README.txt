@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.24.2.3 2009/10/19 14:32:52 robertDouglass Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.24.2.4 2009/10/19 14:37:33 robertDouglass Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -127,6 +127,9 @@ behavior:
 
  - apachesolr_tags_to_index: the list of HTML tags that the module will index
    (see apachesolr_add_tags_to_document()).
+
+ - apachesolr_exclude_comments_types: an array of node types.  Any type listed
+   will have any attached comments excluded from the index.
 
  - apachesolr_ping_timeout: the timeout (in seconds) after which the module will
    consider the Apache Solr server unavailable.

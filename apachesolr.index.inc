@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.2.7 2009/09/30 08:15:21 robertDouglass Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.2.8 2009/10/19 14:37:33 robertDouglass Exp $
 
 /**
  * @file
@@ -56,7 +56,12 @@ function apachesolr_node_to_document($node, $namespace) {
     // because we want a keyed array to come back. Only in this way can we decide
     // whether to index comments or not.
     $extra = array();
+    $exclude_comments = in_array($node->type, variable_get('apachesolr_exclude_comments_types', array()), TRUE);
     foreach (module_implements('nodeapi') as $module) {
+      if ($exclude_comments && $module == 'comment') {
+        // Don't add comments.
+        continue;
+      }
       if ($output = module_invoke($module, 'nodeapi', $node, 'update index', FALSE, FALSE)) {
         $extra[$module] = $output;
       }
