@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.42 2009/10/19 14:37:33 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.43 2009/10/19 14:46:52 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#561082 by pwolanin, consolidate Solr delete queries on cron.
 #580404 by pwolanin per content type comment exclusion.
 #597174 by Frando, add hook_apachesolr_prepare_query() to enable custom sorts.
 #591278 by robertDouglass fix bug that was preventing hook_apachesolr_modify_query from working correctly.

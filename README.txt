@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.24.2.4 2009/10/19 14:37:33 robertDouglass Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.24.2.5 2009/10/19 14:46:52 robertDouglass Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -148,6 +148,10 @@ behavior:
  
  - apachesolr_index_comments_with_node: TRUE | FALSE. Whether to index comments
    along with each node.
+
+ - apachesolr_cron_mass_limit: update or delete at most this many documents in
+   each Solr request, such as when making {apachesolr_search_node} consistent
+   with {node}.
 
 Troubleshooting
 --------------

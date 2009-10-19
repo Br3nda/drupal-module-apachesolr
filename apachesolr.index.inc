@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.2.8 2009/10/19 14:37:33 robertDouglass Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.2.9 2009/10/19 14:46:52 robertDouglass Exp $
 
 /**
  * @file
@@ -252,3 +252,111 @@ function apachesolr_add_tags_to_document(&$document, $text) {
     }
   }
 }
+
+/**
+ * Additional index utility functions
+ */
+ 
+/**
+ * hook_cron() helper to try to make {apachesolr_search_node} consistent with {node}.
+ */
+function apachesolr_cron_check_node_table() {
+  // Check for unpublished content that wasn't deleted from the index.
+  $result = db_query("SELECT n.nid, n.status FROM {apachesolr_search_node} asn INNER JOIN {node} n ON n.nid = asn.nid WHERE asn.status != n.status");
+  $node_lists = array();
+  $nodes = array();
+  // Update or delete at most this many in each Solr query.
+  $limit = variable_get('apachesolr_cron_mass_limit', 500);
+  while ($node = db_fetch_object($result)) {
+    $nodes[$node->nid] = $node;
+    if (count($nodes) == $limit) {
+      $node_lists[] = $nodes;
+      $nodes = array();
+    }
+  }
+  // Any remaning ones if the limit is not reached.
+  if (count($nodes)) {
+    $node_lists[] = $nodes;
+  }
+  foreach ($node_lists as $nodes) {
+    watchdog('Apache Solr', 'On cron running apachesolr_nodeapi_mass_update() on nids @nids', array('@nids' => implode(',', array_keys($nodes))), WATCHDOG_WARNING);
+    if (!apachesolr_nodeapi_mass_update($nodes)) {
+      // Solr query failed - so stop trying.
+      break;
+    }
+  }
+  // Check for deleted content that wasn't deleted from the index.
+  $result = db_query("SELECT asn.nid FROM {apachesolr_search_node} asn LEFT JOIN {node} n ON n.nid = asn.nid WHERE n.nid IS NULL");
+  $node_lists = array();
+  $nodes = array();
+  while ($node = db_fetch_object($result)) {
+    $nodes[$node->nid] = $node;
+    if (count($nodes) == $limit) {
+      $node_lists[] = $nodes;
+      $nodes = array();
+    }
+  }
+  // Any remaning ones if the limit is not reached.
+  if (count($nodes)) {
+    $node_lists[] = $nodes;
+  }
+  foreach ($node_lists as $nodes) {
+    watchdog('Apache Solr', 'On cron running apachesolr_nodeapi_mass_delete() on nids @nids', array('@nids' => implode(',', array_keys($nodes))), WATCHDOG_WARNING);
+    if (!apachesolr_nodeapi_mass_delete($nodes)) {
+      // Solr query failed - so stop trying.
+      break;
+    }
+  }
+}
+ 
+function apachesolr_nodeapi_mass_update($nodes) {
+  if (empty($nodes)) {
+    return TRUE;
+  }
+  $ids = array();
+  foreach ($nodes as $node) {
+    if (!$node->status) {
+      $ids[] = apachesolr_document_id($node->nid);
+    }
+  }
+  $time = time();
+  try {
+    $solr = apachesolr_get_solr();
+    $solr->deleteMultipleById($ids);
+    apachesolr_index_updated($time);
+    foreach ($nodes as $node) {
+      // There was no exception, so update the table.
+      db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", $time, $node->status, $node->nid);
+    }
+    return TRUE;
+  }
+  catch (Exception $e) {
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    return FALSE;
+  }
+}
+ 
+function apachesolr_nodeapi_mass_delete($nodes) {
+  if (empty($nodes)) {
+    return TRUE;
+  }
+  $ids = array();
+  $nids = array();
+  foreach ($nodes as $node) {
+    $ids[] = apachesolr_document_id($node->nid);
+    $nids[] = $node->nid;
+  }
+  try {
+    $solr = apachesolr_get_solr();
+    $solr->deleteMultipleById($ids);
+    apachesolr_index_updated($time);
+    // There was no exception, so update the table.
+    db_query("DELETE FROM {apachesolr_search_node} WHERE nid  IN (" . db_placeholders($nids) . ")", $nids);
+    return TRUE;
+  }
+  catch (Exception $e) {
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    return FALSE;
+  }
+}
+
