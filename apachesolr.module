@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.168 2009/10/22 13:32:44 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.169 2009/10/22 14:05:02 pwolanin Exp $
 
 /**
  * @file
@@ -347,10 +347,17 @@ function apachesolr_index_nodes($rows, $namespace = '', $callback = 'apachesolr_
   $position = $old_position;
 
   foreach ($rows as $row) {
-    // Variables to track the last item changed.
-    $position['last_change'] = $row->changed;
-    $position['last_nid'] = $row->nid;
-    $callback($documents, $row->nid, $namespace);
+    try {
+      $callback($documents, $row->nid, $namespace);
+      // Variables to track the last item changed.
+      $position['last_change'] = $row->changed;
+      $position['last_nid'] = $row->nid;
+    }
+    catch (Exception $e) {
+      // Something bad happened - don't continue.
+      watchdog('Apache Solr', 'Error constructing documents to index: <br /> !message', array('!message' => nl2br(strip_tags($e->getMessage()))), WATCHDOG_ERROR);
+      break;
+    }
   }
 
   if (count($documents)) {
