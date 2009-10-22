@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.115 2009/10/14 13:28:40 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.116 2009/10/22 13:32:44 pwolanin Exp $
 
 /**
  * @file
@@ -285,6 +285,10 @@ function apachesolr_search_add_facet_params(&$params, $query) {
   $facet_missing = variable_get('apachesolr_facet_missing', array());
 
   foreach (apachesolr_get_enabled_facets() as $module => $module_facets) {
+    if (!module_exists($module)) {
+      // When modules are disabled their facet settings may remain.
+      continue;
+    }
     foreach($module_facets as $delta => $facet_field) {
       // TODO: generalize handling of date and range facets.
       if ($module == 'apachesolr_search' && ($facet_field == 'created' || $facet_field == 'changed')) {

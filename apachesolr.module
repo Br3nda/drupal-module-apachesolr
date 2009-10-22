@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.167 2009/10/14 19:08:19 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.168 2009/10/22 13:32:44 pwolanin Exp $
 
 /**
  * @file
@@ -540,7 +540,7 @@ function apachesolr_set_stats_message($text, $type = 'status', $repeat = FALSE) 
  * @param $module
  *   The module (optional).
  * @return
- *   An array consisting info for facets that have been enabled
+ *   An array consisting of info for facets that have been enabled
  *   for the specified module, or all enabled facets.
  */
 function apachesolr_get_enabled_facets($module = NULL) {
@@ -548,6 +548,42 @@ function apachesolr_get_enabled_facets($module = NULL) {
   if (isset($module)) {
     return isset($enabled[$module]) ? $enabled[$module] : array();
   }
+  return $enabled;
+}
+
+/**
+ * Save the enabled facets for all modules.
+ *
+ * @param $enabled
+ *   An array consisting of info for all enabled facets.
+ * @return
+ *   The array consisting of info for all enabled facets.
+ */
+function apachesolr_save_enabled_facets($enabled) {
+  variable_set('apachesolr_enabled_facets', $enabled);
+  return $enabled;
+}
+
+/**
+ * Save the enabled facets for one module.
+ *
+ * @param $module
+ *   The module name.
+ * @param $facets
+ *   Associative array of $delta => $facet_field pairs.  If omitted, all facets
+ *   for $module are disabled.
+ * @return
+ *   An array consisting of info for all enabled facets.
+ */
+function apachesolr_save_module_facets($module, $facets = array()) {
+  $enabled = variable_get('apachesolr_enabled_facets', array());
+  if (!empty($facets) && is_array($facets)) {
+    $enabled[$module] = $facets;
+  }
+  else {
+    unset($enabled[$module]);
+  }
+  variable_set('apachesolr_enabled_facets', $enabled);
   return $enabled;
 }
 
