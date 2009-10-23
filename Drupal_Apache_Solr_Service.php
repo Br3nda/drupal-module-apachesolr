@@ -288,4 +288,23 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     }
     return array($result->data, $headers);
   }
+
+  /**
+   * Create and post a delete document based on multiple document IDs.
+   *
+   * @param array $ids Expected to be utf-8 encoded strings
+   * @return Apache_Solr_Response
+   *
+   * @throws Exception If an error occurs during the service call
+   */
+  public function deleteMultipleById($ids) {
+    $rawPost = "<delete>\n";
+    foreach ($ids as $id) {
+      // Escape special xml characters
+      $id = htmlspecialchars($id, ENT_NOQUOTES, 'UTF-8');
+      $rawPost .= '<id>' . $id . "</id>\n";
+    }
+    $rawPost .= '</delete>';
+    return $this->delete($rawPost);
+  }
 }

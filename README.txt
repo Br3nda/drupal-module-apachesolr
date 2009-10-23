@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.25.2.5 2009/10/23 10:18:16 claudiucristea Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.25.2.6 2009/10/23 11:16:30 claudiucristea Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -145,6 +145,10 @@ behavior:
    with the Apache Solr server.
 
  - apachesolr_query_class: the default query class to use.
+
+ - apachesolr_cron_mass_limit: update or delete at most this many documents in
+   each Solr request, such as when making {apachesolr_search_node} consistent
+   with {node}.
 
 Troubleshooting
 --------------

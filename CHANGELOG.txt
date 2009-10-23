@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.112.2.6 2009/10/23 10:18:16 claudiucristea Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.112.2.7 2009/10/23 11:16:30 claudiucristea Exp $
 
-Apache Solr integration x.x-x.x, xxxx-xx-xx
+Apache Solr Search integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
-Apache Solr integration 5.x-2.x, 2009-09-22
+Apache Solr Search integration 5.x-2.x, 2009-09-22
 ------------------------------
+#561082 by pwolanin, consolidate Solr delete queries on cron.
 #580404 by pwolanin, allow per-node-type comment exclusion.
 #597174 by Frando, add hook_apachesolr_prepare_query() to enable custom sorts.
 #551582 by claudiu.cristea Add callbacks to lookup values based on key for CCK fields.
@@ -12,13 +13,13 @@ Apache Solr integration 5.x-2.x, 2009-09-22
 #584902 by cpliakas, robertDouglass, make $extra a keyed array and prevent PHP warnings.
 #557152 by claudiu.cristea Backporting 6.x-1.x to 5.x-2.x
 
-Apache Solr integration 6.x-1.x, xxxx-xx-xx
+Apache Solr Search integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
 #557382 by Josh Waihi, Scott Reynolds mlt blocks were double encoding titles.
 #543226 by drunken monkey validate port on settings form.
 #502976 by Scott Reynolds followup to Other GET parameters ignored by Apache Solr Facet Blocks
 
-Apache Solr integration 6.x-1.0-RC2, 2009-07-29
+Apache Solr Search integration 6.x-1.0-RC2, 2009-07-29
 ------------------------------
 #530196 by pwolanin, fix facecount form function calls in apachesolr_og.
 #530910 by Damien Tournoud, correct offset for determining indexed fields.
@@ -32,7 +33,7 @@ Apache Solr integration 6.x-1.0-RC2, 2009-07-29
 #508548 by pwolanin, Don't implode params['fq'] if it's not set.
 #528002 by janusman, Add RSS discovery to taxonomy hijack page
 
-Apache Solr integration 6.x-1.0-RC1, 2009-07-02
+Apache Solr Search integration 6.x-1.0-RC1, 2009-07-02
 ------------------------------
 #502976 by pwolanin, Scott Reynolds, robertDouglass facet links and form submissions respect non ApacheSolr $_GET parameters. Note that this changes the interface API: get_url_querystring is now get_url_queryvalues and returns and array instead of a string.
 #507708 by pwolanin, fix sort parameters to use field aliases, validate in query object.
@@ -50,7 +51,7 @@ Apache Solr integration 6.x-1.0-RC1, 2009-07-02
 #358166 by David Lesieur, janusman, cptnCauliflower, and pwolanin, search for just facet(s).
 #489654 by JacobSingh, and pwolanin, allow users to set their index as "read only".
 
-Apache Solr integration 6.x-1.0-beta11, 2009-06-11
+Apache Solr Search integration 6.x-1.0-beta11, 2009-06-11
 ------------------------------
 #348218 by David Lesieur, janusman, and pwolanin, retain filters for next search.
 #401046 by pwolanin, revist urlencoding of query strings.
@@ -60,7 +61,7 @@ Apache Solr integration 6.x-1.0-beta11, 2009-06-11
 #464758 by pwolanin, 4th param to htmlspecialchars breaks PHP < 5.2.3.
 #466328 by pwolanin, fix classes for sort links.
 
-Apache Solr integration 6.x-1.0-beta10, 2009-05-14
+Apache Solr Search integration 6.x-1.0-beta10, 2009-05-14
 ------------------------------
 #449414 by pwolanin, aufumy, & Scott Reynolds, refactor apachesolr_search_search().
 #462836 by pwolanin, catch fatal error in _nodeaccess if no solr.
@@ -73,7 +74,7 @@ Apache Solr integration 6.x-1.0-beta10, 2009-05-14
 #448298 by JacobSingh and pwolanin, use a confirm form for index deletion.
 #454352 by Damien Tournoud, make optimize interval configurable, document variables.
 
-Apache Solr integration 6.x-1.0-beta9, 2009-04-30
+Apache Solr Search integration 6.x-1.0-beta9, 2009-04-30
 ------------------------------
 #435924 by pwolanin, only clear cache on cron after updates and if the server is available.
 #405780 by blackdog and pwolanin, skip excluded node types during counting and indexing.
@@ -87,7 +88,7 @@ Apache Solr integration 6.x-1.0-beta9, 2009-04-30
 #337737 by David Lesieur, mikejoconnor and Scott Reynolds, localize arg(1) dependence.
         Changes query get_path() to facilitate generating facets outside the search page.
 
-Apache Solr integration 6.x-1.0-beta8, 2009-04-16
+Apache Solr Search integration 6.x-1.0-beta8, 2009-04-16
 ------------------------------
 #343252 by pwolanin, fix nodeaccess for method name changes, make multi-site aware.
 #432946 by pwolanin, query class and sort cleanups.
@@ -96,7 +97,7 @@ Apache Solr integration 6.x-1.0-beta8, 2009-04-16
 #348029 by pwolanin, Handle negative filters and improve date facet block code.
 #254565 by drunken monkey and Scott Reynolds, change the query class to enable Views integration.
 
-Apache Solr integration 6.x-1.0-beta7, 2009-04-03
+Apache Solr Search integration 6.x-1.0-beta7, 2009-04-03
 ------------------------------
 #410330 by pwolanin and bhuga, return more information for error 0.
 #293989 by bjaspan and vladimir.dolgopolov, add date facets for created and changed dates. 
@@ -105,7 +106,7 @@ Apache Solr integration 6.x-1.0-beta7, 2009-04-03
 #383478 by pwolanin and JacobSingh, provide more information about autocommit lag, pending deletes.
 #339490 by aufumy, pwolanin, and JacobSingh, Organic groups Apachesolr integration, new _alter hook.
 
-Apache Solr integration 6.x-1.0-beta6, 2009-03-20
+Apache Solr Search integration 6.x-1.0-beta6, 2009-03-20
 ------------------------------
 #305370 by pwolanin, Handle failed delete requests so unpublished/deleted content doesn't stay in the index.
 #407570 by pwolanin and moshe weitzman, _alter for sort links, hide for < 2 results.
@@ -117,14 +118,14 @@ Apache Solr integration 6.x-1.0-beta6, 2009-03-20
 #400882 by mkalkbrenner, fix faceting bug due to static counter in method add_field.
 #382358 by pwolanin, use tokenizer solr.CharStreamAwareWhitespaceTokenizerFactory to fix highlighting.
 
-Apache Solr integration 6.x-1.0-beta5, 2009-02-27
+Apache Solr Search integration 6.x-1.0-beta5, 2009-02-27
 ------------------------------
 #305370 by pwolanin, don't delete from apachesolr table if Solr query fails.
 #385348 by moshe weitzman, use key in sort links array.
 #385362 by pwolanin, Shorten hash from 32 chars to 12.
 #383804 by JacobSingh, fix query building that broke nodeaccess.
 
-Apache Solr integration 6.x-1.0-beta4, 2009-02-23
+Apache Solr Search integration 6.x-1.0-beta4, 2009-02-23
 ------------------------------
 #380670 by pwolanin, only add a bq param for a node-type boost > 'Normal'.
 #379518 by pwolanin, correct mismatch in default boost between 
@@ -133,7 +134,7 @@ Apache Solr integration 6.x-1.0-beta4, 2009-02-23
 #380644 by JacobSingh, Backwards compatability for old sort fields. 
 #380538 by pwolanin, fix code to find vid for taxonomy facet blocks.
 
-Apache Solr integration 6.x-1.0-beta3, 2009-02-20
+Apache Solr Search integration 6.x-1.0-beta3, 2009-02-20
 ------------------------------
 #378222 by janusman and pwolanin, add boost settings for "sticky" and "promote".
 #378566 by pwolanin, nodeaccess not correctly marking single nodes for re-indexing.
@@ -166,7 +167,7 @@ Apache Solr integration 6.x-1.0-beta3, 2009-02-20
 #366957 Add a "configure" link to the more like this block by JacobSingh.
 #365901 Add a bias on node type (and node-type exclusion) by Damien Tournoud and pwolanin.
 
-Apache Solr integration 6.x-1.0-beta2, 2009-01-28 (changes since 6.x-1.0-alpha6 2009-Jan-08)
+Apache Solr Search integration 6.x-1.0-beta2, 2009-01-28 (changes since 6.x-1.0-alpha6 2009-Jan-08)
 ------------------------------
 #365684 Get PHP library from new svn home by pwolanin
 #365620 clear stale data on hook_enable by pwolanin
