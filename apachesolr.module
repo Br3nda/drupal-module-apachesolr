@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.31 2009/10/19 14:46:52 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.32 2009/10/26 02:12:32 pwolanin Exp $
 
 /**
  * @file
@@ -1184,6 +1184,11 @@ function apachesolr_facetcount_save($edit) {
  * }
  */
 function apachesolr_modify_query(&$query, &$params, $caller) {
+   if (empty($query)) {
+     // This should only happen if Solr is not set up - avoids fatal errors.
+     return;
+   }
+
   // Call the hooks first because otherwise any modifications to the
   // $query object don't end up in the $params.
   foreach (module_implements('apachesolr_modify_query') as $module) {

@@ -185,6 +185,56 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
   }
 
   /**
+   * Make a request to a servlet (a path) that's not a standard path.
+   *
+   * @param string $servlet
+   *   A path to be added to the base Solr path. e.g. 'extract/tika'
+   *
+   * @param array $params
+   *   Any request parameters when constructing the URL.
+   *
+   * @param string $method
+   *   'GET', 'POST', 'PUT', or 'HEAD'.
+   *
+   * @param array $request_headers
+   *   Keyed array of header names and values.  Should include 'Content-Type'
+   *   for POST or PUT.
+   *
+   * @param string $rawPost
+   *   Must be an empty string unless method is POST or PUT.
+   *
+   * @param float $timeout
+   *   Read timeout in seconds or FALSE.
+   *
+   * @return 
+   *  Apache_Solr_Response object
+   */
+  public function makeServletRequest($servlet, $params = array(), $method = 'GET', $request_headers = array(), $rawPost = '', $timeout = FALSE) {
+    if ($method == 'GET' || $method == 'HEAD') {
+      // Make sure we are not sending a request body.
+      $rawPost = '';
+    }
+    // Add default params.
+    $params += array(
+      'wt' => self::SOLR_WRITER,
+    );
+
+    $url = $this->_constructUrl($servlet, $params);
+    list ($data, $headers) = $this->_makeHttpRequest($url, $method, $request_headers, $rawPost, $timeout);
+    $response = new Apache_Solr_Response($data, $headers, $this->_createDocuments, $this->_collapseSingleValueArrays);
+    $code = (int) $response->getHttpStatus();
+    if ($code != 200) {
+      $message = $response->getHttpStatusMessage();
+      if ($code >= 400 && $code != 403 && $code != 404) {
+        // Add details, like Solr's exception message.
+        $message .= $response->getRawResponse();
+      }
+      throw new Exception('"' . $code . '" Status: ' . $message);
+    }
+    return $response;
+  }
+
+  /**
    * Put Luke meta-data from the cache into $this->luke when we instantiate.
    *
    * @see Apache_Solr_Service::__construct()
