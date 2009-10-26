@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.170 2009/10/26 02:04:12 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.171 2009/10/26 19:17:34 robertDouglass Exp $
 
 /**
  * @file
@@ -265,25 +265,38 @@ function apachesolr_clear_last_index($namespace = '') {
   else {
     variable_del('apachesolr_index_last');
   }
-}
+}       
 
 /**
  * Truncate and rebuild the apachesolr_search_node table, reset the apachesolr_index_last variable.
  * This is the most complete way to force reindexing, or to build the indexing table for the
  * first time.
+ *
+ * @param $type
+ *   A single content type to be reindexed, leaving the others unaltered.
  */
-function apachesolr_rebuild_index_table() {
-  db_query("DELETE FROM {apachesolr_search_node}");
-  // Populate table
-  db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed)
-            SELECT n.nid, n.status, GREATEST(n.created, n.changed, c.last_comment_timestamp) AS changed
-            FROM {node} n
-            LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid");
-   // Make sure no nodes end up with a timestamp that's in the future.
-   $time = time();
-   db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE changed > %d", $time, $time);
-   apachesolr_clear_last_index();
+function apachesolr_rebuild_index_table($type = NULL) {
+  if (isset($type)) {
+    db_query("DELETE FROM {apachesolr_search_node} WHERE nid IN (SELECT nid FROM {node} WHERE type = '%s')", $type);
+    // Populate table
+    db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed)
+              SELECT n.nid, n.status, %d AS changed
+              FROM {node} n WHERE n.type = '%s'", time(), $type);
+  }
+  else {
+    db_query("DELETE FROM {apachesolr_search_node}");
+    // Populate table
+    db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed)
+              SELECT n.nid, n.status, GREATEST(n.created, n.changed, c.last_comment_timestamp) AS changed
+              FROM {node} n
+              LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid");
+    // Make sure no nodes end up with a timestamp that's in the future.
+    $time = time();
+    db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE changed > %d", $time, $time);
+    apachesolr_clear_last_index();
+  }
 }
+
 
 function _apachesolr_exclude_types($namespace) {
   extract(apachesolr_get_last_index($namespace));

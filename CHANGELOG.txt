@@ -1,10 +1,12 @@
-// $Id: CHANGELOG.txt,v 1.1.2.124 2009/10/26 02:04:12 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.125 2009/10/26 19:17:34 robertDouglass Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#576040 by robertDouglass use Drush to download the SolrPhpClient: drush solr phpclient
+#570476 by robertDouglass add initial Drush support with commands drush solr delete index and drush solr reindex.
 #612024 by pwolanin, Add method to allow requests to additional Solr servelets.
 #611670 by pwolanin, Allow modules to abort the building of documents for indexing.
 #610656 by pwolanin, Don't request facets for non-enabled modules.
