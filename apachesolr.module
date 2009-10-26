@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.169 2009/10/22 14:05:02 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.170 2009/10/26 02:04:12 pwolanin Exp $
 
 /**
  * @file
@@ -1041,6 +1041,10 @@ function apachesolr_facetcount_save($edit) {
  * }
  */
 function apachesolr_modify_query(&$query, &$params, $caller) {
+  if (empty($query)) {
+    // This should only happen if Solr is not set up - avoids fatal errors.
+    return;
+  }
 
   foreach (module_implements('apachesolr_modify_query') as $module) {
     $function_name = $module . '_apachesolr_modify_query';
