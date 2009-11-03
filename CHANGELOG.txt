@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.125 2009/10/26 19:17:34 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.126 2009/11/03 12:34:12 robertDouglass Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#621922 by robertDouglass make the "Show more" js more robust.
 #576040 by robertDouglass use Drush to download the SolrPhpClient: drush solr phpclient
 #570476 by robertDouglass add initial Drush support with commands drush solr delete index and drush solr reindex.
 #612024 by pwolanin, Add method to allow requests to additional Solr servelets.
