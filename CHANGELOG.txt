@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.112.2.9 2009/10/23 12:18:03 claudiucristea Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.112.2.10 2009/11/03 12:35:59 robertDouglass Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search integration 5.x-2.x, 2009-10-23
 ------------------------------
+#621922 by robertDouglass make the "Show more" js more robust.
 #611670 by pwolanin, Allow modules to abort the building of documents for indexing.
 #610656 by pwolanin, Don't request facets for non-enabled modules.
 #561082 by pwolanin, consolidate Solr delete queries on cron.
