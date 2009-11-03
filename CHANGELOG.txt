@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.45 2009/11/03 12:32:09 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.46 2009/11/03 16:31:12 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------                                                 
+#622120 by robertDouglass make the "Show more" block selection dynamic to accommodate other modules.
 #621922 by robertDouglass make the "Show more" js more robust.
 #612024 by pwolanin, Add method to allow requests to additional Solr servelets.
 #561082 by pwolanin, consolidate Solr delete queries on cron.

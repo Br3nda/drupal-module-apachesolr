@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.32 2009/10/26 02:12:32 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.33 2009/11/03 16:31:12 robertDouglass Exp $
 
 /**
  * @file
@@ -210,7 +210,7 @@ function apachesolr_comment($edit, $op) {
     case 'delete':
     case 'publish':
     case 'unpublish':
-      // TODO: do we want to skip this if we are excluding comments 
+      // TODO: do we want to skip this if we are excluding comments
       // from the index for this node type?
       apachesolr_mark_node($edit['nid']);
       break;
@@ -1768,6 +1768,15 @@ function apachesolr_js() {
   // Only add the js stuff once.
   if (empty($settings)) {
     $settings['apachesolr_facetstyle'] = variable_get('apachesolr_facetstyle', 'checkboxes');
+    // This code looks for enabled facet blocks and injects the block #ids into
+    // Drupal.settings as jQuery selectors to add the Show more links.
+    $show_more_blocks = array();
+    foreach (apachesolr_get_enabled_facets() as $module => $blocks) {
+      foreach ($blocks as $block) {
+        $show_more_selector[] = "#block-{$module}-{$block}:has(.apachesolr-hidden-facet)";
+      }
+    }
+    $settings['apachesolr_show_more_blocks'] = implode(', ', $show_more_selector);
     drupal_add_js($settings, 'setting');
     drupal_add_js(drupal_get_path('module', 'apachesolr') . '/apachesolr.js');
   }
