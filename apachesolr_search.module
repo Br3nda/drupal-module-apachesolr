@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.25 2009/10/19 14:32:52 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.26 2009/11/04 12:31:10 robertDouglass Exp $
 
 /**
  * @file
@@ -569,6 +569,10 @@ function apachesolr_search_process_response($response, $query, $params) {
       $extra['comments'] = format_plural($doc->comment_count, '1 comment', '@count comments');
       // Allow modules to alter each document and its extra information.
       drupal_alter('apachesolr_search_result', $doc, $extra);
+      $fields = array();
+      foreach ($doc->getFieldNames() as $field_name) {
+        $fields[$field_name] = $doc->getField($field_name);
+      }
       $results[] = array(
         'link' => url($doc->path),
         'type' => apachesolr_search_get_type($doc->type),
@@ -579,6 +583,7 @@ function apachesolr_search_process_response($response, $query, $params) {
         'extra' => $extra,
         'score' => $doc->score,
         'snippet' => $snippet,
+        'fields' => $fields,
       );
     }
 
