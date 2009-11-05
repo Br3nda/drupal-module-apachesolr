@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.d6.inc,v 1.1.2.1 2009/09/22 15:30:33 claudiucristea Exp $
+// $Id: apachesolr.d6.inc,v 1.1.2.2 2009/11/05 17:17:21 claudiucristea Exp $
 
 /**
  * @file
@@ -76,11 +76,4 @@ function db_type_placeholder($type) {
   // There is no safe value to return here, so return something that
   // will cause the query to fail.
   return 'unsupported type '. $type .'for db_type_placeholder';
-}
-
-function menu_get_object($type = 'node', $position = 1, $path = NULL) {
-  $router_item = menu_get_item($path);
-  if (isset($router_item['load_functions'][$position]) && !empty($router_item['map'][$position]) && $router_item['load_functions'][$position] == $type .'_load') {
-    return $router_item['map'][$position];
-  }
 }

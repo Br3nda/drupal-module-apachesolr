@@ -1,18 +1,27 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.1.2.11.4.1 2009/09/22 15:26:16 claudiucristea Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.1.2.11.4.2 2009/11/05 17:17:21 claudiucristea Exp $
 
 /**
  * Implementation of apachesolr_update_index
  */
 function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node) {
-  static $account;
+  static $anonymous_account;
+  global $user;
 
-  if (!isset($account)) {
-    // Load the anonymous user.
-    $account = drupal_anonymous_user();
+  // We have to run as anonymous while node_access() doesn't take the $user as
+  // argument but we want to check the access as anonymous. We are using
+  // http://drupal.org/node/218104 as a trick to safe switch to anonymous.
+  if ($user->uid) {
+    if (!isset($anonymous_account)) {
+      // Load the anonymous user.
+      $anonymous_account = drupal_anonymous_user();
+    }
+    $original_user = $user;
+    session_save_session(FALSE);
+    $user = $anonymous_account;
   }
-
-  if (!node_access('view', $node, $account)) {
+  
+  if (!node_access('view', $node)) {
     // Get node access grants.
     $result = db_query('SELECT * FROM {node_access} WHERE (nid = 0 OR nid = %d) AND grant_view = 1', $node->nid);
     while ($grant = db_fetch_object($result)) {
@@ -24,6 +33,12 @@ function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node) {
     // Add the generic view grant if we are not using
     // node access or the node is viewable by anonymous users.
     $document->setMultiValue('nodeaccess_all', 0);
+  }
+
+  // Switch back the original user
+  if (isset($original_user)) {
+    $user = $original_user;
+    session_save_session(TRUE);
   }
 }
 
@@ -47,7 +62,7 @@ function _apachesolr_nodeaccess_build_subquery($account) {
   }
   else {
     // Get node access grants.
-    $grants = node_access_grants('view', $account);
+    $grants = node_access_grants('view', $account->uid);
     foreach ($grants as $realm => $gids) {
       foreach ($gids as $gid) {
         $node_access_query->add_filter('nodeaccess_' . apachesolr_site_hash() . '_' . $realm, $gid);
