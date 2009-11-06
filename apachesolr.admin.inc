@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.32.2.7 2009/10/23 11:47:03 claudiucristea Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.32.2.8 2009/11/06 09:39:34 claudiucristea Exp $
 
 /**
  * @file
@@ -406,12 +406,20 @@ function apachesolr_delete_index_confirm_submit($form_id, $form_values) {
 /**
  * Utility function to delete the index and reset all index counters.
  *
+ * @param $type
+ *   a single content type to be deleted from the index.
+ *
  * @throws Exception
  */
-function apachesolr_delete_index() {
+function apachesolr_delete_index($type = NULL) {
   // Instantiate a new Solr object.
   $solr = apachesolr_get_solr();
-  $query = '*:*';
+  if ($type) {
+    $query = 'type:' . $type;
+  }
+  else {
+    $query = '*:*';
+  }
   // Allow other modules to modify the delete query.
   // For example, use the site hash so that you only delete this site's
   // content:  $query = 'hash:' . apachesolr_site_hash()
