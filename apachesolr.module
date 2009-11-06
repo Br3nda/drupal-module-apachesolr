@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.33 2009/11/03 16:31:12 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.34 2009/11/06 10:49:19 robertDouglass Exp $
 
 /**
  * @file
@@ -1200,8 +1200,10 @@ function apachesolr_modify_query(&$query, &$params, $caller) {
   // Add array of fq parameters.
   if ($query && ($fq = $query->get_fq())) {
     foreach ($fq as $delta => $values) {
-      foreach ($values as $value) {
-        $params['fq'][$delta][] = $value;
+      if (is_array($values) || is_object($values)) {
+        foreach ($values as $value) {
+          $params['fq'][$delta][] = $value;
+        }
       }
     }
   }
