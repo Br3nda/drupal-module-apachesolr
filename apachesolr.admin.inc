@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.34 2009/10/26 19:17:34 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.35 2009/11/11 18:05:23 robertDouglass Exp $
 
 /**
  * @file
@@ -127,7 +127,7 @@ function apachesolr_index_page() {
     try {
       $stats_summary = $solr->getStatsSummary();
       $delay_msg = '<p>' . t('<em>The server has a @autocommit_time delay before updates are processed.</em>', $stats_summary) . "</p>\n";
-      $delete_msg = '<p>' . t('Numer of pending deletions: @deletes_total', $stats_summary) . "</p>\n";
+      $delete_msg = '<p>' . t('Number of pending deletions: @deletes_total', $stats_summary) . "</p>\n";
     }
     catch (Exception $e) {
       watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
