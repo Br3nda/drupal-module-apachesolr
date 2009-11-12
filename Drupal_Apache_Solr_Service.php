@@ -58,7 +58,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     if (empty($this->luke[$num_terms])) {
       $url = $this->_constructUrl(self::LUKE_SERVLET, array('numTerms' => "$num_terms", 'wt' => self::SOLR_WRITER));
       $this->luke[$num_terms] = $this->_sendRawGet($url);
-      cache_set($this->luke_cid, $this->luke);
+      cache_set($this->luke_cid, $this->luke, 'cache_apachesolr');
     }
   }
 
@@ -95,7 +95,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       else {
         $response = $this->_sendRawGet($url);
         $this->stats = simplexml_load_string($response->getRawResponse());
-        cache_set($this->stats_cid, $response->getRawResponse());
+        cache_set($this->stats_cid, $response->getRawResponse(), 'cache_apachesolr');
       }
     }
   }
@@ -158,8 +158,8 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
   }
 
   protected function _clearCache() {
-    cache_clear_all("apachesolr:luke:", 'cache', TRUE);
-    cache_clear_all("apachesolr:stats:", 'cache', TRUE);
+    cache_clear_all("apachesolr:luke:", 'cache_apachesolr', TRUE);
+    cache_clear_all("apachesolr:stats:", 'cache_apachesolr', TRUE);
     $this->luke = array();
     $this->stats = NULL;
   }
