@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.35 2009/11/11 18:05:23 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.36 2009/11/15 14:52:28 pwolanin Exp $
 
 /**
  * @file
@@ -11,9 +11,11 @@ function apachesolr_settings() {
 
   // Perform a check to ensure the server is there
   if (empty($_POST)) {
-    $requirements = apachesolr_requirements('runtime');
-    $status = $requirements['apachesolr']['severity'] == 2 ? 'error' : 'status';
-    drupal_set_message($requirements['apachesolr']['value'], $status);
+    module_load_include('install', 'apachesolr');
+    foreach (apachesolr_requirements('runtime') as $requirement) {
+      $status = $requirement['severity'] == REQUIREMENT_ERROR ? 'error' : 'status';
+      drupal_set_message($requirement['title'] . ': ' . $requirement['value'], $status);
+    }
   }
 
   $form['apachesolr_host'] = array(

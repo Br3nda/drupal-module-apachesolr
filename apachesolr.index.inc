@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.13 2009/10/14 19:08:19 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.14 2009/11/15 14:52:28 pwolanin Exp $
 
 /**
  * @file
@@ -16,25 +16,13 @@ function apachesolr_add_node_document(&$documents, $nid, $namespace) {
 }
 
 /**
- * Strip control characters that cause Jetty/Solr to fail.
- */
-function apachesolr_strip_ctl_chars($text) {
-  // See:  http://w3.org/International/questions/qa-forms-utf-8.html
-  // Printable utf-8 does not include any of these chars below x7F
-  return preg_replace('@[\x00-\x08\x0B\x0C\x0E-\x1F]@', ' ', $text);
-}
-
-/**
  * Strip html tags and also control characters that cause Jetty/Solr to fail.
  */
 function apachesolr_clean_text($text) {
   // Add spaces before stripping tags to avoid running words together.
   $text = filter_xss(str_replace(array('<', '>'), array(' <', '> '), $text), array());
   // Decode entities and then make safe any < or > characters.
-  $text = htmlspecialchars(html_entity_decode($text, ENT_NOQUOTES, 'UTF-8'), ENT_NOQUOTES, 'UTF-8');
-  // We must strip low bytes second in case there was an encoded
-  // low-byte character.
-  return apachesolr_strip_ctl_chars($text);
+  return htmlspecialchars(html_entity_decode($text, ENT_NOQUOTES, 'UTF-8'), ENT_NOQUOTES, 'UTF-8');
 }
 
 /**
@@ -79,7 +67,6 @@ function apachesolr_node_to_document($nid, $namespace) {
       }
     }
     $text .= "\n\n" . implode(' ', $extra);
-    $text = apachesolr_strip_ctl_chars($text);
 
     $document = new Apache_Solr_Document();
     $document->id = apachesolr_document_id($node->nid);
@@ -99,13 +86,13 @@ function apachesolr_node_to_document($nid, $namespace) {
     }
     $document->body = apachesolr_clean_text($text);
     $document->type  = $node->type;
-    $document->type_name = apachesolr_strip_ctl_chars(node_get_types('name', $node));
+    $document->type_name = node_get_types('name', $node);
     $document->created = apachesolr_date_iso($node->created);
     $document->changed = apachesolr_date_iso($node->changed);
     $last_change = (isset($node->last_comment_timestamp) && $node->last_comment_timestamp > $node->changed) ? $node->last_comment_timestamp : $node->changed;
     $document->last_comment_or_change = apachesolr_date_iso($last_change);
     $document->comment_count = isset($node->comment_count) ? $node->comment_count : 0;
-    $document->name = apachesolr_strip_ctl_chars($node->name);
+    $document->name = $node->name;
 
     $path = 'node/' . $node->nid;
     $document->url = url($path, array('absolute' => TRUE));
@@ -118,7 +105,7 @@ function apachesolr_node_to_document($nid, $namespace) {
       $language = empty($node->language) ? '' : $node->language;
       $output = drupal_get_path_alias($path, $language);
       if ($output && $output != $path) {
-        $document->path_alias = apachesolr_strip_ctl_chars($output);
+        $document->path_alias = $output;
       }
     }
 
@@ -314,7 +301,7 @@ function apachesolr_nodeapi_mass_update($nodes) {
   $time = time();
   try {
     $solr = apachesolr_get_solr();
-    $solr->deleteMultipleById($ids);
+    $solr->deleteByMultipleIds($ids);
     apachesolr_index_updated($time);
     foreach ($nodes as $node) {
       // There was no exception, so update the table.
@@ -340,7 +327,7 @@ function apachesolr_nodeapi_mass_delete($nodes) {
   }
   try {
     $solr = apachesolr_get_solr();
-    $solr->deleteMultipleById($ids);
+    $solr->deleteByMultipleIds($ids);
     apachesolr_index_updated($time);
     // There was no exception, so update the table.
     db_query("DELETE FROM {apachesolr_search_node} WHERE nid  IN (" . db_placeholders($nids) . ")", $nids);
