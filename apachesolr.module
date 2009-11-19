@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.34 2009/11/06 10:49:19 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.35 2009/11/19 18:05:44 robertDouglass Exp $
 
 /**
  * @file
@@ -1773,9 +1773,15 @@ function apachesolr_js() {
     // This code looks for enabled facet blocks and injects the block #ids into
     // Drupal.settings as jQuery selectors to add the Show more links.
     $show_more_blocks = array();
+    $facet_map = array();
+    foreach (apachesolr_get_facet_definitions() as $module => $definitions) {
+      foreach ($definitions as $facet => $facet_definition) {
+        $facet_map[$facet_definition['facet_field']] = $facet;
+      }
+    }
     foreach (apachesolr_get_enabled_facets() as $module => $blocks) {
       foreach ($blocks as $block) {
-        $show_more_selector[] = "#block-{$module}-{$block}:has(.apachesolr-hidden-facet)";
+        $show_more_selector[] = "#block-{$module}-{$facet_map[$block]}:has(.apachesolr-hidden-facet)";
       }
     }
     $settings['apachesolr_show_more_blocks'] = implode(', ', $show_more_selector);
