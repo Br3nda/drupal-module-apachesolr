@@ -28,14 +28,26 @@ function apachesolr_commentsearch_node_to_comments($node, $namespace) {
     $text = apachesolr_strip_ctl_chars($text);
 
     $document = new Apache_Solr_Document();
+    // Comments have their status integers backwards compared to nodes.
+    // Here we use the logic that the status of the comment is dependent both on the node and
+    // the comment. If the node is published, we look to see if the comment is published, too.
+    // If either the node or the comment are not published, the status of the comment
+    // will get published as 0.
+    $document->status = $node->status ? $document->status == COMMENT_PUBLISHED ? 1 : 0 : 0;
+    if ($document->status == 0) {
+      // don't index unpublished comments.
+      continue;
+    }
     $document->id = apachesolr_document_id($comment->cid, 'comment');
     $document->is_cid = $comment->cid;
     $document->site = url(NULL, array('absolute' => TRUE));
     $document->hash = apachesolr_site_hash();
+    
+    // Since the nid of this comment is set, when the node gets deleted,
+    // the comment will also get removed from the index. See apachesolr_delete_node_from_index()
     $document->nid = $comment->nid;
     $document->uid = $comment->uid;
     $document->title = apachesolr_clean_text($comment->subject);
-    $document->status = $node->status;
     if (!empty($node->language)) {
       $document->language = $node->language;
     }
@@ -82,6 +94,20 @@ function apachesolr_commentsearch_apachesolr_search_result_alter(&$doc, &$extra)
 
 function apachesolr_commentsearch_apachesolr_theme_breadcrumb_alter(&$breadcrumb_name) {
   $breadcrumb_name = 'apachesolr_commentsearch_breadcrumb_type';
+}
+
+function apachesolr_commentsearch_comment(&$a1, $op) {
+  switch ($op) {
+    case 'delete':
+    case 'unpublish':    
+    case 'publish':
+    case 'update':
+      // Make sure this comment gets reindexed any time it changes.
+      $comment = (array) $a1;
+      $node = node_load($comment['nid']);
+      apachesolr_nodeapi_update($node);
+      break;
+  }
 }
 
 /**
