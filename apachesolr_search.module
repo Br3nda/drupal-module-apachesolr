@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.29 2009/11/20 17:13:51 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.30 2009/11/20 18:50:50 robertDouglass Exp $
 
 /**
  * @file
@@ -754,7 +754,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
               unset($active);
               $term = taxonomy_get_term($tid);
               $sortpre = '';
-              if (isset($facet_query_sorts['apachesolr_search'][$delta]) && ($facet_query_sorts['apachesolr_search'][$delta] == 'index')) {
+              if (isset($facet_query_sorts['apachesolr_search'][$delta]) && ($facet_query_sorts['apachesolr_search'][$delta] != 'count')) {
                 $sortpre = $term->name;
               }
               $new_query = clone $query;
@@ -781,7 +781,13 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
           $vid = substr($delta, 7);
           $vocab = taxonomy_vocabulary_load($vid);
           if (is_numeric($vid) && is_array($terms) && isset($terms[$vid]) && is_array($terms[$vid])) {
-            ksort($terms[$vid]);
+            if (!isset($facet_query_sorts['apachesolr_search'][$delta]) || ($facet_query_sorts['apachesolr_search'][$delta] == 'index asc')) {
+              ksort($terms[$vid]);
+            }
+            else if ($facet_query_sorts['apachesolr_search'][$delta] == 'index desc') {
+              krsort($terms[$vid]);
+            }
+            
             $limit = isset($initial_limits['apachesolr_search'][$delta]) ? $initial_limits['apachesolr_search'][$delta] : $limit_default;
             return array(
               'subject' => t('Filter by @name', array('@name' => $vocab->name)),
