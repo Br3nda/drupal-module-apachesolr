@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.117 2009/11/06 10:58:54 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.118 2009/11/20 10:25:43 robertDouglass Exp $
 
 /**
  * @file
@@ -906,7 +906,7 @@ function apachesolr_search_form_apachesolr_settings_alter(&$form, $form_state) {
 function apachesolr_search_make_default_submit($form, &$form_state) {
   // We use variable_get() instead of the form values so as to also handle reset to defaults.
   if ($form_state['values']['apachesolr_search_default_previous'] != variable_get('apachesolr_search_make_default', 0) ||
-      $form_state['values']['apachesolr_search_taxonomy_previous'] != variable_get('apachesolr_search_make_default', 0)) {
+      $form_state['values']['apachesolr_search_taxonomy_previous'] != variable_get('apachesolr_search_taxonomy_links', 0)) {
     // Take account of path changes
     menu_rebuild();
   }
