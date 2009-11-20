@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.drush.inc,v 1.1.4.2 2009/10/26 19:17:34 robertDouglass Exp $
+// $Id: apachesolr.drush.inc,v 1.1.4.3 2009/11/20 11:44:34 robertDouglass Exp $
 
 /**
  * @file
@@ -131,7 +131,7 @@ function apachesolr_drush_solr_phpclient() {
     $path = drupal_get_path('module', 'apachesolr');
   }
   drush_op('chdir', $path);
-  if (drush_shell_exec('svn export -r6 http://solr-php-client.googlecode.com/svn/trunk/ SolrPhpClient')) {
+  if (drush_shell_exec('svn checkout -r22 http://solr-php-client.googlecode.com/svn/trunk/ SolrPhpClient')) {
     drush_log(dt('SolrPhpClient has been downloaded to @path', array('@path' => $path)), 'success');
   }
   else {
