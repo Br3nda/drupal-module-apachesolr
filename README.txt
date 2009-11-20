@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.24.2.5 2009/10/19 14:46:52 robertDouglass Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.24.2.6 2009/11/20 11:37:36 robertDouglass Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -32,18 +32,24 @@ Get the PHP library from the external project. The project is
 found at:  http://code.google.com/p/solr-php-client/
 From the apachesolr module directory, run this command:
 
-svn checkout -r6 http://solr-php-client.googlecode.com/svn/trunk/ SolrPhpClient
+svn checkout -r22 http://solr-php-client.googlecode.com/svn/trunk/ SolrPhpClient
 
-Note that revision 6 is the currently tested and suggested revision. 
+Alternately you may download and extract the library from
+http://code.google.com/p/solr-php-client/downloads/list
+
+Make sure to select a r22 archive, either of these two:
+http://solr-php-client.googlecode.com/files/SolrPhpClient.r22.2009-11-09.zip
+http://solr-php-client.googlecode.com/files/SolrPhpClient.r22.2009-11-09.tgz
+
+Note that revision 22 is the currently tested and required revision. 
 Make sure that the final directory is named SolrPhpClient under the apachesolr
-module directory.  Note: the 2009-03-11 version of the library from the 
-googlecode page is r5 and will not work with beta6+.
+module directory.  
 
 If you are maintaing your code base in subversion, you may choose instead to 
 use svn export or svn externals. For an export (writing a copy to your local
 directory without .svn files to track changes) use:
 
-svn export -r6 http://solr-php-client.googlecode.com/svn/trunk/ SolrPhpClient
+svn export -r22 http://solr-php-client.googlecode.com/svn/trunk/ SolrPhpClient
 
 Instead of checking out, externals can be used too. Externals can be seen as 
 (remote) symlinks in svn. This requires your own project in your own svn ]
@@ -53,7 +59,7 @@ svn propedit svn:externals .
 
 Your editor will open. Add a line
 
-SolrPhpClient -r6 http://solr-php-client.googlecode.com/svn/trunk/
+SolrPhpClient -r22 http://solr-php-client.googlecode.com/svn/trunk/
 
 On exports and checkouts, svn will grab the externals, but it will keep the 
 references on the remote server.
