@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.38 2009/11/20 14:27:08 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.39 2009/11/20 17:13:51 robertDouglass Exp $
 
 /**
  * @file
@@ -818,6 +818,7 @@ function apachesolr_block_admin_configure_submit($form, &$form_state) {
  */
 function apachesolr_facet_block($response, $query, $module, $delta, $facet_field, $filter_by, $facet_callback = FALSE) {
   if (!empty($response->facet_counts->facet_fields->$facet_field)) {
+    $facet_query_sorts = variable_get('apachesolr_facet_query_sorts', array());
     $contains_active = FALSE;
     $items = array();
     foreach ($response->facet_counts->facet_fields->$facet_field as $facet => $count) {
@@ -840,6 +841,10 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
 
       if ($facet_callback && function_exists($facet_callback)) {
         $facet_text = $facet_callback($facet, $options);
+      }
+      // If this block is to be alphabetically sorted, change $sortpre.
+      if (isset($facet_query_sorts[$module][$delta]) && ($facet_query_sorts[$module][$delta] == 'index')) {
+        $sortpre = $facet_text;
       }
       $unclick_link = '';
       $active = FALSE;
@@ -1101,6 +1106,7 @@ function apachesolr_date_gap_drilldown($gap) {
 function apachesolr_facetcount_form($module, $delta) {
   $initial = variable_get('apachesolr_facet_query_initial_limits', array());
   $limits = variable_get('apachesolr_facet_query_limits', array());
+  $sorts = variable_get('apachesolr_facet_query_sorts', array());
   $facet_missing = variable_get('apachesolr_facet_missing', array());
 
   $limit = drupal_map_assoc(array(50, 40, 30, 20, 15, 10, 5, 3));
@@ -1120,6 +1126,18 @@ function apachesolr_facetcount_form($module, $delta) {
     '#description' => t('The maximum number of filter links to show in this block.'),
     '#default_value' => isset($limits[$module][$delta]) ? $limits[$module][$delta] : variable_get('apachesolr_facet_query_limit_default', 20),
   );
+  
+  // TODO: Generalize how we know what type a facet block is by putting field
+  // type into the facet definition. 'created' and 'changed' are date blocks.
+  if ($delta != 'created' && $delta != 'changed') {
+    $form['apachesolr_facet_query_sort'] = array(
+      '#type' => 'radios',
+      '#title' => t('Sort order of facet links'),
+      '#options' => array('count' => t('Count'), 'index' => t('Alphanumeric')),
+      '#description' => t('The sort order of facet links in this block. %Count, which is the default, will show facets with the most results first. %Alphanumeric will sort alphabetically, ascending.', array('%Count' => t('Count'), '%Alphanumeric' => t('Alphanumeric'))),
+      '#default_value' => isset($sorts[$module][$delta]) ? $sorts[$module][$delta] : 'count',
+    );
+  }
   $form['apachesolr_facet_missing'] = array(
     '#type' => 'radios',
     '#title' => t('Include a facet for missing'),
@@ -1141,6 +1159,9 @@ function apachesolr_facetcount_save($edit) {
   $limits = variable_get('apachesolr_facet_query_limits', array());
   $limits[$module][$delta] = (int)$edit['apachesolr_facet_query_limit'];
   variable_set('apachesolr_facet_query_limits', $limits);
+  $sorts = variable_get('apachesolr_facet_query_sorts', array());
+  $sorts[$module][$delta] = $edit['apachesolr_facet_query_sort'];
+  variable_set('apachesolr_facet_query_sorts', $sorts);
   $initial = variable_get('apachesolr_facet_query_initial_limits', array());
   $initial[$module][$delta] = (int)$edit['apachesolr_facet_query_initial_limit'];
   variable_set('apachesolr_facet_query_initial_limits', $initial);

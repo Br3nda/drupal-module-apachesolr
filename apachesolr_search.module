@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.28 2009/11/20 10:24:30 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.29 2009/11/20 17:13:51 robertDouglass Exp $
 
 /**
  * @file
@@ -422,6 +422,7 @@ function apachesolr_search_add_facet_params(&$params, $query) {
       // which won't be used.
       if (apachesolr_block_visibility($query, $module, $delta)) {
         // TODO: generalize handling of date and range facets.
+        // TODO: put field type in the facet definitions.
         if ($module == 'apachesolr_search' && ($facet_field == 'created' || $facet_field == 'changed')) {
           list($start, $end, $gap) = apachesolr_search_date_range($query, $facet_field);
           if ($gap) {
@@ -738,11 +739,11 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
 
         // Handle taxonomy vocabulary facets
         if ((strpos($delta, 'im_vid_') === 0) && module_exists('taxonomy')) {
+          $facet_query_sorts = variable_get('apachesolr_facet_query_sorts', array());
 
           if (is_object($response->facet_counts->facet_fields->$delta)) {
             $contains_active = FALSE;
             $terms = array();
-
             foreach ($response->facet_counts->facet_fields->$delta as $tid => $count) {
               $options = array('delta' => $delta);
               if ($tid == '_empty_') {
@@ -752,6 +753,10 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
               $unclick_link = '';
               unset($active);
               $term = taxonomy_get_term($tid);
+              $sortpre = '';
+              if (isset($facet_query_sorts['apachesolr_search'][$delta]) && ($facet_query_sorts['apachesolr_search'][$delta] == 'index')) {
+                $sortpre = $term->name;
+              }
               $new_query = clone $query;
               if ($active = $query->has_filter('tid', $tid)) {
                 $contains_active = TRUE;
@@ -765,9 +770,11 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
                 $link = theme('apachesolr_facet_link', $term->name, $new_query->get_path(), $options, $count, $active, $response->response->numFound);
               }
               $countsort = $count == 0 ? '' : 1 / $count;
+              $countsort += .000001;
+              $countsort = number_format($countsort, 6);
               // if numdocs == 1 and !active, don't add.
               if ($response->response->numFound > 1 || $active) {
-                $terms[$term->vid][$active ? $countsort . $term->name : 1 + $countsort . $term->name] = $link;
+                $terms[$term->vid][$active ? $sortpre . $countsort . $term->name : $sortpre . (1 + $countsort) . $term->name] = $link;
               }
             }
           }
