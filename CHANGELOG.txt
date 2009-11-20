@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.51 2009/11/20 11:37:36 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.52 2009/11/20 14:27:08 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------                                                 
+#611670 by pwolanin, allow modules to abort the building of documents for indexing.
 #628080 by pwolanin, update to use Solr PHP library r22 and check for it in hook_requirements.
 #638236 by mkalkbrenner and robertDouglass, undocumented dependency on taxonomy module.
 #562458 by janusman, fix typo preventing menu_rebuild regarding taxonomy hijack.

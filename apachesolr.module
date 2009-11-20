@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.37 2009/11/20 11:37:36 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.38 2009/11/20 14:27:08 robertDouglass Exp $
 
 /**
  * @file
@@ -349,15 +349,22 @@ function apachesolr_index_nodes($rows, $namespace) {
   $callbacks = array_filter($callbacks, 'function_exists');
 
   foreach ($rows as $row) {
-    // Variables to track the last item changed.
-    $position['last_change'] = $row->changed;
-    $position['last_nid'] = $row->nid;
-    // Build node. Set reset = TRUE to avoid static caching of all nodes that get indexed.
-    if ($node = node_load($row->nid, NULL, TRUE)) {
-      foreach ($callbacks as $callback) {
-        // The callback can either return a $document or an array of $documents.
-        $documents[] = $callback($node, $namespace);
+    try {
+      // Build node. Set reset = TRUE to avoid static caching of all nodes that get indexed.
+      if ($node = node_load($row->nid, NULL, TRUE)) {
+        foreach ($callbacks as $callback) {
+          // The callback can either return a $document or an array of $documents.
+          $documents[] = $callback($node, $namespace);
+        }
       }
+      // Variables to track the last item changed.
+      $position['last_change'] = $row->changed;
+      $position['last_nid'] = $row->nid;
+    }
+    catch (Exception $e) {
+      // Something bad happened - don't continue.
+      watchdog('Apache Solr', 'Error constructing documents to index: <br /> !message', array('!message' => nl2br(strip_tags($e->getMessage()))), WATCHDOG_ERROR);
+      break;
     }
   }
 
