@@ -25,7 +25,7 @@ function apachesolr_commentsearch_node_to_comments($node, $namespace) {
   $result = db_query("SELECT c.*, u.name AS registered_name FROM {comments} c INNER JOIN {users} u ON c.uid = u.uid WHERE c.nid = %d", $node->nid);
   while ($comment = db_fetch_object($result)) {
     $text = check_markup($comment->comment, $comment->format, FALSE);
-    $text = apachesolr_strip_ctl_chars($text);
+    $text = htmlspecialchars(html_entity_decode($text, ENT_NOQUOTES, 'UTF-8'), ENT_NOQUOTES, 'UTF-8');
 
     $document = new Apache_Solr_Document();
     // Comments have their status integers backwards compared to nodes.
@@ -58,7 +58,7 @@ function apachesolr_commentsearch_node_to_comments($node, $namespace) {
     $document->changed = apachesolr_date_iso($node->changed);
     $last_change = (isset($node->last_comment_timestamp) && $node->last_comment_timestamp > $node->changed) ? $node->last_comment_timestamp : $node->changed;
     $document->last_comment_or_change = apachesolr_date_iso($last_change);
-    $document->name = apachesolr_strip_ctl_chars($comment->name);
+    $document->name = htmlspecialchars(html_entity_decode($comment->name, ENT_NOQUOTES, 'UTF-8'), ENT_NOQUOTES, 'UTF-8');
     $path = "node/{$node->nid}";
     $document->url = url($path, array('absolute' => TRUE, 'fragment' => "comment-{$comment->cid}"));
     $document->path = $path;
