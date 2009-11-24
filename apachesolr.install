@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.1.4.26 2009/11/15 16:36:34 pwolanin Exp $
+// $Id: apachesolr.install,v 1.1.4.27 2009/11/24 16:19:07 robertDouglass Exp $
 
 /**
  * @file
@@ -149,6 +149,7 @@ function apachesolr_uninstall() {
   variable_del('apachesolr_mlt_blocks');
   variable_del('apachesolr_cron_limit');
   variable_del('apachesolr_enabled_facets');
+  variable_del('apachesolr_mlt_blocks');
   // Remove tables.
   drupal_uninstall_schema('apachesolr');
 }
