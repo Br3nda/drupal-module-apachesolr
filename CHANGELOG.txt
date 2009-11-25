@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.54 2009/11/25 14:33:45 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.55 2009/11/25 15:18:20 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------                                                 
+#641452 by robertDouglass, prevent admin from trying to re-index when in read-only mode.
 #372767 by socki, robertDouglass, allow MLT blocks to be filtered by type and custom filters.
 #372336 by der, janusman, robertDouglass, allow name sorting of facet links.
 #611670 by pwolanin, allow modules to abort the building of documents for indexing.
