@@ -1,11 +1,10 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.57 2009/11/25 16:50:27 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.58 2009/11/25 18:58:54 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------                                                 
-#612520 by robertDouglass, pwolanin, Pasqualle, make type facet text translatable.
 #642602 by robertDouglass, change 'content type' to 'content_type' in facet definitions.
 #641452 by robertDouglass, prevent admin from trying to re-index when in read-only mode.
 #372767 by socki, robertDouglass, allow MLT blocks to be filtered by type and custom filters.

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.32 2009/11/25 16:50:27 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.33 2009/11/25 18:58:54 robertDouglass Exp $
 
 /**
  * @file
@@ -897,13 +897,13 @@ function apachesolr_search_get_username($facet) {
  */
 function apachesolr_search_get_type($facet) {
   if ($type = node_get_types('name', $facet)) {
-    // Do nothing.
+
   }
   else if ($facet == 'comment') {
     $type = t('Comment');
   }
   // A disabled or missing node type returns FALSE.
-  return ($type === FALSE) ? $facet : t($type);
+  return ($type === FALSE) ? $facet : $type;
 }
 
 /**
