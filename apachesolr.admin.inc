@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.36 2009/11/15 14:52:28 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.37 2009/11/25 15:22:09 robertDouglass Exp $
 
 /**
  * @file
@@ -87,8 +87,8 @@ function apachesolr_settings() {
   $form['advanced']['apachesolr_read_only'] = array(
     '#type' => 'radios',
     '#title' => t('Index write access'),
-    '#default_value' => variable_get('apachesolr_read_only', 0),
-    '#options' => array(0 => t('Read and write (normal)'), 1 => t('Read only')),
+    '#default_value' => variable_get('apachesolr_read_only', APACHESOLR_READ_WRITE),
+    '#options' => array(APACHESOLR_READ_WRITE => t('Read and write (normal)'), APACHESOLR_READ_ONLY => t('Read only')),
     '#description' => t('<em>Read only</em> stops this site from sending updates to your search index. Useful for development sites.'),
   );
   return system_settings_form($form);
@@ -140,8 +140,14 @@ function apachesolr_index_page() {
     $output .= $delete_msg;
   }
   $output .= '<p>' . l(t('View more details on the search index contents'), 'admin/reports/apachesolr') . "</p>\n";
+  if (variable_get('apachesolr_read_only', APACHESOLR_READ_WRITE) == APACHESOLR_READ_WRITE) {
   // Display the Delete Index form.
   $output .= drupal_get_form('apachesolr_delete_index_form');
+  }
+  else {
+    drupal_set_message(t('The index is in read-only mode. Options for deleting and re-indexing are therefore not available. The index mode can be changed on the !settings_page', array('!settings_page' => l(t('settings page'), 'admin/settings/apachesolr'))), 'warning'); 
+  }
+  
 
   return $output;
 }
