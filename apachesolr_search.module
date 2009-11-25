@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.30 2009/11/20 18:50:50 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.31 2009/11/25 15:44:59 robertDouglass Exp $
 
 /**
  * @file
@@ -659,7 +659,7 @@ function apachesolr_search_apachesolr_facets() {
     $facets['is_book_bid'] = array(
       'info' => t('Book: Filter by Book'),
       'facet_field' => 'is_book_bid',
-      'content types' => variable_get('book_allowed_types', array('book')),
+      'content_types' => variable_get('book_allowed_types', array('book')),
     );
   }
 
@@ -672,7 +672,7 @@ function apachesolr_search_apachesolr_facets() {
       $facets[$delta] = array(
         'info' => t('Taxonomy vocabulary: Filter by taxonomy @name', array('@name' => $vocab->name)),
         'facet_field' => $delta,
-        'content types' => $vocab->nodes,
+        'content_types' => $vocab->nodes,
       );
     }
   }
@@ -686,7 +686,7 @@ function apachesolr_search_apachesolr_facets() {
       $facets[$field['field_name']] = array(
         'info' => t('CCK @field_type field: Filter by @field', array('@field_type' => $field['field_type'], '@field' => $field['label'])),
         'facet_field' => apachesolr_index_key($field),
-        'content types' => $field['content types'],
+        'content_types' => $field['content_types'],
       );
     }
   }

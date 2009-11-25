@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.42 2009/11/25 15:18:20 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.43 2009/11/25 15:44:59 robertDouglass Exp $
 
 /**
  * @file
@@ -711,10 +711,10 @@ function apachesolr_block_visibility($query, $module, $delta) {
   $type_filters = variable_get('apachesolr_type_filter', array());
   if (isset($type_filters[$module][$delta]) && $type_filters[$module][$delta] == TRUE) {
     $facet_info = apachesolr_get_facet_definitions();
-    if (isset($facet_info[$module][$delta]['content types'])) {
+    if (isset($facet_info[$module][$delta]['content_types'])) {
       $has_filter = $query->get_filters($facet_info[$module][$delta]['facet_field']);
       $show = count($has_filter);
-      foreach ($facet_info[$module][$delta]['content types'] as $content_type) {
+      foreach ($facet_info[$module][$delta]['content_types'] as $content_type) {
         if ($query->has_filter('type', $content_type)) {
           $show = TRUE;
         }
@@ -769,13 +769,13 @@ function apachesolr_form_block_admin_configure_alter(&$form, $form_state) {
 
   $facet_info = apachesolr_get_facet_definitions();
 
-  if (isset($facet_info[$module][$delta]['content types'])) {
+  if (isset($facet_info[$module][$delta]['content_types'])) {
     $type_filter_settings = variable_get('apachesolr_type_filter', array());
     // Set up some variables for the verbiage of the form element.
-    $count = count($facet_info[$module][$delta]['content types']);
+    $count = count($facet_info[$module][$delta]['content_types']);
     $types = format_plural($count, t('type'), t('types'));
     $are = format_plural($count, t('is'), t('are'));
-    $content_types = implode(', ', $facet_info[$module][$delta]['content types']) . '.';
+    $content_types = implode(', ', $facet_info[$module][$delta]['content_types']) . '.';
     $form['block_settings']['apachesolr_type_filter'] = array(
       '#type' => 'checkbox',
       '#title' => t('Show this block only when the type filter is selected for: %content_types',  array('%content_types' => $content_types)),
@@ -1531,7 +1531,7 @@ function apachesolr_cck_fields() {
           // depend on it to route program flow to cck specific handlers.
           $row->name = 'cck_' . $row->field_name;
           $fields[$row->field_name] = array_merge((array) $fields[$row->field_name], (array) $row);
-          $fields[$row->field_name]['content types'][] = $row->content_type;
+          $fields[$row->field_name]['content_types'][] = $row->content_type;
           unset($fields[$row->field_name]['content_type']);
         }
       }
