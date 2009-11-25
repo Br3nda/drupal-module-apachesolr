@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.40 2009/11/20 18:50:50 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.41 2009/11/25 14:33:45 robertDouglass Exp $
 
 /**
  * @file
@@ -1672,6 +1672,18 @@ function apachesolr_mlt_suggestions($settings, $id) {
       }
     }
     $query = apachesolr_drupal_query('id:' . $id);
+    
+    $tpye_filters = array();
+    if (is_array($settings['mlt_type_filters'])) {
+      foreach (array_filter($settings['mlt_type_filters']) as $type_filter) {
+        $tpye_filters[] = "type:{$type_filter}";
+      }
+      $params['fq']['mlt'][] = '(' . implode(' OR ', $tpye_filters) . ') ';
+    }
+
+    if ($custom_filters = trim($settings['mlt_custom_filters'])) {
+      $params['fq']['mlt'][] = $custom_filters;
+    }
 
     // This hook allows modules to modify the query and params objects.
     apachesolr_modify_query($query, $params, 'apachesolr_mlt');

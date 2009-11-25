@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.28.2.12 2009/11/20 11:37:36 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28.2.13 2009/11/25 14:33:45 robertDouglass Exp $
 
 /**
  * @file
@@ -584,6 +584,45 @@ function apachesolr_mlt_block_form($delta = NULL) {
     '#options' => drupal_map_assoc(array(3, 5, 7, 10, 12, 15, 20, 25, 30, 35, 40)),
     '#default_value' => $block['mlt_maxqt'],
   );
+  
+  $form['restrictions'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Filters'),
+    '#weight' => '1',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $type_options = array();
+  foreach (node_get_types('types') as $key => $type) {
+    $type_options[$key] = $type->name;
+  }
+
+  $form['restrictions']['mlt_type_filters'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Content Types'),
+    '#default_value' => is_array($block['mlt_type_filters']) ? $block['mlt_type_filters'] : array_keys($type_options),
+    '#options' => $type_options,
+    '#description' => t('Select the content types that similarity suggestions should be restricted to. Multiple types are joined with an OR query, so selecting more types results in more recommendations.'),
+    '#weight' => '-2',
+  );
+
+  $form['restrictions']['mlt_custom_filters'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Additional Query'),
+    '#description' => t('An additional query, in Solr syntax, which will further filter the similarity suggestions. Ex. \'title:strategy\' will filter related content further to only those with strategy in the title. ' .
+                        'Likewise \'body:HDTV^3\' will boost the term HDTV by a factor of 3. Here are some more examples:' .
+                        '<ul>
+                            <li>language:fr</li>
+                            <li>tid:5 OR tid 7</li>
+                            <li>created:[2009-05-01T23:59:59Z TO 2009-07-28T12:30:00Z]</li>
+                            <li>-uid:0 AND -uid:1</li>
+                        </ul>'),
+    '#required' => FALSE,
+    '#default_value' => $block['mlt_custom_filters'],
+    '#weight' => '-1',
+  );
+
 
   return $form;
 }
@@ -604,6 +643,8 @@ function apachesolr_mlt_block_defaults($block = array()) {
     'mlt_minwl' => '3',
     'mlt_maxwl' => '15',
     'mlt_maxqt' => '20',
+    'mlt_type_filters' => array_keys(node_get_types('types')),
+    'mlt_custom_filters' => '',
   );
 }
 
