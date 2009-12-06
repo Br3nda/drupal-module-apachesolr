@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.43 2009/11/25 15:44:59 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.44 2009/12/06 13:38:51 robertDouglass Exp $
 
 /**
  * @file
@@ -1359,13 +1359,19 @@ function apachesolr_static_response_cache($response = NULL) {
  *
  * @param $base_path
  *   The search base path (without the keywords) for this query.
+ *
+ * @param $solr
+ *   An instance of Drupal_Apache_Solr_Service.
  */
-function apachesolr_drupal_query($keys = '', $filters = '', $solrsort = '', $base_path = '') {
+function apachesolr_drupal_query($keys = '', $filters = '', $solrsort = '', $base_path = '', $solr = NULL) {
   list($module, $class) = variable_get('apachesolr_query_class', array('apachesolr', 'Solr_Base_Query'));
   include_once drupal_get_path('module', $module) .'/'. $class .'.php';
-
+  
+  if (empty($solr)) {
+    $solr = apachesolr_get_solr();
+  }
   try {
-    $query = new $class(apachesolr_get_solr(), $keys, $filters, $solrsort, $base_path);
+    $query = new $class($solr, $keys, $filters, $solrsort, $base_path);
   }
   catch (Exception $e) {
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
