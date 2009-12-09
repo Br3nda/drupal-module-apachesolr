@@ -1,13 +1,13 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.44 2009/12/06 13:38:51 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.45 2009/12/09 16:50:09 robertDouglass Exp $
 
 /**
  * @file
  *   Integration with the Apache Solr search application.
  */
 
-define(APACHESOLR_READ_WRITE, 0);
-define(APACHESOLR_READ_ONLY, 1);
+define('APACHESOLR_READ_WRITE', 0);
+define('APACHESOLR_READ_ONLY', 1);
 
 /**
  * Implementation of hook_menu().
