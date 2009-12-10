@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.133 2009/12/10 02:47:32 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.134 2009/12/10 17:43:28 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#401234 by mkalkbrenner, janusman, and pwolanin, reflect hierarchical taxonomy vocabulary in facets.
 #650534 by Scott Reynolds, don't use c.last_comment_timestamp unless comment module enabled.
 #655006 by Scott Reynolds and pwolanin, prevent PHP notices around constants.
 #641452 by robertDouglass, prevent admin from trying to re-index when in read-only mode.

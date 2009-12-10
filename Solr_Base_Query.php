@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.43 2009/10/14 13:28:40 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.44 2009/12/10 17:43:28 pwolanin Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -332,7 +332,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
    *   Optional. When set, this string overrides the query's current keywords.
    */
   public function get_path($new_keywords = NULL) {
-    if ($new_keywords) {
+    if (isset($new_keywords)) {
       return $this->base_path . '/' . $new_keywords;
     }
     return $this->base_path . '/' . $this->get_query_basic();

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.175 2009/12/10 02:47:32 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.176 2009/12/10 17:43:28 pwolanin Exp $
 
 /**
  * @file
@@ -722,7 +722,7 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
       else {
         $new_query->add_filter($facet_field, $facet, $exclude);
         $options['query'] = $new_query->get_url_queryvalues();
-        $link = theme('apachesolr_facet_link', $facet_text, $new_query->get_path(), $options, $count, $active, $response->response->numFound);
+        $link = theme('apachesolr_facet_link', $facet_text, $new_query->get_path(), $options, $count, FALSE, $response->response->numFound);
       }
       if ($count || $active) {
         $items[$sortpre . '*' . $facet_text] = $link;
@@ -1478,8 +1478,11 @@ function theme_apachesolr_facet_list($items, $display_limit = 0) {
     drupal_add_js(drupal_get_path('module', 'apachesolr') . '/apachesolr.js');
     // Split items array into displayed and hidden.
     $hidden_items = array_splice($items, $display_limit);
-    foreach ($hidden_items as $link) {
-      $items[] = array('data' => $link, 'class' => 'apachesolr-hidden-facet');
+    foreach ($hidden_items as $hidden_item) {
+      if (!is_array($hidden_item)) {
+        $hidden_item = array('data' => $hidden_item);
+      }
+      $items[] = $hidden_item + array('class' => 'apachesolr-hidden-facet');
     }
   }
   $admin_link = '';
