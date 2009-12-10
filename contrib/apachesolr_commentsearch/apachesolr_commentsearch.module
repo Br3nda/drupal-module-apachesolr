@@ -47,7 +47,8 @@ function apachesolr_commentsearch_node_to_comments($node, $namespace) {
     // the comment will also get removed from the index. See apachesolr_delete_node_from_index()
     $document->nid = $comment->nid;
     $document->uid = $comment->uid;
-    $document->title = apachesolr_clean_text($comment->subject);
+    $title = empty($comment->subject) ? $comment->title : $node->subject;
+    $document->title = apachesolr_clean_text($title);
     if (!empty($node->language)) {
       $document->language = $node->language;
     }
