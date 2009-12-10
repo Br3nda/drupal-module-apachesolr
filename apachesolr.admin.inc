@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.39 2009/12/09 16:54:04 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.40 2009/12/10 01:41:03 pwolanin Exp $
 
 /**
  * @file
@@ -11,6 +11,11 @@ function apachesolr_settings() {
 
   // Perform a check to ensure the server is there
   if (empty($_POST)) {
+    if (!defined('REQUIREMENT_OK')) {
+      define('REQUIREMENT_OK', 0);
+      define('REQUIREMENT_WARNING', 1);
+      define('REQUIREMENT_ERROR', 2);
+    }
     module_load_include('install', 'apachesolr');
 
     // Load the install.inc so REQUIREMENT_ERROR is defined.

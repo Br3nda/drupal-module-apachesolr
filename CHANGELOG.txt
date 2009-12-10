@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.131 2009/11/25 15:22:09 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.132 2009/12/10 01:41:03 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#655006 by Scott Reynolds and pwolanin, prevent PHP notices around constants.
 #641452 by robertDouglass, prevent admin from trying to re-index when in read-only mode.
 #638572 by robertDouglass fix taxonomy facet sorting.
 #562458 by janusman, fix typo preventing menu_rebuild regarding taxonomy hijack.
