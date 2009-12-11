@@ -25,7 +25,6 @@ function apachesolr_commentsearch_node_to_comments($node, $namespace) {
   $result = db_query("SELECT c.*, u.name AS registered_name FROM {comments} c INNER JOIN {users} u ON c.uid = u.uid WHERE c.nid = %d", $node->nid);
   while ($comment = db_fetch_object($result)) {
     $text = check_markup($comment->comment, $comment->format, FALSE);
-    $text = htmlspecialchars(html_entity_decode($text, ENT_NOQUOTES, 'UTF-8'), ENT_NOQUOTES, 'UTF-8');
 
     $document = new Apache_Solr_Document();
     // Comments have their status integers backwards compared to nodes.
