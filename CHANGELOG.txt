@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.62 2009/12/10 09:34:02 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.63 2009/12/16 11:13:02 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------                                                 
+#641954 by anarchivist, swentel, pwolanin, update schema.xml.
 #651044 by kcoop use node title for comment title when comment has no title.
 #655006 by Scott Reynolds, pwolanin fix warnings on constants.
 #652512 by robertDouglass enable use of more than just the default solr server.
