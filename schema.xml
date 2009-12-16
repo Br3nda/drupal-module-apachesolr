@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- $Id: schema.xml,v 1.1.2.1.2.33 2009/07/29 18:17:13 pwolanin Exp $ -->
+<!-- $Id: schema.xml,v 1.1.2.1.2.34 2009/12/16 04:22:53 pwolanin Exp $ -->
 
 <!--
  This is the Solr schema file. This file should be named "schema.xml" and
@@ -11,14 +11,15 @@
  http://wiki.apache.org/solr/SchemaXml
 -->
 
-<schema name="drupal-0.9.3" version="1.1">
-  <!-- attribute "name" is the name of this schema and is only used for display purposes.
-       Applications should change this to reflect the nature of the search collection.
-       version="1.1" is Solr's version number for the schema syntax and semantics.  It should
-       not normally be changed by applications.
-       1.0: multiValued attribute did not exist, all fields are multiValued by nature
-       1.1: multiValued attribute introduced, false by default -->
-
+<schema name="drupal-0.9.4" version="1.2">
+    <!-- attribute "name" is the name of this schema and is only used for display purposes.
+         Applications should change this to reflect the nature of the search collection.
+         version="1.2" is Solr's version number for the schema syntax and semantics.  It should
+         not normally be changed by applications.
+         1.0: multiValued attribute did not exist, all fields are multiValued by nature
+         1.1: multiValued attribute introduced, false by default 
+         1.2: omitTermFreqAndPositions attribute introduced, true by default except for text fields.
+       -->
   <types>
     <!-- field type definitions. The "name" attribute is
        just a label to be used by field definitions.  The "class"
@@ -61,14 +62,35 @@
     <fieldType name="double" class="solr.DoubleField" omitNorms="true"/>
 
 
-    <!-- Numeric field types that manipulate the value into
-         a string value that isn't human-readable in its internal form,
-         but with a lexicographic ordering the same as the numeric ordering,
-         so that range queries work correctly. -->
+    <!--
+      Note:
+      These should only be used for compatibility with existing indexes (created with older Solr versions)
+      or if "sortMissingFirst" or "sortMissingLast" functionality is needed. Use Trie based fields instead.
+
+      Numeric field types that manipulate the value into
+      a string value that isn't human-readable in its internal form,
+      but with a lexicographic ordering the same as the numeric ordering,
+      so that range queries work correctly.
+    -->
     <fieldType name="sint" class="solr.SortableIntField" sortMissingLast="true" omitNorms="true"/>
     <fieldType name="slong" class="solr.SortableLongField" sortMissingLast="true" omitNorms="true"/>
     <fieldType name="sfloat" class="solr.SortableFloatField" sortMissingLast="true" omitNorms="true"/>
     <fieldType name="sdouble" class="solr.SortableDoubleField" sortMissingLast="true" omitNorms="true"/>
+
+    <!--
+     Numeric field types that index each value at various levels of precision
+     to accelerate range queries when the number of values between the range
+     endpoints is large. See the javadoc for NumericRangeQuery for internal
+     implementation details.
+
+     Smaller precisionStep values (specified in bits) will lead to more tokens
+     indexed per value, slightly larger index size, and faster range queries.
+     A precisionStep of 0 disables indexing at different precision levels.
+    -->
+    <fieldType name="tint" class="solr.TrieIntField" precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
+    <fieldType name="tfloat" class="solr.TrieFloatField" precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
+    <fieldType name="tlong" class="solr.TrieLongField" precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
+    <fieldType name="tdouble" class="solr.TrieDoubleField" precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
 
 
     <!-- The format for this date field is of the form 1995-12-31T23:59:59Z, and
@@ -92,6 +114,9 @@
          Consult the DateField javadocs for more information.
       -->
     <fieldType name="date" class="solr.DateField" sortMissingLast="true" omitNorms="true"/>
+
+    <!-- A Trie based date field for faster date range queries and date faceting. -->
+    <fieldType name="tdate" class="solr.TrieDateField" omitNorms="true" precisionStep="6" positionIncrementGap="0"/>
 
     <!-- solr.TextField allows the specification of custom text analyzers
          specified as a tokenizer and a list of token filters. Different
@@ -177,7 +202,22 @@
         <filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
       </analyzer>
     </fieldType>
-   
+
+    <!-- Edge N gram type - for example for matching against queries with results 
+        KeywordTokenizer leaves input string intact as a single term.
+        see: http://www.lucidimagination.com/blog/2009/09/08/auto-suggest-from-popular-queries-using-edgengrams/
+   -->
+    <fieldType name="edge_n2_kw_text" class="solr.TextField" positionIncrementGap="100">
+     <analyzer type="index">
+       <tokenizer class="solr.KeywordTokenizerFactory"/>
+       <filter class="solr.LowerCaseFilterFactory"/>
+       <filter class="solr.EdgeNGramFilterFactory" minGramSize="2" maxGramSize="25" />
+     </analyzer>
+     <analyzer type="query">
+       <tokenizer class="solr.KeywordTokenizerFactory"/>
+       <filter class="solr.LowerCaseFilterFactory"/>
+     </analyzer>
+    </fieldType>
    <!--  Setup simple analysis for spell checking -->
     
    <fieldType name="textSpell" class="solr.TextField" positionIncrementGap="100">
@@ -224,6 +264,9 @@
       </analyzer>
     </fieldType>
 
+    <!-- A random sort type -->
+    <fieldType name="rand" class="solr.RandomSortField" indexed="true" />
+
     <!-- since fields of this type are by default not stored or indexed, any data added to
          them will be ignored outright
      -->
@@ -264,6 +307,9 @@
    <field name="sort_title" type="sortString" indexed="true" stored="false"/>
    <field name="body" type="text" indexed="true" stored="true" termVectors="true"/>
    <field name="teaser" type="text" indexed="false" stored="true"/>
+   <!-- entity is 'node', 'file', 'user', or some other Drupal object type -->
+   <field name="entity" type="string" indexed="true" stored="true"/>
+   <!-- type is a node type, or can be used flexibly for other entity types -->
    <field name="type" type="string" indexed="true" stored="true"/>
    <field name="type_name" type="string" indexed="true" stored="true"/>
    <field name="path" type="string" indexed="true" stored="true"/>
@@ -335,17 +381,31 @@
    <dynamicField name="tm_*"  type="text"    indexed="true"  stored="true" multiValued="true" termVectors="true"/>
    <dynamicField name="ss_*"  type="string"    indexed="true"  stored="true" multiValued="false"/>
    <dynamicField name="ts_*"  type="text"    indexed="true"  stored="true" multiValued="false" termVectors="true"/>
+   <dynamicField name="tsen2k_*" type="edge_n2_kw_text" indexed="true" stored="true" multiValued="false" omitNorms="true" omitTermFreqAndPositions="true" />
    <dynamicField name="ds_*" type="date"    indexed="true"  stored="true" multiValued="false"/>
    <dynamicField name="dm_*" type="date"    indexed="true"  stored="true" multiValued="true"/>
+   <dynamicField name="tds_*" type="tdate"    indexed="true"  stored="true" multiValued="false"/>
+   <dynamicField name="tdm_*" type="tdate"    indexed="true"  stored="true" multiValued="true"/>
    <dynamicField name="bm_*"  type="boolean" indexed="true"  stored="true" multiValued="true"/>
    <dynamicField name="bs_*"  type="boolean" indexed="true"  stored="true" multiValued="false"/>
    <dynamicField name="fs_*"  type="sfloat"  indexed="true"  stored="true" multiValued="false"/>
    <dynamicField name="fm_*"  type="sfloat"  indexed="true"  stored="true" multiValued="true"/>
    <dynamicField name="ps_*"  type="sdouble" indexed="true"  stored="true" multiValued="false"/>
    <dynamicField name="pm_*"  type="sdouble" indexed="true"  stored="true" multiValued="true"/>
+
+   <dynamicField name="tis_*"  type="tint"  indexed="true"  stored="true" multiValued="false"/>
+   <dynamicField name="tim_*"  type="tint"  indexed="true"  stored="true" multiValued="true"/>
+   <dynamicField name="tls_*"  type="tlong" indexed="true"  stored="true" multiValued="false"/>
+   <dynamicField name="tlm_*"  type="tlong" indexed="true"  stored="true" multiValued="true"/>
+   <dynamicField name="tfs_*"  type="tfloat"  indexed="true"  stored="true" multiValued="false"/>
+   <dynamicField name="tfm_*"  type="tfloat"  indexed="true"  stored="true" multiValued="true"/>
+   <dynamicField name="tps_*"  type="tdouble" indexed="true"  stored="true" multiValued="false"/>
+   <dynamicField name="tpm_*"  type="tdouble" indexed="true"  stored="true" multiValued="true"/>
    <!-- Sortable version of the dynamic string field -->
    <dynamicField name="sort_ss_*" type="sortString" indexed="true" stored="false"/>
    <copyField source="ss_*" dest="sort_ss_*"/>
+  <!-- A random sort field -->
+   <dynamicField name="random_*" type="rand" indexed="true" stored="true"/>
    <!-- This field is used to store node access records, as opposed to CCK field data -->
    <dynamicField name="nodeaccess*" type="integer" indexed="true" stored="false" multiValued="true"/>
 
