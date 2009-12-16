@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.112.2.13 2009/11/06 09:39:34 claudiucristea Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.112.2.14 2009/12/16 11:13:54 robertDouglass Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search integration 5.x-2.x, 2009-10-23
 ------------------------------
+#641954 by anarchivist, swentel, pwolanin, update schema.xml.
 #576040 by robertDouglass, Use Drush to download the SolrPhpClient: drush solr phpclient.
 #570476 by robertDouglass, Add initial Drush support with commands drush solr delete index and drush solr reindex.
 #612024 by pwolanin, Add method to allow requests to additional Solr servelets.
