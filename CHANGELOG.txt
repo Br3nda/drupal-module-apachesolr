@@ -1,10 +1,14 @@
-// $Id: CHANGELOG.txt,v 1.1.2.136 2009/12/17 03:50:06 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.137 2009/12/17 13:58:51 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+
+Apache Solr Search Integration 6.x-1.0-RC4, 2009-12-17
+------------------------------
+#661952 by pwolanin, fix no results help text for dismax syntax.
 #348668 by pwolanin, add indexing of the 'node' entity string.
 #641954 by anarchivist, swentel, pwolanin, update schema.xml.
 #401234 by mkalkbrenner, janusman, and pwolanin, reflect hierarchical taxonomy vocabulary in facets.
