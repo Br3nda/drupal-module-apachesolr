@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.45 2009/12/09 16:50:09 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.46 2009/12/17 12:46:22 robertDouglass Exp $
 
 /**
  * @file
@@ -137,8 +137,19 @@ function apachesolr_site_hash() {
   return $hash;
 }
 
-function apachesolr_document_id($id, $type = 'node') {
-  return apachesolr_site_hash() . "/$type/" . $id;
+/**
+ * Generate a unique ID for an entity being indexed.
+ *
+ * @param $id
+ *   An id number (or string) unique to this site, such as a node ID.
+ * @param $entity
+ *   A string like 'node', 'file', 'user', or some other Drupal object type.
+ *
+ * @return
+ *   A string combining the parameters with the site hash.
+ */
+function apachesolr_document_id($id, $entity = 'node') {
+  return apachesolr_site_hash() . "/$entity/" . $id;
 }
 
 /**

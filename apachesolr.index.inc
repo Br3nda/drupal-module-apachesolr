@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.2.10 2009/11/20 11:37:36 robertDouglass Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.2.11 2009/12/17 12:46:22 robertDouglass Exp $
 
 /**
  * @file
@@ -65,6 +65,7 @@ function apachesolr_node_to_document($node, $namespace) {
     $document->id = apachesolr_document_id($node->nid);
     $document->site = url(NULL, array('absolute' => TRUE));
     $document->hash = apachesolr_site_hash();
+    $document->entity = 'node';
     $document->nid = $node->nid;
     $document->uid = $node->uid;
     $document->title = $node->title;
@@ -77,6 +78,7 @@ function apachesolr_node_to_document($node, $namespace) {
     if (!empty($node->language)) {
       $document->language = $node->language;
     }
+    // TODO - apparently 'zxx' is the no language code in Drupal 7.
     $document->body = apachesolr_clean_text($text);
     $document->type  = $node->type;
     $document->type_name = node_get_types('name', $node);
