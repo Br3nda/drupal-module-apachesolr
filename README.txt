@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.32 2009/12/17 16:04:57 pwolanin Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.33 2009/12/17 16:36:10 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -156,9 +156,6 @@ behavior:
    each Solr request, such as when making {apachesolr_search_node} consistent
    with {node}.
 
- - apachesolr_search_noresults: the text displayed by apachesolr_search when 
-   there are no results for a search.
-
 Troubleshooting
 --------------
 Problem:
@@ -175,12 +172,6 @@ site address.
 
 Developers
 --------------
-
-Important note:  RC3 to RC4 the function apachesolr_clean_text() was renamed to 
-apachesolr_unclean_text().  The handling of html entities changed significantly,
-and any custom theme implementations or hook implmentations must be sure
-to call check_plain() on text that was processed by apachesolr_unclean_text()
-before being indexed.  See issue: http://drupal.org/node/528086
 
 Exposed Hooks in 6.x:
 

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.123 2009/12/17 16:04:57 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.124 2009/12/17 16:36:10 pwolanin Exp $
 
 /**
  * @file
@@ -417,32 +417,14 @@ function apachesolr_process_response($response, $query, $params) {
       else {
         $snippet = '';
       }
-      // We decoded entities when we indexed, so we must make the text safe.
-      // Translate back STRONG tags used for highlighting matches.
-      $snippet = strtr(check_plain($snippet), array('&lt;strong&gt;' => '<strong>', '&lt;/strong&gt;' => '</strong>'));
+
       if (!isset($doc->body)) {
         $doc->body = $snippet;
-      }
-      else {
-        $doc->body = check_plain($doc->body);
       }
       $doc->created = strtotime($doc->created);
       $doc->changed = strtotime($doc->changed);
       // Allow modules to alter each document.
       drupal_alter('apachesolr_search_result', $doc);
-
-      // Find all $doc fields that need to be made safe, except the title
-      // which we expect to be unsafe.
-      $check_keys = array();
-      foreach (apachesolr_cck_fields() as $key => $cck_info) {
-        $check_keys[apachesolr_index_key($cck_info)] = 1;
-      }
-      foreach ($doc as $key => $value) {
-        // We call apachesolr_unclean_text() on these values in apachesolr.index.inc
-        if (isset($check_keys[$key]) || strpos($key, 'ts_vid_') === 0 || strpos($key, 'sm_vid_') === 0) {
-          $doc->$key = check_plain($value);
-        }
-      }
       // Copy code from comment_nodeapi().
       $extra[] = format_plural($doc->comment_count, '1 comment', '@count comments');
       $results[] = array(

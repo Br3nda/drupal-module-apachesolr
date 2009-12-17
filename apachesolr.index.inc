@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.17 2009/12/17 16:04:57 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.18 2009/12/17 16:36:10 pwolanin Exp $
 
 /**
  * @file
@@ -16,14 +16,13 @@ function apachesolr_add_node_document(&$documents, $nid, $namespace) {
 }
 
 /**
- * Strip html tags and decode entities. Becuase of decoding, we should not trust
- * content returned from Solr - we need to apply check_plain().
+ * Strip html tags and also control characters that cause Jetty/Solr to fail.
  */
-function apachesolr_unclean_text($text) {
+function apachesolr_clean_text($text) {
   // Add spaces before stripping tags to avoid running words together.
   $text = filter_xss(str_replace(array('<', '>'), array(' <', '> '), $text), array());
-  // Decode entities so we can search for them.
-  return html_entity_decode($text, ENT_NOQUOTES, 'UTF-8');
+  // Decode entities and then make safe any < or > characters.
+  return htmlspecialchars(html_entity_decode($text, ENT_NOQUOTES, 'UTF-8'), ENT_NOQUOTES, 'UTF-8');
 }
 
 /**
@@ -51,7 +50,7 @@ function apachesolr_node_to_document($nid, $namespace) {
     $node->build_mode = NODE_BUILD_SEARCH_INDEX;
     $node = node_build_content($node, FALSE, FALSE);
     $node->body = drupal_render($node->content);
-    $node->title = apachesolr_unclean_text($node->title);
+    $node->title = apachesolr_clean_text($node->title);
 
     $text = $node->body;
 
@@ -90,7 +89,7 @@ function apachesolr_node_to_document($nid, $namespace) {
       // 'zxx' is the language-neutral code in Drupal 7.
       $document->language = 'zxx';
     }
-    $document->body = apachesolr_unclean_text($text);
+    $document->body = apachesolr_clean_text($text);
     $document->type  = $node->type;
     $document->type_name = node_get_types('name', $node);
     $document->created = apachesolr_date_iso($node->created);
@@ -133,10 +132,10 @@ function apachesolr_node_to_document($nid, $namespace) {
           // We can use 'value' rather than 'safe' since we strip tags and later check_plain().
           if (isset($value['value']) && strlen($value['value'])) {
             if ($cck_info['multiple']) {
-              $document->setMultiValue($index_key, apachesolr_unclean_text($value['value']));
+              $document->setMultiValue($index_key, apachesolr_clean_text($value['value']));
             }
             else {
-              $document->$index_key = apachesolr_unclean_text($value['value']);
+              $document->$index_key = apachesolr_clean_text($value['value']);
             }
           }
         }
@@ -176,7 +175,7 @@ function apachesolr_add_taxonomy_to_document(&$document, $node) {
       foreach ($ancestors as $ancestor) {
         $document->setMultiValue('tid', $ancestor->tid);
         $document->setMultiValue('im_vid_'. $ancestor->vid, $ancestor->tid);
-        $name = apachesolr_unclean_text($ancestor->name);
+        $name = apachesolr_clean_text($ancestor->name);
         $document->setMultiValue('vid', $ancestor->vid);
         $document->{'ts_vid_'. $ancestor->vid .'_names'} .= ' '. $name;
         // We index each name as a string for cross-site faceting
