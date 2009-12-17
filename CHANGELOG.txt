@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.135 2009/12/16 04:22:53 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.136 2009/12/17 03:50:06 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#348668 by pwolanin, add indexing of the 'node' entity string.
 #641954 by anarchivist, swentel, pwolanin, update schema.xml.
 #401234 by mkalkbrenner, janusman, and pwolanin, reflect hierarchical taxonomy vocabulary in facets.
 #650534 by Scott Reynolds, don't use c.last_comment_timestamp unless comment module enabled.
