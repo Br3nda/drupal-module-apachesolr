@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.138 2009/12/17 15:27:52 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.139 2009/12/17 16:04:57 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -8,6 +8,7 @@ Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr Search Integration 6.x-1.0-RC4, 2009-12-17
 ------------------------------
+#528086 by pwolanin, API change. Index non-encoded entities, filter on output.
 #662232 by pwolanin, index zxx as the Language neutral code.
 #661952 by pwolanin, fix no results help text for dismax syntax.
 #348668 by pwolanin, add indexing of the 'node' entity string.
