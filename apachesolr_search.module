@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.36 2009/12/18 12:04:52 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.37 2009/12/18 12:11:44 robertDouglass Exp $
 
 /**
  * @file
@@ -371,7 +371,9 @@ function apachesolr_search_execute($keys, $filterstring, $solrsort, $base_path =
     $params['q.alt'] = implode(' ', $params['fq']);
     unset($params['fq']);
   }
-  $response = $solr->search($query->get_query_basic(), $params['start'], $params['rows'], $params);
+  // We must run htmlspecialchars() here since converted entities are in the index.
+  // and thus bare entities &, > or < won't match.
+  $response = $solr->search(htmlspecialchars($query->get_query_basic(), ENT_NOQUOTES, 'UTF-8'), $params['start'], $params['rows'], $params);
   // The response is cached so that it is accessible to the blocks and anything
   // else that needs it beyond the initial search.
   apachesolr_static_response_cache($response);
@@ -586,7 +588,9 @@ function apachesolr_search_process_response($response, $query, $params) {
       $results[] = array(
         'link' => url($doc->path),
         'type' => apachesolr_search_get_type($doc->type),
-        'title' => $doc->title,
+        // template_preprocess_search_result() runs check_plain() on the title
+        // again.  Decode to correct the display.
+        'title' => htmlspecialchars_decode($doc->title, ENT_QUOTES),
         'user' => theme('username', $doc),
         'date' => $doc->created,
         'node' => $doc,
