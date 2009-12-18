@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.7 2009/10/23 11:47:03 claudiucristea Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.8 2009/12/18 11:07:56 robertDouglass Exp $
 
 /**
  * @file
@@ -181,12 +181,20 @@ function apachesolr_search_view($type = NULL) {
         $results = theme('box', t('Search results'), $results);
       }
       else {
-        $results = theme('box', t('Your search yielded no results'), search_help('search#noresults', drupal_help_arg()));
+        $results = theme('box', t('Your search yielded no results'), variable_get('apachesolr_search_noresults', apachesolr_search_noresults()));
       }
     }
   }
   // Construct the search form.
   return drupal_get_form('search_form', NULL, $keys, $type) . $results;
+}
+
+function apachesolr_search_noresults() {
+  return t('<ul>
+<li>Check if your spelling is correct, or try removing filters.</li>
+<li>Remove quotes around phrases to match each word individually: <em>"blue drop"</em> will match less than <em>blue drop</em>.</li>
+<li>You can require or exclude terms using + and -: <em>big +blue drop</em> will require a match on <em>blue</em> while <em>big blue -drop</em> will exclude results that contain <em>drop</em>.</li>
+</ul>');
 }
 
 /**
