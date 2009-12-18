@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.67 2009/12/18 11:52:13 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.68 2009/12/18 12:04:52 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------                                                 
+#662232 by pwolanin, index zxx as the Language neutral code.
 #401234 by mkalkbrenner, janusman, and pwolanin, reflect hierarchical taxonomy vocabulary in facets.
 #661952 by pwolanin, fix no results help text for dismax syntax.
 #348668 by pwolanin, add indexing of the 'node' entity string.
