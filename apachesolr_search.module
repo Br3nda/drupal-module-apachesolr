@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.8 2009/12/18 11:07:56 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.9 2009/12/19 10:32:38 robertDouglass Exp $
 
 /**
  * @file
@@ -628,7 +628,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
             }
           }
           $vid = substr($delta, 7);
-          $vocab = taxonomy_vocabulary_load($vid);
+          $vocab = taxonomy_get_vocabulary($vid);
           if (is_numeric($vid) && is_array($terms) && isset($terms[$vid]) && is_array($terms[$vid])) {
             ksort($terms[$vid]);
             $limit = isset($initial_limits['apachesolr_search'][$delta]) ? $initial_limits['apachesolr_search'][$delta] : $limit_default;
