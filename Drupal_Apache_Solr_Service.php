@@ -124,6 +124,8 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
      '@deletes_by_id' => '',
      '@deletes_by_query' => '',
      '@deletes_total' => '',
+     '@schema_version' => '',
+     '@core_name' => '',
     );
 
     if (!empty($stats)) {
@@ -139,6 +141,10 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       $deletes_query_xpath = $stats->xpath('//stat[@name="deletesByQuery"]');
       $summary['@deletes_by_query'] = (int) trim($deletes_query_xpath[0]);
       $summary['@deletes_total'] = $summary['@deletes_by_id'] + $summary['@deletes_by_query'];
+      $schema = $stats->xpath('/solr/schema[1]');
+      $summary['@schema_version'] = trim($schema[0]);;
+      $core = $stats->xpath('/solr/core[1]');
+      $summary['@core_name'] = trim($core[0]);
     }
 
     return $summary;
