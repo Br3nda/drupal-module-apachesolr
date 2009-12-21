@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.33 2009/12/17 16:36:10 pwolanin Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.34 2009/12/21 19:54:32 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -69,10 +69,7 @@ download, which includes all the items which are not in Drupal.org CVS due to
 CVS use policy. See the download link here: 
 http://acquia.com/documentation/acquia-search/activation
 
-Download Solr trunk (candidate 1.4.x build) from a nightly build or build it
-from svn.  http://people.apache.org/builds/lucene/solr/nightly/
-
-Once Solr 1.4 is released, you will be able to download from:
+Download Solr 1.4 from:
 http://www.apache.org/dyn/closer.cgi/lucene/solr/
 
 Unpack the tarball somewhere not visible to the web (not in your apache docroot
