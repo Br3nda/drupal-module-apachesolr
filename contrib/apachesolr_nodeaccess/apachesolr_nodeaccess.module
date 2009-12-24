@@ -1,10 +1,10 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.1.2.11 2009/06/05 18:05:06 robertDouglass Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.1.2.12 2009/12/24 03:41:29 pwolanin Exp $
 
 /**
  * Implementation of apachesolr_update_index
  */
-function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node) {
+function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node, $namespace) {
   static $account;
 
   if (!isset($account)) {
