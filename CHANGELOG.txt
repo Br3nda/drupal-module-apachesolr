@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.144 2009/12/24 03:41:29 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.145 2009/12/24 05:10:29 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#667110 by pwolanin, Replace bogus use of pager_query().
 #666648 by pwolanin, Make hook_apachesolr_update_index() more generic by taking a namespace param also.
 #662232 by pwolanin, use 'und' not 'zxx' for Language neutral per Drupal 7 change.
 #665186 by mkalkbrenner, fix README for Solr 1.4 release.

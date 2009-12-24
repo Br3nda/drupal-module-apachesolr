@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.126 2009/12/23 15:21:51 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.127 2009/12/24 05:10:29 pwolanin Exp $
 
 /**
  * @file
@@ -404,7 +404,7 @@ function apachesolr_process_response($response, $query, $params) {
   // We default to getting snippets from the body.
   $hl_fl = is_null($params['hl.fl']) ? 'body' : $params['hl.fl'];
   $total = $response->response->numFound;
-  pager_query("SELECT %d", $params['rows'], 0, NULL, $total);
+  apachesolr_pager_init($total, $params['rows']);
   if ($total > 0) {
     foreach ($response->response->docs as $doc) {
       $extra = array();
