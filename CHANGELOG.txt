@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.147 2009/12/26 11:45:32 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.148 2009/12/26 12:56:14 robertDouglass Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#664818 by pounard, robertDouglass | Scott Reynolds: Fixed Wrong watchdog() usage.
 #667650 by Dave Reid: Fixed Results of apachesolr_process_response() should return absolute URLs.
 #667124 by pwolanin, Use current query not altered query for the breadcrumb.
 #667110 by pwolanin, Replace bogus use of pager_query().
