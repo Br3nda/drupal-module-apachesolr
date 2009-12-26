@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.71 2009/12/22 11:56:54 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.72 2009/12/26 11:44:49 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------                                                 
+#667650 by Dave Reid: Fixed Results of apachesolr_process_response() should return absolute URLs.
 #664572 by pwolanin: Added Add schema and core name to admin screen.
 #664860 by pounard: Fixed Wrong t() usage in apachesolr_field_name_map().
 #528086 by pwolanin, better (but still problematic) handling of entities.

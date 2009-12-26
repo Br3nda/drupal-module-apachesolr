@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.37 2009/12/18 12:11:44 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.38 2009/12/26 11:44:49 robertDouglass Exp $
 
 /**
  * @file
@@ -586,7 +586,7 @@ function apachesolr_search_process_response($response, $query, $params) {
         $fields[$field_name] = $doc->getField($field_name);
       }
       $results[] = array(
-        'link' => url($doc->path),
+        'link' => url($doc->path, array('absolute' => TRUE)),
         'type' => apachesolr_search_get_type($doc->type),
         // template_preprocess_search_result() runs check_plain() on the title
         // again.  Decode to correct the display.
