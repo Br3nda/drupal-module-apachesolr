@@ -1,9 +1,12 @@
-// $Id: CHANGELOG.txt,v 1.1.2.112.2.17 2009/12/26 17:19:01 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.112.2.18 2009/12/26 17:21:03 robertDouglass Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
-Apache Solr Search integration 5.x-2.x, 2009-10-23
+Apache Solr Search Integration 5.x-2.x, 2009-10-23
+------------------------------
+
+Apache Solr Search Integration 5.x-2.0-beta2, 2009-12-26
 ------------------------------
 #657648 by kcoop: Added Add Smaller Limit Options to Apache Solr Cron Indexing.
 #661952 by pwolanin, fix no results help text for dismax syntax.
