@@ -88,7 +88,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     if (empty($this->stats) && isset($data->index->numDocs)) {
       $url = $this->_constructUrl(self::STATS_SERVLET);
       $this->stats_cid = "apachesolr:stats:" . md5($url);
-      $cache = cache_get($this->stats_cid);
+      $cache = cache_get($this->stats_cid, 'cache_apachesolr');
       if (isset($cache->data)) {
         $this->stats = simplexml_load_string($cache->data);
       }
@@ -248,7 +248,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
   public function __construct($host = 'localhost', $port = 8180, $path = '/solr/') {
     parent::__construct($host, $port, $path);
     $this->luke_cid = "apachesolr:luke:" . md5($this->_lukeUrl);
-    $cache = cache_get($this->luke_cid);
+    $cache = cache_get($this->luke_cid, 'cache_apachesolr');
     if (isset($cache->data)) {
       $this->luke = $cache->data;
     }
