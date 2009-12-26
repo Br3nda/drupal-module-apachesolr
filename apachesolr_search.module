@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.38 2009/12/26 11:44:49 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.39 2009/12/26 11:53:44 robertDouglass Exp $
 
 /**
  * @file
@@ -356,7 +356,7 @@ function apachesolr_search_execute($keys, $filterstring, $solrsort, $base_path =
 
   // Cache the built query. Since all the built queries go through
   // this process, all the hook_invocations will happen later
-  apachesolr_current_query($query);
+  $current_query = apachesolr_current_query($query);
 
   // This hook allows modules to modify the query and params objects.
   apachesolr_modify_query($query, $params, $caller);
@@ -379,7 +379,9 @@ function apachesolr_search_execute($keys, $filterstring, $solrsort, $base_path =
   apachesolr_static_response_cache($response);
   apachesolr_has_searched(TRUE);
   // Add search terms and filters onto the breadcrumb.
-  drupal_set_breadcrumb(array_merge(menu_get_active_breadcrumb(), $query->get_breadcrumb()));
+  // We use $current_query to avoid exposing, for example, nodeaccess
+  // filters in the breadcrumb.
+  drupal_set_breadcrumb(array_merge(menu_get_active_breadcrumb(), $current_query->get_breadcrumb()));
   return apachesolr_search_process_response($response, $query, $params);
 }
 
