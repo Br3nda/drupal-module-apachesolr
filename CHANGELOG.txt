@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.73 2009/12/26 11:53:44 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.74 2009/12/26 11:57:09 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------                                                 
+#667110 by pwolanin: Fixed Replace bogus use of pager_query().
 #667124 by pwolanin: Fixed Use current query not altered query for the breadcrumb.
 #667650 by Dave Reid: Fixed Results of apachesolr_process_response() should return absolute URLs.
 #664572 by pwolanin: Added Add schema and core name to admin screen.

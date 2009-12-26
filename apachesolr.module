@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.50 2009/12/21 13:15:16 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.51 2009/12/26 11:57:09 robertDouglass Exp $
 
 /**
  * @file
@@ -1187,6 +1187,35 @@ function apachesolr_facetcount_save($edit) {
   $facet_missing = variable_get('apachesolr_facet_missing', array());
   $facet_missing[$module][$delta] = (int)$edit['apachesolr_facet_missing'];
   variable_set('apachesolr_facet_missing', $facet_missing);
+}
+
+/**
+ * Initialize a pager for theme('pager') without running an SQL query.
+ *
+ * @see pager_query()
+ *
+ * @param $total
+ *  The total number of items found.
+ * @param $limit
+ *  The number of items you will display per page.
+ * @param $element
+ *  An optional integer to distinguish between multiple pagers on one page.
+ *
+ * @return
+ *  The current page for $element. 0 by default if $_GET['page'] is empty.
+ */
+function apachesolr_pager_init($total, $limit = 10, $element = 0) {
+  global $pager_page_array, $pager_total, $pager_total_items;
+  $page = isset($_GET['page']) ? $_GET['page'] : '';
+
+  // Convert comma-separated $page to an array, used by other functions.
+  $pager_page_array = explode(',', $page);
+
+  // We calculate the total of pages as ceil(items / limit).
+  $pager_total_items[$element] = $total;
+  $pager_total[$element] = ceil($pager_total_items[$element] / $limit);
+  $pager_page_array[$element] = max(0, min((int)$pager_page_array[$element], ((int)$pager_total[$element]) - 1));
+  return $pager_page_array[$element];
 }
 
 /**
