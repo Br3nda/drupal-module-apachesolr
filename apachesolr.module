@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.52 2009/12/26 12:48:54 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.53 2009/12/26 13:08:51 robertDouglass Exp $
 
 /**
  * @file
@@ -747,7 +747,7 @@ function apachesolr_get_facet_definitions() {
       foreach ($facets as $delta => $info) {
         $definitions[$module][$delta] = $info;
         if(isset($definitions[$module][$delta])) {
-          $definitions[$module][$delta]['operator'] = $operator_settings[$module][$delta];
+          $definitions[$module][$delta]['operator'] = isset($operator_settings[$module][$delta]) ? $operator_settings[$module][$delta] : 'AND';
         }
       }
     }
@@ -1563,6 +1563,7 @@ function apachesolr_cck_fields() {
         // Only deal with fields that have option widgets (facets don't make sense otherwise), or fields that have specific mappings.
         if ((isset($mappings[$row->field_type][$row->widget_type]) ||  isset($mappings['per-field'][$row->field_name]))) {
           if (isset($mappings['per-field'][$row->field_name])) {
+            $fields[$row->field_name] = $mappings['per-field'][$row->field_name];
             $row->index_type = $mappings['per-field'][$row->field_name]['index_type'];
             $row->indexing_callback = $mappings['per-field'][$row->field_name]['indexing callback'];
             $row->display_callback = $mappings['per-field'][$row->field_name]['display callback'];

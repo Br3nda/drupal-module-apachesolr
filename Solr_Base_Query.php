@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.40.2.9 2009/12/18 11:52:13 robertDouglass Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.40.2.10 2009/12/26 13:08:51 robertDouglass Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -322,7 +322,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
         $queryvalues['filters'] .= ' ' . implode(' ', $values);
       }
     }
-    $queryvalues['filters'] = trim($queryvalues['filters']);
+    $queryvalues['filters'] = isset($queryvalues['filters']) ? trim($queryvalues['filters']) : '';
     $solrsort = $this->solrsort;
     if ($solrsort && ($solrsort['#name'] != 'score' || $solrsort['#direction'] != 'asc')) {
       if (isset($this->field_map[$solrsort['#name']])) {
