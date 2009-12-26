@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.78 2009/12/26 13:31:59 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.79 2009/12/26 17:18:13 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#657648 by kcoop: Added Add Smaller Limit Options to Apache Solr Cron Indexing.
 
 Apache Solr integration 6.x-2.0-ALPHA1, 2009-12-26
 ------------------------------  
