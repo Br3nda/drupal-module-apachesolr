@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.2.12 2009/12/18 12:04:52 robertDouglass Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.2.13 2009/12/26 12:04:03 robertDouglass Exp $
 
 /**
  * @file
@@ -157,10 +157,10 @@ function apachesolr_node_to_document($node, $namespace) {
     apachesolr_add_tags_to_document($document, $text);
     apachesolr_add_taxonomy_to_document($document, $node);
 
-    // Let modules add to the document - TODO convert to drupal_alter().
+    // Let modules add to the document.
     foreach (module_implements('apachesolr_update_index') as $module) {
       $function = $module .'_apachesolr_update_index';
-      $function($document, $node);
+      $function($document, $node, $namespace);
     }
   }
   return $document;
