@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.43 2009/12/26 12:56:14 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.44 2009/12/26 17:17:36 robertDouglass Exp $
 
 /**
  * @file
@@ -45,7 +45,7 @@ function apachesolr_settings() {
     '#description' => t('Path that identifies the Solr request handler to be used.'),
   );
 
-  $numbers = drupal_map_assoc(array(10, 20, 50, 100, 200));
+  $numbers = drupal_map_assoc(array(1, 5, 10, 20, 50, 100, 200));
   $form['apachesolr_cron_limit'] = array(
     '#type' => 'select',
     '#title' => t('Number of items to index per cron run'),
