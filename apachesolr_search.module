@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.128 2009/12/24 05:23:22 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.129 2009/12/26 11:45:32 robertDouglass Exp $
 
 /**
  * @file
@@ -432,7 +432,7 @@ function apachesolr_process_response($response, $query, $params) {
       // Copy code from comment_nodeapi().
       $extra[] = format_plural($doc->comment_count, '1 comment', '@count comments');
       $results[] = array(
-        'link' => url($doc->path),
+        'link' => url($doc->path, array('absolute' => TRUE)),
         'type' => apachesolr_search_get_type($doc->type),
         // template_preprocess_search_result() runs check_plain() on the title
         // again.  Decode to correct the display.
