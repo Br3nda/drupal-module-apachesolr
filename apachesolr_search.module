@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.40 2009/12/26 11:57:09 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.41 2009/12/26 12:05:20 robertDouglass Exp $
 
 /**
  * @file
@@ -922,9 +922,9 @@ function apachesolr_search_language_name($lang) {
     if (function_exists('locale_language_list')) {
       $list = locale_language_list();
     }
-    $list['zxx'] = t('Language neutral');
-    // TODO - remove this line - only present for rc3 to rc4 update.
-    $list['[* TO *]'] = $list['zxx'];
+    $list['und'] = t('Language neutral');
+    // TODO - remove this line - only present for rc4 update.
+    $list['zxx'] = $list['und'];
   }
   return ($lang && isset($list[$lang])) ? $list[$lang] : $lang;
 }
