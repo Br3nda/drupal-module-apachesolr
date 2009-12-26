@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.51 2009/12/26 11:57:09 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.52 2009/12/26 12:48:54 robertDouglass Exp $
 
 /**
  * @file
@@ -349,7 +349,7 @@ function apachesolr_index_nodes($rows, $namespace) {
     }
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    watchdog('apachesolr', '!e', array('!e' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
     return FALSE;
   }
   include_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.index.inc');
@@ -377,7 +377,7 @@ function apachesolr_index_nodes($rows, $namespace) {
     }
     catch (Exception $e) {
       // Something bad happened - don't continue.
-      watchdog('Apache Solr', 'Error constructing documents to index: <br /> !message', array('!message' => nl2br(strip_tags($e->getMessage()))), WATCHDOG_ERROR);
+      watchdog('apachesolr', 'Error constructing documents to index: <br /> !message', array('!message' => nl2br(strip_tags($e->getMessage()))), WATCHDOG_ERROR);
       break;
     }
   }
@@ -389,7 +389,7 @@ function apachesolr_index_nodes($rows, $namespace) {
 
   if (count($documents)) {
     try {
-      watchdog('Apache Solr', 'Adding @count documents.', array('@count' => count($documents)));
+      watchdog('apachesolr', 'Adding @count documents.', array('@count' => count($documents)));
       // Chunk the adds by 20s
       $docs_chunk = array_chunk($documents, 20);
       foreach ($docs_chunk as $docs) {
@@ -405,7 +405,7 @@ function apachesolr_index_nodes($rows, $namespace) {
           $nids[] = $doc->nid;
         }
       }
-      watchdog('Apache Solr', 'Indexing failed on one of the following nodes: @nids <br /> !message',
+      watchdog('apachesolr', 'Indexing failed on one of the following nodes: @nids <br /> !message',
                array('@nids' => implode(', ', $nids), '!message' => nl2br(strip_tags($e->getMessage()))), WATCHDOG_ERROR);
       return FALSE;
     }
@@ -441,7 +441,7 @@ function apachesolr_delete_node_from_index($node) {
     return TRUE;
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    watchdog('apachesolr', '!e', array('!e' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
     // Don't keep trying queries if they are failing.
     $failed = TRUE;
     return FALSE;
@@ -514,7 +514,7 @@ function apachesolr_cron() {
     }
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())) . ' in apachesolr_cron', NULL, WATCHDOG_ERROR);
+    watchdog('apachesolr', '!e', array('!e' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
   }
 }
 
@@ -581,7 +581,7 @@ function apachesolr_set_stats_message($text, $type = 'status', $repeat = FALSE) 
     drupal_set_message(t($text, $stats_summary), $type, FALSE);
   }
   catch (Exception $e) {
-    watchdog('apachesolr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    watchdog('apachesolr', '!e', array('!e' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
   }
 }
 
@@ -1337,7 +1337,7 @@ function apachesolr_get_solr($host = NULL, $port = NULL, $path = NULL) {
       $solr_cache[$host][$port][$path] = new $class($host, $port, $path);
     }
     catch (Exception $e) {
-      watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+      watchdog('apachesolr', '!e', array('!e' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
       return;
     }
   }
@@ -1366,7 +1366,7 @@ function apachesolr_server_status($host = NULL, $port = NULL, $path = NULL) {
     $ping = @$solr->ping(variable_get('apachesolr_ping_timeout', 4));
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', check_plain($e->getMessage()), NULL, WATCHDOG_ERROR);
+    watchdog('apachesolr', '!e', array('!e' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
   }
   return $ping;
 }
@@ -1414,7 +1414,7 @@ function apachesolr_drupal_query($keys = '', $filters = '', $solrsort = '', $bas
     $query = new $class($solr, $keys, $filters, $solrsort, $base_path);
   }
   catch (Exception $e) {
-    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    watchdog('apachesolr', '!e', array('!e' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
     $query = NULL;
   }
 
@@ -1748,7 +1748,7 @@ function apachesolr_mlt_suggestions($settings, $id) {
     }
   }
   catch ( Exception $e ) {
-    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR );
+    watchdog('apachesolr', '!e', array('!e' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
   }
 }
 

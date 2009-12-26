@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.76 2009/12/26 12:05:20 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.77 2009/12/26 12:48:54 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------                                                 
+#664818 by pounard, robertDouglass | Scott Reynolds: Fixed Wrong watchdog() usage.
 #662232 by pwolanin | anarchivist: Changed Use language-neutral code like D7.
 #666648 by pwolanin: Changed Make hook_apachesolr_update_index() more generic by taking a namespace param also.
 #667110 by pwolanin: Fixed Replace bogus use of pager_query().
