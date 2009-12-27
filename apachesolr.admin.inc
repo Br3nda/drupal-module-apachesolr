@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.45 2009/12/27 16:10:28 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.46 2009/12/27 16:47:37 pwolanin Exp $
 
 /**
  * @file
@@ -122,7 +122,7 @@ function apachesolr_index_page() {
     $data = $solr->getLuke();
   }
   catch (Exception $e) {
-    watchdog('apachesolr', '!e', array('!e' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
     drupal_set_message(nl2br(check_plain($e->getMessage())), "warning");
     $data->fields = array();
   }
@@ -140,7 +140,7 @@ function apachesolr_index_page() {
       $delete_msg = '<p>' . t('Number of pending deletions: @deletes_total', $stats_summary) . "</p>\n";
     }
     catch (Exception $e) {
-      watchdog('apachesolr', '!e', array('!e' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
+      watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
     }
     $output .= $solr_msg . $delay_msg;
     $pending_msg = $stats_summary['@pending_docs'] ? t('(@pending_docs sent but not yet processed)', $stats_summary) : '';
@@ -170,7 +170,7 @@ function apachesolr_index_report() {
     $data = $solr->getLuke();
   }
   catch (Exception $e) {
-    watchdog('apachesolr', '!e', array('!e' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
     drupal_set_message(nl2br(check_plain($e->getMessage())), "warning");
     $data->fields = array();
   }
@@ -191,7 +191,7 @@ function apachesolr_index_report() {
       $output .= '<p>' . t('Number of terms in index: @num', array('@num' => $data->index->numTerms)) . "</p>\n";
     }
     catch (Exception $e) {
-      watchdog('apachesolr', '!e', array('!e' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
+      watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
       $data->fields = array();
     }
   }
@@ -420,7 +420,7 @@ function apachesolr_delete_index_confirm_submit($form, &$form_state) {
 
   }
   catch (Exception $e) {
-    watchdog('apachesolr', '!e', array('!e' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
   }
 }           
 
