@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.44 2009/12/26 17:17:36 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.45 2009/12/27 16:10:28 pwolanin Exp $
 
 /**
  * @file
@@ -11,11 +11,9 @@ function apachesolr_settings() {
 
   // Perform a check to ensure the server is there
   if (empty($_POST)) {
-    if (!defined('REQUIREMENT_OK')) {
-      define('REQUIREMENT_OK', 0);
-      define('REQUIREMENT_WARNING', 1);
-      define('REQUIREMENT_ERROR', 2);
-    }
+    // update_help() loads install.inc via include_once, so not much
+    // point in working around it.
+    include_once './includes/install.inc';
     module_load_include('install', 'apachesolr');
 
     foreach (apachesolr_requirements('runtime') as $requirement) {
