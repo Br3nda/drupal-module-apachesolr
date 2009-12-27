@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.1.4.18.2.11 2009/12/26 12:48:54 robertDouglass Exp $
+// $Id: apachesolr.install,v 1.1.4.18.2.12 2009/12/27 17:15:50 robertDouglass Exp $
 
 /**
  * @file
@@ -28,7 +28,7 @@ function apachesolr_requirements($phase) {
       }
     }
     catch (Exception $e) {
-	  watchdog('apachesolr', '!e', array('!e' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
+      watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
     }
     $value =  $ping ? $t('Your site has contacted the Apache Solr server.') : $t('Your site was unable to contact the Apache Solr server.');
     $severity = $ping ? REQUIREMENT_OK : REQUIREMENT_ERROR;

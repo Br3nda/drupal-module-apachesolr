@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.42 2009/12/26 12:48:54 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.43 2009/12/27 17:15:50 robertDouglass Exp $
 
 /**
  * @file
@@ -130,7 +130,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
         return $results;
       }
       catch (Exception $e) {
-        watchdog('apachesolr', '!e', array('!e' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
+        watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
         apachesolr_failure(t('Solr search'), $keys);
       }
       break;
@@ -1238,7 +1238,7 @@ function apachesolr_search_build_spellcheck() {
     $response = $solr->search('solr', 0, 0, $params);
   }
   catch (Exception $e) {
-    watchdog('apachesolr', '!e', array('!e' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
   }
 }
 
