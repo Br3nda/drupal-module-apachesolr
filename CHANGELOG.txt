@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.150 2009/12/27 16:10:28 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.151 2009/12/27 17:06:43 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -6,9 +6,9 @@ Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
 #668396 by pwolanin, closer to fix from #655006 for PHP notices.
-#657648 by kcoop: Added Add Smaller Limit Options to Apache Solr Cron Indexing.
-#664818 by pounard, robertDouglass | Scott Reynolds: Fixed Wrong watchdog() usage.
-#667650 by Dave Reid: Fixed Results of apachesolr_process_response() should return absolute URLs.
+#657648 by kcoop, Add Smaller Limit Options to Apache Solr Cron Indexing.
+#664818 by pounard, robertDouglass, pwolanin fix incorrect watchdog() call.
+#667650 by Dave Reid, Results of apachesolr_process_response() should return absolute URLs.
 #667124 by pwolanin, Use current query not altered query for the breadcrumb.
 #667110 by pwolanin, Replace bogus use of pager_query().
 #666648 by pwolanin, Make hook_apachesolr_update_index() more generic by taking a namespace param also.
