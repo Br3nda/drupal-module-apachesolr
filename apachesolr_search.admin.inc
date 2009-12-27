@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.20.2.4 2009/12/27 17:15:50 robertDouglass Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.20.2.5 2009/12/27 17:23:58 robertDouglass Exp $
 
 /**
  * @file
@@ -17,7 +17,7 @@ function apachesolr_search_settings_page() {
     $output .= drupal_get_form('apachesolr_search_settings_form', $fields);
   }
   catch (Exception $e) {
-    watchdog('apachesolr', nl2br(check_plain($e->getMessage())));
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
     drupal_set_message(nl2br(check_plain($e->getMessage())), "warning");
     $output .= t('Cannot get information about the fields in the index at this time.');
   }

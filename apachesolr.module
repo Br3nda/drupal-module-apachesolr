@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.54 2009/12/27 17:15:50 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.55 2009/12/27 17:23:58 robertDouglass Exp $
 
 /**
  * @file
@@ -581,7 +581,7 @@ function apachesolr_set_stats_message($text, $type = 'status', $repeat = FALSE) 
     drupal_set_message(t($text, $stats_summary), $type, FALSE);
   }
   catch (Exception $e) {
-    watchdog('apachesolr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
   }
 }
 
