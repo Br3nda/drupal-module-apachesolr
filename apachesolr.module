@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.56 2010/01/02 13:47:33 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.57 2010/01/02 14:42:58 robertDouglass Exp $
 
 /**
  * @file
@@ -1534,45 +1534,46 @@ function apachesolr_cck_fields() {
     if (module_exists('content')) {
       // A single default mapping for all text fields.
       $mappings['text'] = array(
-        'optionwidgets_select' => array('indexing callback' => '',
-          'display callback' => 'apachesolr_cck_text_field_callback',
+        'optionwidgets_select' => array(
+          'display_callback' => 'apachesolr_cck_text_field_callback',
           'index_type' => 'string',
         ),
-        'optionwidgets_buttons' => array('indexing callback' => '',
-          'display callback' => 'apachesolr_cck_text_field_callback',
+        'optionwidgets_buttons' => array(
+          'display_callback' => 'apachesolr_cck_text_field_callback',
           'index_type' => 'string',
         ),
       );
       $mappings['nodereference'] = array(
         'nodereference_buttons' => array(
-          'display callback' => 'apachesolr_cck_nodereference_field_callback',
+          'display_callback' => 'apachesolr_cck_nodereference_field_callback',
           'index_type' => 'integer',
         ),
         'nodereference_select' => array(
-          'display callback' => 'apachesolr_cck_nodereference_field_callback',
+          'display_callback' => 'apachesolr_cck_nodereference_field_callback',
           'index_type' => 'integer',
         ),
         'nodereference_autocomplete' => array(
-          'display callback' => 'apachesolr_cck_nodereference_field_callback',
+          'display_callback' => 'apachesolr_cck_nodereference_field_callback',
           'index_type' => 'integer',
         ),
       );
       $mappings['userreference'] = array(
         'userreference_buttons' => array(
-          'display callback' => 'apachesolr_cck_userreference_field_callback',
+          'display_callback' => 'apachesolr_cck_userreference_field_callback',
           'index_type' => 'integer',
         ),
         'userreference_select' => array(
-          'display callback' => 'apachesolr_cck_userreference_field_callback',
+          'display_callback' => 'apachesolr_cck_userreference_field_callback',
           'index_type' => 'integer',
         ),
         'userreference_autocomplete' => array(
-          'display callback' => 'apachesolr_cck_userreference_field_callback',
+          'display_callback' => 'apachesolr_cck_userreference_field_callback',
           'index_type' => 'integer',
         ),
       );
       // Allow other modules to add or alter mappings.
       drupal_alter('apachesolr_cck_fields', $mappings);
+
       $result = db_query("SELECT  i.field_name, f.multiple, f.type AS field_type, i.widget_type, i.label, i.type_name AS content_type FROM {content_node_field_instance} i INNER JOIN {content_node_field} f ON i.field_name = f.field_name;");
       while ($row = db_fetch_object($result)) {
         // Only deal with fields that have option widgets (facets don't make sense otherwise), or fields that have specific mappings.
@@ -1580,13 +1581,13 @@ function apachesolr_cck_fields() {
           if (isset($mappings['per-field'][$row->field_name])) {
             $fields[$row->field_name] = $mappings['per-field'][$row->field_name];
             $row->index_type = $mappings['per-field'][$row->field_name]['index_type'];
-            $row->indexing_callback = $mappings['per-field'][$row->field_name]['indexing callback'];
-            $row->display_callback = $mappings['per-field'][$row->field_name]['display callback'];
+            $row->indexing_callback = $mappings['per-field'][$row->field_name]['indexing_callback'];
+            $row->display_callback = $mappings['per-field'][$row->field_name]['display_callback'];
           }
           else {
             $row->index_type = $mappings[$row->field_type][$row->widget_type]['index_type'];
-            $row->indexing_callback = $mappings[$row->field_type][$row->widget_type]['indexing callback'];
-            $row->display_callback = $mappings[$row->field_type][$row->widget_type]['display callback'];
+            $row->indexing_callback = $mappings[$row->field_type][$row->widget_type]['indexing_callback'];
+            $row->display_callback = $mappings[$row->field_type][$row->widget_type]['display_callback'];
           }
           $row->multiple = (bool) $row->multiple;
           // It's important that we put the 'cck_' here because several points in the later processing
@@ -1599,6 +1600,7 @@ function apachesolr_cck_fields() {
       }
     }
   }
+
   return $fields;
 }
 

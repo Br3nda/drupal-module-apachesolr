@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.2.16 2009/12/27 17:15:50 robertDouglass Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.2.17 2010/01/02 14:42:58 robertDouglass Exp $
 
 /**
  * @file
@@ -113,8 +113,8 @@ function apachesolr_node_to_document($node, $namespace) {
     foreach ($cck_fields as $key => $cck_info) {
       if (isset($node->$key)) {
         // Got a CCK field. See if it is to be indexed.
-        $function = $cck_info['indexing callback'];
-        if ($cck_info['indexing callback'] && function_exists($function)) {
+        $function = $cck_info['indexing_callback'];
+        if ($cck_info['indexing_callback'] && function_exists($function)) {
           $field = $function($node, $key);
         }
         else {
