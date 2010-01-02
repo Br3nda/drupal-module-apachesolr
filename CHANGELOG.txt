@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.84 2010/01/02 14:42:58 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.85 2010/01/02 23:44:04 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#604566 by robertDouglass | jhedstrom: Fixed index_value() never set for CCK fields that aren't of type text, node or user referrence.
 #672530 by robertDouglass: Fixed Change array key names from display callback to display_callback() and indexing callback to indexing_callback().
 #672518 by robertDouglass: Fixed Add new trie prefixes to helper function .
 #551582 by drewish: Fixed Show value instead of key in CCK facets.

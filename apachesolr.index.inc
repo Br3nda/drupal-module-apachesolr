@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.2.17 2010/01/02 14:42:58 robertDouglass Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.2.18 2010/01/02 23:44:04 robertDouglass Exp $
 
 /**
  * @file
@@ -121,30 +121,32 @@ function apachesolr_node_to_document($node, $namespace) {
           $field = $node->$key;
         }
         $index_key = apachesolr_index_key($cck_info);
-        foreach ($field as $value) {
-          // Don't index NULLs or empty strings
-          // We can use 'value' rather than 'safe' since we strip tags and later check_plain().
-          // Furthermore, what is being indexed is the KEY for the CCK value. It will need
-          // a trip through content_format() later to display the value.
-          switch ($cck_info['field_type']) {
-            case 'text';
-              $index_value = (isset($value['value']) && strlen($value['value'])) ? $value['value'] : FALSE;
-              break;
-
-            case 'nodereference':
-              $index_value = (isset($value['nid']) && strlen($value['nid'])) ? $value['nid'] : FALSE;
-              break;
-
-            case 'userreference':
-              $index_value = (isset($value['uid']) && strlen($value['uid'])) ? $value['uid'] : FALSE;
-              break;
-          }
-          if ($index_value) {
-            if ($cck_info['multiple']) {
-              $document->setMultiValue($index_key, apachesolr_clean_text($index_value));
+        if (is_array($field)) {
+          foreach ($field as $value) {
+            // Don't index NULLs or empty strings
+            // We can use 'value' rather than 'safe' since we strip tags and later check_plain().
+            // Furthermore, what is being indexed is the KEY for the CCK value. It will need
+            // a trip through content_format() later to display the value.
+            switch ($cck_info['field_type']) {
+              case 'nodereference':
+                $index_value = (isset($value['nid']) && strlen($value['nid'])) ? $value['nid'] : FALSE;
+                break;
+  
+              case 'userreference':
+                $index_value = (isset($value['uid']) && strlen($value['uid'])) ? $value['uid'] : FALSE;
+                break;
+  
+              default:
+                $index_value = (isset($value['value']) && strlen($value['value'])) ? $value['value'] : FALSE;
+                break;
             }
-            else {
-              $document->$index_key = apachesolr_clean_text($index_value);
+            if ($index_value) {
+              if ($cck_info['multiple']) {
+                $document->setMultiValue($index_key, apachesolr_clean_text($index_value));
+              }
+              else {
+                $document->$index_key = apachesolr_clean_text($index_value);
+              }
             }
           }
         }
