@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.82 2010/01/02 10:54:30 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.83 2010/01/02 13:47:33 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#672518 by robertDouglass: Fixed Add new trie prefixes to helper function .
 #551582 by drewish: Fixed Show value instead of key in CCK facets.
 #668396 by pwolanin, closer to fix from #655006 for PHP notices.
 #664818 by robertDouglass, pounard, pwolanin | Scott Reynolds: Fixed Wrong watchdog() usage.
