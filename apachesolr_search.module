@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.43 2009/12/27 17:15:50 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.44 2010/01/02 10:54:30 robertDouglass Exp $
 
 /**
  * @file
@@ -949,7 +949,7 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
 
   $items = array();
   foreach($facets as $field) {
-    $facet_text = theme('apachesolr_breadcrumb_' . $field['#name'], $field['#value'], $field['#exclude']);
+    $facet_text = theme('apachesolr_breadcrumb_' . $field['#name'], $field, $field['#exclude']);
     if (!$facet_text) {
       $facet_text = $field['#value'];
     }
@@ -992,7 +992,7 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
  */
 function apachesolr_search_get_username($facet) {
   if (is_numeric($facet)) {
-    return theme('apachesolr_breadcrumb_uid', $facet);
+    return theme('apachesolr_breadcrumb_uid', array('#value' => $facet));
   }
   return '';
 }
@@ -1248,16 +1248,16 @@ function apachesolr_search_build_spellcheck() {
 function apachesolr_search_theme() {
   return array(
     'apachesolr_breadcrumb_is_book_bid' => array(
-      'arguments' => array('bid' => NULL, 'exclude' => FALSE),
+      'arguments' => array('field' => NULL, 'exclude' => FALSE),
     ),
     'apachesolr_breadcrumb_uid' => array(
-      'arguments' => array('uid' => NULL, 'exclude' => FALSE),
+      'arguments' => array('field' => NULL, 'exclude' => FALSE),
     ),
     'apachesolr_breadcrumb_tid' => array(
-      'arguments' => array('tid' => NULL, 'exclude' => FALSE),
+      'arguments' => array('field' => NULL, 'exclude' => FALSE),
     ),
     'apachesolr_breadcrumb_type' => array(
-      'arguments' => array('type' => NULL, 'exclude' => FALSE),
+      'arguments' => array('field' => NULL, 'exclude' => FALSE),
     ),
     'apachesolr_breadcrumb_language' => array(
       'arguments' => array('lang' => NULL, 'exclude' => FALSE),
@@ -1266,10 +1266,12 @@ function apachesolr_search_theme() {
       'arguments' => array('field' => NULL),
     ),
     'apachesolr_breadcrumb_changed' => array(
-      'arguments' => array('type' => NULL),
+      'arguments' => array('field' => NULL),
+      'function' => 'theme_apachesolr_breadcrumb_date_range',
     ),
     'apachesolr_breadcrumb_created' => array(
-      'arguments' => array('type' => NULL),
+      'arguments' => array('field' => NULL),
+      'function' => 'theme_apachesolr_breadcrumb_date_range',
     ),
     'apachesolr_browse_blocks' => array(
       'arguments' => array('blocks' => NULL),
@@ -1311,35 +1313,29 @@ function theme_apachesolr_breadcrumb_cck($field) {
   return $field['#value'];
 }
 
-function theme_apachesolr_breadcrumb_language($lang, $exclude = FALSE) {
-  return apachesolr_search_language_name($lang);
+function theme_apachesolr_breadcrumb_language($field, $exclude = FALSE) {
+  return apachesolr_search_language_name($field['#value']);
 }
 
-function theme_apachesolr_breadcrumb_date_range($range) {
-  if (preg_match('@[\[\{](\S+) TO (\S+)[\]\}]@', $range, $match)) {
+/**
+ * Proxy theme function for 'created' and 'changed' date fields.
+ */
+function theme_apachesolr_breadcrumb_date_range($field) {
+  if (preg_match('@[\[\{](\S+) TO (\S+)[\]\}]@', $field['#value'], $match)) {
     return apachesolr_date_format_range($match[1], $match[2]);
   }
-  return $range;
-}
-
-function theme_apachesolr_breadcrumb_changed($range) {
-  return theme_apachesolr_breadcrumb_date_range($range);
-}
-
-function theme_apachesolr_breadcrumb_created($range) {
-  return theme_apachesolr_breadcrumb_date_range($range);
+  return $field['#value'];
 }
 
 /**
  * Return the username from $uid
  */
 function theme_apachesolr_breadcrumb_uid($field) {
-  $uid = $field['#value'];
-  if ($uid == 0) {
+  if ($field['#value'] == 0) {
     return variable_get('anonymous', t('Anonymous'));
   }
   else {
-    return db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $uid));
+    return db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $field['#value']));
   }
 }
 
@@ -1347,29 +1343,27 @@ function theme_apachesolr_breadcrumb_uid($field) {
  * Return the term name from $tid, or $tid as a fallback.
  */
 function theme_apachesolr_breadcrumb_tid($field) {
-  $tid = $field['#value'];
   if (function_exists('taxonomy_get_term')) {
-    if ($term = taxonomy_get_term($tid)) {
+    if ($term = taxonomy_get_term($field['#value'])) {
       return $term->name;
     }
   }
-  return $tid;
+  return $field['#value'];
 }
 
 /**
  * Return the human readable text for a content type.
  */
 function theme_apachesolr_breadcrumb_type($field) {
-  $type = $field['#value'];
-  return node_get_types('name', $type);
+  return node_get_types('name', $field['#value']);
 }
 
 /**
  * Return the title of a book.
  */
-function theme_apachesolr_breadcrumb_is_book_bid($bid) {
-  if (is_numeric($bid)) {
-    return db_result(db_query('SELECT title FROM {node} WHERE nid = %d', $bid));
+function theme_apachesolr_breadcrumb_is_book_bid($field) {
+  if (is_numeric($field['#value'])) {
+    return db_result(db_query('SELECT title FROM {node} WHERE nid = %d', $field['#value']));
   }
   else {
     return t('Not in any book');

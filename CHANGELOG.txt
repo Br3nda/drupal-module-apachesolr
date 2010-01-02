@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.81 2009/12/27 17:29:34 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.82 2010/01/02 10:54:30 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#551582 by drewish: Fixed Show value instead of key in CCK facets.
 #668396 by pwolanin, closer to fix from #655006 for PHP notices.
 #664818 by robertDouglass, pounard, pwolanin | Scott Reynolds: Fixed Wrong watchdog() usage.
 #657648 by kcoop: Added Add Smaller Limit Options to Apache Solr Cron Indexing.
