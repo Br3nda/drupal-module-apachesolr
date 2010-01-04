@@ -41,6 +41,7 @@ function apachesolr_commentsearch_node_to_comments($node, $namespace) {
     $document->is_cid = $comment->cid;
     $document->site = url(NULL, array('absolute' => TRUE));
     $document->hash = apachesolr_site_hash();
+    $document->entity = 'comment';
     
     // Since the nid of this comment is set, when the node gets deleted,
     // the comment will also get removed from the index. See apachesolr_delete_node_from_index()
