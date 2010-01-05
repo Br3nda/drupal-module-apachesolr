@@ -1,11 +1,15 @@
-// $Id: CHANGELOG.txt,v 1.1.2.152 2010/01/02 13:48:14 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.153 2010/01/05 04:58:16 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
-#672518 by robertDouglass: Fixed Add new trie prefixes to helper function .
+
+Apache Solr Search Integration 6.x-1.0-RC5, 2010-01-04
+------------------------------
+#630798 by robertDouglass, pwolanin - critical fix for cach_get() calls.
+#672518 by robertDouglass: Fixed Add new trie prefixes to helper function.
 #668396 by pwolanin, closer to fix from #655006 for PHP notices.
 #657648 by kcoop, Add Smaller Limit Options to Apache Solr Cron Indexing.
 #664818 by pounard, robertDouglass, pwolanin fix incorrect watchdog() call.
