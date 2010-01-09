@@ -1,10 +1,14 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.86 2010/01/04 14:27:56 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.87 2010/01/09 00:53:18 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+
+Apache Solr integration 6.x-2.0-ALPHA2, 2010-01-08
+------------------------------
+#679522 by pwolanin, Add gettableFiles to solr admin interface config.
 http://drupal.org/cvs?commit=309746 by robertDouglass, add entity='comment' to comments on indexing.
 #672882 by David Lesieur: Fixed Broken 'Show more' link on taxonomy facets.
 #604566 by robertDouglass | jhedstrom: Fixed index_value() never set for CCK fields that aren't of type text, node or user referrence.
