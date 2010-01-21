@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.1.4.21.2.1 2009/09/22 15:26:15 claudiucristea Exp $
+// $Id: apachesolr.install,v 1.1.4.21.2.2 2010/01/21 10:32:19 claudiucristea Exp $
 
 /**
  * @file
@@ -15,13 +15,23 @@ function apachesolr_install() {
     case 'mysql':
     case 'mysqli':
       db_query("CREATE TABLE {apachesolr_search_node} (
-                  nid int(10) unsigned NOT NULL COMMENT 'The primary identifier for a node.',
-                  status int(11) NOT NULL default 1 COMMENT 'Boolean indicating whether the node is published (visible to non-administrators).',
-                  changed int(11) NOT NULL default 0 COMMENT 'The Unix timestamp when a node property was changed.',
-                  PRIMARY KEY (nid),
-                  KEY changed (changed, status)
-               ) TYPE=MyISAM COMMENT='Stores a record of when a node property changed to determine if it needs indexing by Solr.' /*!40100 DEFAULT CHARACTER SET utf8 */;"
-      );
+        nid int(10) unsigned NOT NULL COMMENT 'The primary identifier for a node.',
+        status int(11) NOT NULL default 1 COMMENT 'Boolean indicating whether the node is published (visible to non-administrators).',
+        changed int(11) NOT NULL default 0 COMMENT 'The Unix timestamp when a node property was changed.',
+        PRIMARY KEY (nid),
+        KEY changed (changed, status)
+      ) TYPE=MyISAM COMMENT='Stores a record of when a node property changed to determine if it needs indexing by Solr.' /*!40100 DEFAULT CHARACTER SET utf8 */;");
+
+      db_query("CREATE TABLE {cache_apachesolr} (
+        cid varchar(255) NOT NULL default '',
+        data longblob,
+        expire int NOT NULL default '0',
+        created int NOT NULL default '0',
+        headers text,
+        PRIMARY KEY (cid),
+        INDEX expire (expire)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+
       break;
     case 'pgsql':
       // TODO: Implement PostgreSQL DB
@@ -153,5 +163,31 @@ function apachesolr_update_5004() {
     $ret[] = update_sql("DROP TABLE {apachesolr_mlt}");
   }
   $ret[] = update_sql("DELETE FROM {system} WHERE name = 'apachesolr_mlt'");
+  return $ret;
+}
+
+/**
+ * Add ApacheSolr's own cache table.
+ * @see: http://drupal.org/node/630798
+ */
+function apachesolr_update_5005() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("CREATE TABLE {cache_apachesolr} (
+        cid varchar(255) NOT NULL default '',
+        data longblob,
+        expire int NOT NULL default '0',
+        created int NOT NULL default '0',
+        headers text,
+        PRIMARY KEY (cid),
+        INDEX expire (expire)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+      break;
+    case 'pgsql':
+      // TODO: Implement PostgreSQL DB
+      break;
+  }
   return $ret;
 }
