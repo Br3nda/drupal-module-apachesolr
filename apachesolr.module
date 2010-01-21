@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161.2.12 2010/01/21 09:27:31 claudiucristea Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.13 2010/01/21 14:14:56 claudiucristea Exp $
 
 /**
  * @file
@@ -119,43 +119,6 @@ function apachesolr_failure($search_name, $querystring) {
       break;
     case 'show_no_results':
       return;
-  }
-}
-
-/**
- * Implementation of hook_requirements().
- */
-function apachesolr_requirements($phase) {
-  // Ensure translations don't break at install time
-  $t = get_t();
-  if ($phase == 'runtime') {
-    $host = variable_get('apachesolr_host', 'localhost');
-    $port = variable_get('apachesolr_port', 8983);
-    $path = variable_get('apachesolr_path', '/solr');
-    $ping = FALSE;
-    try {
-      $solr = apachesolr_get_solr();
-      $ping = @$solr->ping(variable_get('apachesolr_ping_timeout', 4));
-      // If there is no $solr object, there is no server available, so don't continue.
-      if (!$ping) {
-        throw new Exception(t('No Solr instance available when checking requirements.'));
-      }
-    }
-    catch (Exception $e) {
-      watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), WATCHDOG_ERROR);
-    }
-    $value =  $ping ? $t('Your site has contacted the Apache Solr server.') : $t('Your site was unable to contact the Apache Solr server.');
-    $severity = $ping ? 0: 2;
-    $description = theme('item_list', array($t('Host: %host', array('%host' => $host)),
-                        $t('Port: %port', array('%port' => $port)),
-                        $t('Path: %path', array('%path' => $path))));
-    $requirements['apachesolr'] = array(
-      'title' => $t('Apache Solr'),
-      'value' => $value,
-      'description' => $description,
-      'severity' => $severity,
-    );
-    return $requirements;
   }
 }
 
