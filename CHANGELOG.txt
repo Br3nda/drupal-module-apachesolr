@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.112.2.23 2010/01/21 14:14:56 claudiucristea Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.112.2.24 2010/01/21 14:53:49 claudiucristea Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 5.x-2.x, 2010-xx-xx
 ------------------------------
+#638572 by robertDouglass fix taxonomy facet sorting.
 #628080 by pwolanin, update to use Solr PHP library r22 and check for it in hook_requirements.
 #630798 by joshk, robertDouglass make cache_apachesolr table to facilitate better memcache utilization.
 #623046 by robertDouglass, Make the results that come back from a search more useful.

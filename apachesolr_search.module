@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.12 2010/01/21 14:26:31 claudiucristea Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.13 2010/01/21 14:55:38 claudiucristea Exp $
 
 /**
  * @file
@@ -626,6 +626,9 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
                 $link = theme('apachesolr_facet_link', $term->name, $new_query->get_path(), $options, $count, $active, $response->response->numFound);
               }
               $countsort = $count == 0 ? '' : 1 / $count;
+              $countsort += .000001;
+              $countsort = number_format($countsort, 6);
+
               // if numdocs == 1 and !active, don't add.
               if ($response->response->numFound > 1 || $active) {
                 $terms[$term->vid][$active ? $countsort . $term->name : 1 + $countsort . $term->name] = $link;
