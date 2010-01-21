@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.10 2010/01/21 09:27:31 claudiucristea Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.11 2010/01/21 09:49:11 claudiucristea Exp $
 
 /**
  * @file
@@ -841,13 +841,16 @@ function apachesolr_search_form_alter($form_id, &$form) {
             }
             $new_keywords = strtr($query->get_query_basic(), $replacements);
     
-            $form['basic']['suggestion'] = array(
-              '#prefix' => '<div class="spelling-suggestions">',
-              '#suffix' => '</div>',
-              '#type' => 'item',
-              '#title' => t('Did you mean'),
-              '#value' => l($new_keywords, $query->get_path($new_keywords)),
-            );
+            // Show only if suggestion is different than current query.
+            if ($query->get_query_basic() != $new_keywords) {
+              $form['basic']['suggestion'] = array(
+                '#prefix' => '<div class="spelling-suggestions">',
+                '#suffix' => '</div>',
+                '#type' => 'item',
+                '#title' => t('Did you mean'),
+                '#value' => l($new_keywords, $query->get_path($new_keywords)),
+              );
+            }
           }
         }
       }
