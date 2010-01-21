@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.32.2.11 2010/01/21 14:14:56 claudiucristea Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.32.2.12 2010/01/21 14:42:20 claudiucristea Exp $
 
 /**
  * @file
@@ -454,9 +454,11 @@ function _apachesolr_field_name_map($field_name) {
       'tags_a' => t('Body text inside links (A tags)'),
       'tid' => t('Taxonomy term IDs'),
     );
-    foreach(taxonomy_get_vocabularies() as $vocab) {
-      $map['ts_vid_'. $vocab->vid .'_names'] = t('Taxonomy term names only from the %name vocabulary', array('%name' => $vocab->name));
-      $map['im_vid_'. $vocab->vid] = t('Taxonomy term IDs from the %name vocabulary', array('%name' => $vocab->name));
+    if (module_exists('taxonomy')) {
+      foreach(taxonomy_get_vocabularies() as $vocab) {
+        $map['ts_vid_'. $vocab->vid .'_names'] = t('Taxonomy term names only from the %name vocabulary', array('%name' => $vocab->name));
+        $map['im_vid_'. $vocab->vid] = t('Taxonomy term IDs from the %name vocabulary', array('%name' => $vocab->name));
+      }
     }
     foreach (apachesolr_cck_fields() as $name => $field) {
       $map[apachesolr_index_key($field)] = t('CCK @type field !label', array('@type' => $field['index_type'], '!name' => $field['label']));
