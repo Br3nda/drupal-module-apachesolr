@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.13 2010/01/21 14:55:38 claudiucristea Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.14 2010/01/22 09:59:50 claudiucristea Exp $
 
 /**
  * @file
@@ -15,7 +15,7 @@ include_once(drupal_get_path('module', 'apachesolr_search') .'/apachesolr_search
 function apachesolr_search_help($section) {
   switch ($section) {
     case 'admin/settings/apachesolr/index':
-      if (variable_get('apachesolr_read_only', 0)) {
+      if (variable_get('apachesolr_read_only', APACHESOLR_READ_WRITE)) {
         return t('Operating in read-only mode; updates are disabled.');
       }
       $remaining = 0;

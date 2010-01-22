@@ -274,7 +274,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
    * @see Apache_Solr_Service::_sendRawGet()
    */
   protected function _sendRawPost($url, $rawPost, $timeout = FALSE, $contentType = 'text/xml; charset=UTF-8') {
-    if (variable_get('apachesolr_read_only', 0)) {
+    if (variable_get('apachesolr_read_only', APACHESOLR_READ_WRITE)) {
       throw new Exception('Operating in read-only mode; updates are disabled.');
     }
     $request_headers = array('Content-Type' => $contentType);

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.32.2.12 2010/01/21 14:42:20 claudiucristea Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.32.2.13 2010/01/22 09:59:50 claudiucristea Exp $
 
 /**
  * @file
@@ -305,15 +305,16 @@ function apachesolr_delete_index_form() {
   );
   $form['toggle_index'] = array(
     '#type' => 'submit',
-    '#value' => variable_get('apachesolr_read_only', FALSE) ? t('Start indexer') : t('Pause indexer'),
+    '#value' => variable_get('apachesolr_read_only', APACHESOLR_READ_WRITE) ? t('Start indexer') : t('Pause indexer'),
   );
   $form['toggle_index-desc'] = array(
     '#type' => 'item',
-    '#description' => variable_get('apachesolr_read_only', FALSE) ? t('The indexer is paused. You can restart it by clicking on this button. The indexing process will start on next cron run.') : t('The indexer is started and it runs on cron. You can pause the indexer by clicking on this button.'),
+    '#description' => variable_get('apachesolr_read_only', APACHESOLR_READ_WRITE) ? t('The indexer is paused. You can restart it by clicking on this button. The indexing process will start on next cron run.') : t('The indexer is started and it runs on cron. You can pause the indexer by clicking on this button.'),
   );
   $form['reindex'] = array(
     '#type' => 'submit',
     '#value' => t('Re-index all content'),
+    '#disabled' => (bool)variable_get('apachesolr_read_only', APACHESOLR_READ_WRITE),
   );
   $form['reindex-desc'] = array(
     '#type' => 'item',
@@ -322,6 +323,7 @@ function apachesolr_delete_index_form() {
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Delete the index'),
+    '#disabled' => (bool)variable_get('apachesolr_read_only', APACHESOLR_READ_WRITE),
   );
   $form['delete-desc'] = array(
     '#type' => 'item',
@@ -373,7 +375,7 @@ function apachesolr_delete_index_form_submit($form_id, $form_values) {
     return 'admin/settings/apachesolr/index/clear/confirm';
   }
   elseif (in_array($form_values['op'], array(t('Start indexer'), t('Pause indexer')))) {
-    variable_set('apachesolr_read_only', !($form_values['op'] == t('Start indexer')));
+    variable_set('apachesolr_read_only', $form_values['op'] == t('Start indexer') ? APACHESOLR_READ_WRITE : APACHESOLR_READ_ONLY);
   }
 }
 

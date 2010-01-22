@@ -1,10 +1,13 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161.2.13 2010/01/21 14:14:56 claudiucristea Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.14 2010/01/22 09:59:50 claudiucristea Exp $
 
 /**
  * @file
  *   Integration with the Apache Solr search application.
  */
+
+define('APACHESOLR_READ_WRITE', 0);
+define('APACHESOLR_READ_ONLY', 1);
 
 include_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.d6.inc');
 include_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
@@ -299,7 +302,7 @@ function _apachesolr_exclude_types($namespace) {
  */
 function apachesolr_get_nodes_to_index($namespace, $limit) {
   $rows = array();
-  if (variable_get('apachesolr_read_only', 0)) {
+  if (variable_get('apachesolr_read_only', APACHESOLR_READ_WRITE)) {
     return $rows;
   }
   list($excluded_types, $args, $join_sql, $exclude_sql) = _apachesolr_exclude_types($namespace);
