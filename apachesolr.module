@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161.2.17 2010/01/22 18:00:35 claudiucristea Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.18 2010/01/22 19:06:56 claudiucristea Exp $
 
 /**
  * @file
@@ -1284,32 +1284,32 @@ function apachesolr_cck_fields() {
       $mappings['text'] = array(
         'options_select' => array(
           'indexing_callback' => '',
-          'display callback' => 'apachesolr_cck_text_field_callback',
+          'display_callback' => 'apachesolr_cck_text_field_callback',
           'index_type' => 'string',
         ),
         'options_buttons' => array(
           'indexing_callback' => '',
-          'display callback' => 'apachesolr_cck_text_field_callback',
+          'display_callback' => 'apachesolr_cck_text_field_callback',
           'index_type' => 'string',
         ),
       );
       $mappings['nodereference'] = array(
         'nodereference_select' => array(
-          'display callback' => 'apachesolr_cck_nodereference_field_callback',
+          'display_callback' => 'apachesolr_cck_nodereference_field_callback',
           'index_type' => 'integer',
         ),
         'nodereference_autocomplete' => array(
-          'display callback' => 'apachesolr_cck_nodereference_field_callback',
+          'display_callback' => 'apachesolr_cck_nodereference_field_callback',
           'index_type' => 'integer',
         ),
       );
       $mappings['userreference'] = array(
         'userreference_select' => array(
-          'display callback' => 'apachesolr_cck_userreference_field_callback',
+          'display_callback' => 'apachesolr_cck_userreference_field_callback',
           'index_type' => 'integer',
         ),
         'userreference_autocomplete' => array(
-          'display callback' => 'apachesolr_cck_userreference_field_callback',
+          'display_callback' => 'apachesolr_cck_userreference_field_callback',
           'index_type' => 'integer',
         ),
       );
@@ -1327,12 +1327,12 @@ function apachesolr_cck_fields() {
           if (isset($mappings['per-field'][$row->field_name])) {
             $row->index_type = $mappings['per-field'][$row->field_name]['index_type'];
             $row->indexing_callback = $mappings['per-field'][$row->field_name]['indexing_callback'];
-            $row->display_callback = $mappings['per-field'][$row->field_name]['display callback'];
+            $row->display_callback = $mappings['per-field'][$row->field_name]['display_callback'];
           }
           else {
             $row->index_type = $mappings[$row->field_type][$row->widget_type]['index_type'];
             $row->indexing_callback = $mappings[$row->field_type][$row->widget_type]['indexing_callback'];
-            $row->display_callback = $mappings[$row->field_type][$row->widget_type]['display callback'];
+            $row->display_callback = $mappings[$row->field_type][$row->widget_type]['display_callback'];
           }
           $row->multiple = (bool) $row->multiple;
           // It's important that we put the 'cck_' here because several points in the later processing
