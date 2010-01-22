@@ -1,10 +1,12 @@
-// $Id: CHANGELOG.txt,v 1.1.2.112.2.31 2010/01/22 17:26:38 claudiucristea Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.112.2.32 2010/01/22 17:40:39 claudiucristea Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 5.x-2.x, 2010-xx-xx
 ------------------------------
+#662232 by pwolanin, use 'und' not 'zxx' for Language neutral per Drupal 7 change.
+#665186 by mkalkbrenner, fix README for Solr 1.4 release.
 #664572 by pwolanin, add schema and core name to admin screen.
 #528086 by pwolanin, better (but still problematic) handling of entities.
 #662232 by pwolanin, index zxx as the Language neutral code.

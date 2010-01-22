@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.4.9 2010/01/22 16:42:06 claudiucristea Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.4.10 2010/01/22 17:40:39 claudiucristea Exp $
 
 /**
  * @file
@@ -86,8 +86,9 @@ function apachesolr_node_to_document($nid, $namespace) {
       $document->language = $node->language;
     }
     else {
-      // 'zxx' is the language-neutral code in Drupal 7.
-      $document->language = 'zxx';
+      // 'und' is the language-neutral code in Drupal 7.
+      // Note - this was changed from 'zxx'.
+      $document->language = 'und';
     }
     $document->body = apachesolr_clean_text($text);
     $document->type  = $node->type;
