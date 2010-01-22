@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.15 2010/01/22 16:20:37 claudiucristea Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.16 2010/01/22 16:42:06 claudiucristea Exp $
 
 /**
  * @file
@@ -608,7 +608,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
           case 'is_book_bid':
             return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by book'), 'apachesolr_search_get_book');
           case 'language':
-            return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by language'), 'locale_language_name');
+            return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by language'), 'apachesolr_search_language_name');
            case 'uid':
             return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by author'), 'apachesolr_search_get_username');
           case 'type':
@@ -684,6 +684,7 @@ function apachesolr_search_taxonomy_facet_block($response, $query, $delta) {
         $facets[$tid] = array(
           '#name' => 'tid',
           '#value' => $tid,
+          '#exclude' => FALSE,
           '#count' => $count,
           '#parent' => 0,
           '#children' => array(),
@@ -756,6 +757,20 @@ function apachesolr_search_get_book($facet, &$options) {
     $options['html'] = TRUE;
     return theme('placeholder', t('Not in any book'));
   }
+}
+
+function apachesolr_search_language_name($lang) {
+  static $list = NULL;
+
+  if (!isset($list)) {
+    if (function_exists('locale_language_list')) {
+      $list = locale_language_list();
+    }
+    $list['zxx'] = t('Language neutral');
+    // TODO - remove this line - only present for rc3 to rc4 update.
+    $list['[* TO *]'] = $list['zxx'];
+  }
+  return ($lang && isset($list[$lang])) ? $list[$lang] : $lang;
 }
 
 /**
@@ -1062,6 +1077,10 @@ function theme_apachesolr_breadcrumb_cck($field) {
   return $field['#value'];
 }
 
+function theme_apachesolr_breadcrumb_language($lang, $exclude = FALSE) {
+  return apachesolr_search_language_name($lang);
+}
+
 function theme_apachesolr_breadcrumb_date_range($range) {
   if (preg_match('@[\[\{](\S+) TO (\S+)[\]\}]@', $range, $match)) {
     return apachesolr_date_format_range($match[1], $match[2]);
@@ -1196,7 +1215,7 @@ function apachesolr_search_currentsearch_block($response, $query) {
           // on a taxonomy/term/$tid page.
           $query->add_filter('tid', $tid);
           // Ordering is wonky, but oh well...
-          $fields[] = array('#name' => 'tid', '#value' => $tid, '#parent' => 0, '#children' => array());
+          $fields[] = array('#name' => 'tid', '#value' => $tid, '#exclude' => FALSE, '#parent' => 0, '#children' => array());
           // Get the index of the newly added facet.
           end($fields);
           $facets[$tid] = key($fields);
