@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.112.2.37 2010/01/22 18:42:27 claudiucristea Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.112.2.38 2010/01/22 18:57:46 claudiucristea Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 5.x-2.x, 2010-xx-xx
 ------------------------------
+#551582 by drewish: Fixed Show value instead of key in CCK facets.
 #664818 by pounard, robertDouglass, pwolanin fix incorrect watchdog() call.
 #667650 by Dave Reid: Fixed Results of apachesolr_process_response() should return absolute URLs.
 #667124 by pwolanin, Use current query not altered query for the breadcrumb.
