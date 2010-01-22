@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161.2.14 2010/01/22 09:59:50 claudiucristea Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.15 2010/01/22 11:11:39 claudiucristea Exp $
 
 /**
  * @file
@@ -270,11 +270,19 @@ function apachesolr_rebuild_index_table($type = NULL) {
   }
   else {
     db_query("DELETE FROM {apachesolr_search_node}");
-    // Populate table
-    db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed)
+    // Populate table.
+    if (module_exists('comment')) {
+      // If comment module is enabled, use last_comment_timestamp as well.
+      db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed)
               SELECT n.nid, n.status, GREATEST(n.created, n.changed, c.last_comment_timestamp) AS changed
               FROM {node} n
               LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid");
+    }
+    else {
+      db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed)
+              SELECT n.nid, n.status, GREATEST(n.created, n.changed) AS changed
+              FROM {node} n");
+    }
     // Make sure no nodes end up with a timestamp that's in the future.
     $time = time();
     db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE changed > %d", $time, $time);
