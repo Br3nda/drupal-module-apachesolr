@@ -1,12 +1,13 @@
-// $Id: CHANGELOG.txt,v 1.1.2.155 2010/02/03 23:52:02 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.156 2010/02/04 01:24:44 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#666936 by justindodge, pwolanin make Drupal.behaviors.apachesolr respect context.
 #672882 by David Lesieur, Fix Show more links on taxonomy facets.
-#679522 by pwolanin, Add gettableFiles to solr admin intefrace config.
+#679522 by pwolanin, Add gettableFiles to solr admin interface config.
 
 Apache Solr Search Integration 6.x-1.0-RC5, 2010-01-04
 ------------------------------
