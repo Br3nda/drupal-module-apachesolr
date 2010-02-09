@@ -1,10 +1,12 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.87 2010/01/09 00:53:18 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.88 2010/02/09 13:56:30 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#666936 by pwolanin, robertDouglass, claudiu.cristea | justindodge: Fixed apachesolr.js - Drupal.behaviors.apachesolr does not respect context.
+
 
 Apache Solr integration 6.x-2.0-ALPHA2, 2010-01-08
 ------------------------------
