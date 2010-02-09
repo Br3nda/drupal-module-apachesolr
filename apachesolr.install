@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.1.4.21.2.3 2010/01/21 14:14:56 claudiucristea Exp $
+// $Id: apachesolr.install,v 1.1.4.21.2.4 2010/02/09 10:13:52 claudiucristea Exp $
 
 /**
  * @file
@@ -104,7 +104,27 @@ function apachesolr_install() {
 
       break;
     case 'pgsql':
-      // TODO: Implement PostgreSQL DB
+      // PostgreSQL DB
+      db_query("CREATE TABLE {apachesolr_search_node} (
+        nid numeric(10) NOT NULL default 0,
+        status numeric(11) NOT NULL default 1,
+        changed numeric(11) NOT NULL default 0,
+        PRIMARY KEY (nid)
+      )");
+      db_query("CREATE INDEX {apachesolr_search_node}_changed_idx ON {apachesolr_search_node} (changed)");
+      drupal_set_message("Created Table: apachesolr_search_node");
+      
+      db_query("CREATE TABLE {cache_apachesolr} (
+        cid varchar(255) NOT NULL default '',
+        data bytea,
+        expire numeric(11) NOT NULL default 0,
+        created numeric(11) NOT NULL default 0,
+        headers text,
+        PRIMARY KEY (cid)
+      )");
+      db_query("CREATE INDEX {cache_apachesolr}_expire_idx ON {cache_apachesolr} (expire)");      
+      drupal_set_message("Created Table: cache_apachesolr");
+
       break;
   }
 
@@ -169,7 +189,14 @@ function apachesolr_update_5000() {
         );
         break;
       case 'pgsql':
-        // TODO: Implement PostgreSQL DB
+        // PostgreSQL DB
+        $ret[] = update_sql("CREATE TABLE {apachesolr_search_node} (
+                    nid numeric(10) NOT NULL default 0,
+                    status numeric(11) NOT NULL default 1,
+                    changed numeric(11) NOT NULL default 0,
+                    PRIMARY KEY (nid)
+                  )");
+        $ret[] = update_sql("CREATE INDEX {apachesolr_search_node}_changed_idx ON {apachesolr_search_node} (changed)");
         break;
     }
   }
@@ -256,7 +283,15 @@ function apachesolr_update_5005() {
       ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
       break;
     case 'pgsql':
-      // TODO: Implement PostgreSQL DB
+      $ret[] = update_sql("CREATE TABLE {cache_apachesolr} (
+        cid varchar(255) NOT NULL default '',
+        data bytea,
+        expire numeric(11) NOT NULL default 0,
+        created numeric(11) NOT NULL default 0,
+        headers text,
+        PRIMARY KEY (cid)
+      )");
+      $ret[] = update_sql("CREATE INDEX {cache_apachesolr}_expire_idx ON {cache_apachesolr} (expire)");      
       break;
   }
   return $ret;
