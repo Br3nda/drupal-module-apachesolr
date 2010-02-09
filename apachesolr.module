@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161.2.19 2010/01/27 13:36:46 claudiucristea Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.20 2010/02/09 08:44:01 claudiucristea Exp $
 
 /**
  * @file
@@ -1587,6 +1587,8 @@ function theme_apachesolr_facet_list($items, $display_limit = 0) {
   if (($display_limit > 0) && (count($items) > $display_limit)) {
     // Show/hide extra facets.
     drupal_add_js(drupal_get_path('module', 'apachesolr') . '/apachesolr.js');
+    // Add translated strings.
+    drupal_add_js(array('apachesolr' => array('showMore' => t('Show more'), 'showFewer' => t('Show fewer'))), 'setting');
     // Split items array into displayed and hidden.
     $hidden_items = array_splice($items, $display_limit);
     foreach ($hidden_items as $hidden_item) {

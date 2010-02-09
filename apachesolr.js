@@ -1,15 +1,15 @@
-// $Id: apachesolr.js,v 1.1.2.4.2.1 2009/11/03 12:35:59 robertDouglass Exp $
+// $Id: apachesolr.js,v 1.1.2.4.2.2 2010/02/09 08:44:01 claudiucristea Exp $
 
 Drupal.behaviors.apachesolr = function(context) {
   $('.apachesolr-hidden-facet').hide();
-  $('<a href="#" class="apachesolr-showhide"></a>').text(Drupal.t('Show more')).click(function() {
+  $('<a href="#" class="apachesolr-showhide"></a>').text(Drupal.settings.apachesolr.showMore).click(function() {
     if ($(this).parent().find('.apachesolr-hidden-facet:visible').length == 0) {
       $(this).parent().find('.apachesolr-hidden-facet').show();
-      $(this).text(Drupal.t('Show fewer'));
+      $(this).text(Drupal.settings.apachesolr.showFewer);
     }
     else {
       $(this).parent().find('.apachesolr-hidden-facet').hide();
-      $(this).text(Drupal.t('Show more'));
+      $(this).text(Drupal.settings.apachesolr.showMore);
     }
     return false;
   }).appendTo($('.block-apachesolr_search:has(.apachesolr-hidden-facet), .block-apachesolr:has(.apachesolr-hidden-facet)'));
