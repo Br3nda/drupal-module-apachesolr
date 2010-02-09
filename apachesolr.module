@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161.2.20 2010/02/09 08:44:01 claudiucristea Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.21 2010/02/09 10:17:39 claudiucristea Exp $
 
 /**
  * @file
@@ -1054,7 +1054,7 @@ function apachesolr_facetcount_save($edit) {
  *  The current page for $element. 0 by default if $_GET['page'] is empty.
  */
 function apachesolr_pager_init($total, $limit = 10, $element = 0) {
-  global $pager_page_array, $pager_total, $pager_total_items;dpm($pager_page_array, $pager_total_items, $pager_total);
+  global $pager_page_array, $pager_total, $pager_total_items;
   $page = isset($_GET['page']) ? $_GET['page'] : '';
 
   // Convert comma-separated $page to an array, used by other functions.
