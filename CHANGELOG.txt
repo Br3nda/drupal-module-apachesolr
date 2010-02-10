@@ -1,11 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.112.2.46 2010/02/10 13:12:00 claudiucristea Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.112.2.47 2010/02/10 13:19:46 claudiucristea Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
-#664994 by pounard, claudiu.cristea: Cache CCK fields and small API improvement.
 
 Apache Solr Search Integration 5.x-2.x, 2010-xx-xx
 ------------------------------
+#664994 by pounard, claudiu.cristea: Cache CCK fields and small API improvement.
 #707566 by davidwhthomas: Drupal 5 PostgreSQL.
 #666936 by justindodge, pwolanin make Drupal.behaviors.apachesolr respect context.
 #708812 by claudiu.cristea: "Show more" link is missed from facet blocks.
