@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161.2.22 2010/02/10 13:12:00 claudiucristea Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.23 2010/02/24 16:45:25 claudiucristea Exp $
 
 /**
  * @file
@@ -12,7 +12,7 @@ define('APACHESOLR_READ_ONLY', 1);
 include_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.d6.inc');
 
 // Include admin functions only on the admin pages.
-if (arg(0) == 'admin' && arg(1) == 'settings' && arg(2) == 'apachesolr') {
+if (arg(0) == 'admin' && (arg(1) == 'settings' || arg(1) == 'logs') && arg(2) == 'apachesolr') {
   include_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
 }
 
