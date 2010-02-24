@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.112.2.48 2010/02/24 16:45:25 claudiucristea Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.112.2.49 2010/02/24 16:54:30 claudiucristea Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 5.x-2.x, 2010-xx-xx
 ------------------------------
+#724440 by abautu: Current search does not display properly the CCK filters.
 #722194 by abautu, claudiu.cristea: Solr logs are not accessible.
 #664994 by pounard, claudiu.cristea: Cache CCK fields and small API improvement.
 #707566 by davidwhthomas: Drupal 5 PostgreSQL.

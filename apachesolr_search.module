@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.26 2010/02/24 16:45:25 claudiucristea Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.27 2010/02/24 16:54:30 claudiucristea Exp $
 
 /**
  * @file
@@ -801,7 +801,9 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
 
   $items = array();
   foreach($facets as $field) {
-    $facet_text = theme('apachesolr_breadcrumb_' . $field['#name'], $field, $field['#exclude']);
+    $breadcrumb_name = 'apachesolr_breadcrumb_'. $field['#name'];
+    drupal_alter('apachesolr_theme_breadcrumb', $breadcrumb_name);
+    $facet_text = theme($breadcrumb_name, $field, $field['#exclude']);
     if (!$facet_text) {
       $facet_text = $field['#value'];
     }
