@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.132 2010/02/03 23:52:02 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.133 2010/02/24 23:00:01 pwolanin Exp $
 
 /**
  * @file
@@ -431,6 +431,11 @@ function apachesolr_process_response($response, $query, $params) {
       drupal_alter('apachesolr_search_result', $doc);
       // Copy code from comment_nodeapi().
       $extra[] = format_plural($doc->comment_count, '1 comment', '@count comments');
+      $fields = array();
+      foreach ($doc->getFieldNames() as $field_name) {
+        $fields[$field_name] = $doc->$field_name;
+      }
+
       $results[] = array(
         'link' => url($doc->path, array('absolute' => TRUE)),
         'type' => apachesolr_search_get_type($doc->type),
@@ -443,6 +448,7 @@ function apachesolr_process_response($response, $query, $params) {
         'extra' => $extra,
         'score' => $doc->score,
         'snippet' => $snippet,
+        'fields' => $fields,
       );
     }
 
