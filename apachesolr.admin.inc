@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.32.2.16 2010/01/22 17:26:39 claudiucristea Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.32.2.17 2010/02/27 01:55:51 pwolanin Exp $
 
 /**
  * @file
@@ -459,7 +459,7 @@ function _apachesolr_field_name_map($field_name) {
       'taxonomy_names' => t('All taxonomy term names'),
       'tags_h1' => t('Body text inside H1 tags'),
       'tags_h2_h3' => t('Body text inside H2 or H3 tags'),
-      'tags_h4_h5_h6' => t('Body text inside H4, H4, or H6 tags'),
+      'tags_h4_h5_h6' => t('Body text inside H4, H5, or H6 tags'),
       'tags_inline' => t('Body text in inline tags like EM or STRONG'),
       'tags_a' => t('Body text inside links (A tags)'),
       'tid' => t('Taxonomy term IDs'),
