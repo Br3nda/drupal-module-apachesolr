@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.88 2010/02/09 13:56:30 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.89 2010/03/09 21:02:34 janusman Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -6,7 +6,7 @@ Apache Solr integration x.x-x.x, xxxx-xx-xx
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
 #666936 by pwolanin, robertDouglass, claudiu.cristea | justindodge: Fixed apachesolr.js - Drupal.behaviors.apachesolr does not respect context.
-
+#708424 by janusman: Changed Change gmdate() to Drupal format_date() in date facets to support localization.
 
 Apache Solr integration 6.x-2.0-ALPHA2, 2010-01-08
 ------------------------------
@@ -103,6 +103,7 @@ Apache Solr integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
 #508364 by pwolanin, Don't offer non-indexed fields as search options.
 #508548 by pwolanin, Don't implode params['fq'] if it's not set.
+#708424 by janusman: Changed Change gmdate() to Drupal format_date() in date facets to support localization.
 
 Apache Solr integration 6.x-1.0-RC1, 2009-07-02
 ------------------------------
