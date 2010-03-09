@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.112.2.49 2010/02/24 16:54:30 claudiucristea Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.112.2.50 2010/03/09 21:08:30 janusman Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -12,6 +12,7 @@ Apache Solr Search Integration 5.x-2.x, 2010-xx-xx
 #666936 by justindodge, pwolanin make Drupal.behaviors.apachesolr respect context.
 #708812 by claudiu.cristea: "Show more" link is missed from facet blocks.
 #696758 by claudiu.cristea: Don't include admin files in normal pages.
+#708424 by janusman: Changed Change gmdate() to Drupal format_date() in date facets to support localization.
 
 Apache Solr Search Integration 5.x-2.0-rc2, 2010-01-22
 ------------------------------

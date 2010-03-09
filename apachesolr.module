@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161.2.23 2010/02/24 16:45:25 claudiucristea Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.24 2010/03/09 21:08:30 janusman Exp $
 
 /**
  * @file
@@ -893,17 +893,17 @@ function apachesolr_date_format_iso_by_gap($gap, $iso) {
   if ($unix > 0) {
     switch ($gap) {
       case 'YEAR':
-        return gmdate('Y', $unix);
+        return format_date($unix, 'custom', 'Y', 0);
       case 'MONTH':
-        return gmdate('F Y', $unix);
+        return format_date($unix, 'custom', 'F Y', 0);
       case 'DAY':
-        return gmdate('F j, Y', $unix);
+        return format_date($unix, 'custom', 'F j, Y', 0);
       case 'HOUR':
-        return gmdate('g A', $unix);
+        return format_date($unix, 'custom', 'g A', 0);
       case 'MINUTE':
-        return gmdate('g:i A', $unix);
+        return format_date($unix, 'custom', 'g:i A', 0);
       case 'SECOND':
-        return gmdate('g:i:s A', $unix);
+        return format_date($unix, 'custom', 'g:i:s A', 0);
     }
   }
 
