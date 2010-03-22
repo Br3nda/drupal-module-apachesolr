@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.drush.inc,v 1.1.2.5 2009/11/20 11:37:36 robertDouglass Exp $
+// $Id: apachesolr.drush.inc,v 1.1.2.6 2010/03/22 17:10:27 robertDouglass Exp $
 
 /**
  * @file
@@ -25,7 +25,7 @@ function apachesolr_drush_command() {
   $items = array();
 
   // the key in the $items array is the name of the command.
-  $items['solr delete index'] = array(
+  $items['solr-delete-index'] = array(
     // the name of the function implementing your command.
     'callback' => 'apachesolr_drush_solr_delete_index',
     // a short description of your command
@@ -34,7 +34,7 @@ function apachesolr_drush_command() {
       'types' => dt('Optional. A space delimited list of content types to be deleted from the index.'),
     ),
   );
-  $items['solr reindex'] = array(
+  $items['solr-reindex'] = array(
     // the name of the function implementing your command.
     'callback' => 'apachesolr_drush_solr_reindex',
     // a short description of your command
@@ -43,14 +43,14 @@ function apachesolr_drush_command() {
       'types' => dt('Optional. A space delimited list of content types to be marked for reindexing.'),
     ),
   );
-  $items['solr phpclient'] = array(
+  $items['solr-phpclient'] = array(
     'callback' => 'apachesolr_drush_solr_phpclient',
     'description' => dt('Downloads the required SolrPhpClient from googlecode.com.'),
     'arguments' => array(
       'path' => dt('Optional. A path to the apachesolr module. If omitted Drush will use the default location.'),
     ),
   );
-  $items['solr search'] = array(
+  $items['solr-search'] = array(
     'callback' => 'apachesolr_drush_solr_search',
     'description' => dt('Search the site for keywords using Apache Solr'),
     'arguments' => array(

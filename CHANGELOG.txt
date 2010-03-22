@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.90 2010/03/22 16:55:07 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.91 2010/03/22 17:10:27 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#744038 by siliconmeadow: Changed Change of Drush extension command naming conventions.
 #558160 by robertDouglass, mihha | DenRaf, mcarbone, haxney: Added date facet for cck fields.
 #666936 by pwolanin, robertDouglass, claudiu.cristea | justindodge: Fixed apachesolr.js - Drupal.behaviors.apachesolr does not respect context.
 #708424 by janusman: Changed Change gmdate() to Drupal format_date() in date facets to support localization.
