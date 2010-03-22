@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.91 2010/03/22 17:10:27 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.92 2010/03/22 17:31:19 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#719356 by robertDouglass, mathieu | flk: Fixed Indexing cron triggers sigsegv in apachesolr.module line 387.
 #744038 by siliconmeadow: Changed Change of Drush extension command naming conventions.
 #558160 by robertDouglass, mihha | DenRaf, mcarbone, haxney: Added date facet for cck fields.
 #666936 by pwolanin, robertDouglass, claudiu.cristea | justindodge: Fixed apachesolr.js - Drupal.behaviors.apachesolr does not respect context.

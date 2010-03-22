@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.59 2010/03/22 16:55:07 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.60 2010/03/22 17:31:19 robertDouglass Exp $
 
 /**
  * @file
@@ -384,9 +384,9 @@ function apachesolr_index_nodes($rows, $namespace) {
   }
 
   // Flatten $documents
-  $tmp = (object) array('a' => array());
-  array_walk_recursive($documents, create_function('&$v, $k, &$t', '$t->a[] = $v;'), $tmp);
-  $documents = $tmp->a;
+  $tmp = array();
+  apachesolr_flatten_documents_array($documents, &$tmp);
+  $documents = $tmp;
 
   if (count($documents)) {
     try {
@@ -428,6 +428,25 @@ function apachesolr_index_nodes($rows, $namespace) {
  */
 function apachesolr_date_iso($date_timestamp) {
   return gmdate('Y-m-d\TH:i:s\Z', $date_timestamp);
+}
+
+/**
+ * Function to flatten documents array recursively.
+ *
+ * @param array $documents
+ *   The array of documents being indexed.
+ * @param array &$tmp
+ *   A container variable that will contain the flattened array.
+ */
+function apachesolr_flatten_documents_array($documents, &$tmp) {
+  foreach ($documents AS $index => $item) {
+    if (is_array($item)) {
+      apachesolr_flatten_documents_array($item, $tmp);
+    }
+    else {
+      $tmp[] = $item;
+    }
+  }
 }
 
 function apachesolr_delete_node_from_index($node) {
