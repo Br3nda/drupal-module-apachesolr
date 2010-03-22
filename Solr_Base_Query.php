@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.40.2.10 2009/12/26 13:08:51 robertDouglass Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.40.2.11 2010/03/22 16:55:07 robertDouglass Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -409,7 +409,6 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
     // Gets information about the fields already in solr index.
     $index_fields = $this->solr->getFields();
-
     foreach ((array) $index_fields as $name => $data) {
       // Look for a field alias.
       $alias = isset($this->field_map[$name]) ? $this->field_map[$name] : $name;

@@ -5,3 +5,5 @@ dependencies[] = image
 dependencies[] = apachesolr
 package = Apache Solr
 core = "6.x"
+
+

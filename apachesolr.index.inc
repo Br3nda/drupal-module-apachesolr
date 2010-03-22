@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.2.18 2010/01/02 23:44:04 robertDouglass Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.2.19 2010/03/22 16:55:07 robertDouglass Exp $
 
 /**
  * @file
@@ -110,43 +110,28 @@ function apachesolr_node_to_document($node, $namespace) {
 
     // Get CCK fields list
     $cck_fields = apachesolr_cck_fields();
+    // NOTE: One CCK field might result in multiple Solr fields.
     foreach ($cck_fields as $key => $cck_info) {
       if (isset($node->$key)) {
         // Got a CCK field. See if it is to be indexed.
         $function = $cck_info['indexing_callback'];
+        $fields = NULL;
         if ($cck_info['indexing_callback'] && function_exists($function)) {
-          $field = $function($node, $key);
+          // NOTE: This function should always return an array.
+          $fields = $function($node, $key, $cck_info);
         }
-        else {
-          $field = $node->$key;
-        }
-        $index_key = apachesolr_index_key($cck_info);
-        if (is_array($field)) {
-          foreach ($field as $value) {
-            // Don't index NULLs or empty strings
-            // We can use 'value' rather than 'safe' since we strip tags and later check_plain().
-            // Furthermore, what is being indexed is the KEY for the CCK value. It will need
-            // a trip through content_format() later to display the value.
-            switch ($cck_info['field_type']) {
-              case 'nodereference':
-                $index_value = (isset($value['nid']) && strlen($value['nid'])) ? $value['nid'] : FALSE;
-                break;
-  
-              case 'userreference':
-                $index_value = (isset($value['uid']) && strlen($value['uid'])) ? $value['uid'] : FALSE;
-                break;
-  
-              default:
-                $index_value = (isset($value['value']) && strlen($value['value'])) ? $value['value'] : FALSE;
-                break;
+        // NOTE: This is now being done in the mandatory indexing callback.
+        // $index_key = apachesolr_index_key($cck_info);
+        if (is_array($fields)) {
+          // NOTE: If this were done as $key => $value, and the $index_key were
+          // done within the loop, could we support indexing one CCK field to
+          // multiple Solr fields?
+          foreach ($fields as $field) {
+            if ($cck_info['multiple']) {
+              $document->setMultiValue($field['key'], apachesolr_clean_text($field['value']));
             }
-            if ($index_value) {
-              if ($cck_info['multiple']) {
-                $document->setMultiValue($index_key, apachesolr_clean_text($index_value));
-              }
-              else {
-                $document->$index_key = apachesolr_clean_text($index_value);
-              }
+            else {
+              $document->{$field['key']} = apachesolr_clean_text($field['value']);
             }
           }
         }
@@ -167,6 +152,38 @@ function apachesolr_node_to_document($node, $namespace) {
     }
   }
   return $document;
+}
+
+function apachesolr_cck_nodereference_indexing_callback($node, $field_name, $cck_info) {
+  $fields = array();
+  if (isset($node->{$field_name})) {
+    $index_key = apachesolr_index_key($cck_info);
+    foreach ($node->$field_name as $field) {
+      if ($index_value =  (isset($field['nid']) && strlen($field['nid'])) ? $field['nid'] : FALSE) {
+        $fields[] = array(
+          'key' => $index_key,
+          'value' => $index_value,
+        );
+      }
+    }
+  }
+  return $fields;
+}
+
+function apachesolr_cck_userreference_indexing_callback($node, $field_name, $cck_info) {
+  $fields = array();
+  if (isset($node->$field_name)) {
+    $index_key = apachesolr_index_key($cck_info);
+    foreach ($node->{$field_name} as $field) {
+      if ($index_value =  (isset($field['uid']) && strlen($field['uid'])) ? $field['uid'] : FALSE) {
+        $fields[] = array(
+          'key' => $index_key,
+          'value' => $index_value,
+        );
+      }
+    }
+  }
+  return $fields;
 }
 
 /**
@@ -251,7 +268,7 @@ function apachesolr_add_tags_to_document(&$document, $text) {
 /**
  * Additional index utility functions
  */
- 
+
 /**
  * hook_cron() helper to try to make {apachesolr_search_node} consistent with {node}.
  */
@@ -303,7 +320,7 @@ function apachesolr_cron_check_node_table() {
     }
   }
 }
- 
+
 function apachesolr_nodeapi_mass_update($nodes) {
   if (empty($nodes)) {
     return TRUE;
@@ -330,7 +347,7 @@ function apachesolr_nodeapi_mass_update($nodes) {
     return FALSE;
   }
 }
- 
+
 function apachesolr_nodeapi_mass_delete($nodes) {
   if (empty($nodes)) {
     return TRUE;
@@ -354,4 +371,3 @@ function apachesolr_nodeapi_mass_delete($nodes) {
     return FALSE;
   }
 }
-

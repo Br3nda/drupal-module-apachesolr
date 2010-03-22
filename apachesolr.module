@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.58 2010/03/09 21:02:34 janusman Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.59 2010/03/22 16:55:07 robertDouglass Exp $
 
 /**
  * @file
@@ -280,6 +280,7 @@ function apachesolr_rebuild_index_table($type = NULL) {
     db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE changed > %d", $time, $time);
     apachesolr_clear_last_index();
   }
+  cache_clear_all('*', 'cache_apachesolr', TRUE);
 }
 
 function apachesolr_exclude_types($namespace) {
@@ -744,15 +745,35 @@ function apachesolr_get_facet_definitions() {
     $operator_settings = variable_get('apachesolr_operator', array());
     foreach (module_implements('apachesolr_facets') as $module) {
       $facets = module_invoke($module, 'apachesolr_facets');
-      foreach ($facets as $delta => $info) {
-        $definitions[$module][$delta] = $info;
-        if(isset($definitions[$module][$delta])) {
-          $definitions[$module][$delta]['operator'] = isset($operator_settings[$module][$delta]) ? $operator_settings[$module][$delta] : 'AND';
+      if (!empty($facets)) {
+        foreach ($facets as $delta => $info) {
+          $definitions[$module][$delta] = $info;
+          if(isset($definitions[$module][$delta])) {
+            $definitions[$module][$delta]['operator'] = isset($operator_settings[$module][$delta]) ? $operator_settings[$module][$delta] : 'AND';
+          }
         }
       }
     }
   }
   return $definitions;
+}
+
+/**
+ * Returns a member of the facet definitions array if it contains
+ * $field as the 'field_name' element.
+ *
+ * @param string $field
+ *   The field_name being sought.
+ */
+function apachesolr_get_facet_definition_by_field($field) {
+  $definitions = apachesolr_get_facet_definitions();
+  foreach ($definitions as $module => $facets) {
+    foreach ($facets as $key => $values) {
+      if ($facet = array_search($field, $values)) {
+        return $definitions[$module][$key];
+      }
+    }
+  }
 }
 
 /**
@@ -1112,8 +1133,7 @@ function apachesolr_date_gap_drilldown($gap) {
     'YEAR' => 'MONTH',
     'MONTH' => 'DAY',
     'DAY' => 'HOUR',
-    // For now, HOUR is a reasonable smallest gap.
-    // 'HOUR' => 'MINUTE',
+    'HOUR' => 'MINUTE',
   );
   return isset($drill[$gap]) ? $drill[$gap] : NULL;
 }
@@ -1145,7 +1165,7 @@ function apachesolr_facetcount_form($module, $delta) {
     '#description' => t('The maximum number of filter links to show in this block.'),
     '#default_value' => isset($limits[$module][$delta]) ? $limits[$module][$delta] : variable_get('apachesolr_facet_query_limit_default', 20),
   );
-  
+
   // TODO: Generalize how we know what type a facet block is by putting field
   // type into the facet definition. 'created' and 'changed' are date blocks.
   if ($delta != 'created' && $delta != 'changed') {
@@ -1406,7 +1426,7 @@ function apachesolr_static_response_cache($response = NULL) {
 function apachesolr_drupal_query($keys = '', $filters = '', $solrsort = '', $base_path = '', $solr = NULL) {
   list($module, $class) = variable_get('apachesolr_query_class', array('apachesolr', 'Solr_Base_Query'));
   include_once drupal_get_path('module', $module) .'/'. $class .'.php';
-  
+
   if (empty($solr)) {
     $solr = apachesolr_get_solr();
   }
@@ -1546,14 +1566,17 @@ function apachesolr_cck_fields() {
       $mappings['nodereference'] = array(
         'nodereference_buttons' => array(
           'display_callback' => 'apachesolr_cck_nodereference_field_callback',
+          'indexing_callback' => 'apachesolr_cck_nodereference_indexing_callback',
           'index_type' => 'integer',
         ),
         'nodereference_select' => array(
           'display_callback' => 'apachesolr_cck_nodereference_field_callback',
+          'indexing_callback' => 'apachesolr_cck_nodereference_indexing_callback',
           'index_type' => 'integer',
         ),
         'nodereference_autocomplete' => array(
           'display_callback' => 'apachesolr_cck_nodereference_field_callback',
+          'indexing_callback' => 'apachesolr_cck_nodereference_indexing_callback',
           'index_type' => 'integer',
         ),
       );
@@ -1564,10 +1587,12 @@ function apachesolr_cck_fields() {
         ),
         'userreference_select' => array(
           'display_callback' => 'apachesolr_cck_userreference_field_callback',
+          'indexing_callback' => 'apachesolr_cck_userreference_indexing_callback',
           'index_type' => 'integer',
         ),
         'userreference_autocomplete' => array(
           'display_callback' => 'apachesolr_cck_userreference_field_callback',
+          'indexing_callback' => 'apachesolr_cck_userreference_indexing_callback',
           'index_type' => 'integer',
         ),
       );
@@ -1579,20 +1604,21 @@ function apachesolr_cck_fields() {
         // Only deal with fields that have option widgets (facets don't make sense otherwise), or fields that have specific mappings.
         if ((isset($mappings[$row->field_type][$row->widget_type]) ||  isset($mappings['per-field'][$row->field_name]))) {
           if (isset($mappings['per-field'][$row->field_name])) {
-            $fields[$row->field_name] = $mappings['per-field'][$row->field_name];
-            $row->index_type = $mappings['per-field'][$row->field_name]['index_type'];
-            $row->indexing_callback = $mappings['per-field'][$row->field_name]['indexing_callback'];
-            $row->display_callback = $mappings['per-field'][$row->field_name]['display_callback'];
+            $field = $mappings['per-field'][$row->field_name];
+            $fields[$row->field_name] = $field;
           }
           else {
-            $row->index_type = $mappings[$row->field_type][$row->widget_type]['index_type'];
-            $row->indexing_callback = $mappings[$row->field_type][$row->widget_type]['indexing_callback'];
-            $row->display_callback = $mappings[$row->field_type][$row->widget_type]['display_callback'];
+            $field = $mappings[$row->field_type][$row->widget_type];
           }
-          $row->multiple = (bool) $row->multiple;
           // It's important that we put the 'cck_' here because several points in the later processing
           // depend on it to route program flow to cck specific handlers.
-          $row->name = 'cck_' . $row->field_name;
+          $row->name                 = 'cck_' . $row->field_name;
+          $row->index_type           = $field['index_type'];
+          $row->indexing_callback    = $field['indexing_callback'];
+          $row->display_callback     = $field['display_callback'];
+          $row->facet_block_callback = $field['facet_block_callback'];
+          $row->multiple             = (bool) $row->multiple;
+
           $fields[$row->field_name] = array_merge((array) $fields[$row->field_name], (array) $row);
           $fields[$row->field_name]['content_types'][] = $row->content_type;
           unset($fields[$row->field_name]['content_type']);
@@ -1602,6 +1628,15 @@ function apachesolr_cck_fields() {
   }
 
   return $fields;
+}
+
+/**
+ * Implementation of hook_content_fieldapi
+ */
+function apachesolr_content_fieldapi($op) {
+  if ($op == 'update instance') {
+    cache_clear_all('*', 'cache_apachesolr', TRUE);
+  }
 }
 
 /**
@@ -1739,7 +1774,7 @@ function apachesolr_mlt_suggestions($settings, $id) {
       }
     }
     $query = apachesolr_drupal_query('id:' . $id);
-    
+
     $type_filters = array();
     if (is_array($settings['mlt_type_filters'])) {
       foreach ($settings['mlt_type_filters'] as $type_filter) {

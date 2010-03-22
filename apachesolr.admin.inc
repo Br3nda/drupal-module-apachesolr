@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.28.2.23 2009/12/27 17:29:34 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28.2.24 2010/03/22 16:55:07 robertDouglass Exp $
 
 /**
  * @file
@@ -249,6 +249,9 @@ function apachesolr_enabled_facets_form_submit($form, &$form_state) {
   foreach ($form_state['values']['apachesolr_enabled_facets'] as $module => $facets) {
     $enabled[$module] = array_filter($facets);
   }
+  // This cache being stale can prevent new facet filters from working.
+  $solr = apachesolr_get_solr();
+  $solr->clearCache();
   variable_set('apachesolr_enabled_facets', $enabled);
   drupal_set_message($form_state['values']['submit_message'], 'warning');
 }
@@ -265,9 +268,12 @@ function apachesolr_enabled_facets_form() {
   $module_facets = array();
   $module_list = array();
   foreach (module_implements('apachesolr_facets') as $module) {
-    $module_facets[$module] = module_invoke($module, 'apachesolr_facets');
-    uasort($module_facets[$module], 'apachesolr_sort_facets');
-    $module_list[$module] = $module;
+    $return = module_invoke($module, 'apachesolr_facets');
+    if (!empty($return)) {
+      $module_facets[$module] = $return;
+      uasort($module_facets[$module], 'apachesolr_sort_facets');
+      $module_list[$module] = $module;
+    }
   }
 
   $enabled_facets = apachesolr_get_enabled_facets();
@@ -381,8 +387,8 @@ function apachesolr_clear_index_submit($form, &$form_state) {
     $form_state['redirect'] = 'admin/settings/apachesolr/index/batch/confirm';
   }
   else {
-  $form_state['redirect'] = 'admin/settings/apachesolr/index/clear/confirm';
-}
+    $form_state['redirect'] = 'admin/settings/apachesolr/index/clear/confirm';
+  }
 }
 
 /**

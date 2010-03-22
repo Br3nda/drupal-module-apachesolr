@@ -94,7 +94,14 @@ function apachesolr_commentsearch_apachesolr_search_result_alter(&$doc, &$extra)
 }
 
 function apachesolr_commentsearch_apachesolr_theme_breadcrumb_alter(&$breadcrumb_name) {
-  $breadcrumb_name = 'apachesolr_commentsearch_breadcrumb_type';
+  // While the goal here is to hijack nearly every breadcrumb generation, we
+  // can't do it if it's a ckk facet. That would step on the toes of
+  // date facets, etc. So reverse the logic from apachesolr_search_apachesolr_theme_breadcrumb_alter
+  // and only alter non-cck breadcrumbs.
+  $matches = preg_split('/_cck_/', $fieldname);
+  if (!empty($matches[1])) {
+    $breadcrumb_name = 'apachesolr_commentsearch_breadcrumb_type';
+  }
 }
 
 function apachesolr_commentsearch_comment(&$a1, $op) {

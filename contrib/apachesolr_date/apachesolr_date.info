@@ -1,0 +1,9 @@
+; $Id: apachesolr_date.info,v 1.1.2.1 2010/03/22 16:55:07 robertDouglass Exp $
+name = Apache Solr Date
+description = Index and facet on CCK date fields.
+dependencies[] = apachesolr
+dependencies[] = apachesolr_search
+dependencies[] = date
+package = Apache Solr
+core = "6.x"
+php = 5.1.4
