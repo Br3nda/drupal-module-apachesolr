@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.46 2010/03/22 16:55:07 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.47 2010/03/22 19:22:38 robertDouglass Exp $
 
 /**
  * @file
@@ -262,6 +262,10 @@ function apachesolr_search_browse($keys = '', $filters = '', $solrsort = '', $ba
   $blocks = array();
   $rids = array_keys($user->roles);
   foreach (apachesolr_get_enabled_facets() as $module => $module_facets) {
+    if (!module_exists($module)) {
+      // When modules are disabled their facet settings may remain.
+      continue;
+    }
     foreach($module_facets as $delta => $facet_field) {
       if ($delta == 'currentsearch') {
         continue;

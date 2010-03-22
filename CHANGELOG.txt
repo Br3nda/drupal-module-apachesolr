@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.97 2010/03/22 18:05:54 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.98 2010/03/22 19:22:37 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#610656 by pwolanin, claudiu.cristea | Scott Reynolds: Fixed Facets requests for non-enabled modules.
 #686390 by pwolanin | rjbrown99: Fixed Wrong number of initial items in taxonomy facet under certain conditions.
 #573734 by drewish | robertDouglass: Added Index controls should be radio buttons with one form submission button.
 #736540 by drewish | Scott Reynolds: Changed Minimize UPDATE queries in apachesolr_nodeapi_mass_update().
