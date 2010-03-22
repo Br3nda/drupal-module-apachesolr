@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.159 2010/03/09 20:56:54 janusman Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.160 2010/03/22 17:11:49 robertDouglass Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -9,6 +9,7 @@ Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 
 Apache Solr Search Integration 6.x-1.0, 2010-03-03
 ------------------------------
+#744038 by siliconmeadow: Changed Change of Drush extension command naming conventions.
 #686390 by justindodge, pwolanin don't overwite existing class for facets.
 #623046 by robertDouglass, pwolanin make the results array more useful.
 #666936 by justindodge, pwolanin make Drupal.behaviors.apachesolr respect context.
