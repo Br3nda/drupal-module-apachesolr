@@ -1,9 +1,13 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.98 2010/03/22 19:22:37 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.99 2010/03/22 19:25:02 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
+------------------------------
+
+
+Apache Solr integration 6.x-2.0-ALPHA3, 2010-03-22
 ------------------------------
 #610656 by pwolanin, claudiu.cristea | Scott Reynolds: Fixed Facets requests for non-enabled modules.
 #686390 by pwolanin | rjbrown99: Fixed Wrong number of initial items in taxonomy facet under certain conditions.
