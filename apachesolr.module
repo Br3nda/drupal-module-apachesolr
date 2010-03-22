@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.61 2010/03/22 17:32:20 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.62 2010/03/22 17:59:38 robertDouglass Exp $
 
 /**
  * @file
@@ -47,7 +47,7 @@ function apachesolr_menu() {
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_LOCAL_TASK,
   );
-  $items['admin/settings/apachesolr/index/clear/confirm'] = array(
+  $items['admin/settings/apachesolr/index/confirm/clear'] = array(
     'title'              => 'Confirm the re-indexing of all content',
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_clear_index_confirm'),
@@ -55,15 +55,7 @@ function apachesolr_menu() {
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_CALLBACK,
   );
-  $items['admin/settings/apachesolr/index/batch/confirm'] = array(
-    'title'              => 'Confirm the batch re-indexing of all content',
-    'page callback'      => 'drupal_get_form',
-    'page arguments'     => array('apachesolr_batch_index_confirm'),
-    'access arguments'   => array('administer search'),
-    'file'               => 'apachesolr.admin.inc',
-    'type'               => MENU_CALLBACK,
-  );
-  $items['admin/settings/apachesolr/index/delete/confirm'] = array(
+  $items['admin/settings/apachesolr/index/confirm/delete'] = array(
     'title'              => 'Confirm index deletion',
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_delete_index_confirm'),

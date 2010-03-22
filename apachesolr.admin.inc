@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.28.2.24 2010/03/22 16:55:07 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28.2.25 2010/03/22 17:59:38 robertDouglass Exp $
 
 /**
  * @file
@@ -157,13 +157,12 @@ function apachesolr_index_page() {
   }
   $output .= '<p>' . l(t('View more details on the search index contents'), 'admin/reports/apachesolr') . "</p>\n";
   if (variable_get('apachesolr_read_only', APACHESOLR_READ_WRITE) == APACHESOLR_READ_WRITE) {
-    // Display the Delete Index form.
-    $output .= drupal_get_form('apachesolr_delete_index_form');
+    // Display the Index Action form.
+    $output .= drupal_get_form('apachesolr_index_action_form');
   }
   else {
-    drupal_set_message(t('The index is in read-only mode. Options for deleting and re-indexing are therefore not available. The index mode can be changed on the !settings_page', array('!settings_page' => l(t('settings page'), 'admin/settings/apachesolr'))), 'warning'); 
+    drupal_set_message(t('The index is in read-only mode. Options for deleting and re-indexing are therefore not available. The index mode can be changed on the !settings_page', array('!settings_page' => l(t('settings page'), 'admin/settings/apachesolr'))), 'warning');
   }
-  
 
   return $output;
 }
@@ -397,7 +396,7 @@ function apachesolr_clear_index_submit($form, &$form_state) {
  */
 function apachesolr_clear_index_confirm() {
   $form = array();
-  return confirm_form($form, t('Are you sure you want to re-index?'), 'admin/settings/apachesolr/index', NULL, t('Re-index'), t('Cancel'));
+  return confirm_form($form, t('Are you sure you want to queue content for reindexing?'), 'admin/settings/apachesolr/index', t('All content on the site will be queued for indexing. The documents currently in the Solr index will remain searchable. The content will be gradually resubmitted to Solr during cron runs.'), t('Reindex'), t('Cancel'));
 }
 
 /**
@@ -408,35 +407,7 @@ function apachesolr_clear_index_confirm() {
 function apachesolr_clear_index_confirm_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/settings/apachesolr/index';
   apachesolr_rebuild_index_table();
-}
-
-
-/**
- * Confirmation form for "Batch re-index all content" button
- * @see apachesolr_batch_index_confirm_submit()
- */
-function apachesolr_batch_index_confirm() {
-  $form = array();
-  return confirm_form($form, t('Are you sure you want to batch re-index? This may take some time.'), 'admin/settings/apachesolr/index', NULL, t('Batch re-index'), t('Cancel'));
-}
-
-/**
- * Submit function for the "Batch re-index all content" confirmation form.
- *
- * @see apachesolr_clear_index_confirm()
- */
-function apachesolr_batch_index_confirm_submit($form, &$form_state) {
-  $form_state['redirect'] = 'admin/settings/apachesolr/index';
-  apachesolr_batch_reindex();
-}
-
-/**
- * Submit function for the "Delete the index" button
- * @see apachesolr_delete_index_form()
- *
- */
-function apachesolr_delete_index_submit($form, &$form_state) {
-  $form_state['redirect'] = 'admin/settings/apachesolr/index/delete/confirm';
+  drupal_set_message(t('All the content on your site is queued for indexing. You can wait for it to be indexed during cron runs, or you can manually reindex it.'), 'warning');
 }
 
 /**
@@ -445,7 +416,7 @@ function apachesolr_delete_index_submit($form, &$form_state) {
  */
 function apachesolr_delete_index_confirm() {
   $form = array();
-  return confirm_form($form, t('Are you sure you want to delete your search index and start re-indexing?'), 'admin/settings/apachesolr/index', NULL, t('Delete'), t('Cancel'));
+  return confirm_form($form, t('Are you sure you want to delete the search index?'), 'admin/settings/apachesolr/index', t("All documents in the Solr index will be deleted. This is rarely necessary unless your index is corrupt or you have installed a new schema.xml. After doing this your content will need to be queued for indexing."), t('Delete'), t('Cancel'));
 }
 
 /**
@@ -457,10 +428,7 @@ function apachesolr_delete_index_confirm_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/settings/apachesolr/index';
   try {
     apachesolr_delete_index();
-    // This form can't be seen by anyone without 'administer search'
-    // permission, so no need to check perms before displaying a run-cron link.
-    drupal_set_message(t('The Apache Solr content index has been erased. You must now !run_cron until your entire site has been re-indexed.', array('!run_cron' => l(t('run cron'), 'admin/reports/status/run-cron', array('query' => array('destination' => 'admin/settings/apachesolr/index'))))));
-
+    drupal_set_message(t('The Apache Solr content index has been erased. All the content on your site is queued for indexing. You can wait for it to be indexed during cron runs, or you can manually reindex it.'), 'warning');
   }
   catch (Exception $e) {
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
@@ -604,7 +572,7 @@ function apachesolr_mlt_block_form($delta = NULL) {
     '#options' => drupal_map_assoc(array(3, 5, 7, 10, 12, 15, 20, 25, 30, 35, 40)),
     '#default_value' => $block['mlt_maxqt'],
   );
-  
+
   $form['restrictions'] = array(
     '#type' => 'fieldset',
     '#title' => t('Filters'),
@@ -745,19 +713,19 @@ function apachesolr_mlt_delete_block_form_submit($form, &$form_state) {
  */
 
 /**
-* Control a batch reindex operation using the batch API.
+* Submit a batch job to index the remaining, unindexed content.
 */
-function apachesolr_batch_reindex() {
+function apachesolr_batch_index_remaining() {
   $batch = array(
     'operations' => array(
-      array('apachesolr_batch_reindex_process', array()),
+      array('apachesolr_batch_index_nodes', array()),
     ),
-    'finished' => 'apachesolr_batch_reindex_finished',
-    'title' => t('Reindexing'),
-    'init_message' => t('Batch reindexing is starting.'),
+    'finished' => 'apachesolr_batch_index_finished',
+    'title' => t('Indexing'),
+    'init_message' => t('Preparing to submit content to Solr for indexing...'),
+    'progress_message' => t('Submitting content to Solr...'),
+    'error_message' => t('Solr indexing has encountered an error.'),
     'file' => drupal_get_path('module', 'apachesolr') . '/apachesolr.admin.inc',
-    //'progress_message' => t('Reindexed @current out of @total.'),
-    'error_message' => t('Batch reindexing has encountered an error.'),
   );
   batch_set($batch);
 }
@@ -765,7 +733,7 @@ function apachesolr_batch_reindex() {
 /**
 * Batch Operation Callback
 */
-function apachesolr_batch_reindex_process(&$context) {
+function apachesolr_batch_index_nodes(&$context) {
   if (empty($context['sandbox'])) {
     try {
       // Get the $solr object
@@ -780,51 +748,47 @@ function apachesolr_batch_reindex_process(&$context) {
       return FALSE;
     }
 
+    $status = module_invoke('apachesolr_search', 'search', 'status');
     $context['sandbox']['progress'] = 0;
-    $context['sandbox']['current_node'] = 0;
-    apachesolr_rebuild_index_table();
+    $context['sandbox']['max'] = $status['remaining'];
   }
-  // We can safely process the apachesolr_cron_limit nodes at a time without a timeout.
+
+  // We can safely process the apachesolr_cron_limit nodes at a time without a
+  // timeout or out of memory error.
   $limit = variable_get('apachesolr_cron_limit', 50);
 
-  // Pull the total and remaining variables using apachesolr_search status function.
-  // This is used to push the progress bar for each group of nodes being indexed.
-  // Must set progress before calling the apachesolr_index_nodes() function to properly increment
-  // the progress else progress and total will never equal.
-  $status = module_invoke('apachesolr_search', 'search', 'status');
-  $remaining = $status['remaining'];
-  $total = $status['total'];
-  $nodes_indexed = db_result(db_query('SELECT COUNT(nid) FROM {apachesolr_search_node}'));
-  $context['sandbox']['progress'] += min($limit, $remaining);
-  $number_indexed = min($limit, $remaining);
-  $context['message'] = t('Reindexing @current of @total.', array('@current' => $context['sandbox']['progress'], '@total' => $total));
-  $context['sandbox']['max'] = $total;
-
   // With each pass through the callback, retrieve the next group of nids.
-  $result = apachesolr_get_nodes_to_index('apachesolr_search', $limit);
-  apachesolr_index_nodes($result, 'apachesolr_search');
+  $rows = apachesolr_get_nodes_to_index('apachesolr_search', $limit);
+  apachesolr_index_nodes($rows, 'apachesolr_search');
 
-  // Inform the batch engine that we are not finished,
-  // and provide an estimation of the completion level we reached.
-  if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
-    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+  $context['sandbox']['progress'] += count($rows);
+  $context['message'] = t('Indexed @current of @total nodes', array('@current' => $context['sandbox']['progress'], '@total' => $context['sandbox']['max']));
+
+  // Inform the batch engine that we are not finished, and provide an
+  // estimation of the completion level we reached.
+  $context['finished'] = empty($context['sandbox']['max']) ? 1 : $context['sandbox']['progress'] / $context['sandbox']['max'];
+
+  // Put the total into the results section when we're finished so we can
+  // show it to the admin.
+  if ($context['finished']) {
+    $context['results']['count'] = $context['sandbox']['progress'];
   }
 }
 
 /**
 * Batch 'finished' callback
 */
-function apachesolr_batch_reindex_finished($success, $results, $operations) {
+function apachesolr_batch_index_finished($success, $results, $operations) {
+  $message = format_plural($results['count'], '1 item processed successfully.', '@count items successfully processed.');
   if ($success) {
-    // Here we do something meaningful with the results.
-    $message = format_plural(count($results), '1 item successfully processed.', '@count items successfully processed.');
-    $message .= theme('item_list', $results);
+    $type = 'status';
   }
   else {
-    // An error occurred.
-    // $operations contains the operations that remained unprocessed.
+    // An error occurred, $operations contains the operations that remained
+    // unprocessed.
     $error_operation = reset($operations);
-    $message = t('An error occurred while processing @num with arguments :', array('@num' => $error_operation[0])) . print_r($error_operation[0], TRUE);
+    $message .= ' '. t('An error occurred while processing @num with arguments :', array('@num' => $error_operation[0])) . print_r($error_operation[0], TRUE);
+    $type = 'error';
   }
-  drupal_set_message($message, 'error');
+  drupal_set_message($message, $type);
 }
