@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.28.2.25 2010/03/22 17:59:38 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28.2.26 2010/03/22 18:34:14 robertDouglass Exp $
 
 /**
  * @file
@@ -333,60 +333,66 @@ function apachesolr_enabled_facets_form() {
 /**
  * Create a form for deleting the contents of the Solr index.
  */
-function apachesolr_delete_index_form() {
+function apachesolr_index_action_form() {
   $form = array();
-  $form['markup'] = array(
-    '#prefix' => '<h3>',
-    '#value' => t('Index controls'),
-    '#suffix' => '</h3>',
+
+  $form['action'] = array(
+    '#value' => '<h3>'. t('Index Actions') .'</h3>',
   );
-  $form['batch'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Reindex immediately'),
-    '#description' => t('If checked, the index will be rebuilt immediately in this browser session using the batch API. Depending on the size of your index it may take a while. Leave unchecked to reindex on cron runs.'),
+  // Jump through some forms hoops to get a description under each radio button.
+  $actions = array(
+    'remaining' => array(
+      'title' => t('Index queued content'),
+      'description' => t('Any content that is queued for indexing will be submitted to Solr immediately. Depending on amount of content on the site, it may take a long time to complete, and may place an increased load on your server.'),
+     ),
+    'reindex' => array(
+      'title' => t('Queue content for reindexing'),
+      'description' => t('All content on the site will be queued for indexing. The documents currently in the Solr index will remain searchable. The content will be gradually resubmitted to Solr during cron runs.'),
+     ),
+    'delete' => array(
+      'title' => t('Delete the index'),
+      'description' => t('All documents in the Solr index will be deleted. This is rarely necessary unless your index is corrupt or you have installed a new schema.xml. After doing this your content will need to be resubmitted for indexing.'),
+     ),
   );
-  $form['reindex'] = array(
-    '#type' => 'submit',
-    '#value' => t('Re-index all content'),
-    '#submit' => array('apachesolr_clear_index_submit'),
-  );
-  $form['reindex-desc'] = array(
-    '#type' => 'item',
-    '#description' => t('Re-indexing will add all content to the index again (overwriting the index), but existing content in the index will remain searchable.'),
-  );
+  foreach ($actions as $key => $action) {
+    // Generate the parents as the autogenerator does, so we will have a
+    // unique id for each radio button.
+    $form['action'][$key] = array(
+      '#type' => 'radio',
+      '#title' => $action['title'],
+      '#default_value' => 'remaining',
+      '#return_value' => $key,
+      '#parents' => array('action'),
+      '#description' => $action['description'],
+      '#id' => form_clean_id('edit-'. implode('-', array('action', $key))),
+    );
+  }
+
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Delete the index'),
-    '#submit' => array('apachesolr_delete_index_submit'),
-  );
-  $form['delete-desc'] = array(
-    '#type' => 'item',
-    '#description' => t('Deletes all of the documents in the Solr index. This is rarely necessary unless your index is corrupt or you have installed a new schema.xml.'),
+    '#value' => t('Begin'),
+    '#submit' => array('apachesolr_index_action_form_submit'),
   );
 
   return $form;
 }
 
 /**
- * Submit function for the "Re-index all content" button.
- *
- * @see apachesolr_delete_index_form()
+ * Submit function for the index action form.
  */
-function apachesolr_clear_index($form, &$form_state) {
-  return apachesolr_comfirm_clear_index($form, $form_state);
-}
+function apachesolr_index_action_form_submit($form, &$form_state) {
+  switch ($form_state['values']['action']) {
+    case 'remaining':
+      apachesolr_batch_index_remaining();
+      break;
 
-/**
- * Submit function for the "Re-index all content" button
- * @see apachesolr_delete_index_form()
- *
- */
-function apachesolr_clear_index_submit($form, &$form_state) {
-  if ($form_state['values']['batch']) {
-    $form_state['redirect'] = 'admin/settings/apachesolr/index/batch/confirm';
-  }
-  else {
-    $form_state['redirect'] = 'admin/settings/apachesolr/index/clear/confirm';
+    case 'reindex':
+      $form_state['redirect'] = 'admin/settings/apachesolr/index/confirm/clear';
+      break;
+
+    case 'delete':
+      $form_state['redirect'] = 'admin/settings/apachesolr/index/confirm/delete';
+      break;
   }
 }
 
