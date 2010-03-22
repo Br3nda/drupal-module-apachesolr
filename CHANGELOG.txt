@@ -1,15 +1,16 @@
-// $Id: CHANGELOG.txt,v 1.1.2.160 2010/03/22 17:11:49 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.161 2010/03/22 17:33:36 robertDouglass Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#744038 by siliconmeadow: Changed Change of Drush extension command naming conventions.
+#733116 by pwolanin | drewish: Changed Implement hook_flush_caches().
 #708424 by janusman: Changed Change gmdate() to Drupal format_date() in date facets to support localization.
 
 Apache Solr Search Integration 6.x-1.0, 2010-03-03
 ------------------------------
-#744038 by siliconmeadow: Changed Change of Drush extension command naming conventions.
 #686390 by justindodge, pwolanin don't overwite existing class for facets.
 #623046 by robertDouglass, pwolanin make the results array more useful.
 #666936 by justindodge, pwolanin make Drupal.behaviors.apachesolr respect context.

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.184 2010/03/09 20:56:54 janusman Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.185 2010/03/22 17:33:36 robertDouglass Exp $
 
 /**
  * @file
@@ -470,6 +470,13 @@ function apachesolr_cron() {
   catch (Exception $e) {
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())) . ' in apachesolr_cron', NULL, WATCHDOG_ERROR);
   }
+}
+
+/**
+ * Implementation of hook_flush_caches().
+ */
+function apachesolr_flush_caches() {
+  return array('cache_apachesolr');
 }
 
 /**
