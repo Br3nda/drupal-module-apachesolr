@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.64 2010/03/22 19:22:37 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.65 2010/03/23 12:19:08 robertDouglass Exp $
 
 /**
  * @file
@@ -1610,10 +1610,12 @@ function apachesolr_cck_fields() {
       $mappings['text'] = array(
         'optionwidgets_select' => array(
           'display_callback' => 'apachesolr_cck_text_field_callback',
+          'indexing_callback' => 'apachesolr_cck_text_indexing_callback',
           'index_type' => 'string',
         ),
         'optionwidgets_buttons' => array(
           'display_callback' => 'apachesolr_cck_text_field_callback',
+          'indexing_callback' => 'apachesolr_cck_text_indexing_callback',
           'index_type' => 'string',
         ),
       );
@@ -1637,6 +1639,7 @@ function apachesolr_cck_fields() {
       $mappings['userreference'] = array(
         'userreference_buttons' => array(
           'display_callback' => 'apachesolr_cck_userreference_field_callback',
+          'indexing_callback' => 'apachesolr_cck_userreference_indexing_callback',
           'index_type' => 'integer',
         ),
         'userreference_select' => array(
