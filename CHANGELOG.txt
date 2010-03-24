@@ -1,9 +1,12 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.100 2010/03/24 16:45:44 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.101 2010/03/24 18:53:43 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
+------------------------------
+
+Apache Solr integration 6.x-2.0-BETA1, 2010-03-24
 ------------------------------
 #649038 by brunodbo, slip | robertDouglass: Fixed Search not working on 404 page.
 
