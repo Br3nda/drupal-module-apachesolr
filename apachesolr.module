@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.65 2010/03/23 12:19:08 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.66 2010/03/24 17:24:20 robertDouglass Exp $
 
 /**
  * @file
@@ -377,7 +377,7 @@ function apachesolr_index_nodes($rows, $namespace) {
 
   // Flatten $documents
   $tmp = array();
-  apachesolr_flatten_documents_array($documents, &$tmp);
+  apachesolr_flatten_documents_array($documents, $tmp);
   $documents = $tmp;
 
   if (count($documents)) {
@@ -1655,7 +1655,6 @@ function apachesolr_cck_fields() {
       );
       // Allow other modules to add or alter mappings.
       drupal_alter('apachesolr_cck_fields', $mappings);
-
       $result = db_query("SELECT  i.field_name, f.multiple, f.type AS field_type, i.widget_type, i.label, i.type_name AS content_type FROM {content_node_field_instance} i INNER JOIN {content_node_field} f ON i.field_name = f.field_name;");
       while ($row = db_fetch_object($result)) {
         // Only deal with fields that have option widgets (facets don't make sense otherwise), or fields that have specific mappings.
