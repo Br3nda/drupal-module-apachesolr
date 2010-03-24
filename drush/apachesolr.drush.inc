@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.drush.inc,v 1.1.2.6 2010/03/22 17:10:27 robertDouglass Exp $
+// $Id: apachesolr.drush.inc,v 1.1.2.7 2010/03/24 16:40:08 robertDouglass Exp $
 
 /**
  * @file
@@ -74,13 +74,13 @@ function apachesolr_drush_command() {
  */
 function apachesolr_drush_help($section) {
   switch ($section) {
-    case 'drush:solr delete index':
+    case 'drush:solr-delete-index':
       return dt("Used without parameters, this command deletes the entire Solr index. Used with parameters for content type, it deletes just the content types that are specified. After the index has been deleted, all content will be indexed again on future cron runs.");
-    case 'drush:solr reindex':
+    case 'drush:solr-reindex':
       return dt("Used without parameters, this command marks all of the content in the Solr index for reindexing. Used with paramters for content type, it marks just the content types that are specified. Reindexing is different than deleting as the content is still searchable while it is in queue to be reindexed. Reindexing is done on future cron runs.");
-    case 'drush:solr phpclient':
+    case 'drush:solr-phpclient':
       return dt("Downloads the SolrPhpClient libraray from googlecode.com. Include the optional path to an apachesolr module installation if you have more than one, or if the module is not yet enabled.");
-    case 'drush:solr search':
+    case 'drush:solr-search':
       return dt('Executes a search against the site\'s Apache Solr search index and returns the restults.');
   }
 }
