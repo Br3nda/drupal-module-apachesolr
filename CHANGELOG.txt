@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.102 2010/03/29 07:36:07 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.103 2010/03/29 08:37:45 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -6,7 +6,7 @@ Apache Solr integration x.x-x.x, xxxx-xx-xx
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
 #751420 by pwolanin, skwashd | Damien Tournoud, Scott Reynolds: Fixed apachesolr_site_hash() calls md5() twice.
-
+#750426 by mkalkbrenner, pwolanin | robertDouglass: Fixed fieldType textTight conficts with fieldType text and textSpell.
 
 Apache Solr integration 6.x-2.0-BETA1, 2010-03-24
 ------------------------------
