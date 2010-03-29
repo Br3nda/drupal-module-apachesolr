@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.162 2010/03/29 01:13:28 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.163 2010/03/29 01:19:54 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#751420 by Damien Tournoud, pwolanin, skwashd shorter site hash with different algorithm.
 #742998 by pwolanin: stop catching exceptions in the solr factory function.
 #744038 by siliconmeadow: Changed Change of Drush extension command naming conventions.
 #733116 by pwolanin | drewish: Changed Implement hook_flush_caches().
