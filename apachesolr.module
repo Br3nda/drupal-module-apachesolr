@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.185 2010/03/22 17:33:36 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.186 2010/03/29 01:13:28 pwolanin Exp $
 
 /**
  * @file
@@ -1124,6 +1124,8 @@ function apachesolr_has_searched($searched = NULL) {
  * number of solr objects to be used based on the host, port, path combination.
  * Get an instance like this:
  *   $solr = apachesolr_get_solr();
+ *
+ * @throws Exception
  */
 function apachesolr_get_solr($host = NULL, $port = NULL, $path = NULL) {
   static $solr_cache;
@@ -1141,13 +1143,7 @@ function apachesolr_get_solr($host = NULL, $port = NULL, $path = NULL) {
   if (empty($solr_cache[$host][$port][$path])) {
     list($module, $filepath, $class) = variable_get('apachesolr_service_class', array('apachesolr', 'Drupal_Apache_Solr_Service.php', 'Drupal_Apache_Solr_Service'));
     include_once(drupal_get_path('module', $module) .'/'. $filepath);
-    try {
-      $solr_cache[$host][$port][$path] = new $class($host, $port, $path);
-    }
-    catch (Exception $e) {
-      watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
-      return;
-    }
+    $solr_cache[$host][$port][$path] = new $class($host, $port, $path);
   }
   return $solr_cache[$host][$port][$path];
 }
