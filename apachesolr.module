@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.66 2010/03/24 17:24:20 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.67 2010/03/29 07:36:07 robertDouglass Exp $
 
 /**
  * @file
@@ -123,7 +123,8 @@ function apachesolr_failure($search_name, $querystring) {
 function apachesolr_site_hash() {
   if (!($hash = variable_get('apachesolr_site_hash', FALSE))) {
     global $base_url;
-    $hash = substr(md5(md5($base_url . drupal_get_private_key() . 'apachesolr')), 0, 12);
+    // Set a random 6 digit base-36 number as the hash.
+    $hash = substr(base_convert(sha1(uniqid($base_url, TRUE)), 16, 36), 0, 6);
     variable_set('apachesolr_site_hash', $hash);
   }
   return $hash;
