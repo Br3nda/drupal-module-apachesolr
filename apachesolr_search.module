@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.50 2010/04/08 10:10:34 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.51 2010/04/08 15:52:22 robertDouglass Exp $
 
 /**
  * @file
@@ -1444,7 +1444,7 @@ function theme_apachesolr_search_snippets($doc, $snippets) {
   return implode(' ... ', $snippets) .' ...';
 }
 
-function apacehsolr_get_parent_terms($tids) {
+function apachesolr_get_parent_terms($tids) {
   // Find the starting tid terms and then all their parents.
   $parent_terms = array();
   $new_tids = $tids;
@@ -1491,7 +1491,7 @@ function apachesolr_search_currentsearch_block($response, $query) {
     }
     if ($facets) {
       // Get all term hierarchy information.
-      $all_terms = apacehsolr_get_parent_terms(array_keys($facets));
+      $all_terms = apachesolr_get_parent_terms(array_keys($facets));
       foreach ($all_terms as $tid => $term) {
         if (!isset($facets[$tid])) {
           // This is a parent that is missing from the query.  E.g. we started

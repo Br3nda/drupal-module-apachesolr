@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.106 2010/04/08 15:23:00 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.107 2010/04/08 15:52:22 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#747346 by robertDouglass, pwolanin | lazysoundsystem: Fixed Typo in apachesolr_search().module.
 #763072 by robertDouglass, justinrandell | pwolanin: Fixed warnings when indexing old, crappy html.
 #658278 by cpliakas | JThan: Fixed Errors when building the search index in PHP 5.3.
 #765486 by robertDouglass: Fixed Several cases where Luke cache not getting cleared and resulting in errors.
