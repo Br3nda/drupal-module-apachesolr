@@ -1,9 +1,12 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.109 2010/04/08 18:35:47 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.110 2010/04/08 18:47:13 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
+------------------------------
+
+Apache Solr integration 6.x-2.0-BETA1, 2010-04-08
 ------------------------------
 #660754 by jhedstrom: Added Allow key sorting of facets.
 #614644 by netsensei | robertDouglass: Fixed Forms attached to Apachesolr search results won't work.
