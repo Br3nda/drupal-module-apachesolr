@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.68 2010/04/08 10:10:34 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.69 2010/04/08 10:54:58 robertDouglass Exp $
 
 /**
  * @file
@@ -539,6 +539,14 @@ function apachesolr_flush_caches() {
 }
 
 /**
+ * A wrapper for cache_clear_all to be used as a submit handler on forms that
+ * require clearing Luke cache etc.
+ */
+function apachesolr_clear_cache() {
+  cache_clear_all(NULL, 'cache_apachesolr');
+}
+
+/**
  * Implementation of hook_nodeapi().
  */
 function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
@@ -830,6 +838,34 @@ function apachesolr_get_facet_definition_by_field_name($field_name) {
     }
   }
 }
+
+/**
+ * Implementation of hook_form_[form_id]_alter().
+ *
+ * Make sure to flush cache when content types are changed.
+ */
+function apachesolr_form_node_type_form_alter(&$form, $form_state) {
+  $form['#submit'][] = 'apachesolr_clear_cache';
+}
+
+/**
+ * Implementation of hook_form_[form_id]_alter().
+ *
+ * Make sure to flush cache when fields are added.
+ */
+function apachesolr_form_content_field_overview_form_alter(&$form, $form_state) {
+  $form['#submit'][] = 'apachesolr_clear_cache';
+}
+
+/**
+ * Implementation of hook_form_[form_id]_alter().
+ *
+ * Make sure to flush cache when fields are updated.
+ */
+function apachesolr_form_content_field_edit_form_alter(&$form, $form_state) {
+  $form['#submit'][] = 'apachesolr_clear_cache';
+}
+
 
 /**
  * Implementation of hook_form_[form_id]_alter().
