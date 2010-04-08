@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.112.2.50 2010/03/09 21:08:30 janusman Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.112.2.51 2010/04/08 15:54:28 robertDouglass Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 5.x-2.x, 2010-xx-xx
 ------------------------------
+#747346 by robertDouglass, pwolanin | lazysoundsystem: Fixed Typo in apachesolr_search().module.
 #724440 by abautu: Current search does not display properly the CCK filters.
 #722194 by abautu, claudiu.cristea: Solr logs are not accessible.
 #664994 by pounard, claudiu.cristea: Cache CCK fields and small API improvement.
