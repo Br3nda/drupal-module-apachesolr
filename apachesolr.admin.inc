@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.28.2.27 2010/03/22 19:22:37 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28.2.28 2010/04/08 13:46:34 robertDouglass Exp $
 
 /**
  * @file
@@ -248,10 +248,9 @@ function apachesolr_enabled_facets_form_submit($form, &$form_state) {
   foreach ($form_state['values']['apachesolr_enabled_facets'] as $module => $facets) {
     $enabled[$module] = array_filter($facets);
   }
-  // This cache being stale can prevent new facet filters from working.
-  $solr = apachesolr_get_solr();
-  $solr->clearCache();
   apachesolr_save_enabled_facets($enabled);
+  // This cache being stale can prevent new facet filters from working.
+  apachesolr_clear_cache();
   drupal_set_message($form_state['values']['submit_message'], 'warning');
 }
 
