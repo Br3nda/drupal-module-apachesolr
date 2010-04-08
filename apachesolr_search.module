@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.49 2010/03/24 16:45:44 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.50 2010/04/08 10:10:34 robertDouglass Exp $
 
 /**
  * @file
@@ -705,6 +705,7 @@ function apachesolr_search_apachesolr_facets() {
         'info' => t('Taxonomy vocabulary: Filter by taxonomy @name', array('@name' => $vocab->name)),
         'facet_field' => $delta,
         'content_types' => $vocab->nodes,
+        'display_callback' => 'apachesolr_search_taxonomy_get_term',
       );
     }
   }
@@ -884,6 +885,7 @@ function apachesolr_search_taxonomy_facet_block($response, $query, $delta) {
           }
         }
       }
+
       // Check for the case like starting on a taxonomy/term/$tid page
       // where parents are not marked as active.
       // @todo: can we make this more efficient?
@@ -919,34 +921,6 @@ function apachesolr_search_taxonomy_facet_block($response, $query, $delta) {
 }
 
 /**
- * Callback function for the 'Filter by book' facet block.
- */
-function apachesolr_search_get_book($facet, &$options) {
-  if (is_numeric($facet)) {
-    return db_result(db_query('SELECT title FROM {node} WHERE nid = %d', $facet));
-  }
-  else {
-    $options['html'] = TRUE;
-    return theme('placeholder', t('Not in any book'));
-  }
-}
-
-function apachesolr_search_language_name($lang) {
-  static $list = NULL;
-
-  if (!isset($list)) {
-    if (function_exists('locale_language_list')) {
-      $list = locale_language_list();
-    }
-    $list['und'] = t('Language neutral');
-    // TODO - remove this line - only present for rc4 update.
-    $list['zxx'] = $list['und'];
-  }
-  return ($lang && isset($list[$lang])) ? $list[$lang] : $lang;
-}
-
-
-/**
  * Recursive function that returns a nested array of facet values for use with
  * theme_item_list().
  *
@@ -965,7 +939,7 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
   $items = array();
   foreach($facets as $field) {
     $facet_text = '';
-    $facet_definition = apachesolr_get_facet_definition_by_field($field['#name']);
+    $facet_definition = apachesolr_get_facet_definition_by_field_name($field['#name']);
     if (isset($facet_definition['display_callback'])) {
       $function = $facet_definition['display_callback'];
       if (function_exists($function)) {
@@ -1010,6 +984,41 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
     ksort($items);
   }
   return array_values($items);
+}
+
+
+function apachesolr_search_taxonomy_get_term($tid) {
+  if (function_exists('taxonomy_get_term')) {
+    $term = taxonomy_get_term($tid);
+    return $term['name'];
+  }
+}
+
+/**
+ * Callback function for the 'Filter by book' facet block.
+ */
+function apachesolr_search_get_book($facet, &$options) {
+  if (is_numeric($facet)) {
+    return db_result(db_query('SELECT title FROM {node} WHERE nid = %d', $facet));
+  }
+  else {
+    $options['html'] = TRUE;
+    return theme('placeholder', t('Not in any book'));
+  }
+}
+
+function apachesolr_search_language_name($lang) {
+  static $list = NULL;
+
+  if (!isset($list)) {
+    if (function_exists('locale_language_list')) {
+      $list = locale_language_list();
+    }
+    $list['und'] = t('Language neutral');
+    // TODO - remove this line - only present for rc4 update.
+    $list['zxx'] = $list['und'];
+  }
+  return ($lang && isset($list[$lang])) ? $list[$lang] : $lang;
 }
 
 /**
