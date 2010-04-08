@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.134 2010/04/08 15:53:11 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.135 2010/04/08 17:52:22 robertDouglass Exp $
 
 /**
  * @file
@@ -143,7 +143,7 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
 function apachesolr_search_view($type = NULL) {
   // Search form submits with POST but redirects to GET.
   $results = '';
-  if (!isset($_POST['form_id'])) {
+  if (!isset($_POST['keys'])) {
     if (empty($type)) {
       // Note: search/X can not be a default tab because it would take on the
       // path of its parent (search). It would prevent remembering keywords when
