@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.166 2010/04/08 17:52:22 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.167 2010/04/13 02:37:58 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#763072 by robertDouglass, justinrandell: Fixed warnings when indexing old, crappy html.
 #614644 by netsensei | robertDouglass: Fixed Forms attached to Apachesolr search results won't work.
 #747346 by robertDouglass, pwolanin | lazysoundsystem: Fixed Typo in apachesolr_search().module.
 #750426 by mkalkbrenner: remove ununsed textTight type from schema.xml.
