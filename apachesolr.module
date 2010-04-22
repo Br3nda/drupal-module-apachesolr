@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.74 2010/04/22 10:34:01 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.75 2010/04/22 17:30:14 jpmckinney Exp $
 
 /**
  * @file
@@ -1398,10 +1398,12 @@ function apachesolr_modify_query(&$query, &$params, $caller) {
         $fields[] = trim(drupal_substr($delta, 7, drupal_strlen($delta)));
       }
       elseif ($delta == 'tid') {
-        foreach ($values as $value) {
-          $filters = $query->filter_extract($value, 'tid');
-          $term = taxonomy_get_term($filters[0]['#value']);
-          $fields[] = 'im_vid_' . $term->vid;
+        if (function_exists('taxonomy_get_term')) {
+          foreach ($values as $value) {
+            $filters = $query->filter_extract($value, 'tid');
+            $term = taxonomy_get_term($filters[0]['#value']);
+            $fields[] = 'im_vid_' . $term->vid;
+          }
         }
       }
 

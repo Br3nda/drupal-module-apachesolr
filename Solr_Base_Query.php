@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.40.2.14 2010/04/22 08:46:03 jpmckinney Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.40.2.15 2010/04/22 17:30:14 jpmckinney Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -383,7 +383,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
       }
       $progressive_crumb[] = $this->make_filter($field);
       $options = array('query' => 'filters=' . rawurlencode(implode(' ', $progressive_crumb)));
-      $breadcrumb_name = "apachesolr_breadcrumb_" . $name;
+      $breadcrumb_name = 'apachesolr_breadcrumb_' . $name;
       // Modules utilize this alter to consolidate several fields into one
       // theme function. This is how CCK breadcrumbs are handled.
       drupal_alter('apachesolr_theme_breadcrumb', $breadcrumb_name);
