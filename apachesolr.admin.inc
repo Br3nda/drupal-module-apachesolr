@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.28.2.28 2010/04/08 13:46:34 robertDouglass Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28.2.29 2010/04/22 10:34:01 jpmckinney Exp $
 
 /**
  * @file
@@ -132,6 +132,7 @@ function apachesolr_index_page() {
   catch (Exception $e) {
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
     drupal_set_message(nl2br(check_plain($e->getMessage())), "warning");
+    $data = (object) array();
     $data->fields = array();
   }
 
@@ -784,13 +785,16 @@ function apachesolr_batch_index_nodes(&$context) {
 * Batch 'finished' callback
 */
 function apachesolr_batch_index_finished($success, $results, $operations) {
-  $message = format_plural($results['count'], '1 item processed successfully.', '@count items successfully processed.');
+  $message = '';
+  // $results['count'] will not be set if Solr is unavailable.
+  if (isset($results['count'])) {
+    $message .= format_plural($results['count'], '1 item processed successfully.', '@count items successfully processed.');
+  }
   if ($success) {
     $type = 'status';
   }
   else {
-    // An error occurred, $operations contains the operations that remained
-    // unprocessed.
+    // An error occurred. $operations contains the unprocessed operations.
     $error_operation = reset($operations);
     $message .= ' '. t('An error occurred while processing @num with arguments :', array('@num' => $error_operation[0])) . print_r($error_operation[0], TRUE);
     $type = 'error';

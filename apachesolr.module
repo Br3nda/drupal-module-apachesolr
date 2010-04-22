@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.73 2010/04/22 09:12:10 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.74 2010/04/22 10:34:01 jpmckinney Exp $
 
 /**
  * @file
@@ -1722,10 +1722,17 @@ function apachesolr_cck_fields() {
           $row->index_type           = $field['index_type'];
           $row->indexing_callback    = $field['indexing_callback'];
           $row->display_callback     = $field['display_callback'];
-          $row->facet_block_callback = $field['facet_block_callback'];
+          if (isset($field['facet_block_callback'])) {
+            $row->facet_block_callback = $field['facet_block_callback'];
+          }
           $row->multiple             = (bool) $row->multiple;
 
-          $fields[$row->field_name] = array_merge((array) $fields[$row->field_name], (array) $row);
+          if (isset($fields[$row->field_name])) {
+            $fields[$row->field_name] = array_merge((array) $fields[$row->field_name], (array) $row);
+          }
+          else {
+            $fields[$row->field_name] = (array) $row;
+          }
           $fields[$row->field_name]['content_types'][] = $row->content_type;
           unset($fields[$row->field_name]['content_type']);
         }
