@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.53 2010/04/22 08:20:47 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.54 2010/04/22 08:46:03 jpmckinney Exp $
 
 /**
  * @file
@@ -443,7 +443,8 @@ function apachesolr_search_add_facet_params(&$params, $query) {
         // TODO: generalize handling of date and range facets.
         // TODO: put field type in the facet definitions.
         // NOTE: This is a dependency on the apachesolr_date module. Using function_exists to avoid problems.
-        if (in_array($facet_info[$module][$delta]['field_type'], array('date', 'datetime', 'datestamp'))
+        if (isset($facet_info[$module][$delta]['field_type'])
+              && in_array($facet_info[$module][$delta]['field_type'], array('date', 'datetime', 'datestamp'))
               && function_exists('apachesolr_date_search_date_range')) {
           list($start, $end, $gap) = apachesolr_date_search_date_range($query, $facet_field);
           if ($gap) {
@@ -573,7 +574,7 @@ function apachesolr_search_add_boost_params(&$params, $query, $solr) {
 function apachesolr_search_process_response($response, $query, $params) {
   $results = array();
   // We default to getting snippets from the body.
-  $hl_fl = is_null($params['hl.fl']) ? 'body' : $params['hl.fl'];
+  $hl_fl = isset($params['hl.fl']) ? $params['hl.fl'] : 'body';
   $total = $response->response->numFound;
   apachesolr_pager_init($total, $params['rows']);
   if ($total > 0) {
@@ -965,7 +966,7 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
 
     // If this block is to be alphabetically sorted, change $sortpre.
     if (isset($facet_query_sorts['apachesolr_search'][$field_name]) && strpos($facet_query_sorts['apachesolr_search'][$field_name], 'index key') === 0) {
-      $sortpre = $facet;
+      $sortpre = $field_name;
     }
     elseif (isset($facet_query_sorts['apachesolr_search'][$field_name]) && ($facet_query_sorts['apachesolr_search'][$field_name] != 'count')) {
       $sortpre = $facet_text;
@@ -998,7 +999,7 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
     $items[$sortpre . '*' . $facet_text . $field['#name'] . $field['#value']] = $link;
   }
 
-  if ($sort) {
+  if ($sort && $items) {
     if (!isset($facet_query_sorts['apachesolr_search'][$field_name]) || in_array($facet_query_sorts['apachesolr_search'][$field_name], array('index asc', 'index key asc'))) {
       ksort($items, SORT_STRING);
     }
@@ -1502,7 +1503,8 @@ function apachesolr_search_currentsearch_block($response, $query) {
   // Find all taxonomy terms to be treated in a hierarchy.
   if (module_exists('taxonomy')) {
     $reflect_hierarchy = apachesolr_search_get_hierarchical_vocabularies();
-    foreach($fields as $index => $field) {
+    $facets = array();
+    foreach ($fields as $index => $field) {
       if ($field['#name'] && 'tid' == $field['#name']) {
         $term = taxonomy_get_term($field['#value']);
         if ($reflect_hierarchy[$term->vid]) {
