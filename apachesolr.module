@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.72 2010/04/22 08:46:03 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.73 2010/04/22 09:12:10 jpmckinney Exp $
 
 /**
  * @file
@@ -1389,15 +1389,23 @@ function apachesolr_modify_query(&$query, &$params, $caller) {
 
   if (isset($params['fq'])) {
     $filter_queries = $params['fq'];
-    foreach ($filter_queries as $delta => $value) {
+    foreach ($filter_queries as $delta => $values) {
       $fq = $tag = '';
       $op = 'AND';
-      // CCK facet field block deltas are not the same as their Solr index field names.
-      $cck_delta = '';
-      if (strpos($delta, '_cck_')) {
-        $cck_delta = trim(drupal_substr($delta, 7, drupal_strlen($delta)));
+      $fields = array($delta);
+      // CCK and taxonomy facet field block deltas are not the same as their Solr index field names.
+      if (strpos($delta, '_cck_') !== FALSE) {
+        $fields[] = trim(drupal_substr($delta, 7, drupal_strlen($delta)));
       }
-      if (in_array($delta, $ors) || in_array($cck_delta, $ors)) {
+      elseif ($delta == 'tid') {
+        foreach ($values as $value) {
+          $filters = $query->filter_extract($value, 'tid');
+          $term = taxonomy_get_term($filters[0]['#value']);
+          $fields[] = 'im_vid_' . $term->vid;
+        }
+      }
+
+      if (array_intersect($fields, $ors)) {
         $tag = "{!tag=$delta}";
         $op = 'OR';
       }
