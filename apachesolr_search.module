@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.52 2010/04/08 17:51:18 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.53 2010/04/22 08:20:47 jpmckinney Exp $
 
 /**
  * @file
@@ -911,7 +911,8 @@ function apachesolr_search_taxonomy_facet_block($response, $query, $delta) {
     $items = apachesolr_search_nested_facet_items($query, $facets, $response->response->numFound);
     // Process all terms into an item list
     if ($items && ($response->response->numFound > 1 || $contains_active)) {
-      $limit = isset($initial_limits['apachesolr_search'][$delta]) ? $initial_limits['apachesolr_search'][$delta] : $limit_default;
+      $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
+      $limit = isset($initial_limits['apachesolr_search'][$delta]) ? $initial_limits['apachesolr_search'][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
       return array(
         'subject' => t('Filter by @name', array('@name' => $vocab->name)),
         'content' => theme('apachesolr_facet_list', $items, $limit),
@@ -936,10 +937,19 @@ function apachesolr_search_taxonomy_facet_block($response, $query, $delta) {
  *   the facets will be returned in the order they were received.
  */
 function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort = TRUE) {
+  $facet_query_sorts = variable_get('apachesolr_facet_query_sorts', array());
   $items = array();
-  foreach($facets as $field) {
+  foreach ($facets as $field) {
+    $sortpre = 1000000 - $field['#count'];
     $facet_text = '';
-    $facet_definition = apachesolr_get_facet_definition_by_field_name($field['#name']);
+    $field_name = $field['#name'];
+    // Taxonomy filters in the query string use the tid field.
+    if ($field_name == 'tid') {
+      // Each taxonomy vocabulary in the Solr index uses its own field.
+      $term = taxonomy_get_term($field['#value']);
+      $field_name = 'im_vid_' . $term->vid;
+    }
+    $facet_definition = apachesolr_get_facet_definition_by_field_name($field_name);
     if (isset($facet_definition['display_callback'])) {
       $function = $facet_definition['display_callback'];
       if (function_exists($function)) {
@@ -952,6 +962,15 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
     if (!$facet_text) {
       $facet_text = $field['#value'];
     }
+
+    // If this block is to be alphabetically sorted, change $sortpre.
+    if (isset($facet_query_sorts['apachesolr_search'][$field_name]) && strpos($facet_query_sorts['apachesolr_search'][$field_name], 'index key') === 0) {
+      $sortpre = $facet;
+    }
+    elseif (isset($facet_query_sorts['apachesolr_search'][$field_name]) && ($facet_query_sorts['apachesolr_search'][$field_name] != 'count')) {
+      $sortpre = $facet_text;
+    }
+
     $link = array();
     $new_query = clone $query;
     if (!empty($field['#active'])) {
@@ -964,7 +983,6 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
       $link['data'] = theme('apachesolr_unclick_link', $facet_text, $new_query->get_path(), $options);
     }
     else {
-      $sortpre = 1000000 - $field['#count'];
       $new_query->add_filter($field['#name'], $field['#value']);
       $options = array('query' => $new_query->get_url_queryvalues());
       $link['data'] = theme('apachesolr_facet_link', $facet_text, $new_query->get_path(), $options, $field['#count'], FALSE, $num_found);
@@ -981,7 +999,12 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
   }
 
   if ($sort) {
-    ksort($items);
+    if (!isset($facet_query_sorts['apachesolr_search'][$field_name]) || in_array($facet_query_sorts['apachesolr_search'][$field_name], array('index asc', 'index key asc'))) {
+      ksort($items, SORT_STRING);
+    }
+    else if (in_array($facet_query_sorts['apachesolr_search'][$field_name], array('index desc', 'index key desc'))) {
+      krsort($items, SORT_STRING);
+    }
   }
   return array_values($items);
 }
