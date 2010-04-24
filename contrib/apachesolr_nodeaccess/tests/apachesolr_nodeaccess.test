@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.test,v 1.1.2.2.2.2 2010/04/22 08:09:26 jpmckinney Exp $
+// $Id: apachesolr_nodeaccess.test,v 1.1.2.2.2.3 2010/04/24 22:57:21 jpmckinney Exp $
 
 class DrupalApacheSolrNodeAccess extends DrupalWebTestCase {
   function getInfo() {
@@ -38,7 +38,7 @@ class DrupalApacheSolrNodeAccess extends DrupalWebTestCase {
     $edit = array();
     $edit['title'] = $this->randomName(32);
     $edit['body']  = $this->randomName(32);
-    $author_restricted_node   = $this->drupalCreateNode($edit);
+    $author_restricted_node = $this->drupalCreateNode($edit);
 
     $this->drupalLogout();
 
@@ -109,7 +109,8 @@ class DrupalApacheSolrNodeAccess extends DrupalWebTestCase {
         $this->assertTrue(in_array($field['#value'], $expected_criterion[$field['#name']]), t('Expected node access grant @name == @value found', array('@name' => $field['#name'], '@value' => $field['#value'])));
         //This is sorta a bug
         $found_criterion[$field['#name']] = $expected_criterion[$field['#name']];
-      } else {
+      }
+      else {
         $this->assertEqual($field['#value'], $expected_criterion[$field['#name']], t('Expected node access grant @name == @value found', array('@name' => $field['#name'], '@value' => $field['#value'])));
         $found_criterion[$field['#name']] = $expected_criterion[$field['#name']];
       }

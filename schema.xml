@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- $Id: schema.xml,v 1.1.2.1.2.32.2.3 2010/03/29 08:37:45 robertDouglass Exp $ -->
+<!-- $Id: schema.xml,v 1.1.2.1.2.32.2.4 2010/04/24 22:57:21 jpmckinney Exp $ -->
 
 <!--
  This is the Solr schema file. This file should be named "schema.xml" and
@@ -406,7 +406,7 @@
    <!-- BACKWARDS COMPATIBILITY -->
    <!-- Here is where we store fields which are no longer used -->
    
-   <!-- Fields previously used for sorting  -->
+   <!-- Fields previously used for sorting -->
    <field name="stitle" type="string" indexed="true" stored="true"/>
    <field name="title_sort" type="sortString" indexed="true" stored="false"/>
 

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.2.24 2010/04/13 02:39:00 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.2.25 2010/04/24 22:57:21 jpmckinney Exp $
 
 /**
  * @file
@@ -37,8 +37,6 @@ function apachesolr_node_to_document($node, $namespace) {
     $node->body = drupal_render($node->content);
     $node->title = apachesolr_clean_text($node->title);
 
-    $text = $node->body;
-
     // Fetch extra data normally not visible, including comments.
     // We do this manually (with module_implements instead of node_invoke_nodeapi)
     // because we want a keyed array to come back. Only in this way can we decide
@@ -60,7 +58,7 @@ function apachesolr_node_to_document($node, $namespace) {
       unset($extra['comment']);
     }
 
-    $text .= "\n\n" . implode(' ', $extra);
+    $text = $node->body . "\n\n" . implode(' ', $extra);
 
     $document = new Apache_Solr_Document();
     $document->id = apachesolr_document_id($node->nid);
@@ -85,7 +83,7 @@ function apachesolr_node_to_document($node, $namespace) {
       $document->language = 'und';
     }
     $document->body = apachesolr_clean_text($text);
-    $document->type  = $node->type;
+    $document->type = $node->type;
     $document->type_name = node_get_types('name', $node);
     $document->created = apachesolr_date_iso($node->created);
     $document->changed = apachesolr_date_iso($node->changed);
@@ -160,7 +158,7 @@ function apachesolr_cck_text_indexing_callback($node, $field_name, $cck_info) {
   if (isset($node->{$field_name})) {
     $index_key = apachesolr_index_key($cck_info);
     foreach ($node->$field_name as $field) {
-      if ($index_value =  (isset($field['safe']) && strlen($field['safe'])) ? $field['safe'] : FALSE) {
+      if ($index_value = (isset($field['safe']) && strlen($field['safe'])) ? $field['safe'] : FALSE) {
         $fields[] = array(
           'key' => $index_key,
           'value' => $index_value,
@@ -389,7 +387,7 @@ function apachesolr_nodeapi_mass_delete($nodes) {
     $solr->deleteByMultipleIds($ids);
     apachesolr_index_updated($time);
     // There was no exception, so update the table.
-    db_query("DELETE FROM {apachesolr_search_node} WHERE nid  IN (" . db_placeholders($nids) . ")", $nids);
+    db_query("DELETE FROM {apachesolr_search_node} WHERE nid IN (" . db_placeholders($nids) . ")", $nids);
     return TRUE;
   }
   catch (Exception $e) {

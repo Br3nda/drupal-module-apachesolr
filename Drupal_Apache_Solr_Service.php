@@ -47,7 +47,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       return microtime(TRUE) - $start;
     }
     else {
-      return FALSE; 
+      return FALSE;
     }
   }
 
@@ -78,7 +78,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     }
     return $this->luke[$num_terms];
   }
-  
+
   /**
    * Sets $this->stats with the information about the Solr Core form /admin/stats.jsp
    */
@@ -99,7 +99,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       }
     }
   }
-  
+
   /**
    * Get information about the Solr Core.
    *
@@ -212,7 +212,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
    * @param float $timeout
    *   Read timeout in seconds or FALSE.
    *
-   * @return 
+   * @return
    *  Apache_Solr_Response object
    */
   public function makeServletRequest($servlet, $params = array(), $method = 'GET', $request_headers = array(), $rawPost = '', $timeout = FALSE) {

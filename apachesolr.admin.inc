@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.28.2.29 2010/04/22 10:34:01 jpmckinney Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28.2.30 2010/04/24 22:57:21 jpmckinney Exp $
 
 /**
  * @file
@@ -136,7 +136,7 @@ function apachesolr_index_page() {
     $data->fields = array();
   }
 
-  $output  = '';
+  $output = '';
   if (isset($data->index->numDocs)) {
     $pending_docs = $delay_msg = $delete_msg = '';
     try {
