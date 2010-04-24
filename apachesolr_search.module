@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.57 2010/04/22 17:30:14 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.58 2010/04/24 23:24:30 jpmckinney Exp $
 
 /**
  * @file
@@ -181,7 +181,8 @@ function apachesolr_search_view($type = NULL) {
       else {
         $content = theme('box', t('Your search yielded no results'), variable_get('apachesolr_search_noresults', apachesolr_search_noresults()));
       }
-    } else if ($type != 'node') {
+    }
+    else if ($type != 'node') {
       // Ignore $type == node. Since we override the menu path to search to point
       // to this function, we have to count on core searches coming in here, too.
 
@@ -967,11 +968,11 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
       $facet_text = $field['#value'];
     }
 
+    $active = !empty($field['#active']);
+
     $link = array();
     $new_query = clone $query;
-    if (!empty($field['#active'])) {
-      // '*' sorts before all numbers.
-      $sortpre = '*';
+    if ($active) {
       foreach (apachesolr_search_collect_children($field) as $child) {
         $new_query->remove_filter($child['#name'], $child['#value']);
       }
@@ -979,18 +980,24 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
       $link['data'] = theme('apachesolr_unclick_link', $facet_text, $new_query->get_path(), $options);
     }
     else {
-      $sortpre = 1000000 - $field['#count'];
       $new_query->add_filter($field['#name'], $field['#value']);
       $options = array('query' => $new_query->get_url_queryvalues());
       $link['data'] = theme('apachesolr_facet_link', $facet_text, $new_query->get_path(), $options, $field['#count'], FALSE, $num_found);
     }
 
     // If this block is to be alphabetically sorted, change $sortpre.
-    if (isset($facet_query_sorts['apachesolr_search'][$field_name]) && strpos($facet_query_sorts['apachesolr_search'][$field_name], 'index key') === 0) {
+    if ($active) {
+      // '*' sorts before all numbers.
+      $sortpre = '*';
+    }
+    elseif (isset($facet_query_sorts['apachesolr_search'][$field_name]) && strpos($facet_query_sorts['apachesolr_search'][$field_name], 'index key') === 0) {
       $sortpre = $field_name;
     }
-    elseif (isset($facet_query_sorts['apachesolr_search'][$field_name]) && ($facet_query_sorts['apachesolr_search'][$field_name] != 'count')) {
+    elseif (isset($facet_query_sorts['apachesolr_search'][$field_name]) && strpos($facet_query_sorts['apachesolr_search'][$field_name], 'index') === 0) {
       $sortpre = $facet_text;
+    }
+    else {
+      $sortpre = 1000000 - $field['#count'];
     }
 
     // We don't display children unless the parent is clicked.
@@ -1008,7 +1015,7 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
     if (!isset($facet_query_sorts['apachesolr_search'][$field_name]) || in_array($facet_query_sorts['apachesolr_search'][$field_name], array('index asc', 'index key asc'))) {
       ksort($items, SORT_STRING);
     }
-    else if (in_array($facet_query_sorts['apachesolr_search'][$field_name], array('index desc', 'index key desc'))) {
+    elseif (in_array($facet_query_sorts['apachesolr_search'][$field_name], array('index desc', 'index key desc'))) {
       krsort($items, SORT_STRING);
     }
   }
@@ -1166,11 +1173,11 @@ function apachesolr_search_form_search_form_alter(&$form, $form_state) {
     }
 
     if (variable_get('apachesolr_search_spellcheck', TRUE) && $apachesolr_has_searched && ($response = apachesolr_static_response_cache())) {
-      //Get spellchecker suggestions into an array.
+      // Get spellchecker suggestions into an array.
       $suggestions = get_object_vars($response->spellcheck->suggestions);
 
       if ($suggestions) {
-        //Get the original query and replace words.
+        // Get the original query and replace words.
         $query = apachesolr_current_query();
 
         foreach($suggestions as $word => $value) {
@@ -1546,7 +1553,7 @@ function apachesolr_search_currentsearch_block($response, $query) {
   }
 
   // We don't directly render any items with a parent.
-  foreach($fields as $index => $field) {
+  foreach ($fields as $index => $field) {
     $fields[$index]['#active'] = TRUE;
     if (!empty($fields[$index]['#parent']) || !$field['#name']) {
       // We will render it via its parent.

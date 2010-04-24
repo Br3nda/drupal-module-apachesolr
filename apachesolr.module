@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.75 2010/04/22 17:30:14 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.76 2010/04/24 23:24:30 jpmckinney Exp $
 
 /**
  * @file
@@ -301,7 +301,7 @@ function apachesolr_get_nodes_to_index($namespace, $limit) {
   }
   list($excluded_types, $args, $join_sql, $exclude_sql) = apachesolr_exclude_types($namespace);
   $result = db_query_range("SELECT asn.nid, asn.changed FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > %d OR (asn.changed = %d AND asn.nid > %d)) AND asn.status = 1 ". $exclude_sql ."ORDER BY asn.changed ASC, asn.nid ASC", $args, 0, $limit);
-  while($row = db_fetch_object($result)) {
+  while ($row = db_fetch_object($result)) {
     $rows[] = $row;
   }
   return $rows;
@@ -558,7 +558,7 @@ function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
     case 'insert':
       // Make sure no node ends up with a timestamp that's in the future
       // by using time() rather than the node's changed or created timestamp.
-      db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed) VALUES  (%d, %d, %d)", $node->nid, $node->status, time());
+      db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed) VALUES (%d, %d, %d)", $node->nid, $node->status, time());
       break;
     case 'update':
       apachesolr_nodeapi_update($node);
@@ -587,14 +587,14 @@ function apachesolr_nodeapi_update($node, $set_message = TRUE) {
   if (!$node->status && db_result(db_query("SELECT status FROM {apachesolr_search_node} WHERE nid = %d", $node->nid))) {
     if (apachesolr_delete_node_from_index($node)) {
       // There was no exception, so update the table.
-      db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
+      db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid = %d", time(), $node->status, $node->nid);
       if ($set_message && user_access('administer search') && variable_get('apachesolr_set_nodeapi_messages', 1)) {
         apachesolr_set_stats_message('Unpublished content will be removed from the Apache Solr search index in approximately @autocommit_time.');
       }
     }
   }
   else {
-    db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
+    db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid = %d", time(), $node->status, $node->nid);
   }
 }
 
@@ -723,15 +723,17 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
         $toggle = array('asc' => 'desc', 'desc' => 'asc');
         foreach ($sorts as $name => $sort) {
           $active = $solrsort['#name'] == $name;
-          $direction = '';
-          $new_direction = $sort['default'];
           if ($name == 'score') {
-            // We only sort by ascending score.
-            $new_direction = 'asc';
+            $direction = '';
+            $new_direction = 'asc'; // We only sort by ascending score.
           }
           elseif ($active) {
             $direction = $solrsort['#direction'];
             $new_direction = $toggle[$solrsort['#direction']];
+          }
+          else {
+            $direction = '';
+            $new_direction = $sort['default'];
           }
           $new_query->set_solrsort($name, $new_direction);
           $sort_links[$name] = array(
@@ -780,9 +782,8 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
  */
 function apachesolr_block_visibility($query, $module, $delta) {
   // TYPE HIERARCHY.
-  // If the block is configured to heed type hierarcy then it looks
-  // to see if a suitable type filter has been chosen. If not,
-  // the function returns.
+  // If the block is configured to heed type hierarchy then it looks to see if a
+  // suitable type filter has been chosen. If not, the function returns.
   // This variable is not static cached because variable_get() already does that.
   $type_filters = variable_get('apachesolr_type_filter', array());
   if (isset($type_filters[$module][$delta]) && $type_filters[$module][$delta] == TRUE) {
@@ -805,14 +806,14 @@ function apachesolr_block_visibility($query, $module, $delta) {
 
 function apachesolr_get_facet_definitions() {
   static $definitions;
-  if (is_null($definitions)) {
+  if (!isset($definitions)) {
     $operator_settings = variable_get('apachesolr_operator', array());
     foreach (module_implements('apachesolr_facets') as $module) {
       $facets = module_invoke($module, 'apachesolr_facets');
       if (!empty($facets)) {
         foreach ($facets as $delta => $info) {
           $definitions[$module][$delta] = $info;
-          if(isset($definitions[$module][$delta])) {
+          if (isset($definitions[$module][$delta])) {
             $definitions[$module][$delta]['operator'] = isset($operator_settings[$module][$delta]) ? $operator_settings[$module][$delta] : 'AND';
           }
         }
@@ -949,40 +950,50 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
     $contains_active = FALSE;
     $items = array();
     foreach ($response->facet_counts->facet_fields->$facet_field as $facet => $count) {
-      $sortpre = 1000000 - $count;
+      $active = $query->has_filter($facet_field, $facet);
       $options = array('delta' => $delta);
       $exclude = FALSE;
+
       // Solr sends this back if it's empty.
-      if ($facet == '_empty_') {
-         $exclude = TRUE;
-         $facet = '[* TO *]';
-         $facet_text = theme('placeholder', t('Missing this field'));
-         $options['html'] = TRUE;
-         // Put this just below any active facets.
-         // '-' sorts before all numbers, but after '*'.
-         $sortpre = '-';
-       }
-       else {
-         $facet_text = $facet;
+     if ($facet == '_empty_') {
+        $exclude = TRUE;
+        $facet = '[* TO *]';
+        $options['html'] = TRUE;
       }
 
       if ($facet_callback && function_exists($facet_callback)) {
         $facet_text = $facet_callback($facet, $options);
       }
-      // If this block is to be alphabetically sorted, change $sortpre.
-      if (isset($facet_query_sorts[$module][$delta]) && strpos($facet_query_sorts[$module][$delta], 'index key') === 0) {
-        $sortpre = $facet;
+      elseif ($exclude) {
+        $facet_text = theme('placeholder', t('Missing this field'));
       }
-      elseif (isset($facet_query_sorts[$module][$delta]) && ($facet_query_sorts[$module][$delta] != 'count')) {
-        $sortpre = $facet_text;
+      else {
+        $facet_text = $facet;
       }
-      $unclick_link = '';
-      $active = FALSE;
-      $new_query = clone $query;
-      if ($query->has_filter($facet_field, $facet)) {
-        $contains_active = $active = TRUE;
+
+      if ($active) {
         // '*' sorts before all numbers.
         $sortpre = '*';
+      }
+      elseif (isset($facet_query_sorts[$module][$delta]) && strpos($facet_query_sorts[$module][$delta], 'index key') === 0) {
+        // If this block is to be alphabetically sorted by key, change $sortpre.
+        $sortpre = $facet;
+      }
+      elseif (isset($facet_query_sorts[$module][$delta]) && strpos($facet_query_sorts[$module][$delta], 'index') === 0) {
+        // If this block is to be alphabetically sorted, change $sortpre.
+        $sortpre = $facet_text;
+      }
+      elseif ($exclude) {
+        // '-' sorts before all numbers, but after '*'.
+        $sortpre = '-';
+      }
+      else {
+        $sortpre = 1000000 - $count;
+      }
+
+      $new_query = clone $query;
+      if ($active) {
+        $contains_active = TRUE;
         $new_query->remove_filter($facet_field, $facet);
         $options['query'] = $new_query->get_url_queryvalues();
         $link = theme('apachesolr_unclick_link', $facet_text, $new_query->get_path(), $options);
@@ -992,6 +1003,7 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
         $options['query'] = $new_query->get_url_queryvalues();
         $link = theme('apachesolr_facet_link', $facet_text, $new_query->get_path(), $options, $count, FALSE, $response->response->numFound);
       }
+
       if ($count || $active) {
         $items[$sortpre . '*' . $facet_text] = $link;
       }
@@ -1001,7 +1013,7 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
       if (!isset($facet_query_sorts[$module][$delta]) || in_array($facet_query_sorts[$module][$delta], array('index asc', 'index key asc'))) {
         ksort($items, SORT_STRING);
       }
-      else if (in_array($facet_query_sorts[$module][$delta], array('index desc', 'index key desc'))) {
+      elseif (in_array($facet_query_sorts[$module][$delta], array('index desc', 'index key desc'))) {
         krsort($items, SORT_STRING);
       }
       // Get information needed by the rest of the blocks about limits.
@@ -1707,7 +1719,7 @@ function apachesolr_cck_fields() {
       );
       // Allow other modules to add or alter mappings.
       drupal_alter('apachesolr_cck_fields', $mappings);
-      $result = db_query("SELECT  i.field_name, f.multiple, f.type AS field_type, i.widget_type, i.label, i.type_name AS content_type FROM {content_node_field_instance} i INNER JOIN {content_node_field} f ON i.field_name = f.field_name;");
+      $result = db_query("SELECT i.field_name, f.multiple, f.type AS field_type, i.widget_type, i.label, i.type_name AS content_type FROM {content_node_field_instance} i INNER JOIN {content_node_field} f ON i.field_name = f.field_name;");
       while ($row = db_fetch_object($result)) {
         // Only deal with fields that have option widgets (facets don't make sense otherwise), or fields that have specific mappings.
         if ((isset($mappings[$row->field_type][$row->widget_type]) ||  isset($mappings['per-field'][$row->field_name]))) {
@@ -1720,14 +1732,14 @@ function apachesolr_cck_fields() {
           }
           // It's important that we put the 'cck_' here because several points in the later processing
           // depend on it to route program flow to cck specific handlers.
-          $row->name                 = 'cck_' . $row->field_name;
-          $row->index_type           = $field['index_type'];
-          $row->indexing_callback    = $field['indexing_callback'];
-          $row->display_callback     = $field['display_callback'];
+          $row->name              = 'cck_' . $row->field_name;
+          $row->index_type        = $field['index_type'];
+          $row->indexing_callback = $field['indexing_callback'];
+          $row->display_callback  = $field['display_callback'];
           if (isset($field['facet_block_callback'])) {
             $row->facet_block_callback = $field['facet_block_callback'];
           }
-          $row->multiple             = (bool) $row->multiple;
+          $row->multiple          = (bool) $row->multiple;
 
           if (isset($fields[$row->field_name])) {
             $fields[$row->field_name] = array_merge((array) $fields[$row->field_name], (array) $row);
