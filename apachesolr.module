@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.82 2010/04/25 04:36:27 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.83 2010/04/25 04:54:36 jpmckinney Exp $
 
 /**
  * @file
@@ -265,7 +265,7 @@ function apachesolr_rebuild_index_table($type = NULL) {
     db_query("DELETE FROM {apachesolr_search_node}");
     // Populate table
     db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed)
-              SELECT n.nid, n.status, GREATEST(n.created, n.changed, IFNULL(c.last_comment_timestamp, 0)) AS changed
+              SELECT n.nid, n.status, GREATEST(n.created, n.changed, COALESCE(c.last_comment_timestamp, 0)) AS changed
               FROM {node} n
               LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid");
     // Make sure no nodes end up with a timestamp that's in the future.
