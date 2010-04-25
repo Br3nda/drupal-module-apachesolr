@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.20.2.5 2009/12/27 17:23:58 robertDouglass Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.20.2.6 2010/04/25 03:17:18 jpmckinney Exp $
 
 /**
  * @file
@@ -14,7 +14,7 @@ function apachesolr_search_settings_page() {
   try {
     $solr = apachesolr_get_solr();
     $fields = $solr->getFields();
-    $output .= drupal_get_form('apachesolr_search_settings_form', $fields);
+    $output = drupal_get_form('apachesolr_search_settings_form', $fields);
   }
   catch (Exception $e) {
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
