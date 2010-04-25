@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.84 2010/04/25 05:00:03 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.85 2010/04/25 21:12:20 jpmckinney Exp $
 
 /**
  * @file
@@ -746,7 +746,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
           if ($name == 'score') {
             // Set a solrsort parameter so we can distinguish between a user
             // selecting "score desc" and the page defaulting to "score desc".
-            $sort_links[$name]['options'] = array('query' => array('solrsort' => 'score desc'));
+            $sort_links[$name]['options']['query']['solrsort'] = 'score desc';
           }
         }
         // Allow other modules to add or remove sorts.
