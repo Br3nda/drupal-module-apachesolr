@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.drush.inc,v 1.1.2.7 2010/03/24 16:40:08 robertDouglass Exp $
+// $Id: apachesolr.drush.inc,v 1.1.2.8 2010/04/25 20:59:28 jpmckinney Exp $
 
 /**
  * @file
@@ -142,7 +142,7 @@ function apachesolr_drush_solr_phpclient() {
 function apachesolr_drush_solr_search() {
   $args = func_get_args();
   $keys = implode(' ', $args);
-  foreach(apachesolr_search_execute($keys) as $result) {
+  foreach(apachesolr_search_execute($keys, '', '') as $result) {
     $output = 'node/' . $result['node']->nid . ' ' . dt('by @name (user/@uid)', array('@name' => strip_tags($result['user']), '@uid' => $result['node']->uid)) . "\n";
     $output .= dt('title: ') .  $result['title'] . "\n";
     $output .= preg_replace('/[\s]+/', ' ', strip_tags($result['snippet'])) . "\n\n";
