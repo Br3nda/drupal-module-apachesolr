@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_date.module,v 1.1.2.1 2010/03/22 16:55:07 robertDouglass Exp $
+// $Id: apachesolr_date.module,v 1.1.2.2 2010/04/25 04:11:37 jpmckinney Exp $
 
 /**
  * @file
@@ -51,7 +51,7 @@ function apachesolr_date_block($op = 'list', $delta = 0, $edit = array()) {
       $blocks = array();
       foreach ($enabled_facets as $delta => $facet_field) {
         if (isset($facets[$delta])) {
-          $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE,);
+          $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE);
           // TODO: This is ugly. The only consolation is that the admin can
           // override block titles anyway.
           $blocks[$delta]['label'] = $blocks[$delta]['label']  . ' (end)';

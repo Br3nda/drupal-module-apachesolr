@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.40.2.16 2010/04/24 23:26:25 jpmckinney Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.40.2.17 2010/04/25 04:11:37 jpmckinney Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -16,7 +16,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     $patterns[] = '/(^| |-)'. $name .':([^ ]*)/';
     foreach ($patterns as $p) {
       if (preg_match_all($p, $filterstring, $matches, PREG_SET_ORDER)) {
-        foreach($matches as $match) {
+        foreach ($matches as $match) {
           $filter = array();
           $filter['#query'] = $match[0];
           $filter['#exclude'] = ($match[1] == '-');

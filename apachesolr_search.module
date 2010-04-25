@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.58 2010/04/24 23:24:30 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.59 2010/04/25 04:11:37 jpmckinney Exp $
 
 /**
  * @file
@@ -267,12 +267,12 @@ function apachesolr_search_browse($keys = '', $filters = '', $solrsort = '', $ba
       // When modules are disabled their facet settings may remain.
       continue;
     }
-    foreach($module_facets as $delta => $facet_field) {
+    foreach ($module_facets as $delta => $facet_field) {
       if ($delta == 'currentsearch') {
         continue;
       }
-      if (count((array)$response->facet_counts->facet_fields->$facet_field) > 0 ||
-          count((array)$response->facet_counts->facet_dates->$facet_field) > 0) {
+      if (count((array) $response->facet_counts->facet_fields->$facet_field) > 0 ||
+          count((array) $response->facet_counts->facet_dates->$facet_field) > 0) {
         // This bit is modeled on block.module, block_list().
         $result = db_query(db_rewrite_sql("SELECT DISTINCT b.* FROM {blocks} b
           LEFT JOIN {blocks_roles} r ON b.module = r.module AND b.delta = r.delta
@@ -437,7 +437,7 @@ function apachesolr_search_add_facet_params(&$params, $query) {
   $ors = array();
 
   foreach (apachesolr_get_enabled_facets() as $module => $module_facets) {
-    foreach($module_facets as $delta => $facet_field) {
+    foreach ($module_facets as $delta => $facet_field) {
       // Checking the block visibility saves us from adding facet fields to the query
       // which won't be used.
       if (apachesolr_block_visibility($query, $module, $delta)) {
@@ -741,7 +741,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
       $blocks = array();
       foreach ($enabled_facets as $delta => $facet_field) {
         if (isset($facets[$delta])) {
-          $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE,);
+          $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE);
         }
       }
       $blocks['currentsearch'] = array(
@@ -1180,7 +1180,7 @@ function apachesolr_search_form_search_form_alter(&$form, $form_state) {
         // Get the original query and replace words.
         $query = apachesolr_current_query();
 
-        foreach($suggestions as $word => $value) {
+        foreach ($suggestions as $word => $value) {
           $replacements[$word] = $value->suggestion[0];
         }
         $new_keywords = strtr($query->get_query_basic(), $replacements);
@@ -1485,7 +1485,7 @@ function apachesolr_get_parent_terms($tids) {
   $parent_terms = array();
   $new_tids = $tids;
   do {
-    $result = db_query(db_rewrite_sql("SELECT t.tid, t.parent FROM {term_hierarchy} t WHERE t.tid IN (". db_placeholders($new_tids) .")",'t', 'tid'), $new_tids);
+    $result = db_query(db_rewrite_sql("SELECT t.tid, t.parent FROM {term_hierarchy} t WHERE t.tid IN (". db_placeholders($new_tids) .")", 't', 'tid'), $new_tids);
     $new_tids = array();
     while ($term = db_fetch_object($result)) {
       $parent_terms[$term->tid] = $term;

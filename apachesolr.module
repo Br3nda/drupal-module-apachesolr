@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.80 2010/04/25 03:17:18 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.81 2010/04/25 04:11:37 jpmckinney Exp $
 
 /**
  * @file
@@ -698,7 +698,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
             $suggestions['subject'] = check_plain($block['name']);
             $suggestions['content'] = theme('apachesolr_mlt_recommendation_block', $docs);
             if (user_access('administer search')) {
-               $suggestions['content'] .= l(t('Configure this block'),'admin/build/block/configure/apachesolr/' . $delta, array('attributes' => array('class' => 'apachesolr-mlt-admin-link')));
+               $suggestions['content'] .= l(t('Configure this block'), 'admin/build/block/configure/apachesolr/' . $delta, array('attributes' => array('class' => 'apachesolr-mlt-admin-link')));
             }
           }
         }
@@ -1221,7 +1221,7 @@ function apachesolr_date_determine_gap($start, $end) {
   $start = strtotime($start);
   $end = strtotime($end);
 
-  if ($end - $start >= 86400*365) {
+  if ($end - $start >= 86400 * 365) {
     return 'YEAR';
   }
 
@@ -1401,7 +1401,7 @@ function apachesolr_modify_query(&$query, &$params, $caller) {
   $ors = array();
   $facet_info = apachesolr_get_facet_definitions();
   foreach ($facet_info as $infos) {
-    foreach($infos as $delta => $facet) {
+    foreach ($infos as $delta => $facet) {
       if ($facet['operator'] == 'OR') {
         $ors[] = $delta;
       }
@@ -1656,7 +1656,7 @@ function apachesolr_field_name_map($field_name) {
       'tid' => t('Taxonomy term IDs'),
     );
     if (module_exists('taxonomy')) {
-      foreach(taxonomy_get_vocabularies() as $vocab) {
+      foreach (taxonomy_get_vocabularies() as $vocab) {
         $map['ts_vid_'. $vocab->vid .'_names'] = t('Taxonomy term names only from the %name vocabulary', array('%name' => $vocab->name));
         $map['im_vid_'. $vocab->vid] = t('Taxonomy term IDs from the %name vocabulary', array('%name' => $vocab->name));
       }
@@ -1936,8 +1936,8 @@ function apachesolr_mlt_suggestions($settings, $id) {
       return $docs;
     }
   }
-  catch ( Exception $e ) {
-    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR );
+  catch (Exception $e) {
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
   }
 }
 

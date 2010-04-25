@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_og.module,v 1.1.2.4.2.3 2009/09/17 17:14:06 robertDouglass Exp $
+// $Id: apachesolr_og.module,v 1.1.2.4.2.4 2010/04/25 04:11:37 jpmckinney Exp $
 
 /**
  * @file
@@ -43,7 +43,7 @@ function apachesolr_og_admin() {
  */
 function apachesolr_og_reindex() {
   $result = db_query("SELECT nid FROM {og}");
-  while($og = db_fetch_array($result)) {
+  while ($og = db_fetch_array($result)) {
     apachesolr_mark_node($og['nid']);
   }
   drupal_set_message(t('All group nodes marked for re-indexing'));
@@ -145,7 +145,7 @@ function apachesolr_og_block($op = 'list', $delta = 0, $edit = array()) {
       $blocks = array();
       foreach ($enabled_facets as $delta => $facet_field) {
         if (isset($facets[$delta])) {
-          $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE,);
+          $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE);
         }
       }
       return $blocks;
