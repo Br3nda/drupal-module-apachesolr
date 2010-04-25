@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.78 2010/04/24 23:48:02 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.79 2010/04/25 00:32:21 jpmckinney Exp $
 
 /**
  * @file
@@ -728,7 +728,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
             $new_direction = 'desc'; // We only sort by descending score.
           }
           elseif ($active) {
-            $direction = $solrsort['#direction'];
+            $direction = $toggle[$solrsort['#direction']];
             $new_direction = $toggle[$solrsort['#direction']];
           }
           else {
