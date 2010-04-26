@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.64 2010/04/26 17:33:54 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.65 2010/04/26 21:03:17 jpmckinney Exp $
 
 /**
  * @file
@@ -157,12 +157,14 @@ function apachesolr_search_view($type = NULL) {
     }
     // Only perform search if there is non-whitespace search term or filters:
     if ($keys || $filters || variable_get('apachesolr_search_browse', 'browse') == 'results') {
-      // Log the search keys:
-      $log = $keys;
-      if ($filters) {
-        $log .= 'filters='. $filters;
+      if (variable_get('apachesolr_logging', TRUE)) {
+        // Log the search keys:
+        $log = $keys;
+        if ($filters) {
+          $log .= 'filters='. $filters;
+        }
+        watchdog('search', '%keys (@type).', array('%keys' => $log, '@type' => t('Search')), WATCHDOG_NOTICE, l(t('results'), 'search/'. $type .'/'. $keys));
       }
-      watchdog('search', '%keys (@type).', array('%keys' => $log, '@type' => t('Search')), WATCHDOG_NOTICE, l(t('results'), 'search/'. $type .'/'. $keys));
 
       // Collect the search results. See search_data().
       $content = apachesolr_search_search('search', $keys);
