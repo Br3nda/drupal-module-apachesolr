@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.15 2010/04/26 15:10:53 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.16 2010/04/26 15:22:00 jpmckinney Exp $
 
 /**
  * @file
@@ -1415,6 +1415,11 @@ function theme_apachesolr_sort_list($items) {
  * The interface for all 'query' objects.
  */
 interface Drupal_Solr_Query_Interface {
+  /**
+   * Removes the keywords from the query.
+   */
+  function remove_keys();
+
   /**
    * Return the search path.
    *

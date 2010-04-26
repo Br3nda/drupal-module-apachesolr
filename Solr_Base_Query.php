@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.11 2010/04/26 15:15:43 jpmckinney Exp $
+// $Id: Solr_Base_Query.php,v 1.12 2010/04/26 15:22:00 jpmckinney Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -132,6 +132,10 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
   function __clone() {
     $this->id = ++self::$idCount;
+  }
+
+  public function remove_keys() {
+    $this->keys = '';
   }
 
   public function get_filters($name = NULL) {
