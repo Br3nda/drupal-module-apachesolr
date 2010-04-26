@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.40.2.19 2010/04/26 16:39:20 jpmckinney Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.40.2.20 2010/04/26 16:41:02 jpmckinney Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -214,6 +214,10 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
   function set_keys($keys) {
     $this->keys = $keys;
+  }
+
+  public function remove_keys() {
+    $this->keys = '';
   }
 
   public function add_subquery(Drupal_Solr_Query_Interface $query, $fq_operator = 'OR', $q_operator = 'AND') {

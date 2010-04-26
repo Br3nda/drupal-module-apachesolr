@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.88 2010/04/26 16:39:20 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.89 2010/04/26 16:41:02 jpmckinney Exp $
 
 /**
  * @file
@@ -2169,6 +2169,11 @@ interface Drupal_Solr_Query_Interface {
    *   The new keywords.
    */
   function set_keys($keys);
+
+  /**
+   * Removes the query's keywords.
+   */
+  function remove_keys();
 
   /**
    * Return the search path (including the search keywords).
