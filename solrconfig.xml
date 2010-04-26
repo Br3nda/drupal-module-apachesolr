@@ -479,11 +479,11 @@
      <str name="hl.mergeContiguous">true</str>
    <!-- instructs Solr to return the field itself if no query terms are
         found -->
-     <str name="f.body.hl.alternateField">body</str>
+     <str name="f.body.hl.alternateField">teaser</str>
      <str name="f.body.hl.maxAlternateFieldLength">256</str>
      <!-- JS: I wasn't getting good results here... I'm turning off for now
-     because I was getting periods (.) by themselves at the begining of
-     snippets and don't feel like deubgging anymore.  Without the regex is
+     because I was getting periods (.) by themselves at the beginning of
+     snippets and don't feel like debugging anymore.  Without the regex is
      faster too -->
      <!--<str name="f.body.hl.fragmenter">regex</str>--> <!-- defined below -->
 

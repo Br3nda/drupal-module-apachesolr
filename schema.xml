@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- $Id: schema.xml,v 1.1.2.1.2.32.2.4 2010/04/24 22:57:21 jpmckinney Exp $ -->
+<!-- $Id: schema.xml,v 1.1.2.1.2.32.2.5 2010/04/26 17:33:54 jpmckinney Exp $ -->
 
 <!--
  This is the Solr schema file. This file should be named "schema.xml" and
@@ -326,8 +326,6 @@
    <copyField source="name" dest="sort_name"/>
    <!-- Copy terms to a single field that contains all taxonomy term names -->
    <copyField source="ts_vid_*" dest="taxonomy_names"/>
-   <!-- The teaser can be used when a better snippet is not available -->
-   <copyField source="body" dest="teaser" maxChars="300"/>
   
    <!-- A set of fields to contain text extracted from tag contents which we
         can boost at query time. -->

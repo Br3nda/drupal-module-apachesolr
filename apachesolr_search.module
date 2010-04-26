@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.63 2010/04/26 03:47:20 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.64 2010/04/26 17:33:54 jpmckinney Exp $
 
 /**
  * @file
@@ -771,7 +771,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
         }
 
         // Handle taxonomy vocabulary facets
-        if ((strpos($delta, 'im_vid_') === 0)) {
+        if (strpos($delta, 'im_vid_') === 0) {
           return apachesolr_search_taxonomy_facet_block($response, $query, $delta);
         }
 
