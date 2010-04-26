@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.9 2009/06/29 23:23:06 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.10 2010/04/26 15:10:53 jpmckinney Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -138,12 +138,6 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     $this->fields[] = array('#exclude' => $exclude, '#name' => $field, '#value' => trim($value));
   }
 
-  /**
-   * Get all filters, or the subset of filters for one field.
-   *
-   * @param $name
-   *   Optional name of a Solr field.
-   */
   public function get_filters($name = NULL) {
     if (empty($name)) {
       return $this->fields;
@@ -210,17 +204,6 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     $this->parse_filters();
   }
 
-  /**
-   * A subquery is another instance of a Solr_Base_Query that should be joined
-   * to the query. The operator determines whether it will be joined with AND or
-   * OR.
-   *
-   * @param $query
-   *   An instance of Drupal_Solr_Query_Interface.
-   *
-   * @param $operator
-   *   'AND' or 'OR'
-   */
   public function add_subquery(Drupal_Solr_Query_Interface $query, $fq_operator = 'OR', $q_operator = 'AND') {
     $this->subqueries[$query->id] = array('#query' => $query, '#fq_operator' => $fq_operator, '#q_operator' => $q_operator);
   }
@@ -258,9 +241,6 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     );
   }
 
-  /**
-   * Return filters and sort in a form suitable for a query param to url().
-   */
   public function get_url_querystring() {
     $querystring = '';
     if ($fq = $this->rebuild_fq(TRUE)) {
@@ -276,20 +256,10 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     return $this->rebuild_fq();
   }
 
-  /**
-   * A function to get just the keyword components of the query,
-   * omitting any field:value portions.
-   */
   public function get_query_basic() {
     return $this->rebuild_query();
   }
   
-  /**
-   * Return the search path.
-   *
-   * @param string $new_keywords
-   *   Optional. When set, this string overrides the query's current keywords.
-   */
   public function get_path($new_keywords = NULL) {
     if ($new_keywords) {
       return $this->base_path . '/' . $new_keywords;
