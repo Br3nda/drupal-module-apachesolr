@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.40.2.18 2010/04/26 16:35:42 jpmckinney Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.40.2.19 2010/04/26 16:39:20 jpmckinney Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -138,10 +138,6 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     $this->id = ++self::$idCount;
   }
 
-  public function add_filter($field, $value, $exclude = FALSE, $callbacks = array()) {
-    $this->fields[] = array('#exclude' => $exclude, '#name' => $field, '#value' => trim($value), '#callbacks' => $callbacks);
-  }
-
   public function get_filters($name = NULL) {
     if (empty($name)) {
       return $this->fields;
@@ -154,6 +150,19 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
       }
     }
     return $matches;
+  }
+
+  public function has_filter($name, $value) {
+    foreach ($this->fields as $pos => $values) {
+      if (isset($values['#name']) && isset($values['#value']) && $values['#name'] == $name && $values['#value'] == $value) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+  public function add_filter($field, $value, $exclude = FALSE, $callbacks = array()) {
+    $this->fields[] = array('#exclude' => $exclude, '#name' => $field, '#value' => trim($value), '#callbacks' => $callbacks);
   }
 
   public function remove_filter($name, $value = NULL) {
@@ -175,15 +184,6 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
         }
       }
     }
-  }
-
-  public function has_filter($name, $value) {
-    foreach ($this->fields as $pos => $values) {
-      if (isset($values['#name']) && isset($values['#value']) && $values['#name'] == $name && $values['#value'] == $value) {
-        return TRUE;
-      }
-    }
-    return FALSE;
   }
 
   /**
@@ -208,12 +208,12 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     $this->parse_filters();
   }
 
-  function set_keys($keys) {
-    $this->keys = $keys;
-  }
-
   function get_keys() {
     return $this->keys;
+  }
+
+  function set_keys($keys) {
+    $this->keys = $keys;
   }
 
   public function add_subquery(Drupal_Solr_Query_Interface $query, $fq_operator = 'OR', $q_operator = 'AND') {
@@ -245,14 +245,18 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     }
   }
 
-  public function set_solrsort($name, $direction) {
-    if (isset($this->available_sorts[$name])) {
-      $this->solrsort = array('#name' => $name, '#direction' => $direction);
-    }
-  }
-
-  public function get_solrsort() {
-    return $this->solrsort;
+  /**
+   * Returns a default list of sorts.
+   */
+  protected function default_sorts() {
+    // The array keys must always be real Solr index fields.
+    return array(
+      'score' => array('title' => t('Relevancy'), 'default' => 'desc'),
+      'sort_title' => array('title' => t('Title'), 'default' => 'asc'),
+      'type' => array('title' => t('Type'), 'default' => 'asc'),
+      'sort_name' => array('title' => t('Author'), 'default' => 'asc'),
+      'created' => array('title' => t('Date'), 'default' => 'desc'),
+    );
   }
 
   public function get_available_sorts() {
@@ -272,21 +276,30 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     $this->parse_sortstring();
   }
 
-  /**
-   * Returns a default list of sorts.
-   */
-  protected function default_sorts() {
-    // The array keys must always be real Solr index fields.
-    return array(
-      'score' => array('title' => t('Relevancy'), 'default' => 'desc'),
-      'sort_title' => array('title' => t('Title'), 'default' => 'asc'),
-      'type' => array('title' => t('Type'), 'default' => 'asc'),
-      'sort_name' => array('title' => t('Author'), 'default' => 'asc'),
-      'created' => array('title' => t('Date'), 'default' => 'desc'),
-    );
+  public function get_solrsort() {
+    return $this->solrsort;
   }
 
-   public function get_url_queryvalues() {
+  public function set_solrsort($name, $direction) {
+    if (isset($this->available_sorts[$name])) {
+      $this->solrsort = array('#name' => $name, '#direction' => $direction);
+    }
+  }
+
+  /**
+   * Return the search path (including the search keywords).
+   *
+   * @param string $new_keywords
+   *   Optional. When set, this string overrides the query's current keywords.
+   */
+  public function get_path($new_keywords = NULL) {
+    if (isset($new_keywords)) {
+      return $this->base_path . '/' . $new_keywords;
+    }
+    return $this->base_path . '/' . $this->get_query_basic();
+  }
+
+  public function get_url_queryvalues() {
     $queryvalues = array();
     if ($fq = $this->rebuild_fq(TRUE)) {
       $queryvalues['filters'] = '';
@@ -305,25 +318,12 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     return $queryvalues;
   }
 
-  public function get_fq() {
-    return $this->rebuild_fq();
-  }
-
   public function get_query_basic() {
     return $this->rebuild_query();
   }
 
-  /**
-   * Return the search path (including the search keywords).
-   *
-   * @param string $new_keywords
-   *   Optional. When set, this string overrides the query's current keywords.
-   */
-  public function get_path($new_keywords = NULL) {
-    if (isset($new_keywords)) {
-      return $this->base_path . '/' . $new_keywords;
-    }
-    return $this->base_path . '/' . $this->get_query_basic();
+  public function get_fq() {
+    return $this->rebuild_fq();
   }
 
   /**
