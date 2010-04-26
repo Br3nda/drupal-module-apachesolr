@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.install,v 1.1.2.5.2.2 2009/12/01 14:05:21 robertDouglass Exp $
+// $Id: apachesolr_search.install,v 1.1.2.5.2.3 2010/04/26 03:35:16 jpmckinney Exp $
 
 /**
  * @file
@@ -14,6 +14,8 @@ function apachesolr_search_uninstall() {
   $stored = variable_get('apachesolr_index_last', array());
   unset($stored['apachesolr_search']);
   variable_set('apachesolr_index_last', $stored);
+  // Remove blocks.
+  db_query('DELETE FROM {blocks} WHERE module = "apachesolr_search"');
 }
 
 /**
