@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.40.2.17 2010/04/25 04:11:37 jpmckinney Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.40.2.18 2010/04/26 16:35:42 jpmckinney Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -142,12 +142,6 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     $this->fields[] = array('#exclude' => $exclude, '#name' => $field, '#value' => trim($value), '#callbacks' => $callbacks);
   }
 
-  /**
-   * Get all filters, or the subset of filters for one field.
-   *
-   * @param $name
-   *   Optional name of a Solr field.
-   */
   public function get_filters($name = NULL) {
     if (empty($name)) {
       return $this->fields;
@@ -214,34 +208,14 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     $this->parse_filters();
   }
 
-  /**
-   * Set keywords in this query.
-   *
-   * @param $keys
-   *   New keywords
-   */
   function set_keys($keys) {
     $this->keys = $keys;
   }
 
-  /**
-   * Get this query's keywords.
-   */
   function get_keys() {
     return $this->keys;
   }
 
-  /**
-   * A subquery is another instance of a Solr_Base_Query that should be joined
-   * to the query. The operator determines whether it will be joined with AND or
-   * OR.
-   *
-   * @param $query
-   *   An instance of Drupal_Solr_Query_Interface.
-   *
-   * @param $operator
-   *   'AND' or 'OR'
-   */
   public function add_subquery(Drupal_Solr_Query_Interface $query, $fq_operator = 'OR', $q_operator = 'AND') {
     $this->subqueries[$query->id] = array('#query' => $query, '#fq_operator' => $fq_operator, '#q_operator' => $q_operator);
   }
@@ -312,9 +286,6 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     );
   }
 
-  /**
-   * Return filters and sort in a form suitable for a query param to url().
-   */
    public function get_url_queryvalues() {
     $queryvalues = array();
     if ($fq = $this->rebuild_fq(TRUE)) {
@@ -338,16 +309,12 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     return $this->rebuild_fq();
   }
 
-  /**
-   * A function to get just the keyword components of the query,
-   * omitting any field:value portions.
-   */
   public function get_query_basic() {
     return $this->rebuild_query();
   }
 
   /**
-   * Return the search path.
+   * Return the search path (including the search keywords).
    *
    * @param string $new_keywords
    *   Optional. When set, this string overrides the query's current keywords.

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.86 2010/04/25 21:13:56 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.87 2010/04/26 16:35:43 jpmckinney Exp $
 
 /**
  * @file
@@ -2122,7 +2122,7 @@ interface Drupal_Solr_Query_Interface {
   function has_filter($field, $value);
 
   /**
-   * Remove a filter from the query
+   * Remove a filter from the query.
    *
    * @param string $field
    * the facet field to remove
@@ -2134,7 +2134,7 @@ interface Drupal_Solr_Query_Interface {
   function remove_filter($field, $value = NULL);
 
   /**
-   * Add a filter to a query
+   * Add a filter to a query.
    *
    * @param string $field
    *   the facet field to apply to this query
@@ -2155,27 +2155,25 @@ interface Drupal_Solr_Query_Interface {
   function get_path();
 
   /**
-   * Return the query's keywords.
+   * Get the query's keywords.
    */
   function get_keys();
 
   /**
    * Set the query's keywords.
    *
-   * @param string keys
+   * @param string $keys
    *   The new keywords.
    */
   function set_keys($keys);
 
   /**
-   * Return an array of parameters for use in the l function.
-   *
-   * @see l()
+   * Return filters and sort in a form suitable for a query param to url().
    */
   function get_url_queryvalues();
-
+  
   /**
-   * return the basic string query
+   * Return the basic string query.
    */
   function get_query_basic();
 
@@ -2199,7 +2197,10 @@ interface Drupal_Solr_Query_Interface {
   function get_solrsort();
 
   /**
-   * Return an array of all filters.
+   * Get all filters, or the subset of filters for one field.
+   *
+   * @param $name
+   *   Optional name of a Solr field.
    */
   function get_filters($name = NULL);
 
@@ -2221,14 +2222,14 @@ interface Drupal_Solr_Query_Interface {
   function add_subquery(Drupal_Solr_Query_Interface $query, $fq_operator = 'OR', $q_operator = 'AND');
 
   /**
-   * return the sorts that are provided by the query object
+   * Return the sorts that are provided by the query object.
    *
    * @return array all the sorts provided
    */
   function get_available_sorts();
 
   /**
-   * Remove a specific subquery
+   * Remove a specific subquery.
    *
    * @param Drupal_Solr_Query_Interface $query
    * the query to remove
@@ -2236,12 +2237,12 @@ interface Drupal_Solr_Query_Interface {
   function remove_subquery(Drupal_Solr_Query_Interface $query);
 
   /**
-   * remove all subqueries
+   * Remove all subqueries.
    */
   function remove_subqueries();
 
   /**
-   * make a sort available
+   * Make a sort available.
    */
   function set_available_sort($field, $sort);
 }
