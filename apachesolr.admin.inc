@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.28.2.31 2010/04/25 04:11:37 jpmckinney Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28.2.32 2010/04/26 03:47:20 jpmckinney Exp $
 
 /**
  * @file
@@ -755,7 +755,7 @@ function apachesolr_batch_index_nodes(&$context) {
       return FALSE;
     }
 
-    $status = module_invoke('apachesolr_search', 'search', 'status');
+    $status = apachesolr_index_status('apachesolr_search');
     $context['sandbox']['progress'] = 0;
     $context['sandbox']['max'] = $status['remaining'];
   }

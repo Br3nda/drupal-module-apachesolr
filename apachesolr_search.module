@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.62 2010/04/26 02:39:42 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.63 2010/04/26 03:47:20 jpmckinney Exp $
 
 /**
  * @file
@@ -19,7 +19,7 @@ function apachesolr_search_help($section) {
       $remaining = 0;
       $total = 0;
       // Collect the stats
-      $status = module_invoke('apachesolr_search', 'search', 'status');
+      $status = apachesolr_index_status('apachesolr_search');
       $remaining += $status['remaining'];
       $total += $status['total'];
 
@@ -141,8 +141,9 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
  * Re-implementation of search_view().
  */
 function apachesolr_search_view($type = NULL) {
-  // Search form submits with POST but redirects to GET.
+  $keys = trim(search_get_keys());
   $content = '';
+  // Search form submits with POST but redirects to GET.
   if (!isset($_POST['keys'])) {
     if (empty($type)) {
       // Note: search/X can not be a default tab because it would take on the
@@ -150,7 +151,6 @@ function apachesolr_search_view($type = NULL) {
       // switching tabs. This is why we drupal_goto to it from the parent instead.
       drupal_goto('search/apachesolr_search');
     }
-    $keys = trim(search_get_keys());
     $filters = '';
     if ($type == 'apachesolr_search' && isset($_GET['filters'])) {
       $filters = trim($_GET['filters']);
