@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.91 2010/04/26 20:51:40 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.92 2010/04/27 15:48:17 jpmckinney Exp $
 
 /**
  * @file
@@ -1461,6 +1461,8 @@ function apachesolr_has_searched($searched = NULL) {
  * number of solr objects to be used based on the host, port, path combination.
  * Get an instance like this:
  *   $solr = apachesolr_get_solr();
+ *
+ * @throws Exception
  */
 function apachesolr_get_solr($host = NULL, $port = NULL, $path = NULL) {
   static $solr_cache;
@@ -1478,16 +1480,10 @@ function apachesolr_get_solr($host = NULL, $port = NULL, $path = NULL) {
   if (empty($solr_cache[$host][$port][$path])) {
     list($module, $filepath, $class) = variable_get('apachesolr_service_class', array('apachesolr', 'Drupal_Apache_Solr_Service.php', 'Drupal_Apache_Solr_Service'));
     include_once(drupal_get_path('module', $module) .'/'. $filepath);
-    try {
-      $solr = new $class($host, $port, $path);
-      // Set a non-default behavior.
-      $solr->setCollapseSingleValueArrays(FALSE);
-      $solr_cache[$host][$port][$path] = $solr;
-    }
-    catch (Exception $e) {
-      watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
-      return;
-    }
+    $solr = new $class($host, $port, $path);
+    // Set a non-default behavior.
+    $solr->setCollapseSingleValueArrays(FALSE);
+    $solr_cache[$host][$port][$path] = $solr;
   }
   return $solr_cache[$host][$port][$path];
 }
