@@ -1,21 +1,31 @@
 <?php
-// $Id: apachesolr_og.install,v 1.4 2009/06/29 23:23:08 pwolanin Exp $
+// $Id: apachesolr_og.install,v 1.5 2010/04/27 13:53:53 pwolanin Exp $
 
 /**
- * Implementation of hook_install().
+ * Implementation of hook_uninstall().
  */
-function apachesolr_og_install() {
-  $facet_missing = variable_get('apachesolr_facet_missing', array());
-  $facet_missing['apachesolr_og']['im_og_gid'] = 1;
-  variable_set('apachesolr_facet_missing', $facet_missing);
+function apachesolr_og_uninstall() {
+  // Remove blocks.
+  db_query('DELETE FROM {blocks} WHERE module = "apachesolr_og"');
 }
 
 /**
  * Implementation of hook_enable().
  */
 function apachesolr_og_enable() {
+  $facet_missing = variable_get('apachesolr_facet_missing', array());
+  $facet_missing['apachesolr_og']['im_og_gid'] = 1;
+  variable_set('apachesolr_facet_missing', $facet_missing);
   drupal_set_message(t('All existing Organic Group posts will be re-indexed'), 'warning');
   db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {og_ancestry})", time());
+}
+
+/**
+ * Implementation of hook_disable().
+ */
+function apachesolr_og_disable() {
+  // Disable all facets for this module.
+  apachesolr_save_module_facets('apachesolr_og', array());
 }
 
 /**
@@ -26,7 +36,7 @@ function apachesolr_og_update_6000() {
   apachesolr_clear_last_index();
   $ret[] = array('success' => TRUE, 'query' => 'Called function apachesolr_clear_last_index(). All content will be re-indexed');
   $facet_missing = variable_get('apachesolr_facet_missing', array());
-  $facet_missing['apachesolr_og'][_apachesolr_og_gid_key()] = 1;
+  $facet_missing['apachesolr_og'][apachesolr_og_gid_key()] = 1;
   variable_set('apachesolr_facet_missing', $facet_missing);
   return $ret;
 }

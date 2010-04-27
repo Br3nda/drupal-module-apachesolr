@@ -172,8 +172,8 @@
          maxTime - oldest uncommited update (in ms) is this long ago
     -->
     <autoCommit> 
-      <maxDocs>2000</maxDocs>
-      <maxTime>120000</maxTime> 
+      <maxDocs>50</maxDocs>
+      <maxTime>15000</maxTime> 
     </autoCommit>
 
 
@@ -479,11 +479,11 @@
      <str name="hl.mergeContiguous">true</str>
    <!-- instructs Solr to return the field itself if no query terms are
         found -->
-     <str name="f.body.hl.alternateField">body</str>
+     <str name="f.body.hl.alternateField">teaser</str>
      <str name="f.body.hl.maxAlternateFieldLength">256</str>
      <!-- JS: I wasn't getting good results here... I'm turning off for now
-     because I was getting periods (.) by themselves at the begining of
-     snippets and don't feel like deubgging anymore.  Without the regex is
+     because I was getting periods (.) by themselves at the beginning of
+     snippets and don't feel like debugging anymore.  Without the regex is
      faster too -->
      <!--<str name="f.body.hl.fragmenter">regex</str>--> <!-- defined below -->
 
@@ -719,6 +719,16 @@
   <!-- config for the admin interface -->
   <admin>
     <defaultQuery>solr</defaultQuery>
+
+    <gettableFiles>
+         solrconfig.xml
+         schema.xml
+         elevate.xml
+         mapping-ISOLatin1Accent.txt
+         protwords.txt
+         stopwords.txt
+         synonyms.txt
+    </gettableFiles>   
 
     <!-- configure a healthcheck file for servers behind a loadbalancer
     <healthcheck type="file">server-enabled</healthcheck>

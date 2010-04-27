@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.6 2009/06/29 23:23:08 pwolanin Exp $
+// $Id: apachesolr_search.admin.inc,v 1.7 2010/04/27 13:53:53 pwolanin Exp $
 
 /**
  * @file
@@ -14,10 +14,10 @@ function apachesolr_search_settings_page() {
   try {
     $solr = apachesolr_get_solr();
     $fields = $solr->getFields();
-    $output .= drupal_get_form('apachesolr_search_settings_form', $fields);
+    $output = drupal_get_form('apachesolr_search_settings_form', $fields);
   }
   catch (Exception $e) {
-    watchdog('apachesolr', nl2br(check_plain($e->getMessage())));
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
     drupal_set_message(nl2br(check_plain($e->getMessage())), "warning");
     $output .= t('Cannot get information about the fields in the index at this time.');
   }
@@ -43,7 +43,7 @@ function apachesolr_search_bias_form($form_state) {
   $changed_settings = variable_get('apachesolr_search_changed_boost', '0:0');
   $sticky_boost = variable_get('apachesolr_search_sticky_boost', '0');
   $promote_boost = variable_get('apachesolr_search_promote_boost', '0');
-  
+
   $options = array(
     '10:2000.0' => '10',
     '8:1000.0' => '9',
@@ -119,8 +119,8 @@ function apachesolr_search_settings_form($form_state, $fields) {
   $qf = variable_get('apachesolr_search_query_fields', array());
   $weights = drupal_map_assoc(array('21.0', '13.0', '8.0', '5.0', '3.0', '2.0', '1.0', '0.8', '0.5', '0.3', '0.2', '0.1'));
   $weights['0'] = t('Omit');
-  // Note - we have default values set in solrconfig.xml, which will operate when 
-  // none are set.
+  // Note - we have default values set in solrconfig.xml, which will operate
+  // when none are set.  That's the preferred state.
   $defaults = array(
     'body' => '1.0',
     'title' => '5.0',
@@ -136,7 +136,6 @@ function apachesolr_search_settings_form($form_state, $fields) {
     $qf = $defaults;
   }
   if ($fields) {
-
     $form['apachesolr_search_query_fields'] = array(
       '#type' => 'fieldset',
       '#title' => t('Field biases'),
@@ -146,15 +145,20 @@ function apachesolr_search_settings_form($form_state, $fields) {
       '#description' => t('Specify here which fields are more important when searching. Give a field a greater numeric value to make it more important. If you omit a field, it will not be searched.'),
     );
     foreach ($fields as $field_name => $field) {
-      $form['apachesolr_search_query_fields'][$field_name] = array(
-        '#access' => $field->type == 'text',
-        '#type' => 'select',
-        '#options' => $weights,
-        '#title' => apachesolr_field_name_map($field_name),
-        '#default_value' => isset($qf[$field_name]) ? $qf[$field_name] : '0',
-      );
+      // Only indexed feids are searchable.
+      if ($field->schema{0} == 'I') {
+        // By default we only show text fields.  Use hook_form_alter to change.
+        $form['apachesolr_search_query_fields'][$field_name] = array(
+          '#access' => $field->type == 'text',
+          '#type' => 'select',
+          '#options' => $weights,
+          '#title' => apachesolr_field_name_map($field_name),
+          '#default_value' => isset($qf[$field_name]) ? $qf[$field_name] : '0',
+        );
+      }
     }
-    // Make sure all the default fields are included, even if they have no indexed content.
+    // Make sure all the default fields are included, even if they have
+    // no indexed content.
     foreach ($defaults as $field_name => $weight) {
       $form['apachesolr_search_query_fields'][$field_name] = array(
         '#type' => 'select',
@@ -221,7 +225,7 @@ function apachesolr_search_type_boost_form($form_state) {
 
 /**
  * Submit callback for apachesolr_search_type_boost_form().
- * 
+ *
  * This is called before system_settings_form_submit().
  */
 function apachesolr_search_type_boost_form_submit($form_id, &$form_state) {
@@ -239,7 +243,7 @@ function apachesolr_search_type_boost_form_submit($form_id, &$form_state) {
     if (!empty($new_excluded_types[$type])) {
       $solr = apachesolr_get_solr();
       $solr->deleteByQuery("type:$type");
-      apachesolr_index_updated(time());
+      apachesolr_index_set_last_updated(time());
     }
   }
 

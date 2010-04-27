@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_og.module,v 1.5 2009/06/29 23:23:08 pwolanin Exp $
+// $Id: apachesolr_og.module,v 1.6 2010/04/27 13:53:53 pwolanin Exp $
 
 /**
  * @file
@@ -16,7 +16,7 @@ function apachesolr_og_menu() {
       'description'      => 'Apache Solr OG facet settings for group posts.',
       'page callback'    => 'drupal_get_form',
       'page arguments'   => array('apachesolr_og_admin'),
-      'access arguments' => array('administer site configuration'),
+      'access arguments' => array('administer search'),
     ),
   );
 }
@@ -43,7 +43,7 @@ function apachesolr_og_admin() {
  */
 function apachesolr_og_reindex() {
   $result = db_query("SELECT nid FROM {og}");
-  while($og = db_fetch_array($result)) {
+  while ($og = db_fetch_array($result)) {
     apachesolr_mark_node($og['nid']);
   }
   drupal_set_message(t('All group nodes marked for re-indexing'));
@@ -56,12 +56,12 @@ function apachesolr_og_apachesolr_update_index(&$document, $node) {
   // Index group posts
   if (!empty($node->og_groups)) {
     foreach ($node->og_groups as $gid) {
-      $document->setMultiValue(_apachesolr_og_gid_key(), $gid);
+      $document->setMultiValue(apachesolr_og_gid_key(), $gid);
     }
-  } 
+  }
   elseif (isset($node->og_description) && variable_get('apachesolr_og_groupnode', 0)) {
     // Index the group node itself as in the group.
-    $document->setMultiValue(_apachesolr_og_gid_key(), $node->nid);
+    $document->setMultiValue(apachesolr_og_gid_key(), $node->nid);
   }
 }
 
@@ -72,7 +72,7 @@ function apachesolr_og_apachesolr_modify_query(&$query, &$params, $caller) {
   // Fetch the group ID in results - however, this is currently not used.
   // May be useful for custom theming.
   if ($caller == 'apachesolr_search') {
-    $params['fl'] .= ',' . _apachesolr_og_gid_key();
+    $params['fl'] .= ',' . apachesolr_og_gid_key();
   }
 }
 
@@ -80,7 +80,7 @@ function apachesolr_og_apachesolr_modify_query(&$query, &$params, $caller) {
  * Implementation of hook_apachesolr_process_results().
  */
 function apachesolr_og_apachesolr_process_results(&$results) {
-  $key = _apachesolr_og_gid_key();
+  $key = apachesolr_og_gid_key();
   $groups = array();
   foreach ($results as $idx => $r) {
     if (!is_array($r['node']->$key)) {
@@ -111,7 +111,7 @@ function apachesolr_og_apachesolr_process_results(&$results) {
 /**
  * Apachesolr index name for Organic group id
  */
-function _apachesolr_og_gid_key() {
+function apachesolr_og_gid_key() {
   $group_id = array(
     'name'       => 'og_gid',
     'multiple'   => TRUE,
@@ -125,7 +125,7 @@ function _apachesolr_og_gid_key() {
  * Implementation of hook_apachesolr_facets().
  */
 function apachesolr_og_apachesolr_facets() {
-  $key = _apachesolr_og_gid_key();
+  $key = apachesolr_og_gid_key();
   $facets[$key] = array(
     'info' => t('Apache Solr OG: Filter by Organic Group'),
     'facet_field' => $key,
@@ -145,17 +145,17 @@ function apachesolr_og_block($op = 'list', $delta = 0, $edit = array()) {
       $blocks = array();
       foreach ($enabled_facets as $delta => $facet_field) {
         if (isset($facets[$delta])) {
-          $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE,);
+          $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE);
         }
       }
       return $blocks;
 
     case 'view':
       if (apachesolr_has_searched()) {
-        if ($delta != _apachesolr_og_gid_key()) {
+        if ($delta != apachesolr_og_gid_key()) {
           return;
         }
-        
+
         $response = apachesolr_static_response_cache();
         if (empty($response)) {
           return;
@@ -167,9 +167,9 @@ function apachesolr_og_block($op = 'list', $delta = 0, $edit = array()) {
       break;
 
     case 'configure':
-      return apachesolr_facetcount_form($delta);
+      return apachesolr_facetcount_form('apachesolr_og', $delta);
     case 'save':
-      apachesolr_facetcount_save($delta, $edit);
+      apachesolr_facetcount_save($edit);
       break;
   }
 }
@@ -189,7 +189,7 @@ function apachesolr_og_group_name($facet, &$options) {
 /**
  * Implementation of hook_theme().
  *
- * The breadcrumb function assumes that _apachesolr_og_gid_key() returns im_og_gid
+ * The breadcrumb function assumes that apachesolr_og_gid_key() returns im_og_gid
  * If that changes, modify the theme name appropriately
  */
 function apachesolr_og_theme() {
@@ -201,7 +201,8 @@ function apachesolr_og_theme() {
 /**
  * Theme the breadcrumb.
  */
-function theme_apachesolr_breadcrumb_im_og_gid($group_id) {
+function theme_apachesolr_breadcrumb_im_og_gid($field) {
+  $group_id = $field['#value'];
   if (!is_numeric($group_id)) {
     return t('No group');
   }

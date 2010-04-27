@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.install,v 1.6 2009/06/29 23:23:08 pwolanin Exp $
+// $Id: apachesolr_search.install,v 1.7 2010/04/27 13:53:53 pwolanin Exp $
 
 /**
  * @file
@@ -11,7 +11,11 @@
  * Update to namespace tracking.
  */
 function apachesolr_search_uninstall() {
-  apachesolr_clear_last_index('apachesolr_search');
+  $stored = variable_get('apachesolr_index_last', array());
+  unset($stored['apachesolr_search']);
+  variable_set('apachesolr_index_last', $stored);
+  // Remove blocks.
+  db_query('DELETE FROM {blocks} WHERE module = "apachesolr_search"');
 }
 
 /**

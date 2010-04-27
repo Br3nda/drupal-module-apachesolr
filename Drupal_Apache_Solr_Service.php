@@ -47,7 +47,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       return microtime(TRUE) - $start;
     }
     else {
-      return FALSE; 
+      return FALSE;
     }
   }
 
@@ -58,7 +58,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     if (empty($this->luke[$num_terms])) {
       $url = $this->_constructUrl(self::LUKE_SERVLET, array('numTerms' => "$num_terms", 'wt' => self::SOLR_WRITER));
       $this->luke[$num_terms] = $this->_sendRawGet($url);
-      cache_set($this->luke_cid, $this->luke);
+      cache_set($this->luke_cid, $this->luke, 'cache_apachesolr');
     }
   }
 
@@ -78,7 +78,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     }
     return $this->luke[$num_terms];
   }
-  
+
   /**
    * Sets $this->stats with the information about the Solr Core form /admin/stats.jsp
    */
@@ -88,18 +88,18 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     if (empty($this->stats) && isset($data->index->numDocs)) {
       $url = $this->_constructUrl(self::STATS_SERVLET);
       $this->stats_cid = "apachesolr:stats:" . md5($url);
-      $cache = cache_get($this->stats_cid);
+      $cache = cache_get($this->stats_cid, 'cache_apachesolr');
       if (isset($cache->data)) {
         $this->stats = simplexml_load_string($cache->data);
       }
       else {
         $response = $this->_sendRawGet($url);
         $this->stats = simplexml_load_string($response->getRawResponse());
-        cache_set($this->stats_cid, $response->getRawResponse());
+        cache_set($this->stats_cid, $response->getRawResponse(), 'cache_apachesolr');
       }
     }
   }
-  
+
   /**
    * Get information about the Solr Core.
    *
@@ -124,6 +124,8 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
      '@deletes_by_id' => '',
      '@deletes_by_query' => '',
      '@deletes_total' => '',
+     '@schema_version' => '',
+     '@core_name' => '',
     );
 
     if (!empty($stats)) {
@@ -139,6 +141,10 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       $deletes_query_xpath = $stats->xpath('//stat[@name="deletesByQuery"]');
       $summary['@deletes_by_query'] = (int) trim($deletes_query_xpath[0]);
       $summary['@deletes_total'] = $summary['@deletes_by_id'] + $summary['@deletes_by_query'];
+      $schema = $stats->xpath('/solr/schema[1]');
+      $summary['@schema_version'] = trim($schema[0]);;
+      $core = $stats->xpath('/solr/core[1]');
+      $summary['@core_name'] = trim($core[0]);
     }
 
     return $summary;
@@ -158,8 +164,8 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
   }
 
   protected function _clearCache() {
-    cache_clear_all("apachesolr:luke:", 'cache', TRUE);
-    cache_clear_all("apachesolr:stats:", 'cache', TRUE);
+    cache_clear_all("apachesolr:luke:", 'cache_apachesolr', TRUE);
+    cache_clear_all("apachesolr:stats:", 'cache_apachesolr', TRUE);
     $this->luke = array();
     $this->stats = NULL;
   }
@@ -185,6 +191,56 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
   }
 
   /**
+   * Make a request to a servlet (a path) that's not a standard path.
+   *
+   * @param string $servlet
+   *   A path to be added to the base Solr path. e.g. 'extract/tika'
+   *
+   * @param array $params
+   *   Any request parameters when constructing the URL.
+   *
+   * @param string $method
+   *   'GET', 'POST', 'PUT', or 'HEAD'.
+   *
+   * @param array $request_headers
+   *   Keyed array of header names and values.  Should include 'Content-Type'
+   *   for POST or PUT.
+   *
+   * @param string $rawPost
+   *   Must be an empty string unless method is POST or PUT.
+   *
+   * @param float $timeout
+   *   Read timeout in seconds or FALSE.
+   *
+   * @return
+   *  Apache_Solr_Response object
+   */
+  public function makeServletRequest($servlet, $params = array(), $method = 'GET', $request_headers = array(), $rawPost = '', $timeout = FALSE) {
+    if ($method == 'GET' || $method == 'HEAD') {
+      // Make sure we are not sending a request body.
+      $rawPost = '';
+    }
+    // Add default params.
+    $params += array(
+      'wt' => self::SOLR_WRITER,
+    );
+
+    $url = $this->_constructUrl($servlet, $params);
+    list($data, $headers) = $this->_makeHttpRequest($url, $method, $request_headers, $rawPost, $timeout);
+    $response = new Apache_Solr_Response($data, $headers, $this->_createDocuments, $this->_collapseSingleValueArrays);
+    $code = (int) $response->getHttpStatus();
+    if ($code != 200) {
+      $message = $response->getHttpStatusMessage();
+      if ($code >= 400 && $code != 403 && $code != 404) {
+        // Add details, like Solr's exception message.
+        $message .= $response->getRawResponse();
+      }
+      throw new Exception('"' . $code . '" Status: ' . $message);
+    }
+    return $response;
+  }
+
+  /**
    * Put Luke meta-data from the cache into $this->luke when we instantiate.
    *
    * @see Apache_Solr_Service::__construct()
@@ -192,7 +248,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
   public function __construct($host = 'localhost', $port = 8180, $path = '/solr/') {
     parent::__construct($host, $port, $path);
     $this->luke_cid = "apachesolr:luke:" . md5($this->_lukeUrl);
-    $cache = cache_get($this->luke_cid);
+    $cache = cache_get($this->luke_cid, 'cache_apachesolr');
     if (isset($cache->data)) {
       $this->luke = $cache->data;
     }
@@ -204,7 +260,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
    * @see Apache_Solr_Service::_sendRawGet()
    */
   protected function _sendRawGet($url, $timeout = FALSE) {
-    list ($data, $headers) = $this->_makeHttpRequest($url, 'GET', array(), '', $timeout);
+    list($data, $headers) = $this->_makeHttpRequest($url, 'GET', array(), '', $timeout);
     $response = new Apache_Solr_Response($data, $headers, $this->_createDocuments, $this->_collapseSingleValueArrays);
     $code = (int) $response->getHttpStatus();
     if ($code != 200) {
@@ -221,14 +277,11 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
   /**
    * Central method for making a post operation against this Solr Server
    *
-   * @see Apache_Solr_Service::_sendRawGet()
+   * @see Apache_Solr_Service::_sendRawPost()
    */
   protected function _sendRawPost($url, $rawPost, $timeout = FALSE, $contentType = 'text/xml; charset=UTF-8') {
-    if (variable_get('apachesolr_read_only', 0)) {
-      throw new Exception('Operating in read-only mode; updates are disabled.');
-    }
     $request_headers = array('Content-Type' => $contentType);
-    list ($data, $headers) = $this->_makeHttpRequest($url, 'POST', $request_headers, $rawPost, $timeout);
+    list($data, $headers) = $this->_makeHttpRequest($url, 'POST', $request_headers, $rawPost, $timeout);
     $response = new Apache_Solr_Response($data, $headers, $this->_createDocuments, $this->_collapseSingleValueArrays);
     $code = (int) $response->getHttpStatus();
     if ($code != 200) {

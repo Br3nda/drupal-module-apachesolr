@@ -1,10 +1,10 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.4 2009/06/29 23:23:08 pwolanin Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.5 2010/04/27 13:53:53 pwolanin Exp $
 
 /**
  * Implementation of apachesolr_update_index
  */
-function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node) {
+function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node, $namespace) {
   static $account;
 
   if (!isset($account)) {
@@ -32,7 +32,7 @@ function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node) {
  *
  * @param $account an account to get grants for and build a solr query
  */
-function _apachesolr_nodeaccess_build_subquery($account) {
+function apachesolr_nodeaccess_build_subquery($account) {
   if (!user_access('access content', $account)) {
     throw new Exception('No access');
   }
@@ -61,10 +61,13 @@ function _apachesolr_nodeaccess_build_subquery($account) {
 /**
  * Implementation of hook_apachesolr_modify_query().
  */
-function apachesolr_nodeaccess_apachesolr_modify_query(&$query, &$params) {
+function apachesolr_nodeaccess_apachesolr_modify_query(&$query, &$params, $caller = 'apachesolr_search') {
+  if ($caller == 'apachesolr_views_query') {
+    return;
+  }
   global $user;
   try {
-    $subquery = _apachesolr_nodeaccess_build_subquery($user);
+    $subquery = apachesolr_nodeaccess_build_subquery($user);
   }
   catch (Exception $e) {
     $query = NULL;
