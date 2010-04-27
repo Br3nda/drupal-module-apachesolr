@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.188 2010/04/13 03:18:17 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.189 2010/04/27 15:52:27 jpmckinney Exp $
 
 /**
  * @file
@@ -1144,7 +1144,10 @@ function apachesolr_get_solr($host = NULL, $port = NULL, $path = NULL) {
   if (empty($solr_cache[$host][$port][$path])) {
     list($module, $filepath, $class) = variable_get('apachesolr_service_class', array('apachesolr', 'Drupal_Apache_Solr_Service.php', 'Drupal_Apache_Solr_Service'));
     include_once(drupal_get_path('module', $module) .'/'. $filepath);
-    $solr_cache[$host][$port][$path] = new $class($host, $port, $path);
+    $solr = new $class($host, $port, $path);
+    // Set a non-default behavior.
+    $solr->setCollapseSingleValueArrays(FALSE);
+    $solr_cache[$host][$port][$path] = $solr;
   }
   return $solr_cache[$host][$port][$path];
 }
