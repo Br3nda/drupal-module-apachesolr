@@ -49,7 +49,11 @@ function apachesolr_commentsearch_node_to_comments($node, $namespace) {
     $document->uid = $comment->uid;
     $title = empty($comment->subject) ? $node->title : $comment->subject;
     $document->title = apachesolr_clean_text($title);
-    if (!empty($node->language)) {
+    if (empty($node->language)) {
+      // 'und' is the language-neutral code in Drupal 7.
+      $document->language = 'und';
+    }
+    else {
       $document->language = $node->language;
     }
     $document->body = apachesolr_clean_text($text);
