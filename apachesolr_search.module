@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.28 2010/04/08 15:54:28 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.29 2010/04/28 21:07:19 jpmckinney Exp $
 
 /**
  * @file
@@ -776,8 +776,6 @@ function apachesolr_search_language_name($lang) {
       $list = locale_language_list();
     }
     $list['und'] = t('Language neutral');
-    // TODO - remove this line - only present for rc4 update.
-    $list['zxx'] = $list['und'];
   }
   return ($lang && isset($list[$lang])) ? $list[$lang] : $lang;
 }
