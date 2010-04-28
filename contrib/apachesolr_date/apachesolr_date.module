@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_date.module,v 1.1.2.2 2010/04/25 04:11:37 jpmckinney Exp $
+// $Id: apachesolr_date.module,v 1.1.2.3 2010/04/28 20:05:01 jpmckinney Exp $
 
 /**
  * @file
@@ -303,12 +303,14 @@ function apachesolr_date_search_date_range($query, $facet_field) {
       $start_iso = apachesolr_date_iso($date->format('U'));
     }
 
+    // Subtract one second, so that this range's $end_iso is not equal to the
+    // next range's $start_iso.
     $end_value = db_result(db_query("SELECT MAX(cck.$column) FROM {{$table}} cck INNER JOIN {node} n ON cck.vid = n.vid WHERE n.status = 1"));
     if (is_numeric($end_value)) {
-      $end_iso = apachesolr_date_iso($end_value);
+      $end_iso = apachesolr_date_iso($end_value - 1);
     }
     else if ($date = date_create($end_value, $tz)) {
-      $end_iso = apachesolr_date_iso($date->format('U'));
+      $end_iso = apachesolr_date_iso($date->format('U') - 1);
     }
 
     if (isset($start_iso) && isset($end_iso)) {
