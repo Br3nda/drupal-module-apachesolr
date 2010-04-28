@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.1.4.30 2009/12/27 16:47:37 pwolanin Exp $
+// $Id: apachesolr.install,v 1.1.4.31 2010/04/28 21:16:34 jpmckinney Exp $
 
 /**
  * @file
@@ -186,7 +186,7 @@ function apachesolr_update_6000() {
   db_create_table($ret, 'apachesolr_search_node', $schema['apachesolr_search_node']);
   // Populate table
   $ret[] = update_sql("INSERT INTO {apachesolr_search_node} (nid, status, changed)
-                       SELECT n.nid, n.status, GREATEST(n.created, n.changed, c.last_comment_timestamp) AS changed
+                       SELECT n.nid, n.status, GREATEST(n.created, n.changed, COALESCE(c.last_comment_timestamp, 0)) AS changed
                        FROM {node} n LEFT JOIN {apachesolr_search_node} asn ON n.nid = asn.nid
                        LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid
                        WHERE asn.changed IS NULL");
