@@ -32,7 +32,7 @@ function apachesolr_commentsearch_node_to_comments($node, $namespace) {
     // the comment. If the node is published, we look to see if the comment is published, too.
     // If either the node or the comment are not published, the status of the comment
     // will get published as 0.
-    $document->status = $node->status ? $document->status == COMMENT_PUBLISHED ? 1 : 0 : 0;
+    $document->status = $node->status ? ($comment->status == COMMENT_PUBLISHED ? 1 : 0) : 0;
     if ($document->status == 0) {
       // don't index unpublished comments.
       continue;
@@ -108,17 +108,49 @@ function apachesolr_commentsearch_apachesolr_theme_breadcrumb_alter(&$breadcrumb
   }
 }
 
-function apachesolr_commentsearch_comment(&$a1, $op) {
+/**
+ * Removes the comment from the index if the comment is deleted or unpublished.
+ *
+ * apachesolr_comment() is responsible for updating the comment's node.
+ *
+ * @see apachesolr_comment()
+ */
+function apachesolr_commentsearch_comment($edit, $op) {
   switch ($op) {
     case 'delete':
     case 'unpublish':
-    case 'publish':
-    case 'update':
-      // Make sure this comment gets reindexed any time it changes.
-      $comment = (array) $a1;
-      $node = node_load($comment['nid']);
-      apachesolr_nodeapi_update($node);
+      apachesolr_commentsearch_delete_comment_from_index($edit);
       break;
+  }
+}
+
+/**
+ * Removes a comment from the index.
+ *
+ * @param object $comment
+ *   The comment to remove.
+ *
+ * @return boolean
+ *   TRUE if comment removed from index, FALSE otherwise.
+ *
+ * @see apachesolr_delete_node_from_index()
+ */
+function apachesolr_commentsearch_delete_comment_from_index($comment) {
+  static $failed = FALSE;
+  if ($failed) {
+    return FALSE;
+  }
+  try {
+    $solr = apachesolr_get_solr();
+    $solr->deleteById(apachesolr_document_id($comment->cid, 'comment'));
+    apachesolr_index_set_last_updated(time());
+    return TRUE;
+  }
+  catch (Exception $e) {
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    // Don't keep trying queries if they are failing.
+    $failed = TRUE;
+    return FALSE;
   }
 }
 
