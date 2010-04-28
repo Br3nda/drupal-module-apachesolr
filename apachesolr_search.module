@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.65 2010/04/26 21:03:17 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.66 2010/04/28 15:43:37 jpmckinney Exp $
 
 /**
  * @file
@@ -353,7 +353,7 @@ function apachesolr_search_execute($keys, $filterstring, $solrsort, $base_path =
     // No highlighting, use the teaser as a snippet.
     $params['fl'] .= ',teaser';
   }
-  $has_or = apachesolr_search_add_facet_params($params, $query);
+  apachesolr_search_add_facet_params($params, $query);
   apachesolr_search_add_boost_params($params, $query, $solr);
 
   // Allow modules to alter the query prior to statically caching it.
@@ -375,10 +375,19 @@ function apachesolr_search_execute($keys, $filterstring, $solrsort, $base_path =
     return array();
   }
 
-  if (!$has_or && ('' == $keys) && isset($params['fq'])) {
-    // Move the fq params to the q.alt for better performance.
-    $params['q.alt'] = implode(' ', $params['fq']);
-    unset($params['fq']);
+  if ($keys == '' && isset($params['fq'])) {
+    // Move the fq params to q.alt for better performance.
+    $qalt = array();
+    foreach($params['fq'] as $delta => $value) {
+      // Move the fq param if it has no local params and is not negative.
+      if (!preg_match('/^(?:\{!|-)/', $value)) {
+        $qalt[] = $value;
+        unset($params['fq'][$delta]);
+      }
+    }
+    if ($qalt) {
+      $params['q.alt'] = implode(' ', $qalt);
+    }
   }
   // We must run htmlspecialchars() here since converted entities are in the index.
   // and thus bare entities &, > or < won't match.
@@ -437,7 +446,6 @@ function apachesolr_search_add_facet_params(&$params, $query) {
   $facet_query_limits = variable_get('apachesolr_facet_query_limits', array());
   $facet_missing = variable_get('apachesolr_facet_missing', array());
   $facet_info = apachesolr_get_facet_definitions();
-  $ors = array();
 
   foreach (apachesolr_get_enabled_facets() as $module => $module_facets) {
     foreach ($module_facets as $delta => $facet_field) {
@@ -468,10 +476,11 @@ function apachesolr_search_add_facet_params(&$params, $query) {
           }
         }
         else {
+          $ex = '';
           if ($facet_info[$module][$delta]['operator'] == 'OR') {
-            $ors[$delta] = $delta;
+            $ex = "{!ex=$facet_field}";
           }
-          $params['facet.field'][$delta][] = $facet_field;
+          $params['facet.field'][] = $ex . $facet_field;
           // Facet limits
           if (isset($facet_query_limits[$module][$delta])) {
             $params['f.' . $facet_field . '.facet.limit'] = $facet_query_limits[$module][$delta];
@@ -488,23 +497,7 @@ function apachesolr_search_add_facet_params(&$params, $query) {
   if (!empty($params['facet.field'])) {
     // Add a default limit for fields where no limit was set.
     $params['facet.limit'] = variable_get('apachesolr_facet_query_limit_default', 20);
-    if ($facet_fields = $params['facet.field']) {
-      foreach ($facet_fields as $delta => $values) {
-        $ex = $ff = '';
-        $op = 'AND';
-
-        if (in_array($delta, $ors)) {
-          $ex = "{!ex=$delta}";
-          $op = 'OR';
-        }
-        $ff = implode(" $op ", $params['facet.field'][$delta]);
-        $params['facet.field'][] = $ex . $ff;
-
-        unset($params['facet.field'][$delta]);
-      }
-    }
   }
-  return count($ors);
 }
 
 function apachesolr_search_add_boost_params(&$params, $query, $solr) {
