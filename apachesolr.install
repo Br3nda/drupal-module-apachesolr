@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.1.4.21.2.5 2010/04/28 21:16:40 jpmckinney Exp $
+// $Id: apachesolr.install,v 1.1.4.21.2.6 2010/04/28 21:44:36 jpmckinney Exp $
 
 /**
  * @file
@@ -163,6 +163,8 @@ function apachesolr_uninstall() {
   if (db_table_exists('apachesolr_search_node')) {
     db_query("DROP TABLE {apachesolr_search_node}");
   }
+  // Remove blocks.
+  db_query('DELETE FROM {blocks} WHERE module = "apachesolr"');
 }
 
 /**
