@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.40.4.4 2010/01/22 16:20:37 claudiucristea Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.40.4.5 2010/04/28 20:48:26 jpmckinney Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -8,6 +8,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
    */
   public function filter_extract(&$filterstring, $name) {
     $extracted = array();
+    $name = preg_quote($name, '/');
     // Range queries.  The "TO" is case-sensitive.
     $patterns[] = '/(^| |-)'. $name .':([\[\{](\S+) TO (\S+)[\]\}])/';
     // Match quoted values.
