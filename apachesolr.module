@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161.2.29 2010/04/28 21:16:40 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.30 2010/04/28 21:21:12 jpmckinney Exp $
 
 /**
  * @file
@@ -680,11 +680,15 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
         }
         // Allow other modules to add or remove sorts.
         drupal_alter('apachesolr_sort_links', $sort_links);
-        foreach ($sort_links as $name => $link) {
-          $themed_links[$name] = theme('apachesolr_sort_link', $link['title'], $link['path'], $link['options'], $link['active'], $link['direction']);
+        if (!empty($sort_links)) {
+          foreach ($sort_links as $name => $link) {
+            $themed_links[$name] = theme('apachesolr_sort_link', $link['title'], $link['path'], $link['options'], $link['active'], $link['direction']);
+          }
+          return array(
+            'subject' => t('Sort by'),
+            'content' => theme('apachesolr_sort_list', $themed_links),
+          );
         }
-        return array('subject' => t('Sort by'),
-                     'content' => theme('apachesolr_sort_list', $themed_links));
       }
       break;
     case 'configure':
