@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.191 2010/04/28 20:46:50 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.192 2010/04/28 21:02:52 jpmckinney Exp $
 
 /**
  * @file
@@ -949,11 +949,9 @@ function apachesolr_date_determine_gap($start, $end) {
   if ($end - $start >= 86400*365) {
     return 'YEAR';
   }
-
-  if (date('m', $start) != date('m', $end)) {
+  if (date('Ym', $start) != date('Ym', $end)) {
     return 'MONTH';
   }
-
   if ($end - $start > 86400) {
     return 'DAY';
   }
