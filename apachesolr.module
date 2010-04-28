@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161.2.28 2010/04/28 21:02:56 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.29 2010/04/28 21:16:40 jpmckinney Exp $
 
 /**
  * @file
@@ -278,7 +278,7 @@ function apachesolr_rebuild_index_table($type = NULL) {
     if (module_exists('comment')) {
       // If comment module is enabled, use last_comment_timestamp as well.
       db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed)
-              SELECT n.nid, n.status, GREATEST(n.created, n.changed, c.last_comment_timestamp) AS changed
+              SELECT n.nid, n.status, GREATEST(n.created, n.changed, COALESCE(c.last_comment_timestamp, 0)) AS changed
               FROM {node} n
               LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid");
     }
