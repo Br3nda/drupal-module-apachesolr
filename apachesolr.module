@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161.2.24 2010/03/09 21:08:30 janusman Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.25 2010/04/28 20:43:48 jpmckinney Exp $
 
 /**
  * @file
@@ -890,7 +890,7 @@ function apachesolr_date_format_iso_by_gap($gap, $iso) {
   // information.  However, we'd need to do that per-field and I'm not
   // our callers always have field information handy.
   $unix = strtotime($iso);
-  if ($unix > 0) {
+  if ($unix !== FALSE) {
     switch ($gap) {
       case 'YEAR':
         return format_date($unix, 'custom', 'Y', 0);
