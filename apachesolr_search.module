@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.136 2010/04/13 03:18:17 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.137 2010/04/28 21:07:23 jpmckinney Exp $
 
 /**
  * @file
@@ -733,12 +733,9 @@ function apachesolr_search_language_name($lang) {
       $list = locale_language_list();
     }
     $list['und'] = t('Language neutral');
-    // TODO - remove this line - only present for rc4 update.
-    $list['zxx'] = $list['und'];
   }
   return ($lang && isset($list[$lang])) ? $list[$lang] : $lang;
 }
-
 
 /**
  * Recursive function that returns a nested array of facet values for use with
