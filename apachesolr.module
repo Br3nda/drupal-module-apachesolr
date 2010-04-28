@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161.2.25 2010/04/28 20:43:48 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.26 2010/04/28 20:46:46 jpmckinney Exp $
 
 /**
  * @file
@@ -666,7 +666,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
             $new_direction = 'asc';
           }
           elseif ($active) {
-            $direction = $solrsort['#direction'];
+            $direction = $toggle[$solrsort['#direction']];
             $new_direction = $toggle[$solrsort['#direction']];
           }
           $new_query->set_solrsort($name, $new_direction);
