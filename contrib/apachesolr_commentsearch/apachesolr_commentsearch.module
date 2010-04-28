@@ -59,8 +59,11 @@ function apachesolr_commentsearch_node_to_comments($node, $namespace) {
     $document->body = apachesolr_clean_text($text);
     $document->type = 'comment';
     $document->type_name = 'Comment';
-    $document->created = apachesolr_date_iso($node->created);
-    $document->changed = apachesolr_date_iso($node->changed);
+    // A comment's timestamp is the time that it was created or last updated,
+    // so we must use it for both the "created" and "changed" fields.
+    $timestamp = apachesolr_date_iso($comment->timestamp);
+    $document->created = $timestamp;
+    $document->changed = $timestamp;
     $last_change = (isset($node->last_comment_timestamp) && $node->last_comment_timestamp > $node->changed) ? $node->last_comment_timestamp : $node->changed;
     $document->last_comment_or_change = apachesolr_date_iso($last_change);
     $document->name = htmlspecialchars(html_entity_decode($comment->name, ENT_NOQUOTES, 'UTF-8'), ENT_NOQUOTES, 'UTF-8');
