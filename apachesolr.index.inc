@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.4.13 2010/04/28 21:12:10 jpmckinney Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.4.14 2010/04/29 20:51:33 jpmckinney Exp $
 
 /**
  * @file
@@ -62,7 +62,8 @@ function apachesolr_node_to_document($nid, $namespace) {
         // Don't add comments.
         continue;
       }
-      if ($output = module_invoke($module, 'nodeapi', $node, 'update index', NULL, NULL)) {
+      $function = $module .'_nodeapi';
+      if ($output = $function($node, 'update index', FALSE, FALSE)) {
         $extra[$module] = $output;
       }
     }
