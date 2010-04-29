@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.30 2010/04/29 21:45:05 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.31 2010/04/29 21:48:59 jpmckinney Exp $
 
 /**
  * @file
@@ -246,10 +246,19 @@ function apachesolr_search_execute($keys, $filters, $solrsort, $base_path = '', 
     return array();
   }
 
-  if (('' == $keys) && isset($params['fq'])) {
-    // Move the fq params to the q.alt for better performance.
-    $params['q.alt'] = implode(' ', $params['fq']);
-    unset($params['fq']);
+  if ($keys == '' && isset($params['fq'])) {
+    // Move the fq params to q.alt for better performance.
+    $qalt = array();
+    foreach($params['fq'] as $delta => $value) {
+      // Move the fq param if it has no local params and is not negative.
+      if (!preg_match('/^(?:\{!|-)/', $value)) {
+        $qalt[] = $value;
+        unset($params['fq'][$delta]);
+      }
+    }
+    if ($qalt) {
+      $params['q.alt'] = implode(' ', $qalt);
+    }
   }
 
   // We must run htmlspecialchars() here since converted entities are in the index.
