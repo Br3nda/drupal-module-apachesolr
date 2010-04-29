@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.194 2010/04/28 21:21:15 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.195 2010/04/29 21:49:15 jpmckinney Exp $
 
 /**
  * @file
@@ -1196,10 +1196,19 @@ function apachesolr_do_query($caller, $current_query, $params = array('rows' => 
   }
 
   $keys = $query->get_query_basic();
-  if (('' == $keys) && isset($params['fq'])) {
-    // Move the fq params to the q.alt for better performance.
-    $params['q.alt'] = implode(' ', $params['fq']);
-    unset($params['fq']);
+  if ($keys == '' && isset($params['fq'])) {
+    // Move the fq params to q.alt for better performance.
+    $qalt = array();
+    foreach($params['fq'] as $delta => $value) {
+      // Move the fq param if it has no local params and is not negative.
+      if (!preg_match('/^(?:\{!|-)/', $value)) {
+        $qalt[] = $value;
+        unset($params['fq'][$delta]);
+      }
+    }
+    if ($qalt) {
+      $params['q.alt'] = implode(' ', $qalt);
+    }
   }
   // This is the object that does the communication with the solr server.
   $solr = apachesolr_get_solr();
@@ -1211,7 +1220,6 @@ function apachesolr_do_query($caller, $current_query, $params = array('rows' => 
   apachesolr_static_response_cache($response, $caller);
   return array($query, $response);
 }
-
 
 /**
  * It is important to hold on to the Solr response object for the duration of the
