@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.93 2010/04/29 21:53:54 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.94 2010/04/30 20:57:44 jpmckinney Exp $
 
 /**
  * @file
@@ -876,7 +876,6 @@ function apachesolr_form_content_field_overview_form_alter(&$form, $form_state) 
 function apachesolr_form_content_field_edit_form_alter(&$form, $form_state) {
   $form['#submit'][] = 'apachesolr_clear_cache';
 }
-
 
 /**
  * Implementation of hook_form_[form_id]_alter().
