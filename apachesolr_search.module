@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.34 2010/04/30 16:17:00 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.35 2010/04/30 21:24:04 jpmckinney Exp $
 
 /**
  * @file
@@ -61,43 +61,6 @@ function apachesolr_search_menu($may_cache) {
   }
   return $items;
 }
-
- /**
- * Implementation of hook_menu_alter().
- */
-/**
- * TODO: Rewrite this to alter menus in D5
- * see: http://drupal.org/node/557152#comment-2049266
- */
-/*
-function apachesolr_search_menu_alter(&$menu) {
-  if (isset($menu['search/apachesolr_search/%menu_tail'])) {
-    $menu['search']['page callback'] = 'apachesolr_search_view';
-    $menu['search/apachesolr_search/%menu_tail']['page callback'] = 'apachesolr_search_view';
-  }
-  if (variable_get('apachesolr_search_make_default', 0)) {
-    if (isset($menu['search/node/%menu_tail'])) {
-      // Hide the node search tab.
-      $menu['search/node/%menu_tail']['type'] = MENU_CALLBACK;
-      unset($menu['search/node/%menu_tail']['title callback'], $menu['search/node/%menu_tail']['title arguments']);
-      $menu['search/node/%menu_tail']['title'] = 'Search';
-    }
-    if (isset($menu['search/apachesolr_search/%menu_tail'])) {
-      // Alter the solr search tab
-      $menu['search/apachesolr_search/%menu_tail']['weight'] = -10;
-      unset($menu['search/apachesolr_search/%menu_tail']['title callback'], $menu['search/apachesolr_search/%menu_tail']['title arguments']);
-      $menu['search/apachesolr_search/%menu_tail']['title'] = 'Content';
-    }
-  }
-  if (variable_get('apachesolr_search_taxonomy_links', 0)) {
-    if (isset($menu['taxonomy/term/%'])) {
-      $menu['taxonomy/term/%']['page callback'] = 'apachesolr_search_taxonomy_term_page';
-      $menu['taxonomy/term/%']['file path'] = drupal_get_path('module', 'apachesolr_search');
-      $menu['taxonomy/term/%']['file'] = 'apachesolr.taxonomy.inc';
-    }
-  }
-}
-*/
 
 /**
  * Implementation of hook_update_index().
