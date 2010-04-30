@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.33 2010/04/30 16:08:26 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.34 2010/04/30 16:17:00 jpmckinney Exp $
 
 /**
  * @file
@@ -213,8 +213,6 @@ function apachesolr_search_execute($keys, $filters, $solrsort, $base_path = '', 
     throw new Exception(t('Could not construct a Solr query in function apachesolr_search_search()'));
   }
 
-  // This is the object that does the communication with the solr server.
-  $solr = apachesolr_get_solr();
   $params += apachesolr_search_basic_params($query);
   if ($keys) {
     $params += apachesolr_search_highlighting_params($query);
@@ -225,54 +223,15 @@ function apachesolr_search_execute($keys, $filters, $solrsort, $base_path = '', 
     $params['fl'] .= ',teaser';
   }
   apachesolr_search_add_facet_params($params, $query);
-  apachesolr_search_add_boost_params($params, $query, $solr);
+  apachesolr_search_add_boost_params($params, $query, apachesolr_get_solr());
 
-  // Allow modules to alter the query prior to statically caching it.
-  // This can e.g. be used to add available sorts.
-  foreach (module_implements('apachesolr_prepare_query') as $module) {
-    $function_name = $module . '_apachesolr_prepare_query';
-    $function_name($query, $params, $caller);
-  }
-
-  // Cache the built query. Since all the built queries go through
-  // this process, all the hook_invocations will happen later
-  $current_query = apachesolr_current_query($query);
-
-  // This hook allows modules to modify the query and params objects.
-  apachesolr_modify_query($query, $params, $caller);
-  $params['start'] = $page * $params['rows'];
-
-  if (!$query) {
-    return array();
-  }
-
-  if ($keys == '' && isset($params['fq'])) {
-    // Move the fq params to q.alt for better performance.
-    $qalt = array();
-    foreach($params['fq'] as $delta => $value) {
-      // Move the fq param if it has no local params and is not negative.
-      if (!preg_match('/^(?:\{!|-)/', $value)) {
-        $qalt[] = $value;
-        unset($params['fq'][$delta]);
-      }
-    }
-    if ($qalt) {
-      $params['q.alt'] = implode(' ', $qalt);
-    }
-  }
-
-  // We must run htmlspecialchars() here since converted entities are in the index.
-  // and thus bare entities &, > or < won't match.
-  $response = $solr->search(htmlspecialchars($query->get_query_basic(), ENT_NOQUOTES, 'UTF-8'), $params['start'], $params['rows'], $params);
-  // The response is cached so that it is accessible to the blocks and anything
-  // else that needs it beyond the initial search.
-  apachesolr_static_response_cache($response);
+  list($final_query, $response) = apachesolr_do_query($caller, $query, $params, $page);
   apachesolr_has_searched(TRUE);
   // Add search terms and filters onto the breadcrumb.
-  // We use $current_query to avoid exposing, for example, nodeaccess
+  // We use the original $query to avoid exposing, for example, nodeaccess
   // filters in the breadcrumb.
-  drupal_set_breadcrumb(array_merge(menu_get_active_breadcrumb(), $current_query->get_breadcrumb()));
-  return apachesolr_process_response($response, $query, $params);
+  drupal_set_breadcrumb(array_merge(menu_get_active_breadcrumb(), $query->get_breadcrumb()));
+  return apachesolr_process_response($response, $final_query, $params);
 }
 
 function apachesolr_search_basic_params($query) {
