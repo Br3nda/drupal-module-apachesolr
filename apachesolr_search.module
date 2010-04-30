@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.140 2010/04/30 16:08:27 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.141 2010/04/30 20:56:27 jpmckinney Exp $
 
 /**
  * @file
@@ -851,8 +851,21 @@ function apachesolr_search_form_search_block_form_alter(&$form, $form_state) {
 
 /**
  * Process a block search form submission.
+ *
+ * @see search_box_form_submit()
  */
 function apachesolr_search_search_box_form_submit($form, &$form_state) {
+  // The search form relies on control of the redirect destination for its
+  // functionality, so we override any static destination set in the request,
+  // for example by drupal_access_denied() or drupal_not_found()
+  // (see http://drupal.org/node/292565).
+  if (isset($_REQUEST['destination'])) {
+    unset($_REQUEST['destination']);
+  }
+  if (isset($_REQUEST['edit']['destination'])) {
+    unset($_REQUEST['edit']['destination']);
+  }
+
   $form_id = $form['form_id']['#value'];
   $keys = $form_state['values'][$form_id];
   // Handle Apache webserver clean URL quirks.
