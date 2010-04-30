@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.35 2010/04/30 21:24:04 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.36 2010/04/30 21:44:19 jpmckinney Exp $
 
 /**
  * @file
@@ -794,7 +794,7 @@ function apachesolr_search_get_type($facet) {
  * Process a block search form submission.
  */
 function apachesolr_search_search_box_form_submit($form_id, $form_values) {
-  $keys = $form_values[$form_id];
+  $keys = $form_values[$form_id .'_keys'];
   // Handle Apache webserver clean URL quirks.
   if (variable_get('clean_url', '0')) {
     $keys = str_replace('+', '%2B', $keys);
@@ -911,7 +911,8 @@ function apachesolr_search_form_alter($form_id, &$form) {
           $key = isset($form['#submit']['search_box_form_submit']) ? 'search_box_form_submit' : FALSE;
           if ($key !== FALSE) {
             // Replace the search module's function.
-            $form['#submit'][$key] = 'apachesolr_search_search_box_form_submit';
+            unset($form['#submit'][$key]);
+            $form['#submit']['apachesolr_search_search_box_form_submit'] = array();
           }
         }
       }
