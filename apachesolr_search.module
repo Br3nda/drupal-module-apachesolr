@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.139 2010/04/29 21:57:30 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.140 2010/04/30 16:08:27 jpmckinney Exp $
 
 /**
  * @file
@@ -447,7 +447,9 @@ function apachesolr_search_date_range($query, $facet_field) {
   // gap to use.  This callback assumes $delta is 'changed' or 'created'.
   if (!isset($start_iso)) {
     $start_iso = apachesolr_date_iso(db_result(db_query("SELECT MIN($facet_field) FROM {node} WHERE status = 1")));
-    $end_iso = apachesolr_date_iso(db_result(db_query("SELECT MAX($facet_field) FROM {node} WHERE status = 1")));
+    // Subtract one second, so that this range's $end_iso is not equal to the
+    // next range's $start_iso.
+    $end_iso = apachesolr_date_iso(db_result(db_query("SELECT MAX($facet_field) FROM {node} WHERE status = 1")) - 1);
     $gap = apachesolr_date_determine_gap($start_iso, $end_iso);
   }
   // Return a query range from the beginning of a gap period to the beginning
