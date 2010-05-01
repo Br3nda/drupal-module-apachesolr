@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.28.2.34 2010/05/01 03:01:15 jpmckinney Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28.2.35 2010/05/01 04:38:15 jpmckinney Exp $
 
 /**
  * @file
@@ -85,7 +85,7 @@ function apachesolr_settings() {
   $form['mlt_link'] = array(
     '#type' => 'item',
     '#value' => l(t('Add a new content recommendation block'), 'admin/settings/apachesolr/mlt/add_block'),
-    '#description' => format_plural(count(apachesolr_mlt_list_blocks()),  'You currently have 1 block.', 'You currenly have @count blocks.'),
+    '#description' => format_plural(count(apachesolr_mlt_list_blocks()), 'You currently have 1 block.', 'You currenly have @count blocks.'),
   );
   $form['advanced'] = array(
     '#type' => 'fieldset',
@@ -538,7 +538,7 @@ function apachesolr_mlt_block_form($delta = NULL) {
     '#description' => t('Choose the fields to be used in calculating similarity. The default combination of %taxonomy_names and %title will provide relevant results for typical sites.', array("%taxonomy_names" => apachesolr_field_name_map("taxonomy_names"), "%title" => apachesolr_field_name_map("title"))),
     '#options' => apachesolr_mlt_get_fields(),
     '#required' => TRUE,
-    '#default_value' =>  $block['mlt_fl'],
+    '#default_value' => $block['mlt_fl'],
   );
   $form['advanced'] = array(
     '#type' => 'fieldset',
@@ -633,7 +633,7 @@ function apachesolr_mlt_block_defaults($block = array()) {
   return $block + array(
     'name' => '',
     'num_results' => '5',
-    'mlt_fl' =>  array(
+    'mlt_fl' => array(
       'title' => 'title',
       'taxonomy_names' => 'taxonomy_names',
     ),

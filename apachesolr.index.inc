@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.2.27 2010/04/26 17:33:54 jpmckinney Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.2.28 2010/05/01 04:38:15 jpmckinney Exp $
 
 /**
  * @file
@@ -175,7 +175,7 @@ function apachesolr_cck_nodereference_indexing_callback($node, $field_name, $cck
   if (isset($node->{$field_name})) {
     $index_key = apachesolr_index_key($cck_info);
     foreach ($node->$field_name as $field) {
-      if ($index_value =  (isset($field['nid']) && strlen($field['nid'])) ? $field['nid'] : FALSE) {
+      if ($index_value = (isset($field['nid']) && strlen($field['nid'])) ? $field['nid'] : FALSE) {
         $fields[] = array(
           'key' => $index_key,
           'value' => $index_value,
@@ -191,7 +191,7 @@ function apachesolr_cck_userreference_indexing_callback($node, $field_name, $cck
   if (isset($node->$field_name)) {
     $index_key = apachesolr_index_key($cck_info);
     foreach ($node->{$field_name} as $field) {
-      if ($index_value =  (isset($field['uid']) && strlen($field['uid'])) ? $field['uid'] : FALSE) {
+      if ($index_value = (isset($field['uid']) && strlen($field['uid'])) ? $field['uid'] : FALSE) {
         $fields[] = array(
           'key' => $index_key,
           'value' => $index_value,

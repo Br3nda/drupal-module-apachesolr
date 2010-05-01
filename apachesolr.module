@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.95 2010/05/01 03:01:15 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.96 2010/05/01 04:38:15 jpmckinney Exp $
 
 /**
  * @file
@@ -1356,7 +1356,7 @@ function apachesolr_pager_init($total, $limit = 10, $element = 0) {
  *
  * Example:
  *
- * function my_module_apachesolr_modify_query(&$query, &$params) {
+ * function my_module_apachesolr_modify_query(&$query, &$params, $caller) {
  *   // I only want to see articles by the admin!
  *   $query->add_filter("uid", 1);
  *
