@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.24 2009/12/27 17:06:43 pwolanin Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.25 2010/05/01 03:26:13 jpmckinney Exp $
 
 /**
  * @file
@@ -10,7 +10,8 @@
  * Menu callback - the settings form.
  */
 function apachesolr_search_settings_page() {
-  // try to fetch the schema fields
+  $output = '';
+  // Try to fetch the schema fields.
   try {
     $solr = apachesolr_get_solr();
     $fields = $solr->getFields();

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.196 2010/04/30 16:39:12 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.197 2010/05/01 03:26:13 jpmckinney Exp $
 
 /**
  * @file
@@ -1092,10 +1092,13 @@ function apachesolr_modify_query(&$query, &$params, $caller) {
     return;
   }
 
+  // Call the hooks first because otherwise any modifications to the
+  // $query object don't end up in the $params.
   foreach (module_implements('apachesolr_modify_query') as $module) {
     $function_name = $module . '_apachesolr_modify_query';
     $function_name($query, $params, $caller);
   }
+
   // TODO: The query object should hold all the params.
   // Add array of fq parameters.
   if ($query && ($fq = $query->get_fq())) {
@@ -1679,6 +1682,14 @@ function theme_apachesolr_sort_list($items) {
  */
 interface Drupal_Solr_Query_Interface {
   /**
+   * Get all filters, or the subset of filters for one field.
+   *
+   * @param $name
+   *   Optional name of a Solr field.
+   */
+  function get_filters($name = NULL);
+
+  /**
    * Checks to see if a specific filter is already present.
    *
    * @param string $field
@@ -1690,19 +1701,7 @@ interface Drupal_Solr_Query_Interface {
   function has_filter($field, $value);
 
   /**
-   * Remove a filter from the query
-   *
-   * @param string $field
-   * the facet field to remove
-   *
-   * @param string $value
-   * The facet value to remove
-   * This value can be NULL
-   */
-  function remove_filter($field, $value = NULL);
-
-  /**
-   * Add a filter to a query
+   * Add a filter to a query.
    *
    * @param string $field
    *   the facet field to apply to this query
@@ -1718,21 +1717,51 @@ interface Drupal_Solr_Query_Interface {
   function add_filter($field, $value, $exclude = FALSE);
 
   /**
+   * Remove a filter from the query.
+   *
+   * @param string $field
+   * the facet field to remove
+   *
+   * @param string $value
+   * The facet value to remove
+   * This value can be NULL
+   */
+  function remove_filter($field, $value = NULL);
+
+  /**
    * Return the search path (including the search keywords).
    */
   function get_path();
 
   /**
-   * Return an array of parameters for use in the l function.
-   *
-   * @see l()
+   * Return filters and sort in a form suitable for a query param to url().
    */
   function get_url_queryvalues();
 
   /**
-   * return the basic string query
+   * Return the basic string query.
    */
   function get_query_basic();
+
+  /**
+   * Return the sorts that are provided by the query object.
+   *
+   * @return array all the sorts provided
+   */
+  function get_available_sorts();
+
+  /**
+   * Make a sort available.
+   */
+  function set_available_sort($field, $sort);
+
+  /**
+   * Get the solrsort.
+   *
+   * Returns the non-urlencode, non-aliased sort field and direction.
+   * as an array keyed with '#name' and '#direction'.
+   */
+  function get_solrsort();
 
   /**
    * Set the solrsort.
@@ -1744,19 +1773,6 @@ interface Drupal_Solr_Query_Interface {
    *  'asc' or 'desc'
    */
   function set_solrsort($field, $direction);
-
-  /**
-   * Get the solrsort.
-   *
-   * Returns the non-urlencode, non-aliased sort field and direction.
-   * as an array keyed with '#name' and '#direction'.
-   */
-  function get_solrsort();
-
-  /**
-   * Return an array of all filters.
-   */
-  function get_filters($name = NULL);
 
   /**
    * Add a subquery to the query.
@@ -1776,14 +1792,7 @@ interface Drupal_Solr_Query_Interface {
   function add_subquery(Drupal_Solr_Query_Interface $query, $fq_operator = 'OR', $q_operator = 'AND');
 
   /**
-   * return the sorts that are provided by the query object
-   *
-   * @return array all the sorts provided
-   */
-  function get_available_sorts();
-
-  /**
-   * Remove a specific subquery
+   * Remove a specific subquery.
    *
    * @param Drupal_Solr_Query_Interface $query
    * the query to remove
@@ -1791,13 +1800,7 @@ interface Drupal_Solr_Query_Interface {
   function remove_subquery(Drupal_Solr_Query_Interface $query);
 
   /**
-   * remove all subqueries
+   * Remove all subqueries.
    */
   function remove_subqueries();
-
-  /**
-   * make a sort available
-   */
-  function set_available_sort($field, $sort);
 }
-
