@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.71 2010/05/01 03:01:15 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.72 2010/05/01 04:36:27 jpmckinney Exp $
 
 /**
  * @file
@@ -605,7 +605,9 @@ function apachesolr_search_date_range($query, $facet_field) {
   // gap to use.  This callback assumes $delta is 'changed' or 'created'.
   if (!isset($start_iso)) {
     $start_iso = apachesolr_date_iso(db_result(db_query("SELECT MIN($facet_field) FROM {node} WHERE status = 1")));
-    $end_iso = apachesolr_date_iso(db_result(db_query("SELECT MAX($facet_field) FROM {node} WHERE status = 1")));
+    // Subtract one second, so that this range's $end_iso is not equal to the
+    // next range's $start_iso.
+    $end_iso = apachesolr_date_iso(db_result(db_query("SELECT MAX($facet_field) FROM {node} WHERE status = 1")) - 1);
     $gap = apachesolr_date_determine_gap($start_iso, $end_iso);
   }
   // Return a query range from the beginning of a gap period to the beginning
@@ -1025,10 +1027,8 @@ function apachesolr_search_get_username($facet) {
  * Callback function for the 'Filter by type' facet block.
  */
 function apachesolr_search_get_type($facet) {
-  if ($type = node_get_types('name', $facet)) {
-
-  }
-  else if ($facet == 'comment') {
+  $type = node_get_types('name', $facet);
+  if ($type === FALSE && $facet == 'comment') {
     $type = t('Comment');
   }
   // A disabled or missing node type returns FALSE.
