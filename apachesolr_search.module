@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.69 2010/05/01 01:52:57 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.70 2010/05/01 01:56:42 jpmckinney Exp $
 
 /**
  * @file
@@ -167,7 +167,7 @@ function apachesolr_search_view($type = NULL) {
       }
 
       // Collect the search results. See search_data().
-      $content = module_invoke($type, 'search', 'search', $keys);
+      $content = apachesolr_search_search('search', $keys);
       if (isset($content) && is_array($content) && count($content)) {
         if (module_hook($type, 'search_page')) {
           return module_invoke($type, 'search_page', $content);

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.drush.inc,v 1.1.2.9 2010/05/01 01:52:57 jpmckinney Exp $
+// $Id: apachesolr.drush.inc,v 1.1.2.10 2010/05/01 01:56:42 jpmckinney Exp $
 
 /**
  * @file
@@ -124,7 +124,7 @@ function apachesolr_drush_solr_reindex() {
 
 function apachesolr_drush_solr_phpclient() {
   $args = func_get_args();
-  if (isset($args[0])) {
+  if ($args[0]) {
     $path = $args[0];
   }
   else {
