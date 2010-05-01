@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.26 2010/05/01 04:42:17 jpmckinney Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.27 2010/05/01 05:05:19 jpmckinney Exp $
 
 /**
  * @file
@@ -52,8 +52,6 @@ function apachesolr_node_to_document($nid, $namespace) {
     $node->body = drupal_render($node->content);
     $node->title = apachesolr_clean_text($node->title);
 
-    $text = $node->body;
-
     // Fetch extra data normally not visible, including comments.
     $extra = array();
     $exclude_comments = in_array($node->type, variable_get('apachesolr_exclude_comments_types', array()), TRUE);
@@ -67,7 +65,8 @@ function apachesolr_node_to_document($nid, $namespace) {
         $extra[$module] = $output;
       }
     }
-    $text .= "\n\n" . implode(' ', $extra);
+
+    $text = $node->body . "\n\n" . implode(' ', $extra);
 
     $document = new Apache_Solr_Document();
     $document->id = apachesolr_document_id($node->nid);
@@ -91,7 +90,7 @@ function apachesolr_node_to_document($nid, $namespace) {
       $document->language = $node->language;
     }
     $document->body = apachesolr_clean_text($text);
-    $document->type  = $node->type;
+    $document->type = $node->type;
     $document->type_name = node_get_types('name', $node);
     $document->created = apachesolr_date_iso($node->created);
     $document->changed = apachesolr_date_iso($node->changed);
@@ -312,7 +311,7 @@ function apachesolr_nodeapi_mass_update($nodes) {
     apachesolr_index_updated($time);
     foreach ($nodes as $node) {
       // There was no exception, so update the table.
-      db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", $time, $node->status, $node->nid);
+      db_query('UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid = %d', $time, $node->status, $node->nid);
     }
     return TRUE;
   }

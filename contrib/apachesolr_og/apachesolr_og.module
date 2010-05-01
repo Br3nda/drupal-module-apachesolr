@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_og.module,v 1.1.2.8 2010/05/01 04:42:17 jpmckinney Exp $
+// $Id: apachesolr_og.module,v 1.1.2.9 2010/05/01 05:05:19 jpmckinney Exp $
 
 /**
  * @file
@@ -43,7 +43,7 @@ function apachesolr_og_admin() {
  */
 function apachesolr_og_reindex() {
   $result = db_query("SELECT nid FROM {og}");
-  while($og = db_fetch_array($result)) {
+  while ($og = db_fetch_array($result)) {
     apachesolr_mark_node($og['nid']);
   }
   drupal_set_message(t('All group nodes marked for re-indexing'));

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.198 2010/05/01 04:42:17 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.199 2010/05/01 05:05:19 jpmckinney Exp $
 
 /**
  * @file
@@ -309,7 +309,7 @@ function apachesolr_get_nodes_to_index($namespace, $limit) {
   }
   list($excluded_types, $args, $join_sql, $exclude_sql) = _apachesolr_exclude_types($namespace);
   $result = db_query_range("SELECT asn.nid, asn.changed FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > %d OR (asn.changed = %d AND asn.nid > %d)) AND asn.status = 1 ". $exclude_sql ."ORDER BY asn.changed ASC, asn.nid ASC", $args, 0, $limit);
-  while($row = db_fetch_object($result)) {
+  while ($row = db_fetch_object($result)) {
     $rows[] = $row;
   }
   return $rows;
@@ -529,14 +529,14 @@ function _apachesolr_nodeapi_update($node, $set_message = TRUE) {
   if (!$node->status && db_result(db_query("SELECT status FROM {apachesolr_search_node} WHERE nid = %d", $node->nid))) {
     if (apachesolr_delete_node_from_index($node)) {
       // There was no exception, so update the table.
-      db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
+      db_query('UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid = %d', time(), $node->status, $node->nid);
       if ($set_message && user_access('administer search') && variable_get('apachesolr_set_nodeapi_messages', 1)) {
         apachesolr_set_stats_message('Unpublished content will be removed from the Apache Solr search index in approximately @autocommit_time.');
       }
     }
   }
   else {
-    db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid  = %d", time(), $node->status, $node->nid);
+    db_query('UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid = %d', time(), $node->status, $node->nid);
   }
 }
 
@@ -552,7 +552,7 @@ function apachesolr_set_stats_message($text, $type = 'status', $repeat = FALSE) 
     drupal_set_message(t($text, $stats_summary), $type, FALSE);
   }
   catch (Exception $e) {
-    watchdog('apachesolr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
   }
 }
 
@@ -640,7 +640,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
             $suggestions['subject'] = check_plain($block['name']);
             $suggestions['content'] = theme('apachesolr_mlt_recommendation_block', $docs);
             if (user_access('administer search')) {
-               $suggestions['content'] .= l(t('Configure this block'),'admin/build/block/configure/apachesolr/' . $delta, array('attributes' => array('class' => 'apachesolr-mlt-admin-link')));
+               $suggestions['content'] .= l(t('Configure this block'), 'admin/build/block/configure/apachesolr/' . $delta, array('attributes' => array('class' => 'apachesolr-mlt-admin-link')));
             }
           }
         }
@@ -665,15 +665,18 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
         $toggle = array('asc' => 'desc', 'desc' => 'asc');
         foreach ($sorts as $name => $sort) {
           $active = $solrsort['#name'] == $name;
-          $direction = '';
-          $new_direction = $sort['default'];
           if ($name == 'score') {
             // We only sort by ascending score.
+            $direction = '';
             $new_direction = 'asc';
           }
           elseif ($active) {
             $direction = $toggle[$solrsort['#direction']];
             $new_direction = $toggle[$solrsort['#direction']];
+          }
+          else {
+            $direction = '';
+            $new_direction = $sort['default'];
           }
           $new_query->set_solrsort($name, $new_direction);
           $sort_links[$name] = array(
@@ -720,33 +723,43 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
     $contains_active = FALSE;
     $items = array();
     foreach ($response->facet_counts->facet_fields->$facet_field as $facet => $count) {
-      $sortpre = 1000000 - $count;
       $options = array();
       $exclude = FALSE;
+
       // Solr sends this back if it's empty.
       if ($facet == '_empty_') {
-         $exclude = TRUE;
-         $facet = '[* TO *]';
-         $facet_text = theme('placeholder', t('Missing this field'));
-         $options['html'] = TRUE;
-         // Put this just below any active facets.
-         // '-' sorts before all numbers, but after '*'.
-         $sortpre = '-';
-       }
-       else {
-         $facet_text = $facet;
+        $exclude = TRUE;
+        $facet = '[* TO *]';
+        $options['html'] = TRUE;
       }
 
       if ($facet_callback && function_exists($facet_callback)) {
         $facet_text = $facet_callback($facet, $options);
       }
-      $unclick_link = '';
-      $active = FALSE;
-      $new_query = clone $query;
-      if ($query->has_filter($facet_field, $facet)) {
-        $contains_active = $active = TRUE;
+      elseif ($exclude) {
+        $facet_text = theme('placeholder', t('Missing this field'));
+      }
+      else {
+        $facet_text = $facet;
+      }
+
+      $active = $query->has_filter($facet_field, $facet);
+
+      if ($active) {
         // '*' sorts before all numbers.
         $sortpre = '*';
+      }
+      elseif ($exclude) {
+        // '-' sorts before all numbers, but after '*'.
+        $sortpre = '-';
+      }
+      else {
+        $sortpre = 1000000 - $count;
+      }
+
+      $new_query = clone $query;
+      if ($active) {
+        $contains_active = TRUE;
         $new_query->remove_filter($facet_field, $facet);
         $options['query'] = $new_query->get_url_queryvalues();
         $link = theme('apachesolr_unclick_link', $facet_text, $new_query->get_path(), $options);
@@ -756,6 +769,7 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
         $options['query'] = $new_query->get_url_queryvalues();
         $link = theme('apachesolr_facet_link', $facet_text, $new_query->get_path(), $options, $count, FALSE, $response->response->numFound);
       }
+
       if ($count || $active) {
         $items[$sortpre . '*' . $facet_text] = $link;
       }
@@ -968,7 +982,6 @@ function apachesolr_date_determine_gap($start, $end) {
   if ($end - $start > 86400) {
     return 'DAY';
   }
-  // For now, HOUR is a reasonable smallest gap.
   return 'HOUR';
 }
 
@@ -985,8 +998,6 @@ function apachesolr_date_gap_drilldown($gap) {
     'YEAR' => 'MONTH',
     'MONTH' => 'DAY',
     'DAY' => 'HOUR',
-    // For now, HOUR is a reasonable smallest gap.
-    // 'HOUR' => 'MINUTE',
   );
   return isset($drill[$gap]) ? $drill[$gap] : NULL;
 }
@@ -1497,8 +1508,8 @@ function apachesolr_mlt_suggestions($settings, $id) {
       return $docs;
     }
   }
-  catch ( Exception $e ) {
-    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR );
+  catch (Exception $e) {
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
   }
 }
 
