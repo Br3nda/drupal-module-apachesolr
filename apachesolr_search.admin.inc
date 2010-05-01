@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.20.2.6 2010/04/25 03:17:18 jpmckinney Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.20.2.7 2010/05/01 03:01:15 jpmckinney Exp $
 
 /**
  * @file
@@ -10,11 +10,12 @@
  * Menu callback - the settings form.
  */
 function apachesolr_search_settings_page() {
-  // try to fetch the schema fields
+  $output = '';
+  // Try to fetch the schema fields.
   try {
     $solr = apachesolr_get_solr();
     $fields = $solr->getFields();
-    $output = drupal_get_form('apachesolr_search_settings_form', $fields);
+    $output .= drupal_get_form('apachesolr_search_settings_form', $fields);
   }
   catch (Exception $e) {
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);

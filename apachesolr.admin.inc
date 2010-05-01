@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.28.2.33 2010/04/26 21:03:17 jpmckinney Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28.2.34 2010/05/01 03:01:15 jpmckinney Exp $
 
 /**
  * @file
@@ -126,6 +126,7 @@ function apachesolr_settings_validate($form, &$form_state) {
  * Gets information about the fields already in solr index.
  */
 function apachesolr_index_page() {
+  $data = (object) array();
   try {
     $solr = apachesolr_get_solr();
     // TODO: possibly clear this every page view if we are running multi-site.
@@ -137,7 +138,6 @@ function apachesolr_index_page() {
   catch (Exception $e) {
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
     drupal_set_message(nl2br(check_plain($e->getMessage())), "warning");
-    $data = (object) array();
     $data->fields = array();
   }
 

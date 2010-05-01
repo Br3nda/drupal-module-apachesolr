@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.70 2010/05/01 01:56:42 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.71 2010/05/01 03:01:15 jpmckinney Exp $
 
 /**
  * @file
@@ -940,15 +940,16 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
       $link['data'] = theme('apachesolr_facet_link', $facet_text, $new_query->get_path(), $options, $field['#count'], FALSE, $num_found);
     }
 
-    // If this block is to be alphabetically sorted, change $sortpre.
     if ($active) {
       // '*' sorts before all numbers.
       $sortpre = '*';
     }
     elseif (isset($facet_query_sorts['apachesolr_search'][$field_name]) && strpos($facet_query_sorts['apachesolr_search'][$field_name], 'index key') === 0) {
+      // If this block is to be alphabetically sorted by key, change $sortpre.
       $sortpre = $field_name;
     }
     elseif (isset($facet_query_sorts['apachesolr_search'][$field_name]) && strpos($facet_query_sorts['apachesolr_search'][$field_name], 'index') === 0) {
+      // If this block is to be alphabetically sorted, change $sortpre.
       $sortpre = $facet_text;
     }
     else {

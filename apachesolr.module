@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.94 2010/04/30 20:57:44 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.95 2010/05/01 03:01:15 jpmckinney Exp $
 
 /**
  * @file
@@ -1363,10 +1363,10 @@ function apachesolr_pager_init($total, $limit = 10, $element = 0) {
  * }
  */
 function apachesolr_modify_query(&$query, &$params, $caller) {
-   if (empty($query)) {
-     // This should only happen if Solr is not set up - avoids fatal errors.
-     return;
-   }
+  if (empty($query)) {
+    // This should only happen if Solr is not set up - avoids fatal errors.
+    return;
+  }
 
   // Call the hooks first because otherwise any modifications to the
   // $query object don't end up in the $params.
