@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.96 2010/05/01 04:38:15 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.97 2010/05/01 05:04:31 jpmckinney Exp $
 
 /**
  * @file
@@ -958,12 +958,11 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
     $contains_active = FALSE;
     $items = array();
     foreach ($response->facet_counts->facet_fields->$facet_field as $facet => $count) {
-      $active = $query->has_filter($facet_field, $facet);
       $options = array('delta' => $delta);
       $exclude = FALSE;
 
       // Solr sends this back if it's empty.
-     if ($facet == '_empty_') {
+      if ($facet == '_empty_') {
         $exclude = TRUE;
         $facet = '[* TO *]';
         $options['html'] = TRUE;
@@ -978,6 +977,8 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
       else {
         $facet_text = $facet;
       }
+
+      $active = $query->has_filter($facet_field, $facet);
 
       if ($active) {
         // '*' sorts before all numbers.
@@ -1229,7 +1230,6 @@ function apachesolr_date_determine_gap($start, $end) {
   if ($end - $start > 86400) {
     return 'DAY';
   }
-  // For now, HOUR is a reasonable smallest gap.
   return 'HOUR';
 }
 
@@ -1559,7 +1559,7 @@ function apachesolr_do_query($caller, $current_query, $params = array('rows' => 
   if ($keys == '' && isset($params['fq'])) {
     // Move the fq params to q.alt for better performance.
     $qalt = array();
-    foreach($params['fq'] as $delta => $value) {
+    foreach ($params['fq'] as $delta => $value) {
       // Move the fq param if it has no local params and is not negative.
       if (!preg_match('/^(?:\{!|-)/', $value)) {
         $qalt[] = $value;
