@@ -47,7 +47,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       return microtime(TRUE) - $start;
     }
     else {
-      return FALSE; 
+      return FALSE;
     }
   }
 
@@ -78,7 +78,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     }
     return $this->luke[$num_terms];
   }
-  
+
   /**
    * Sets $this->stats with the information about the Solr Core form /admin/stats.jsp
    */
@@ -99,7 +99,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       }
     }
   }
-  
+
   /**
    * Get information about the Solr Core.
    *
@@ -212,7 +212,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
    * @param float $timeout
    *   Read timeout in seconds or FALSE.
    *
-   * @return 
+   * @return
    *  Apache_Solr_Response object
    */
   public function makeServletRequest($servlet, $params = array(), $method = 'GET', $request_headers = array(), $rawPost = '', $timeout = FALSE) {
@@ -226,7 +226,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     );
 
     $url = $this->_constructUrl($servlet, $params);
-    list ($data, $headers) = $this->_makeHttpRequest($url, $method, $request_headers, $rawPost, $timeout);
+    list($data, $headers) = $this->_makeHttpRequest($url, $method, $request_headers, $rawPost, $timeout);
     $response = new Apache_Solr_Response($data, $headers, $this->_createDocuments, $this->_collapseSingleValueArrays);
     $code = (int) $response->getHttpStatus();
     if ($code != 200) {
@@ -260,7 +260,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
    * @see Apache_Solr_Service::_sendRawGet()
    */
   protected function _sendRawGet($url, $timeout = FALSE) {
-    list ($data, $headers) = $this->_makeHttpRequest($url, 'GET', array(), '', $timeout);
+    list($data, $headers) = $this->_makeHttpRequest($url, 'GET', array(), '', $timeout);
     $response = new Apache_Solr_Response($data, $headers, $this->_createDocuments, $this->_collapseSingleValueArrays);
     $code = (int) $response->getHttpStatus();
     if ($code != 200) {
@@ -277,14 +277,14 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
   /**
    * Central method for making a post operation against this Solr Server
    *
-   * @see Apache_Solr_Service::_sendRawGet()
+   * @see Apache_Solr_Service::_sendRawPost()
    */
   protected function _sendRawPost($url, $rawPost, $timeout = FALSE, $contentType = 'text/xml; charset=UTF-8') {
     if (variable_get('apachesolr_read_only', 0)) {
       throw new Exception('Operating in read-only mode; updates are disabled.');
     }
     $request_headers = array('Content-Type' => $contentType);
-    list ($data, $headers) = $this->_makeHttpRequest($url, 'POST', $request_headers, $rawPost, $timeout);
+    list($data, $headers) = $this->_makeHttpRequest($url, 'POST', $request_headers, $rawPost, $timeout);
     $response = new Apache_Solr_Response($data, $headers, $this->_createDocuments, $this->_collapseSingleValueArrays);
     $code = (int) $response->getHttpStatus();
     if ($code != 200) {

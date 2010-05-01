@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.197 2010/05/01 03:26:13 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.198 2010/05/01 04:42:17 jpmckinney Exp $
 
 /**
  * @file
@@ -187,7 +187,7 @@ function apachesolr_comment($edit, $op) {
     case 'delete':
     case 'publish':
     case 'unpublish':
-      // TODO: do we want to skip this if we are excluding comments 
+      // TODO: do we want to skip this if we are excluding comments
       // from the index for this node type?
       apachesolr_mark_node($edit['nid']);
       break;
@@ -243,7 +243,7 @@ function apachesolr_clear_last_index($namespace = '') {
   else {
     variable_del('apachesolr_index_last');
   }
-}       
+}
 
 /**
  * Truncate and rebuild the apachesolr_search_node table, reset the apachesolr_index_last variable.
@@ -1080,7 +1080,7 @@ function apachesolr_pager_init($total, $limit = 10, $element = 0) {
  *
  * Example:
  *
- * function my_module_apachesolr_modify_query(&$query, &$params) {
+ * function my_module_apachesolr_modify_query(&$query, &$params, $caller) {
  *   // I only want to see articles by the admin!
  *   $query->add_filter("uid", 1);
  *
@@ -1211,7 +1211,7 @@ function apachesolr_do_query($caller, $current_query, $params = array('rows' => 
   if ($keys == '' && isset($params['fq'])) {
     // Move the fq params to q.alt for better performance.
     $qalt = array();
-    foreach($params['fq'] as $delta => $value) {
+    foreach ($params['fq'] as $delta => $value) {
       // Move the fq param if it has no local params and is not negative.
       if (!preg_match('/^(?:\{!|-)/', $value)) {
         $qalt[] = $value;

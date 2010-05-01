@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.50 2010/05/01 03:26:13 jpmckinney Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.51 2010/05/01 04:42:17 jpmckinney Exp $
 
 /**
  * @file
@@ -156,9 +156,8 @@ function apachesolr_index_page() {
   $output .= drupal_get_form('apachesolr_delete_index_form');
   }
   else {
-    drupal_set_message(t('The index is in read-only mode. Options for deleting and re-indexing are therefore not available. The index mode can be changed on the !settings_page', array('!settings_page' => l(t('settings page'), 'admin/settings/apachesolr'))), 'warning'); 
+    drupal_set_message(t('The index is in read-only mode. Options for deleting and re-indexing are therefore not available. The index mode can be changed on the !settings_page', array('!settings_page' => l(t('settings page'), 'admin/settings/apachesolr'))), 'warning');
   }
-  
 
   return $output;
 }
@@ -269,7 +268,7 @@ function apachesolr_enabled_facets_form() {
 
   $enabled_facets = apachesolr_get_enabled_facets();
   $form = array();
-  $form['apachesolr_enabled_facets']['help'] = array (
+  $form['apachesolr_enabled_facets']['help'] = array(
     '#type' => 'item',
     '#value' => t('You can use this screen to select which search filter blocks should be created by enabling the corresponding filters on this page. For performance reasons, you should only enable filters that you intend to have available to users on the search page.  After selecting which filter blocks to create, you will be sent to the blocks page where you can choose which of those blocks should be enabled when your users search by placing each block in a region.'),
   );
@@ -280,7 +279,7 @@ function apachesolr_enabled_facets_form() {
       $module_list[$item['name']] = unserialize($item['info']);
     }
   }
-  foreach($module_facets as $module => $facets) {
+  foreach ($module_facets as $module => $facets) {
     $form['apachesolr_enabled_facets'][$module] = array(
       '#type' => 'fieldset',
       '#title' => check_plain($module_list[$module]['name']),
@@ -291,7 +290,7 @@ function apachesolr_enabled_facets_form() {
     // guaranteed to be unique.  A single module could, for example, have
     // two different blocks that expose different faceting on the same
     // field in the index.
-    foreach($facets as $delta => $data) {
+    foreach ($facets as $delta => $data) {
       $form['apachesolr_enabled_facets'][$module][$delta] = array(
         '#type' => 'checkbox',
         '#title' => $data['info'],
@@ -427,7 +426,7 @@ function apachesolr_delete_index_confirm_submit($form, &$form_state) {
   catch (Exception $e) {
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
   }
-}           
+}
 
 /**
  * Utility function to delete the index and reset all index counters.
@@ -480,7 +479,7 @@ function _apachesolr_field_name_map($field_name) {
       'tid' => t('Taxonomy term IDs'),
     );
     if (module_exists('taxonomy')) {
-      foreach(taxonomy_get_vocabularies() as $vocab) {
+      foreach (taxonomy_get_vocabularies() as $vocab) {
         $map['ts_vid_'. $vocab->vid .'_names'] = t('Taxonomy term names only from the %name vocabulary', array('%name' => $vocab->name));
         $map['im_vid_'. $vocab->vid] = t('Taxonomy term IDs from the %name vocabulary', array('%name' => $vocab->name));
       }

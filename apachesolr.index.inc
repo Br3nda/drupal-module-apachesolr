@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.25 2010/04/29 20:56:34 jpmckinney Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.26 2010/05/01 04:42:17 jpmckinney Exp $
 
 /**
  * @file
@@ -54,7 +54,7 @@ function apachesolr_node_to_document($nid, $namespace) {
 
     $text = $node->body;
 
-    // Fetch extra data normally not visible, including comments.      
+    // Fetch extra data normally not visible, including comments.
     $extra = array();
     $exclude_comments = in_array($node->type, variable_get('apachesolr_exclude_comments_types', array()), TRUE);
     foreach (module_implements('nodeapi') as $module) {
