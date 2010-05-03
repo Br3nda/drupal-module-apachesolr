@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.2.29 2010/05/03 18:50:27 jpmckinney Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.2.30 2010/05/03 19:38:24 jpmckinney Exp $
 
 /**
  * @file
@@ -36,7 +36,6 @@ function apachesolr_node_to_document($node, $namespace) {
     $node = node_build_content($node, FALSE, FALSE);
     $node->body = drupal_render($node->content);
     $node->title = apachesolr_clean_text($node->title);
-    $node->teaser = apachesolr_clean_text($node->teaser);
 
     // Fetch extra data normally not visible, including comments.
     // We do this manually (with module_implements instead of node_invoke_nodeapi)
@@ -69,7 +68,6 @@ function apachesolr_node_to_document($node, $namespace) {
     $document->nid = $node->nid;
     $document->uid = $node->uid;
     $document->title = $node->title;
-    $document->teaser = $node->teaser;
     $document->status = $node->status;
     $document->sticky = $node->sticky;
     $document->promote = $node->promote;
@@ -84,6 +82,12 @@ function apachesolr_node_to_document($node, $namespace) {
       $document->language = $node->language;
     }
     $document->body = apachesolr_clean_text($text);
+    if (isset($node->teaser)) {
+      $document->teaser = apachesolr_clean_text($node->teaser);
+    }
+    else {
+      $document->teaser = truncate_utf8($document->body, 300, TRUE);
+    }
     $document->type = $node->type;
     $document->type_name = node_get_types('name', $node);
     $document->created = apachesolr_date_iso($node->created);
