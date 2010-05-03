@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.install,v 1.1.2.5.2.3 2010/04/26 03:35:16 jpmckinney Exp $
+// $Id: apachesolr_search.install,v 1.1.2.5.2.4 2010/05/03 18:50:27 jpmckinney Exp $
 
 /**
  * @file
@@ -40,12 +40,12 @@ function apachesolr_search_update_6000() {
 function apachesolr_search_update_6001() {
   $ret = array();
   if ($fields = apachesolr_cck_fields()) {
-     foreach ($fields as $name => $field) {
-       $index_key = substr(apachesolr_index_key($field), 0, 32);
-       $new_delta = $field['field_name'];
-       $ret[] = update_sql("UPDATE {blocks} SET delta = '". $new_delta ."' WHERE module = 'apachesolr_search' AND delta = '". $index_key ."'");
-       $ret[] = update_sql("UPDATE {blocks_roles} SET delta = '". $new_delta ."' WHERE module = 'apachesolr_search' AND delta = '". $index_key ."'");
-     }
+    foreach ($fields as $name => $field) {
+      $index_key = substr(apachesolr_index_key($field), 0, 32);
+      $new_delta = $field['field_name'];
+      $ret[] = update_sql("UPDATE {blocks} SET delta = '". $new_delta ."' WHERE module = 'apachesolr_search' AND delta = '". $index_key ."'");
+      $ret[] = update_sql("UPDATE {blocks_roles} SET delta = '". $new_delta ."' WHERE module = 'apachesolr_search' AND delta = '". $index_key ."'");
+    }
   }
   return $ret;
 }

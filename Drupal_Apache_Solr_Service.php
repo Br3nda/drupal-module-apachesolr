@@ -1,4 +1,6 @@
 <?php
+// $Id: Drupal_Apache_Solr_Service.php,v 1.1.2.20.2.10 2010/05/03 18:50:27 jpmckinney Exp $
+
 require_once 'SolrPhpClient/Apache/Solr/Service.php';
 
 /**
@@ -40,7 +42,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       $timeout = -1;
     }
     // Attempt a HEAD request to the solr ping url.
-    list($data, $headers) = $this->_makeHttpRequest($this->_pingUrl, 'HEAD', array(), null, $timeout);
+    list($data, $headers) = $this->_makeHttpRequest($this->_pingUrl, 'HEAD', array(), NULL, $timeout);
     $response = new Apache_Solr_Response($data, $headers);
 
     if ($response->getHttpStatus() == 200) {

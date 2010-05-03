@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_date.module,v 1.1.2.3 2010/04/28 20:05:01 jpmckinney Exp $
+// $Id: apachesolr_date.module,v 1.1.2.4 2010/05/03 18:50:27 jpmckinney Exp $
 
 /**
  * @file
@@ -8,10 +8,10 @@
  */
 
 /**
- * Implementation of hook_apachesolr_facets.
+ * Implementation of hook_apachesolr_facets().
  * Only handles end date facets.
  * Start date facet definitions are handled later.
- * @see function apachesolr_date_apachesolr_cck_fields_alter()
+ * @see apachesolr_date_apachesolr_cck_fields_alter()
  */
 function apachesolr_date_apachesolr_facets() {
   // Get CCK field facets.
@@ -40,7 +40,7 @@ function apachesolr_date_apachesolr_facets() {
 }
 
 /**
- * Implementation of hook_block.
+ * Implementation of hook_block().
  */
 function apachesolr_date_block($op = 'list', $delta = 0, $edit = array()) {
   switch ($op) {
@@ -99,7 +99,7 @@ function apachesolr_date_block($op = 'list', $delta = 0, $edit = array()) {
 }
 
 /**
- * Implementation of hook_apachesolr_prepare_query.
+ * Implementation of hook_apachesolr_prepare_query().
  * Adds sorts for enabled date facets to the sorting block.
  */
 function apachesolr_date_apachesolr_prepare_query(&$query) {
@@ -115,13 +115,13 @@ function apachesolr_date_apachesolr_prepare_query(&$query) {
       $query->set_available_sort($value, array(
         'title' => $cck_field['widget']['label'], // how the sort is to appear in the sorts block
         'default' => 'desc',
-       ));
+      ));
     }
   }
 }
 
 /**
- * Implementation of hook_apachesolr_cck_fields_alter.
+ * Implementation of hook_apachesolr_cck_fields_alter().
  * This function adds the CCK date fields' definitions to let
  * them be recognized as facets.
  */
@@ -299,7 +299,7 @@ function apachesolr_date_search_date_range($query, $facet_field) {
     if (is_numeric($start_value)) {
       $start_iso = apachesolr_date_iso($start_value);
     }
-    else if ($date = date_create($start_value, $tz)) {
+    elseif ($date = date_create($start_value, $tz)) {
       $start_iso = apachesolr_date_iso($date->format('U'));
     }
 
@@ -309,7 +309,7 @@ function apachesolr_date_search_date_range($query, $facet_field) {
     if (is_numeric($end_value)) {
       $end_iso = apachesolr_date_iso($end_value - 1);
     }
-    else if ($date = date_create($end_value, $tz)) {
+    elseif ($date = date_create($end_value, $tz)) {
       $end_iso = apachesolr_date_iso($date->format('U') - 1);
     }
 
@@ -335,7 +335,7 @@ function apachesolr_date_search_date_range($query, $facet_field) {
 function apachesolr_date_date_facet_block($response, $query, $module, $delta, $facet_field, $filter_by, $facet_callback = FALSE) {
   // The items in the facet block (facet links and unclick links).
   $items = array();
-  // The array that is ultimately sent into apachesolr_l(), @see apachesolr_l
+  // The array that is ultimately sent into apachesolr_l(), @see apachesolr_l()
   $options = array();
   // The display text for any given facet or unclick link.
   $facet_text = '';
@@ -361,7 +361,7 @@ function apachesolr_date_date_facet_block($response, $query, $module, $delta, $f
     $field = clone $response->facet_counts->facet_dates->$facet_field;
   }
   elseif (!empty($response->facet_counts->facet_fields->$facet_field)) {
-     $field = clone $response->facet_counts->facet_fields->$facet_field;
+    $field = clone $response->facet_counts->facet_fields->$facet_field;
   }
   if ($field) {
     // A field will have this type of structure, where the main information

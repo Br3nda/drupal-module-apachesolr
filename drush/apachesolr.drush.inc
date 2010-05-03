@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.drush.inc,v 1.1.2.12 2010/05/01 04:38:15 jpmckinney Exp $
+// $Id: apachesolr.drush.inc,v 1.1.2.13 2010/05/03 18:50:27 jpmckinney Exp $
 
 /**
  * @file
@@ -16,7 +16,7 @@
  * Notice how this structure closely resembles how
  * you define menu hooks.
  *
- * @See drush_parse_command() for a list of recognized keys.
+ * @see drush_parse_command() for a list of recognized keys.
  *
  * @return
  *   An associative array describing your command(s).

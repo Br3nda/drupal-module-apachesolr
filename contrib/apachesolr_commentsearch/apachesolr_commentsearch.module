@@ -2,7 +2,7 @@
 
 
 /**
- * Implementation of hook_apachesolr_document_handlers.
+ * Implementation of hook_apachesolr_document_handlers().
  *
  * @param string $type
  *   Entity type. 'node', 'comment', and so forth. Used to evaluate whether this module

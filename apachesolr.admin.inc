@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.28.2.35 2010/05/01 04:38:15 jpmckinney Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28.2.36 2010/05/03 18:50:27 jpmckinney Exp $
 
 /**
  * @file
@@ -349,15 +349,15 @@ function apachesolr_index_action_form() {
     'remaining' => array(
       'title' => t('Index queued content'),
       'description' => t('Any content that is queued for indexing will be submitted to Solr immediately. Depending on amount of content on the site, it may take a long time to complete, and may place an increased load on your server.'),
-     ),
+    ),
     'reindex' => array(
       'title' => t('Queue content for reindexing'),
       'description' => t('All content on the site will be queued for indexing. The documents currently in the Solr index will remain searchable. The content will be gradually resubmitted to Solr during cron runs.'),
-     ),
+    ),
     'delete' => array(
       'title' => t('Delete the index'),
       'description' => t('All documents in the Solr index will be deleted. This is rarely necessary unless your index is corrupt or you have installed a new schema.xml. After doing this your content will need to be resubmitted for indexing.'),
-     ),
+    ),
   );
   foreach ($actions as $key => $action) {
     // Generate the parents as the autogenerator does, so we will have a
@@ -725,8 +725,8 @@ function apachesolr_mlt_delete_block_form_submit($form, &$form_state) {
  */
 
 /**
-* Submit a batch job to index the remaining, unindexed content.
-*/
+ * Submit a batch job to index the remaining, unindexed content.
+ */
 function apachesolr_batch_index_remaining() {
   $batch = array(
     'operations' => array(
@@ -743,8 +743,8 @@ function apachesolr_batch_index_remaining() {
 }
 
 /**
-* Batch Operation Callback
-*/
+ * Batch Operation Callback
+ */
 function apachesolr_batch_index_nodes(&$context) {
   if (empty($context['sandbox'])) {
     try {
@@ -788,8 +788,8 @@ function apachesolr_batch_index_nodes(&$context) {
 }
 
 /**
-* Batch 'finished' callback
-*/
+ * Batch 'finished' callback
+ */
 function apachesolr_batch_index_finished($success, $results, $operations) {
   $message = '';
   // $results['count'] will not be set if Solr is unavailable.
