@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_og.module,v 1.1.2.9 2010/05/01 05:05:19 jpmckinney Exp $
+// $Id: apachesolr_og.module,v 1.1.2.10 2010/05/03 19:08:13 jpmckinney Exp $
 
 /**
  * @file
@@ -95,7 +95,7 @@ function apachesolr_og_apachesolr_process_results(&$results) {
     // Copied code from og_node_groups_distinguish() and og_nodeapi().
     $accessible_groups = array();
     $placeholders = db_placeholders($groups);
-    $result = db_query(db_rewrite_sql('SELECT n.nid FROM {node} n WHERE n.nid IN ('. $placeholders. ')'), $groups);
+    $result = db_query(db_rewrite_sql('SELECT n.nid FROM {node} n WHERE n.nid IN (' . $placeholders . ')'), $groups);
     while ($row = db_fetch_object($result)) {
       $accessible_groups[] = $row->nid;
     }

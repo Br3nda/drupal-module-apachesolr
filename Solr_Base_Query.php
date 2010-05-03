@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.46 2010/05/01 03:26:13 jpmckinney Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.47 2010/05/03 19:08:12 jpmckinney Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -44,7 +44,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     // If the field value has spaces, or : in it, wrap it in double quotes.
     // unless it is a range query.
     if (preg_match('/[ :]/', $filter['#value']) && !isset($filter['#start']) && !preg_match('/[\[\{]\S+ TO \S+[\]\}]/', $filter['#value'])) {
-      $filter['#value'] = '"'. $filter['#value']. '"';
+      $filter['#value'] = '"' . $filter['#value'] . '"';
     }
     $prefix = empty($filter['#exclude']) ? '' : '-';
     return $prefix . $filter['#name'] . ':' . $filter['#value'];

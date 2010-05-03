@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.1.4.33 2010/05/01 05:05:19 jpmckinney Exp $
+// $Id: apachesolr.install,v 1.1.4.34 2010/05/03 19:08:12 jpmckinney Exp $
 
 /**
  * @file
@@ -135,7 +135,7 @@ function apachesolr_schema() {
 }
 
 /**
- * Implementation of hook_uninstall()
+ * Implementation of hook_uninstall().
  */
 function apachesolr_uninstall() {
   variable_del('apachesolr_host');
@@ -214,11 +214,10 @@ function apachesolr_update_6001() {
  */
 function apachesolr_update_6002() {
   $ret = array();
-   // Make sure no nodes end up with a timestamp that's in the future.
-   $time = (int) time();
-   $ret[] = update_sql("UPDATE {apachesolr_search_node} SET changed = $time WHERE changed > $time");
-
-   return $ret;
+  // Make sure no nodes end up with a timestamp that's in the future.
+  $time = (int) time();
+  $ret[] = update_sql("UPDATE {apachesolr_search_node} SET changed = $time WHERE changed > $time");
+  return $ret;
 }
 
 /**

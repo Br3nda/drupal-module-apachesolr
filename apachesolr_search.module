@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.143 2010/05/01 04:42:17 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.144 2010/05/03 19:08:13 jpmckinney Exp $
 
 /**
  * @file
@@ -582,7 +582,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
             return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by book'), 'apachesolr_search_get_book');
           case 'language':
             return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by language'), 'apachesolr_search_language_name');
-           case 'uid':
+          case 'uid':
             return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by author'), 'apachesolr_search_get_username');
           case 'type':
             return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by type'), 'apachesolr_search_get_type');
@@ -592,14 +592,14 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
             return apachesolr_date_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by post date'));
 
           default:
-           if ($fields = apachesolr_cck_fields()) {
-            foreach ($fields as $name => $field) {
-              if ($field['field_name'] == $delta) {
-                $index_key = apachesolr_index_key($field);
-                return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $index_key, t('Filter by @field', array('@field' => $field['label'])));
+            if ($fields = apachesolr_cck_fields()) {
+              foreach ($fields as $name => $field) {
+                if ($field['field_name'] == $delta) {
+                  $index_key = apachesolr_index_key($field);
+                  return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $index_key, t('Filter by @field', array('@field' => $field['label'])));
+                }
               }
             }
-          }
         }
         break;
       }

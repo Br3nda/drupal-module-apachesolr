@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.199 2010/05/01 05:05:19 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.200 2010/05/03 19:08:12 jpmckinney Exp $
 
 /**
  * @file
@@ -377,8 +377,10 @@ function apachesolr_index_nodes($rows, $namespace = '', $callback = 'apachesolr_
           $nids[] = $doc->nid;
         }
       }
-      watchdog('Apache Solr', 'Indexing failed on one of the following nodes: @nids <br /> !message',
-               array('@nids' => implode(', ', $nids), '!message' => nl2br(strip_tags($e->getMessage()))), WATCHDOG_ERROR);
+      watchdog('Apache Solr', 'Indexing failed on one of the following nodes: @nids <br /> !message', array(
+        '@nids' => implode(', ', $nids),
+        '!message' => nl2br(strip_tags($e->getMessage())),
+      ), WATCHDOG_ERROR);
       return FALSE;
     }
   }
@@ -640,7 +642,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
             $suggestions['subject'] = check_plain($block['name']);
             $suggestions['content'] = theme('apachesolr_mlt_recommendation_block', $docs);
             if (user_access('administer search')) {
-               $suggestions['content'] .= l(t('Configure this block'), 'admin/build/block/configure/apachesolr/' . $delta, array('attributes' => array('class' => 'apachesolr-mlt-admin-link')));
+              $suggestions['content'] .= l(t('Configure this block'), 'admin/build/block/configure/apachesolr/' . $delta, array('attributes' => array('class' => 'apachesolr-mlt-admin-link')));
             }
           }
         }
@@ -1328,7 +1330,7 @@ function apachesolr_index_key($field) {
     case 'sint':
       $type_prefix = 'si';
       break;
-   case 'double':
+    case 'double':
       $type_prefix = 'p'; // reserve d for date
       break;
     case 'boolean':
