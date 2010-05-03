@@ -1,5 +1,5 @@
 <?php
-// $Id: Drupal_Apache_Solr_Service.php,v 1.1.2.20.4.8 2010/05/03 18:50:33 jpmckinney Exp $
+// $Id: Drupal_Apache_Solr_Service.php,v 1.1.2.20.4.9 2010/05/03 19:15:20 jpmckinney Exp $
 
 require_once 'SolrPhpClient/Apache/Solr/Service.php';
 
@@ -282,9 +282,6 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
    * @see Apache_Solr_Service::_sendRawGet()
    */
   protected function _sendRawPost($url, $rawPost, $timeout = FALSE, $contentType = 'text/xml; charset=UTF-8') {
-    if (variable_get('apachesolr_read_only', APACHESOLR_READ_WRITE)) {
-      throw new Exception('Operating in read-only mode; updates are disabled.');
-    }
     $request_headers = array('Content-Type' => $contentType);
     list ($data, $headers) = $this->_makeHttpRequest($url, 'POST', $request_headers, $rawPost, $timeout);
     $response = new Apache_Solr_Response($data, $headers, $this->_createDocuments, $this->_collapseSingleValueArrays);
