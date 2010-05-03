@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.37 2010/04/30 21:49:29 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.38 2010/05/03 18:50:33 jpmckinney Exp $
 
 /**
  * @file
@@ -244,7 +244,7 @@ function apachesolr_search_add_facet_params(&$params, $query) {
       // When modules are disabled their facet settings may remain.
       continue;
     }
-    foreach($module_facets as $delta => $facet_field) {
+    foreach ($module_facets as $delta => $facet_field) {
       // TODO: generalize handling of date and range facets.
       if ($module == 'apachesolr_search' && ($facet_field == 'created' || $facet_field == 'changed')) {
         list($start, $end, $gap) = apachesolr_search_date_range($query, $facet_field);
@@ -546,7 +546,7 @@ function apachesolr_search_block($op = 'list', $delta = 0, $edit = array()) {
             return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by book'), 'apachesolr_search_get_book');
           case 'language':
             return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by language'), 'apachesolr_search_language_name');
-           case 'uid':
+          case 'uid':
             return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by author'), 'apachesolr_search_get_username');
           case 'type':
             return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by type'), 'apachesolr_search_get_type');
@@ -730,7 +730,7 @@ function apachesolr_search_language_name($lang) {
 function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort = TRUE) {
 
   $items = array();
-  foreach($facets as $field) {
+  foreach ($facets as $field) {
     $breadcrumb_name = 'apachesolr_breadcrumb_'. $field['#name'];
     drupal_alter('apachesolr_theme_breadcrumb', $breadcrumb_name);
     $facet_text = theme($breadcrumb_name, $field, $field['#exclude']);
@@ -823,7 +823,7 @@ function apachesolr_search_search_box_form_submit($form_id, $form_values) {
 function apachesolr_search_form_search_submit($form_id, $form_values) {
   $fv = $form_values;
   $keys = $fv['processed_keys'];
-  $base = 'search/'. $fv['module'] . '/';
+  $base = 'search/' . $fv['module'] . '/';
   if (variable_get('clean_url', '0')) {
     $keys = str_replace('+', '%2B', $keys);
   }
@@ -856,7 +856,7 @@ function apachesolr_search_form_alter($form_id, &$form) {
         // In D6: $form['submit']['#submit'][] = 'apaechesolr_search_build_spellcheck';
         $form['#submit']['apachesolr_search_build_spellcheck'] = array();
       }
-    break;    
+    break;
     case 'search_form':
       if ($form['module']['#value'] == 'apachesolr_search') {
         $form['#submit']['apachesolr_search_form_search_submit'] = array();
@@ -864,13 +864,13 @@ function apachesolr_search_form_alter($form_id, &$form) {
         // Note - this means that the query must always be run before
         // calling drupal_get_form('search_form').
         $apachesolr_has_searched = apachesolr_has_searched();
-    
+
         $queryvalues = array();
         if ($apachesolr_has_searched) {
           $query = apachesolr_current_query();
           $queryvalues = $query->get_url_queryvalues();
         }
-    
+
         $form['basic']['apachesolr_search']['#tree'] = TRUE;
         $form['basic']['apachesolr_search']['queryvalues'] = array(
           '#type' => 'hidden',
@@ -887,20 +887,20 @@ function apachesolr_search_form_alter($form_id, &$form) {
             '#default_value' => (int) isset($_GET['retain-filters']),
           );
         }
-    
+
         if (variable_get('apachesolr_search_spellcheck', FALSE) && $apachesolr_has_searched && ($response = apachesolr_static_response_cache())) {
           //Get spellchecker suggestions into an array.
           $suggestions = get_object_vars($response->spellcheck->suggestions);
-    
+
           if ($suggestions) {
             //Get the original query and replace words.
             $query = apachesolr_current_query();
-    
-            foreach($suggestions as $word => $value) {
+
+            foreach ($suggestions as $word => $value) {
               $replacements[$word] = $value->suggestion[0];
             }
             $new_keywords = strtr($query->get_query_basic(), $replacements);
-    
+
             // Show only if suggestion is different than current query.
             if ($query->get_query_basic() != $new_keywords) {
               $form['basic']['suggestion'] = array(
@@ -956,14 +956,14 @@ function apachesolr_search_form_alter($form_id, &$form) {
         '#type' => 'value',
         '#value' => variable_get('apachesolr_search_taxonomy_links', 0),
       );
-    
+
       $form['apachesolr_search_spellcheck'] = array(
         '#type' => 'checkbox',
         '#title' => t('Enable spellchecker and suggestions'),
         '#default_value' => variable_get('apachesolr_search_spellcheck', FALSE),
         '#description' => t('Enable spellchecker and get word suggestions. Also known as the "Did you mean ... ?" feature.'),
       );
-    
+
       $form['#submit']['apachesolr_search_build_spellcheck'] = array();
       $form['#submit']['apachesolr_search_make_default_submit'] = array();
       // Move buttons to the bottom.
@@ -1112,7 +1112,7 @@ function apachesolr_get_parent_terms($tids) {
   $parent_terms = array();
   $new_tids = $tids;
   do {
-    $result = db_query(db_rewrite_sql("SELECT t.tid, t.parent FROM {term_hierarchy} t WHERE t.tid IN (". db_placeholders($new_tids) .")",'t', 'tid'), $new_tids);
+    $result = db_query(db_rewrite_sql("SELECT t.tid, t.parent FROM {term_hierarchy} t WHERE t.tid IN (". db_placeholders($new_tids) .")", 't', 'tid'), $new_tids);
     $new_tids = array();
     while ($term = db_fetch_object($result)) {
       $parent_terms[$term->tid] = $term;
@@ -1143,7 +1143,7 @@ function apachesolr_search_currentsearch_block($response, $query) {
   // Find all taxonomy terms to be treated in a hierarchy.
   if (module_exists('taxonomy')) {
     $reflect_hierarchy = apachesolr_search_get_hierarchical_vocabularies();
-    foreach($fields as $index => $field) {
+    foreach ($fields as $index => $field) {
       if ($field['#name'] && 'tid' == $field['#name']) {
         $term = taxonomy_get_term($field['#value']);
         if ($reflect_hierarchy[$term->vid]) {
@@ -1180,7 +1180,7 @@ function apachesolr_search_currentsearch_block($response, $query) {
   }
 
   // We don't directly render any items with a parent.
-  foreach($fields as $index => $field) {
+  foreach ($fields as $index => $field) {
     $fields[$index]['#active'] = TRUE;
     if (!empty($fields[$index]['#parent']) || !$field['#name']) {
       // We will render it via its parent.

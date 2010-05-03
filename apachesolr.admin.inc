@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.32.2.17 2010/02/27 01:55:51 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.32.2.18 2010/05/03 18:50:33 jpmckinney Exp $
 
 /**
  * @file
@@ -251,7 +251,7 @@ function apachesolr_enabled_facets_form() {
 
   $enabled_facets = apachesolr_get_enabled_facets();
   $form = array();
-  $form['apachesolr_enabled_facets']['help'] = array (
+  $form['apachesolr_enabled_facets']['help'] = array(
     '#type' => 'item',
     '#value' => t('You can use this screen to select which search filter blocks should be created by enabling the corresponding filters on this page. For performance reasons, you should only enable filters that you intend to have available to users on the search page.  After selecting which filter blocks to create, you will be sent to the blocks page where you can choose which of those blocks should be enabled when your users search by placing each block in a region.'),
   );
@@ -259,7 +259,7 @@ function apachesolr_enabled_facets_form() {
     $module_list[$module] = _module_parse_info_file(drupal_get_path('module', $module) .'/'. $module .'.info');
   }
 
-  foreach($module_facets as $module => $facets) {
+  foreach ($module_facets as $module => $facets) {
     $form['apachesolr_enabled_facets'][$module] = array(
       '#type' => 'fieldset',
       '#title' => check_plain($module_list[$module]['name']),
@@ -270,7 +270,7 @@ function apachesolr_enabled_facets_form() {
     // guaranteed to be unique.  A single module could, for example, have
     // two different blocks that expose different faceting on the same
     // field in the index.
-    foreach($facets as $delta => $data) {
+    foreach ($facets as $delta => $data) {
       $form['apachesolr_enabled_facets'][$module][$delta] = array(
         '#type' => 'checkbox',
         '#title' => $data['info'],
@@ -465,7 +465,7 @@ function _apachesolr_field_name_map($field_name) {
       'tid' => t('Taxonomy term IDs'),
     );
     if (module_exists('taxonomy')) {
-      foreach(taxonomy_get_vocabularies() as $vocab) {
+      foreach (taxonomy_get_vocabularies() as $vocab) {
         $map['ts_vid_'. $vocab->vid .'_names'] = t('Taxonomy term names only from the %name vocabulary', array('%name' => $vocab->name));
         $map['im_vid_'. $vocab->vid] = t('Taxonomy term IDs from the %name vocabulary', array('%name' => $vocab->name));
       }

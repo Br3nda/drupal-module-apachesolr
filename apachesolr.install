@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.1.4.21.2.6 2010/04/28 21:44:36 jpmckinney Exp $
+// $Id: apachesolr.install,v 1.1.4.21.2.7 2010/05/03 18:50:33 jpmckinney Exp $
 
 /**
  * @file
@@ -113,7 +113,7 @@ function apachesolr_install() {
       )");
       db_query("CREATE INDEX {apachesolr_search_node}_changed_idx ON {apachesolr_search_node} (changed)");
       drupal_set_message("Created Table: apachesolr_search_node");
-      
+
       db_query("CREATE TABLE {cache_apachesolr} (
         cid varchar(255) NOT NULL default '',
         data bytea,
@@ -122,7 +122,7 @@ function apachesolr_install() {
         headers text,
         PRIMARY KEY (cid)
       )");
-      db_query("CREATE INDEX {cache_apachesolr}_expire_idx ON {cache_apachesolr} (expire)");      
+      db_query("CREATE INDEX {cache_apachesolr}_expire_idx ON {cache_apachesolr} (expire)");
       drupal_set_message("Created Table: cache_apachesolr");
 
       break;
@@ -144,7 +144,7 @@ function apachesolr_enable() {
 }
 
 /**
- * Implementation of hook_uninstall()
+ * Implementation of hook_uninstall().
  */
 function apachesolr_uninstall() {
   variable_del('apachesolr_host');
@@ -158,7 +158,7 @@ function apachesolr_uninstall() {
   variable_del('apachesolr_mlt_blocks');
   variable_del('apachesolr_cron_limit');
   variable_del('apachesolr_enabled_facets');
-  
+
   // Remove tables.
   if (db_table_exists('apachesolr_search_node')) {
     db_query("DROP TABLE {apachesolr_search_node}");
@@ -172,7 +172,7 @@ function apachesolr_uninstall() {
  */
 function apachesolr_update_5000() {
   set_time_limit(0);
-  
+
   // Create table.
   $ret = array();
 
@@ -202,7 +202,7 @@ function apachesolr_update_5000() {
         break;
     }
   }
-  
+
   // Populate table
   $ret[] = update_sql("INSERT INTO {apachesolr_search_node} (nid, status, changed)
                        SELECT n.nid, n.status, GREATEST(n.created, n.changed, COALESCE(c.last_comment_timestamp, 0)) AS changed
@@ -228,10 +228,10 @@ function apachesolr_update_5001() {
  */
 function apachesolr_update_5002() {
   $ret = array();
-   // Make sure no nodes end up with a timestamp that's in the future.
-   $time = (int) time();
-   $ret[] = update_sql("UPDATE {apachesolr_search_node} SET changed = $time WHERE changed > $time");
-   return $ret;
+  // Make sure no nodes end up with a timestamp that's in the future.
+  $time = (int) time();
+  $ret[] = update_sql("UPDATE {apachesolr_search_node} SET changed = $time WHERE changed > $time");
+  return $ret;
 }
 
 /**
@@ -267,7 +267,7 @@ function apachesolr_update_5004() {
 
 /**
  * Add ApacheSolr's own cache table.
- * @see: http://drupal.org/node/630798
+ * @see http://drupal.org/node/630798
  */
 function apachesolr_update_5005() {
   $ret = array();
@@ -293,7 +293,7 @@ function apachesolr_update_5005() {
         headers text,
         PRIMARY KEY (cid)
       )");
-      $ret[] = update_sql("CREATE INDEX {cache_apachesolr}_expire_idx ON {cache_apachesolr} (expire)");      
+      $ret[] = update_sql("CREATE INDEX {cache_apachesolr}_expire_idx ON {cache_apachesolr} (expire)");
       break;
   }
   return $ret;

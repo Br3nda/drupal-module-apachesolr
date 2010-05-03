@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161.2.32 2010/04/30 16:17:00 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.33 2010/05/03 18:50:33 jpmckinney Exp $
 
 /**
  * @file
@@ -320,7 +320,7 @@ function apachesolr_get_nodes_to_index($namespace, $limit) {
   }
   list($excluded_types, $args, $join_sql, $exclude_sql) = _apachesolr_exclude_types($namespace);
   $result = db_query_range("SELECT asn.nid, asn.changed FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > %d OR (asn.changed = %d AND asn.nid > %d)) AND asn.status = 1 ". $exclude_sql ."ORDER BY asn.changed ASC, asn.nid ASC", $args, 0, $limit);
-  while($row = db_fetch_object($result)) {
+  while ($row = db_fetch_object($result)) {
     $rows[] = $row;
   }
   return $rows;
@@ -635,7 +635,7 @@ function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
             $suggestions['subject'] = check_plain($block['name']);
             $suggestions['content'] = theme('apachesolr_mlt_recommendation_block', $docs);
             if (user_access('administer search')) {
-               $suggestions['content'] .= l(t('Configure this block'),'admin/build/block/configure/apachesolr/'. $delta, array('class' => 'apachesolr-mlt-admin-link'));
+              $suggestions['content'] .= l(t('Configure this block'), 'admin/build/block/configure/apachesolr/' . $delta, array('class' => 'apachesolr-mlt-admin-link'));
             }
           }
         }
@@ -720,15 +720,15 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
       $exclude = FALSE;
       // Solr sends this back if it's empty.
       if ($facet == '_empty_') {
-         $exclude = TRUE;
-         $facet = '[* TO *]';
-         $facet_text = theme('placeholder', t('Missing this field'));
-         $options['html'] = TRUE;
-         // Put this just below any active facets.
-         // '-' sorts before all numbers, but after '*'.
-         $sortpre = '-';
-       }
-       else {
+        $exclude = TRUE;
+        $facet = '[* TO *]';
+        $facet_text = theme('placeholder', t('Missing this field'));
+        $options['html'] = TRUE;
+        // Put this just below any active facets.
+        // '-' sorts before all numbers, but after '*'.
+        $sortpre = '-';
+      }
+      else {
          $facet_text = $facet;
       }
 
@@ -1201,7 +1201,7 @@ function apachesolr_do_query($caller, $current_query, $params = array('rows' => 
   if ($keys == '' && isset($params['fq'])) {
     // Move the fq params to q.alt for better performance.
     $qalt = array();
-    foreach($params['fq'] as $delta => $value) {
+    foreach ($params['fq'] as $delta => $value) {
       // Move the fq param if it has no local params and is not negative.
       if (!preg_match('/^(?:\{!|-)/', $value)) {
         $qalt[] = $value;

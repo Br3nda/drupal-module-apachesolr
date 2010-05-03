@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.40.4.5 2010/04/28 20:48:26 jpmckinney Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.40.4.6 2010/05/03 18:50:33 jpmckinney Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -17,7 +17,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     $patterns[] = '/(^| |-)'. $name .':([^ ]*)/';
     foreach ($patterns as $p) {
       if (preg_match_all($p, $filterstring, $matches, PREG_SET_ORDER)) {
-        foreach($matches as $match) {
+        foreach ($matches as $match) {
           $filter = array();
           $filter['#query'] = $match[0];
           $filter['#exclude'] = ($match[1] == '-');
@@ -44,7 +44,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     // If the field value has spaces, or : in it, wrap it in double quotes.
     // unless it is a range query.
     if (preg_match('/[ :]/', $filter['#value']) && !isset($filter['#start']) && !preg_match('/[\[\{]\S+ TO \S+[\]\}]/', $filter['#value'])) {
-      $filter['#value'] = '"'. $filter['#value']. '"';
+      $filter['#value'] = '"' . $filter['#value'] . '"';
     }
     $prefix = empty($filter['#exclude']) ? '' : '-';
     return $prefix . $filter['#name'] . ':' . $filter['#value'];
@@ -299,7 +299,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
   /**
    * Return filters and sort in a form suitable for a query param to url().
    */
-   public function get_url_queryvalues() {
+  public function get_url_queryvalues() {
     $queryvalues = array();
     if ($fq = $this->rebuild_fq(TRUE)) {
       $queryvalues['filters'] = implode(' ', $fq);

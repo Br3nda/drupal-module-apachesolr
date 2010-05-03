@@ -1,4 +1,6 @@
 <?php
+// $Id: Drupal_Apache_Solr_Service.php,v 1.1.2.20.4.8 2010/05/03 18:50:33 jpmckinney Exp $
+
 require_once 'SolrPhpClient/Apache/Solr/Service.php';
 
 /**
@@ -40,14 +42,14 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       $timeout = -1;
     }
     // Attempt a HEAD request to the solr ping url.
-    list($data, $headers) = $this->_makeHttpRequest($this->_pingUrl, 'HEAD', array(), null, $timeout);
+    list($data, $headers) = $this->_makeHttpRequest($this->_pingUrl, 'HEAD', array(), NULL, $timeout);
     $response = new Apache_Solr_Response($data, $headers);
 
     if ($response->getHttpStatus() == 200) {
       return microtime(TRUE) - $start;
     }
     else {
-      return FALSE; 
+      return FALSE;
     }
   }
 
@@ -78,7 +80,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     }
     return $this->luke[$num_terms];
   }
-  
+
   /**
    * Sets $this->stats with the information about the Solr Core form /admin/stats.jsp
    */
@@ -99,7 +101,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       }
     }
   }
-  
+
   /**
    * Get information about the Solr Core.
    *
@@ -212,7 +214,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
    * @param float $timeout
    *   Read timeout in seconds or FALSE.
    *
-   * @return 
+   * @return
    *  Apache_Solr_Response object
    */
   public function makeServletRequest($servlet, $params = array(), $method = 'GET', $request_headers = array(), $rawPost = '', $timeout = FALSE) {
@@ -288,7 +290,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     $response = new Apache_Solr_Response($data, $headers, $this->_createDocuments, $this->_collapseSingleValueArrays);
     $code = (int) $response->getHttpStatus();
     if ($code != 200) {
-      $message = $response->getHttpStatusMessage(); 
+      $message = $response->getHttpStatusMessage();
       if ($code >= 400 && $code != 403 && $code != 404) {
         // Add details, like Solr's exception message.
         $message .= $response->getRawResponse();
