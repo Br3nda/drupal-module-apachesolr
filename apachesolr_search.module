@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.73 2010/05/03 18:50:27 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.74 2010/05/07 15:00:19 jpmckinney Exp $
 
 /**
  * @file
@@ -170,11 +170,12 @@ function apachesolr_search_view($type = NULL) {
       $content = apachesolr_search_search('search', $keys);
       if (isset($content) && is_array($content) && count($content)) {
         if (module_hook($type, 'search_page')) {
-          return module_invoke($type, 'search_page', $content);
+          $output = module_invoke($type, 'search_page', $content);
         }
         else {
-          return drupal_get_form('search_form', NULL, $keys, $type) . theme('search_results', $content, $type);
+          $output = theme('search_results', $content, $type);
         }
+        return drupal_get_form('search_form', NULL, $keys, $type) . $output;
       }
 
       // See search_view().
