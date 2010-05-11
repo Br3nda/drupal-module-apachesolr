@@ -1,4 +1,4 @@
-; $Id: apachesolr_og.info,v 1.6 2010/04/27 13:53:53 pwolanin Exp $
+; $Id: apachesolr_og.info,v 1.7 2010/05/11 19:38:09 pwolanin Exp $
 name = Apache Solr Organic Groups
 description = Integrates Organic Groups and Apache Solr Search
 dependencies[] = apachesolr

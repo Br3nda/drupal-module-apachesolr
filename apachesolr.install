@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.8 2010/04/27 13:53:53 pwolanin Exp $
+// $Id: apachesolr.install,v 1.9 2010/05/11 19:38:09 pwolanin Exp $
 
 /**
  * @file
@@ -30,7 +30,7 @@ function apachesolr_requirements($phase) {
     catch (Exception $e) {
       watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
     }
-    $value =  $ping ? $t('Your site has contacted the Apache Solr server.') : $t('Your site was unable to contact the Apache Solr server.');
+    $value = $ping ? $t('Your site has contacted the Apache Solr server.') : $t('Your site was unable to contact the Apache Solr server.');
     $severity = $ping ? REQUIREMENT_OK : REQUIREMENT_ERROR;
     $description = theme('item_list', array($t('Host: %host', array('%host' => $host)),
                         $t('Port: %port', array('%port' => $port)),
@@ -135,7 +135,7 @@ function apachesolr_schema() {
 }
 
 /**
- * Implementation of hook_uninstall()
+ * Implementation of hook_uninstall().
  */
 function apachesolr_uninstall() {
   variable_del('apachesolr_host');
@@ -214,11 +214,10 @@ function apachesolr_update_6001() {
  */
 function apachesolr_update_6002() {
   $ret = array();
-   // Make sure no nodes end up with a timestamp that's in the future.
-   $time = (int) time();
-   $ret[] = update_sql("UPDATE {apachesolr_search_node} SET changed = $time WHERE changed > $time");
-
-   return $ret;
+  // Make sure no nodes end up with a timestamp that's in the future.
+  $time = (int) time();
+  $ret[] = update_sql("UPDATE {apachesolr_search_node} SET changed = $time WHERE changed > $time");
+  return $ret;
 }
 
 /**

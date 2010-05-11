@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.taxonomy.inc,v 1.2 2010/04/27 13:53:53 pwolanin Exp $
+// $Id: apachesolr.taxonomy.inc,v 1.3 2010/05/11 19:38:09 pwolanin Exp $
 
 /**
  * Overrides taxonomy/term/X links
@@ -42,7 +42,7 @@ function apachesolr_search_taxonomy_term_page($str_tids = '', $depth = 0, $op = 
       $results = theme('search_results', $data, $type);
     }
     catch (Exception $e) {
-      watchdog('apachesolr', t('Error running search'));
+      watchdog('Apache Solr', t('Error running search'));
     }
 
     // Set the title to the term name like taxonomy does.

@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.5 2010/04/27 13:53:53 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.6 2010/05/11 19:38:09 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------

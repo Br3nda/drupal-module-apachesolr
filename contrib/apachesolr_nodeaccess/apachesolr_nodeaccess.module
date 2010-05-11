@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.5 2010/04/27 13:53:53 pwolanin Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.6 2010/05/11 19:38:09 pwolanin Exp $
 
 /**
  * Implementation of apachesolr_update_index

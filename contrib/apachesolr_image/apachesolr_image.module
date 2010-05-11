@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_image.module,v 1.8 2010/04/27 13:53:53 pwolanin Exp $
+// $Id: apachesolr_image.module,v 1.9 2010/05/11 19:38:09 pwolanin Exp $
 
 /**
  * Implementation of hook_apachesolr_update_index().

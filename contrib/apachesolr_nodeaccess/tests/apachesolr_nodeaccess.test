@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.test,v 1.5 2010/04/27 13:53:53 pwolanin Exp $
+// $Id: apachesolr_nodeaccess.test,v 1.6 2010/05/11 19:38:09 pwolanin Exp $
 
 class DrupalApacheSolrNodeAccess extends DrupalWebTestCase {
   function getInfo() {
@@ -45,7 +45,7 @@ class DrupalApacheSolrNodeAccess extends DrupalWebTestCase {
     $roles = array_keys($basic_user->roles);
     // The assigned role will be the last in the array.
     $assigned_role = end($roles);
-    $role_grant = array (
+    $role_grant = array(
         'gid' => $assigned_role,
         'realm' => 'nodeaccess_rid',
         'grant_view' => '1',
@@ -54,7 +54,7 @@ class DrupalApacheSolrNodeAccess extends DrupalWebTestCase {
     );
     node_access_write_grants($role_restricted_node, array($role_grant), 'nodeaccess_rid');
 
-    $author_grant = array (
+    $author_grant = array(
         'gid' => $basic_user->uid,
         'realm' => 'nodeaccess_author',
         'grant_view' => '1',

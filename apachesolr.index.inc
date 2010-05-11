@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.4 2010/04/27 13:53:53 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.5 2010/05/11 19:38:09 pwolanin Exp $
 
 /**
  * @file
@@ -36,7 +36,6 @@ function apachesolr_node_to_document($node, $namespace) {
     $node = node_build_content($node, FALSE, FALSE);
     $node->body = drupal_render($node->content);
     $node->title = apachesolr_clean_text($node->title);
-    $node->teaser = apachesolr_clean_text($node->teaser);
 
     // Fetch extra data normally not visible, including comments.
     // We do this manually (with module_implements instead of node_invoke_nodeapi)
@@ -69,7 +68,6 @@ function apachesolr_node_to_document($node, $namespace) {
     $document->nid = $node->nid;
     $document->uid = $node->uid;
     $document->title = $node->title;
-    $document->teaser = $node->teaser;
     $document->status = $node->status;
     $document->sticky = $node->sticky;
     $document->promote = $node->promote;
@@ -84,6 +82,12 @@ function apachesolr_node_to_document($node, $namespace) {
       $document->language = $node->language;
     }
     $document->body = apachesolr_clean_text($text);
+    if (isset($node->teaser)) {
+      $document->teaser = apachesolr_clean_text($node->teaser);
+    }
+    else {
+      $document->teaser = truncate_utf8($document->body, 300, TRUE);
+    }
     $document->type = $node->type;
     $document->type_name = node_get_types('name', $node);
     $document->created = apachesolr_date_iso($node->created);
@@ -175,7 +179,7 @@ function apachesolr_cck_nodereference_indexing_callback($node, $field_name, $cck
   if (isset($node->{$field_name})) {
     $index_key = apachesolr_index_key($cck_info);
     foreach ($node->$field_name as $field) {
-      if ($index_value =  (isset($field['nid']) && strlen($field['nid'])) ? $field['nid'] : FALSE) {
+      if ($index_value = (isset($field['nid']) && strlen($field['nid'])) ? $field['nid'] : FALSE) {
         $fields[] = array(
           'key' => $index_key,
           'value' => $index_value,
@@ -191,7 +195,7 @@ function apachesolr_cck_userreference_indexing_callback($node, $field_name, $cck
   if (isset($node->$field_name)) {
     $index_key = apachesolr_index_key($cck_info);
     foreach ($node->{$field_name} as $field) {
-      if ($index_value =  (isset($field['uid']) && strlen($field['uid'])) ? $field['uid'] : FALSE) {
+      if ($index_value = (isset($field['uid']) && strlen($field['uid'])) ? $field['uid'] : FALSE) {
         $fields[] = array(
           'key' => $index_key,
           'value' => $index_value,
@@ -291,7 +295,7 @@ function apachesolr_add_tags_to_document(&$document, $text) {
  */
 function apachesolr_cron_check_node_table() {
   // Check for unpublished content that wasn't deleted from the index.
-  $result = db_query("SELECT n.nid, n.status FROM {apachesolr_search_node} asn INNER JOIN {node} n ON n.nid = asn.nid WHERE asn.status != n.status");
+  $result = db_query("SELECT n.nid, n.status FROM {apachesolr_search_node} asn INNER JOIN {node} n ON n.nid = asn.nid WHERE asn.status <> n.status");
   $node_lists = array();
   $nodes = array();
   // Update or delete at most this many in each Solr query.

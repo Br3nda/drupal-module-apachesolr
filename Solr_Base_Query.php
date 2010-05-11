@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.13 2010/04/27 13:53:53 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.14 2010/05/11 19:38:09 pwolanin Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -44,7 +44,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     // If the field value has spaces, or : in it, wrap it in double quotes.
     // unless it is a range query.
     if (preg_match('/[ :]/', $filter['#value']) && !isset($filter['#start']) && !preg_match('/[\[\{]\S+ TO \S+[\]\}]/', $filter['#value'])) {
-      $filter['#value'] = '"'. $filter['#value']. '"';
+      $filter['#value'] = '"' . $filter['#value'] . '"';
     }
     $prefix = empty($filter['#exclude']) ? '' : '-';
     return $prefix . $filter['#name'] . ':' . $filter['#value'];
@@ -121,7 +121,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
    *   Visible string telling solr how to sort - added to GET query params.
    *
    * @param $base_path
-   *   The search base path (without the keywords) for this query.
+   *   The search base path (without the keywords) for this query, without trailing slash.
    */
   function __construct($solr, $keys, $filterstring, $sortstring, $base_path) {
     $this->solr = $solr;
