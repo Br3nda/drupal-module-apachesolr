@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.5 2010/05/11 19:38:09 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.6 2010/05/12 14:04:20 pwolanin Exp $
 
 /**
  * @file
@@ -32,8 +32,8 @@ function apachesolr_node_to_document($node, $namespace) {
 
   if ($build_document) {
     // Build the node body.
-    $node->build_mode = NODE_BUILD_SEARCH_INDEX;
-    $node = node_build_content($node, FALSE, FALSE);
+    $node->build_mode = 'search_index';
+    node_build_content($node);
     $node->body = drupal_render($node->content);
     $node->title = apachesolr_clean_text($node->title);
 
@@ -71,7 +71,8 @@ function apachesolr_node_to_document($node, $namespace) {
     $document->status = $node->status;
     $document->sticky = $node->sticky;
     $document->promote = $node->promote;
-    $document->moderate = $node->moderate;
+    // TODO: $node->moderate has been removed
+    //$document->moderate = $node->moderate;
     $document->tnid = $node->tnid;
     $document->translate = $node->translate;
     if (empty($node->language)) {
@@ -89,7 +90,7 @@ function apachesolr_node_to_document($node, $namespace) {
       $document->teaser = truncate_utf8($document->body, 300, TRUE);
     }
     $document->type = $node->type;
-    $document->type_name = node_get_types('name', $node);
+    $document->type_name = node_type_get_name($node);
     $document->created = apachesolr_date_iso($node->created);
     $document->changed = apachesolr_date_iso($node->changed);
     $last_change = (isset($node->last_comment_timestamp) && $node->last_comment_timestamp > $node->changed) ? $node->last_comment_timestamp : $node->changed;
@@ -241,7 +242,7 @@ function apachesolr_vocab_name($vid) {
   static $names = array();
 
   if (!isset($names[$vid])) {
-    $vocab_name = db_result(db_query('SELECT v.name FROM {vocabulary} v WHERE v.vid = %d', $vid));
+    $vocab_name = db_query('SELECT v.name FROM {vocabulary} v WHERE v.vid = :vid', array(':vid' => $vid))->fetchField();
     $names[$vid] = preg_replace('/[^a-zA-Z0-9_\x7f-\xff]/', '_', $vocab_name);
     // Fallback for names ending up all as '_'.
     $check = rtrim($names[$vid], '_');
@@ -300,7 +301,7 @@ function apachesolr_cron_check_node_table() {
   $nodes = array();
   // Update or delete at most this many in each Solr query.
   $limit = variable_get('apachesolr_cron_mass_limit', 500);
-  while ($node = db_fetch_object($result)) {
+  foreach ($result as $node) {
     $nodes[$node->nid] = $node;
     if (count($nodes) == $limit) {
       $node_lists[] = $nodes;
@@ -322,7 +323,7 @@ function apachesolr_cron_check_node_table() {
   $result = db_query("SELECT asn.nid FROM {apachesolr_search_node} asn LEFT JOIN {node} n ON n.nid = asn.nid WHERE n.nid IS NULL");
   $node_lists = array();
   $nodes = array();
-  while ($node = db_fetch_object($result)) {
+  foreach ($result as $node) {
     $nodes[$node->nid] = $node;
     if (count($nodes) == $limit) {
       $node_lists[] = $nodes;
@@ -356,7 +357,7 @@ function apachesolr_nodeapi_mass_update($nodes) {
       $unpublished_ids[$node->nid] = apachesolr_document_id($node->nid);
     }
   }
-  $time = time();
+  $time = REQUEST_TIME;
   try {
     $solr = apachesolr_get_solr();
     $solr->deleteByMultipleIds($unpublished_ids);
@@ -364,10 +365,10 @@ function apachesolr_nodeapi_mass_update($nodes) {
 
       // There was no exception, so update the table.
     if ($published_ids) {
-      db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = 1 WHERE nid IN (". db_placeholders($published_ids) .")", array_merge((array) $time, array_keys($published_ids)));
+      db_update('apachesolr_search_node')->fields(array('changed' => REQUEST_TIME, 'status' => 1))->condition('nid', array_keys($published_ids), 'IN')->execute();
     }
     if ($unpublished_ids) {
-      db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = 0 WHERE nid IN (". db_placeholders($unpublished_ids) .")", array_merge((array) $time, array_keys($unpublished_ids)));
+      db_update('apachesolr_search_node')->fields(array('changed' => REQUEST_TIME, 'status' => 0))->condition('nid', array_keys($unpublished_ids), 'IN')->execute();
     }
     return TRUE;
   }
@@ -392,7 +393,7 @@ function apachesolr_nodeapi_mass_delete($nodes) {
     $solr->deleteByMultipleIds($ids);
     apachesolr_index_updated($time);
     // There was no exception, so update the table.
-    db_query("DELETE FROM {apachesolr_search_node} WHERE nid IN (" . db_placeholders($nids) . ")", $nids);
+    db_delete('apachesolr_search_node')->condition('nid', $nids, 'IN')->execute();
     return TRUE;
   }
   catch (Exception $e) {

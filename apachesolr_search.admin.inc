@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.8 2010/05/11 19:38:09 pwolanin Exp $
+// $Id: apachesolr_search.admin.inc,v 1.9 2010/05/12 14:04:20 pwolanin Exp $
 
 /**
  * @file
@@ -10,17 +10,16 @@
  * Menu callback - the settings form.
  */
 function apachesolr_search_settings_page() {
-  $output = '';
   // Try to fetch the schema fields.
   try {
     $solr = apachesolr_get_solr();
     $fields = $solr->getFields();
-    $output .= drupal_get_form('apachesolr_search_settings_form', $fields);
+    $output = drupal_get_form('apachesolr_search_settings_form', $fields);
   }
   catch (Exception $e) {
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
-    drupal_set_message(nl2br(check_plain($e->getMessage())), "warning");
-    $output .= t('Cannot get information about the fields in the index at this time.');
+    drupal_set_message(nl2br(check_plain($e->getMessage())), 'warning');
+    $output = t('Cannot get information about the fields in the index at this time.');
   }
   return $output;
 }
@@ -30,14 +29,14 @@ function apachesolr_search_settings_page() {
  */
 function apachesolr_boost_settings_page() {
   $output = drupal_get_form('apachesolr_search_bias_form');
-  $output .= drupal_get_form('apachesolr_search_type_boost_form');
+  $output += drupal_get_form('apachesolr_search_type_boost_form');
   return $output;
 }
 
 /**
  * Form builder function to set date, comment, etc biases.
  */
-function apachesolr_search_bias_form($form_state) {
+function apachesolr_search_bias_form($form, &$form_state) {
 
   $date_settings = variable_get('apachesolr_search_date_boost', '4:200.0');
   $comment_settings = variable_get('apachesolr_search_comment_boost', '0:0');
@@ -105,17 +104,20 @@ function apachesolr_search_bias_form($form_state) {
     '#description' => t('This setting will change the result scoring so that nodes with the most recent comments (or most recent updates to the node itself) may appear before those with higher keyword matching.'),
   );
   $form = system_settings_form($form);
-  $form['biasing']['buttons'] = $form['buttons'];
-  unset($form['buttons']);
+
+  // TODO: is this neccessary?
+  if (isset($form['buttons'])) {
+    $form['biasing']['buttons'] = $form['buttons'];
+    unset($form['buttons']);
+  }
+
   return $form;
 }
 
 /**
  * Form builder function to set query field weights.
  */
-function apachesolr_search_settings_form($form_state, $fields) {
-  $form = array();
-
+function apachesolr_search_settings_form($form, &$form_state, $fields) {
   // get the current weights
   $qf = variable_get('apachesolr_search_query_fields', array());
   $weights = drupal_map_assoc(array('21.0', '13.0', '8.0', '5.0', '3.0', '2.0', '1.0', '0.8', '0.5', '0.3', '0.2', '0.1'));
@@ -178,9 +180,7 @@ function apachesolr_search_settings_form($form_state, $fields) {
 /**
  * Form builder function to set query type weights.
  */
-function apachesolr_search_type_boost_form($form_state) {
-  $form = array();
-
+function apachesolr_search_type_boost_form($form, &$form_state) {
   $form['apachesolr_search_type_settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('Type biasing and exclusion'),
@@ -198,7 +198,7 @@ function apachesolr_search_type_boost_form($form_state) {
 
   // Get the current boost values.
   $type_boosts = variable_get('apachesolr_search_type_boosts', array());
-  $names = node_get_types('names');
+  $names = node_type_get_names();
 
   foreach ($names as $type => $name) {
     $form['apachesolr_search_type_settings']['apachesolr_search_type_boosts'][$type] = array(
@@ -219,8 +219,13 @@ function apachesolr_search_type_boost_form($form_state) {
 
   $form['#submit'][] = 'apachesolr_search_type_boost_form_submit';
   $form = system_settings_form($form);
-  $form['apachesolr_search_type_settings']['buttons'] = $form['buttons'];
-  unset($form['buttons']);
+
+  // TODO: is this neccessary?
+  if (isset($form['buttons'])) {
+    $form['apachesolr_search_type_settings']['buttons'] = $form['buttons'];
+    unset($form['buttons']);
+  }
+
   return $form;
 }
 
@@ -244,14 +249,15 @@ function apachesolr_search_type_boost_form_submit($form_id, &$form_state) {
     if (!empty($new_excluded_types[$type])) {
       $solr = apachesolr_get_solr();
       $solr->deleteByQuery("type:$type");
-      apachesolr_index_set_last_updated(time());
+      apachesolr_index_set_last_updated(REQUEST_TIME);
     }
   }
 
   foreach ($old_excluded_types as $type => $excluded) {
     // Set no longer omitted node types for reindexing.
     if (empty($new_excluded_types[$type]) && !empty($old_excluded_types[$type])) {
-      db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {node} WHERE type = '%s')", time(), $type);
+      $nids = db_select('node')->fields('node', array('nid'))->condition('type', $type);
+      db_update('apachesolr_search_node')->fields(array('changed' => REQUEST_TIME))->condition('nid', $nids, 'IN')->execute();
     }
   }
 }

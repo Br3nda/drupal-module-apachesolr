@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.19 2010/05/11 19:38:09 pwolanin Exp $
+// $Id: apachesolr.module,v 1.20 2010/05/12 14:04:20 pwolanin Exp $
 
 /**
  * @file
@@ -10,11 +10,11 @@ define('APACHESOLR_READ_WRITE', 0);
 define('APACHESOLR_READ_ONLY', 1);
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function apachesolr_menu() {
   $items = array();
-  $items['admin/settings/apachesolr'] = array(
+  $items['admin/config/apachesolr'] = array(
     'title'              => 'Apache Solr',
     'description'        => 'Administer Apache Solr.',
     'page callback'      => 'drupal_get_form',
@@ -22,15 +22,16 @@ function apachesolr_menu() {
     'access callback'    => 'user_access',
     'access arguments'   => array('administer search'),
     'file'               => 'apachesolr.admin.inc',
+    'type'               => MENU_NORMAL_ITEM,
   );
-  $items['admin/settings/apachesolr/settings'] = array(
+  $items['admin/config/apachesolr/settings'] = array(
     'title'              => 'Settings',
     'weight'             => -10,
     'access arguments'   => array('administer search'),
     'file'               => 'apachesolr.admin.inc',
-    'type'               => MENU_DEFAULT_LOCAL_TASK,
+    'type'               => MENU_LOCAL_TASK,
   );
-  $items['admin/settings/apachesolr/enabled-filters'] = array(
+  $items['admin/config/apachesolr/enabled-filters'] = array(
     'title'              => 'Enabled filters',
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_enabled_facets_form'),
@@ -39,7 +40,7 @@ function apachesolr_menu() {
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_LOCAL_TASK,
   );
-  $items['admin/settings/apachesolr/index'] = array(
+  $items['admin/config/apachesolr/index'] = array(
     'title'              => 'Search index',
     'page callback'      => 'apachesolr_index_page',
     'access arguments'   => array('administer search'),
@@ -47,7 +48,7 @@ function apachesolr_menu() {
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_LOCAL_TASK,
   );
-  $items['admin/settings/apachesolr/index/confirm/clear'] = array(
+  $items['admin/config/apachesolr/index/confirm/clear'] = array(
     'title'              => 'Confirm the re-indexing of all content',
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_clear_index_confirm'),
@@ -55,7 +56,7 @@ function apachesolr_menu() {
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_CALLBACK,
   );
-  $items['admin/settings/apachesolr/index/confirm/delete'] = array(
+  $items['admin/config/apachesolr/index/confirm/delete'] = array(
     'title'              => 'Confirm index deletion',
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_delete_index_confirm'),
@@ -74,14 +75,14 @@ function apachesolr_menu() {
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_DEFAULT_LOCAL_TASK,
   );
-  $items['admin/settings/apachesolr/mlt/add_block'] = array(
+  $items['admin/config/apachesolr/mlt/add_block'] = array(
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_mlt_add_block_form'),
     'access arguments'   => array('administer search'),
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_CALLBACK,
   );
-  $items['admin/settings/apachesolr/mlt/delete_block/%'] = array(
+  $items['admin/config/apachesolr/mlt/delete_block/%'] = array(
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_mlt_delete_block_form', 5),
     'access arguments'   => array('administer search'),
@@ -146,7 +147,7 @@ function apachesolr_document_id($id, $entity = 'node') {
 }
 
 /**
- * Implementation of hook_user().
+ * Implements hook_user().
  *
  * Mark nodes as needing re-indexing if the author name changes.
  */
@@ -154,26 +155,28 @@ function apachesolr_user($op, &$edit, &$account) {
   switch ($op) {
     case 'update':
       if (isset($edit['name']) && $account->name != $edit['name']) {
-        db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {node} WHERE uid = %d)", time(), $account->uid);
+        $nids = db_select('node')->fields('node', array('nid'))->condition('uid', $account->uid);
+        db_update('apachesolr_search_node')->condition('nid', $nids, 'IN')->fields(array('changed' => REQUEST_TIME))->execute();
       }
       break;
   }
 }
 
 /**
- * Implementation of hook_taxonomy().
+ * Implements hook_taxonomy().
  *
  * Mark nodes as needing re-indexing if a term name changes.
  */
 function apachesolr_taxonomy($op, $type, $edit) {
   if ($type == 'term' && ($op == 'update')) {
-    db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {term_node} WHERE tid = %d)", time(), $edit['tid']);
+    $nids = db_select('term_node')->fields('term_node', array('nid'))->condition('tid', $edit['tid']);
+    db_update('apachesolr_search_node')->condition('nid', $nids, 'IN')->fields(array('changed' => REQUEST_TIME))->execute();
   }
   // TODO: the rest, such as term deletion.
 }
 
 /**
- * Implementation of hook_comment().
+ * Implements hook_comment().
  *
  * Mark nodes as needing re-indexing if comments are added or changed.
  * Like search_comment().
@@ -198,18 +201,19 @@ function apachesolr_comment($edit, $op) {
  * Mark one node as needing re-indexing.
  */
 function apachesolr_mark_node($nid) {
-  db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid = %d", time(), $nid);
+  db_update('apachesolr_search_node')->condition('nid', $nid)->fields(array('changed' => REQUEST_TIME))->execute();
 }
 
 /**
- * Implementation of hook_node_type().
+ * Implements hook_node_type().
  *
  * Mark nodes as needing re-indexing if a node type name changes.
  */
 function apachesolr_node_type($op, $info) {
   if ($op != 'delete' && !empty($info->old_type) && $info->old_type != $info->type) {
     // We cannot be sure we are going before or after node module.
-    db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {node} WHERE type = '%s' OR type = '%s')", time(), $info->old_type, $info->type);
+    $nid = db_select('node')->fields('node', array('nid'))->where("type = :new OR type = :old", array(':new' => $info->type, ':old' => $info->old_type));
+    db_update('apachesolr_search_node')->condition('nid', $nid, 'IN')->fields(array('changed' => REQUEST_TIME))->execute();
   }
 }
 
@@ -218,13 +222,13 @@ function apachesolr_node_type($op, $info) {
  */
 function apachesolr_index_status($namespace) {
   list($excluded_types, $args, $join_sql, $exclude_sql) = apachesolr_exclude_types($namespace);
-  $total = db_result(db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE asn.status = 1 " . $exclude_sql, $excluded_types));
-  $remaining = db_result(db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > %d OR (asn.changed = %d AND asn.nid > %d)) AND asn.status = 1 "  . $exclude_sql, $args));
+  $total = db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE asn.status = 1 " . $exclude_sql)->fetchField();
+  $remaining = db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > :last_changed OR (asn.changed = :last_changed AND asn.nid > :last_nid)) AND asn.status = 1 "  . $exclude_sql, $args)->fetchField();
   return array('remaining' => $remaining, 'total' => $total);
 }
 
 /**
- * Returns last changed and last nid for an indexing namespace.
+ * Returns last_changed and last_nid for an indexing namespace.
  */
 function apachesolr_get_last_index($namespace) {
   $stored = variable_get('apachesolr_index_last', array());
@@ -255,22 +259,24 @@ function apachesolr_clear_last_index($namespace = '') {
  */
 function apachesolr_rebuild_index_table($type = NULL) {
   if (isset($type)) {
-    db_query("DELETE FROM {apachesolr_search_node} WHERE nid IN (SELECT nid FROM {node} WHERE type = '%s')", $type);
+    $nids = db_select('node')->fields('node', array('nid'))->condition('type', $type);
+    db_delete('apachesolr_search_node')->condition('nid', $nids, 'IN')->execute();
     // Populate table
+    // TODO: use db_insert()
     db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed)
-              SELECT n.nid, n.status, %d AS changed
-              FROM {node} n WHERE n.type = '%s'", time(), $type);
+              SELECT n.nid, n.status, :time AS changed
+              FROM {node} n WHERE n.type = ':type'", array(':time' => REQUEST_TIME, ':type' => $type));
   }
   else {
-    db_query("DELETE FROM {apachesolr_search_node}");
+    db_delete('apachesolr_search_node')->execute();
     // Populate table
+    // TODO: use db_insert()
     db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed)
               SELECT n.nid, n.status, GREATEST(n.created, n.changed, COALESCE(c.last_comment_timestamp, 0)) AS changed
               FROM {node} n
               LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid");
     // Make sure no nodes end up with a timestamp that's in the future.
-    $time = time();
-    db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE changed > %d", $time, $time);
+    db_update('apachesolr_search_node')->condition('changed', REQUEST_TIME, '>')->fields(array('changed' => REQUEST_TIME))->execute();
     apachesolr_clear_last_index();
   }
   cache_clear_all('*', 'cache_apachesolr', TRUE);
@@ -279,14 +285,13 @@ function apachesolr_rebuild_index_table($type = NULL) {
 function apachesolr_exclude_types($namespace) {
   extract(apachesolr_get_last_index($namespace));
   $excluded_types = module_invoke_all('apachesolr_types_exclude', $namespace);
-  $args = array($last_change, $last_change, $last_nid);
+  $args = array(':last_changed' => $last_change, ':last_nid' => $last_nid);
   $join_sql = '';
   $exclude_sql = '';
   if ($excluded_types) {
     $excluded_types = array_unique($excluded_types);
     $join_sql = "INNER JOIN {node} n ON n.nid = asn.nid ";
-    $exclude_sql = "AND n.type NOT IN(". db_placeholders($excluded_types, 'varchar') .") ";
-    $args = array_merge($args, $excluded_types);
+    $exclude_sql = "AND n.type NOT IN('" . implode("','", $excluded_types) . "') ";
   }
   return array($excluded_types, $args, $join_sql, $exclude_sql);
 }
@@ -300,11 +305,9 @@ function apachesolr_get_nodes_to_index($namespace, $limit) {
     return $rows;
   }
   list($excluded_types, $args, $join_sql, $exclude_sql) = apachesolr_exclude_types($namespace);
-  $result = db_query_range("SELECT asn.nid, asn.changed FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > %d OR (asn.changed = %d AND asn.nid > %d)) AND asn.status = 1 ". $exclude_sql ."ORDER BY asn.changed ASC, asn.nid ASC", $args, 0, $limit);
-  while ($row = db_fetch_object($result)) {
-    $rows[] = $row;
-  }
-  return $rows;
+  // TODO: update to use new API
+  $result = db_query_range("SELECT asn.nid, asn.changed FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > :last_changed OR (asn.changed = :last_changed AND asn.nid > :last_nid)) AND asn.status = 1 ". $exclude_sql ."ORDER BY asn.changed ASC, asn.nid ASC", 0, $limit, $args);
+  return $result;
 }
 
 /**
@@ -390,7 +393,7 @@ function apachesolr_index_nodes($rows, $namespace) {
         $solr->addDocuments($docs);
       }
       // Set the timestamp to indicate an index update.
-      apachesolr_index_set_last_updated(time());
+      apachesolr_index_set_last_updated(REQUEST_TIME);
     }
     catch (Exception $e) {
       $nids = array();
@@ -452,7 +455,7 @@ function apachesolr_delete_node_from_index($node) {
   try {
     $solr = apachesolr_get_solr();
     $solr->deleteById(apachesolr_document_id($node->nid));
-    apachesolr_index_set_last_updated(time());
+    apachesolr_index_set_last_updated(REQUEST_TIME);
     return TRUE;
   }
   catch (Exception $e) {
@@ -486,28 +489,36 @@ function apachesolr_index_get_last_updated() {
 }
 
 /**
- * Implementation of hook_cron().
+ * Implements hook_cron().
  */
 function apachesolr_cron() {
   try {
     $solr = apachesolr_get_solr();
 
     // Check for unpublished content that wasn't deleted from the index.
-    $result = db_query("SELECT n.nid, n.status FROM {apachesolr_search_node} asn INNER JOIN {node} n ON n.nid = asn.nid WHERE asn.status <> n.status");
-    while ($node = db_fetch_object($result)) {
-      apachesolr_nodeapi_update($node, FALSE);
+    $query = db_select('apachesolr_search_node', 'asn');
+    $n_alias = $query->innerJoin('node', 'n', 'n.nid = asn.nid');
+    $query->fields($n_alias, array('nid', 'status'));
+    $query->condition('asn.status', "$n_alias.status", '<>');
+    $result = $query->execute();
+    foreach ($result as $node) {
+      apachesolr_node_update($node, FALSE);
     }
 
     // Check for deleted content that wasn't deleted from the index.
-    $result = db_query("SELECT asn.nid FROM {apachesolr_search_node} asn LEFT JOIN {node} n ON n.nid = asn.nid WHERE n.nid IS NULL");
-    while ($node = db_fetch_object($result)) {
-      apachesolr_nodeapi_delete($node, FALSE);
+    $query = db_select('apachesolr_search_node', 'asn');
+    $query->fields('asn', array('nid'));
+    $n_alias = $query->leftJoin('node', 'n', 'n.nid = asn.nid');
+    $query->isNull("$n_alias.nid");
+    $result = $query->execute();
+    foreach ($result as $node) {
+      apachesolr_node_delete($node, FALSE);
     }
 
     // Optimize the index (by default once a day).
     $optimize_interval = variable_get('apachesolr_optimize_interval', 60 * 60 * 24);
     $last = variable_get('apachesolr_last_optimize', 0);
-    $time = time();
+    $time = REQUEST_TIME;
     if ($optimize_interval && ($time - $last > $optimize_interval)) {
       $solr->optimize(FALSE, FALSE);
       variable_set('apachesolr_last_optimize', $time);
@@ -534,7 +545,7 @@ function apachesolr_cron() {
 }
 
 /**
- * Implementation of hook_flush_caches().
+ * Implements hook_flush_caches().
  */
 function apachesolr_flush_caches() {
   return array('cache_apachesolr');
@@ -550,31 +561,21 @@ function apachesolr_clear_cache() {
 }
 
 /**
- * Implementation of hook_nodeapi().
+ * Implements hook_node_insert().
  */
-function apachesolr_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
-  switch ($op) {
-    case 'delete':
-      apachesolr_nodeapi_delete($node);
-      break;
-    case 'insert':
-      // Make sure no node ends up with a timestamp that's in the future
-      // by using time() rather than the node's changed or created timestamp.
-      db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed) VALUES (%d, %d, %d)", $node->nid, $node->status, time());
-      break;
-    case 'update':
-      apachesolr_nodeapi_update($node);
-      break;
-  }
+function apachesolr_node_insert($node) {
+  // Make sure no node ends up with a timestamp that's in the future by using 
+  // REQUEST_TIME rather than the node's changed or created timestamp.
+  db_insert('apachesolr_search_node')->fields(array('nid' => $node->nid, 'status' => $node->status, 'changed' => REQUEST_TIME))->execute();
 }
 
 /**
- * Helper function for hook_nodeapi().
+ * Implements hook_node_delete().
  */
-function apachesolr_nodeapi_delete($node, $set_message = TRUE) {
+function apachesolr_node_delete($node, $set_message = TRUE) {
   if (apachesolr_delete_node_from_index($node)) {
     // There was no exception, so delete from the table.
-    db_query("DELETE FROM {apachesolr_search_node} WHERE nid = %d", $node->nid);
+    db_delete('apachesolr_search_node')->condition('nid', $node->nid)->execute();
     if ($set_message && user_access('administer search') && variable_get('apachesolr_set_nodeapi_messages', 1)) {
       apachesolr_set_stats_message('Deleted content will be removed from the Apache Solr search index in approximately @autocommit_time.');
     }
@@ -582,21 +583,21 @@ function apachesolr_nodeapi_delete($node, $set_message = TRUE) {
 }
 
 /**
- * Helper function for hook_nodeapi().
+ * Implements hook_node_update().
  */
-function apachesolr_nodeapi_update($node, $set_message = TRUE) {
+function apachesolr_node_update($node, $set_message = TRUE) {
   // Check if the node has gone from published to unpublished.
-  if (!$node->status && db_result(db_query("SELECT status FROM {apachesolr_search_node} WHERE nid = %d", $node->nid))) {
+  if (!$node->status && db_select('apachesolr_search_node', 'asn')->fields('asn', array('status'))->condition('nid', $node->nid)->execute()) {
     if (apachesolr_delete_node_from_index($node)) {
       // There was no exception, so update the table.
-      db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid = %d", time(), $node->status, $node->nid);
+      db_update('apachesolr_search_node')->condition('nid', $node->nid)->fields(array('changed' => REQUEST_TIME, 'status' => $node->status))->execute();
       if ($set_message && user_access('administer search') && variable_get('apachesolr_set_nodeapi_messages', 1)) {
         apachesolr_set_stats_message('Unpublished content will be removed from the Apache Solr search index in approximately @autocommit_time.');
       }
     }
   }
   else {
-    db_query("UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid = %d", time(), $node->status, $node->nid);
+    db_update('apachesolr_search_node')->condition('nid', $node->nid)->fields(array('changed' => REQUEST_TIME, 'status' => $node->status))->execute();
   }
 }
 
@@ -670,7 +671,7 @@ function apachesolr_save_module_facets($module, $facets = array()) {
 }
 
 /**
- * Implementation of hook_block().
+ * Implements hook_block().
  */
 function apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
   static $access;
@@ -853,7 +854,7 @@ function apachesolr_get_facet_definition_by_field_name($field_name) {
 }
 
 /**
- * Implementation of hook_form_[form_id]_alter().
+ * Implements hook_form_[form_id]_alter().
  *
  * Make sure to flush cache when content types are changed.
  */
@@ -862,7 +863,7 @@ function apachesolr_form_node_type_form_alter(&$form, $form_state) {
 }
 
 /**
- * Implementation of hook_form_[form_id]_alter().
+ * Implements hook_form_[form_id]_alter().
  *
  * Make sure to flush cache when fields are added.
  */
@@ -871,7 +872,7 @@ function apachesolr_form_content_field_overview_form_alter(&$form, $form_state) 
 }
 
 /**
- * Implementation of hook_form_[form_id]_alter().
+ * Implements hook_form_[form_id]_alter().
  *
  * Make sure to flush cache when fields are updated.
  */
@@ -880,7 +881,7 @@ function apachesolr_form_content_field_edit_form_alter(&$form, $form_state) {
 }
 
 /**
- * Implementation of hook_form_[form_id]_alter().
+ * Implements hook_form_[form_id]_alter().
  *
  * Hide the core 'title' field in favor of our 'name' field.
  *
@@ -1801,8 +1802,9 @@ function apachesolr_cck_fields() {
       );
       // Allow other modules to add or alter mappings.
       drupal_alter('apachesolr_cck_fields', $mappings);
+      // TODO: use db_select
       $result = db_query("SELECT i.field_name, f.multiple, f.type AS field_type, i.widget_type, i.label, i.type_name AS content_type FROM {content_node_field_instance} i INNER JOIN {content_node_field} f ON i.field_name = f.field_name;");
-      while ($row = db_fetch_object($result)) {
+      foreach($result as $row) {
         // Only deal with fields that have option widgets (facets don't make sense otherwise), or fields that have specific mappings.
         if ((isset($mappings[$row->field_type][$row->widget_type]) ||  isset($mappings['per-field'][$row->field_name]))) {
           if (isset($mappings['per-field'][$row->field_name])) {
@@ -1840,7 +1842,7 @@ function apachesolr_cck_fields() {
 }
 
 /**
- * Implementation of hook_content_fieldapi().
+ * Implements hook_content_fieldapi().
  */
 function apachesolr_content_fieldapi($op) {
   if ($op == 'update instance') {
@@ -1903,7 +1905,7 @@ function apachesolr_cck_userreference_field_callback($facet, $options) {
 }
 
 /**
- * Implementation of hook_theme().
+ * Implements hook_theme().
  */
 function apachesolr_theme() {
   return array(
@@ -2015,7 +2017,7 @@ function apachesolr_mlt_suggestions($settings, $id) {
 }
 
 /**
- * Implementation of hook_form_[form_id]_alter
+ * Implements hook_form_[form_id]_alter
  */
 function apachesolr_form_block_admin_display_form_alter(&$form) {
   foreach ($form as $key => $block) {
@@ -2165,7 +2167,7 @@ function theme_apachesolr_facet_list($items, $display_limit = 0, $delta = '') {
   }
   $admin_link = '';
   if (user_access('administer search')) {
-    $admin_link = l(t('Configure enabled filters'), 'admin/settings/apachesolr/enabled-filters');
+    $admin_link = l(t('Configure enabled filters'), 'admin/config/apachesolr/enabled-filters');
   }
   return theme('item_list', $items) . $admin_link;
 }

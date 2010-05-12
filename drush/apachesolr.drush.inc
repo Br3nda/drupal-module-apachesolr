@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.drush.inc,v 1.2 2010/05/12 02:52:10 pwolanin Exp $
+// $Id: apachesolr.drush.inc,v 1.3 2010/05/12 14:04:20 pwolanin Exp $
 
 /**
  * @file
@@ -7,7 +7,7 @@
  */
 
 /**
- * Implementation of hook_drush_command().
+ * Implements hook_drush_command().
  *
  * In this hook, you specify which commands your
  * drush module makes available, what it does and
@@ -61,7 +61,7 @@ function apachesolr_drush_command() {
 }
 
 /**
- * Implementation of hook_drush_help().
+ * Implements hook_drush_help().
  *
  * This function is called whenever a drush user calls
  * 'drush help <name-of-your-command>'

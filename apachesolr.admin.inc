@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.8 2010/05/11 19:38:09 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.9 2010/05/12 14:04:20 pwolanin Exp $
 
 /**
  * @file
@@ -84,7 +84,7 @@ function apachesolr_settings() {
   // Add a link to add more mlt blocks.
   $form['mlt_link'] = array(
     '#type' => 'item',
-    '#value' => l(t('Add a new content recommendation block'), 'admin/settings/apachesolr/mlt/add_block'),
+    '#markup' => l(t('Add a new content recommendation block'), 'admin/config/apachesolr/mlt/add_block'),
     '#description' => format_plural(count(apachesolr_mlt_list_blocks()), 'You currently have 1 block.', 'You currenly have @count blocks.'),
   );
   $form['advanced'] = array(
@@ -164,10 +164,11 @@ function apachesolr_index_page() {
   $output .= '<p>' . l(t('View more details on the search index contents'), 'admin/reports/apachesolr') . "</p>\n";
   if (variable_get('apachesolr_read_only', APACHESOLR_READ_WRITE) == APACHESOLR_READ_WRITE) {
     // Display the Index Action form.
-    $output .= drupal_get_form('apachesolr_index_action_form');
+    // XXX: bit of a hack
+    $output .= drupal_render(drupal_get_form('apachesolr_index_action_form'));
   }
   else {
-    drupal_set_message(t('The index is in read-only mode. Options for deleting and re-indexing are therefore not available. The index mode can be changed on the !settings_page', array('!settings_page' => l(t('settings page'), 'admin/settings/apachesolr'))), 'warning');
+    drupal_set_message(t('The index is in read-only mode. Options for deleting and re-indexing are therefore not available. The index mode can be changed on the !settings_page', array('!settings_page' => l(t('settings page'), 'admin/config/apachesolr'))), 'warning');
   }
 
   return $output;
@@ -281,16 +282,14 @@ function apachesolr_enabled_facets_form() {
   }
 
   $enabled_facets = apachesolr_get_enabled_facets();
-  $form = array();
   $form['apachesolr_enabled_facets']['help'] = array(
     '#type' => 'item',
-    '#value' => t('You can use this screen to select which search filter blocks should be created by enabling the corresponding filters on this page. For performance reasons, you should only enable filters that you intend to have available to users on the search page.  After selecting which filter blocks to create, you will be sent to the blocks page where you can choose which of those blocks should be enabled when your users search by placing each block in a region.'),
+    '#markup' => t('You can use this screen to select which search filter blocks should be created by enabling the corresponding filters on this page. For performance reasons, you should only enable filters that you intend to have available to users on the search page.  After selecting which filter blocks to create, you will be sent to the blocks page where you can choose which of those blocks should be enabled when your users search by placing each block in a region.'),
   );
   if ($module_list) {
-    $placeholders = implode(', ', array_fill(0, count($module_list), "'%s'"));
-    $result = db_query("SELECT name, info FROM {system} WHERE name IN (". $placeholders .") AND type = 'module'", $module_list);
-    while ($item = db_fetch_array($result)) {
-      $module_list[$item['name']] = unserialize($item['info']);
+    $result = db_select('system')->fields('system', array('name', 'info'))->condition('name', $module_list, 'IN')->condition('type', 'module')->execute();
+    foreach ($result as $item) {
+      $module_list[$item->name] = unserialize($item->info);
     }
   }
   foreach ($module_facets as $module => $facets) {
@@ -322,14 +321,14 @@ function apachesolr_enabled_facets_form() {
     '#access' => $has_facets,
   );
   $form['no-facets-message'] = array(
-    '#value' => t('<em>No filters are available from your currently enabled modules</em>'),
+    '#markup' => t('<em>No filters are available from your currently enabled modules</em>'),
     '#access' => !$has_facets,
   );
 
   $form['#tree'] = TRUE;
   $form['submit_message'] = array(
     '#type' => 'value',
-    '#value' => t('The Apache Solr filters settings were changed.  To arrange the blocks for your enabled filters, visit the <a href="@url">blocks administration page</a>.', array('@url' => url('admin/build/block'))),
+    '#markup' => t('The Apache Solr filters settings were changed.  To arrange the blocks for your enabled filters, visit the <a href="@url">blocks administration page</a>.', array('@url' => url('admin/build/block'))),
   );
 
   return $form;
@@ -342,7 +341,8 @@ function apachesolr_index_action_form() {
   $form = array();
 
   $form['action'] = array(
-    '#value' => '<h3>'. t('Index Actions') .'</h3>',
+    '#type' => 'fieldset',
+    '#title' => t('Index Actions'),
   );
   // Jump through some forms hoops to get a description under each radio button.
   $actions = array(
@@ -369,7 +369,7 @@ function apachesolr_index_action_form() {
       '#return_value' => $key,
       '#parents' => array('action'),
       '#description' => $action['description'],
-      '#id' => form_clean_id('edit-'. implode('-', array('action', $key))),
+      '#id' => drupal_clean_css_identifier('edit-'. implode('-', array('action', $key))),
     );
   }
 
@@ -392,11 +392,11 @@ function apachesolr_index_action_form_submit($form, &$form_state) {
       break;
 
     case 'reindex':
-      $form_state['redirect'] = 'admin/settings/apachesolr/index/confirm/clear';
+      $form_state['redirect'] = 'admin/config/apachesolr/index/confirm/clear';
       break;
 
     case 'delete':
-      $form_state['redirect'] = 'admin/settings/apachesolr/index/confirm/delete';
+      $form_state['redirect'] = 'admin/config/apachesolr/index/confirm/delete';
       break;
   }
 }
@@ -407,7 +407,7 @@ function apachesolr_index_action_form_submit($form, &$form_state) {
  */
 function apachesolr_clear_index_confirm() {
   $form = array();
-  return confirm_form($form, t('Are you sure you want to queue content for reindexing?'), 'admin/settings/apachesolr/index', t('All content on the site will be queued for indexing. The documents currently in the Solr index will remain searchable. The content will be gradually resubmitted to Solr during cron runs.'), t('Reindex'), t('Cancel'));
+  return confirm_form($form, t('Are you sure you want to queue content for reindexing?'), 'admin/config/apachesolr/index', t('All content on the site will be queued for indexing. The documents currently in the Solr index will remain searchable. The content will be gradually resubmitted to Solr during cron runs.'), t('Reindex'), t('Cancel'));
 }
 
 /**
@@ -416,7 +416,7 @@ function apachesolr_clear_index_confirm() {
  * @see apachesolr_clear_index_confirm()
  */
 function apachesolr_clear_index_confirm_submit($form, &$form_state) {
-  $form_state['redirect'] = 'admin/settings/apachesolr/index';
+  $form_state['redirect'] = 'admin/config/apachesolr/index';
   apachesolr_rebuild_index_table();
   drupal_set_message(t('All the content on your site is queued for indexing. You can wait for it to be indexed during cron runs, or you can manually reindex it.'), 'warning');
 }
@@ -427,7 +427,7 @@ function apachesolr_clear_index_confirm_submit($form, &$form_state) {
  */
 function apachesolr_delete_index_confirm() {
   $form = array();
-  return confirm_form($form, t('Are you sure you want to delete the search index?'), 'admin/settings/apachesolr/index', t("All documents in the Solr index will be deleted. This is rarely necessary unless your index is corrupt or you have installed a new schema.xml. After doing this your content will need to be queued for indexing."), t('Delete'), t('Cancel'));
+  return confirm_form($form, t('Are you sure you want to delete the search index?'), 'admin/config/apachesolr/index', t("All documents in the Solr index will be deleted. This is rarely necessary unless your index is corrupt or you have installed a new schema.xml. After doing this your content will need to be queued for indexing."), t('Delete'), t('Cancel'));
 }
 
 /**
@@ -436,7 +436,7 @@ function apachesolr_delete_index_confirm() {
  * @see apachesolr_delete_index_confirm()
  */
 function apachesolr_delete_index_confirm_submit($form, &$form_state) {
-  $form_state['redirect'] = 'admin/settings/apachesolr/index';
+  $form_state['redirect'] = 'admin/config/apachesolr/index';
   try {
     apachesolr_delete_index();
     drupal_set_message(t('The Apache Solr content index has been erased. All the content on your site is queued for indexing. You can wait for it to be indexed during cron runs, or you can manually reindex it.'), 'warning');
@@ -471,7 +471,7 @@ function apachesolr_delete_index($type = NULL) {
   $solr->commit();
   // Rebuild our node-tracking table.
   apachesolr_rebuild_index_table();
-  apachesolr_index_set_last_updated(time());
+  apachesolr_index_set_last_updated(REQUEST_TIME);
 }
 
 /**
@@ -593,7 +593,7 @@ function apachesolr_mlt_block_form($delta = NULL) {
   );
 
   $type_options = array();
-  foreach (node_get_types('types') as $key => $type) {
+  foreach (node_type_get_types() as $key => $type) {
     $type_options[$key] = $type->name;
   }
 
@@ -642,7 +642,7 @@ function apachesolr_mlt_block_defaults($block = array()) {
     'mlt_minwl' => '3',
     'mlt_maxwl' => '15',
     'mlt_maxqt' => '20',
-    'mlt_type_filters' => array_keys(node_get_types('types')),
+    'mlt_type_filters' => array_keys(node_type_get_types()),
     'mlt_custom_filters' => '',
   );
 }

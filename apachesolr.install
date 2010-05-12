@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.9 2010/05/11 19:38:09 pwolanin Exp $
+// $Id: apachesolr.install,v 1.10 2010/05/12 14:04:20 pwolanin Exp $
 
 /**
  * @file
@@ -7,7 +7,7 @@
  */
 
 /**
- * Implementation of hook_requirements().
+ * Implements hook_requirements().
  */
 function apachesolr_requirements($phase) {
   $requirements = array();
@@ -77,11 +77,9 @@ function apachesolr_requirements($phase) {
 }
 
 /**
- * Implementation of hook_install().
+ * Implements hook_install().
  */
 function apachesolr_install() {
-  // Create tables.
-  drupal_install_schema('apachesolr');
   // Create one MLT block.
   require_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
   apachesolr_mlt_save_block(array('name' => t('More like this')));
@@ -90,7 +88,7 @@ function apachesolr_install() {
 }
 
 /**
- * Implementation of hook_enable().
+ * Implements hook_enable().
  */
 function apachesolr_enable() {
   // Completely build the index table.
@@ -98,7 +96,7 @@ function apachesolr_enable() {
 }
 
 /**
- * Implementation of hook_schema().
+ * Implements hook_schema().
  *
  * TODO: move all node indexing/seach code to apachesolr_search
  */
@@ -135,7 +133,7 @@ function apachesolr_schema() {
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function apachesolr_uninstall() {
   variable_del('apachesolr_host');
@@ -149,8 +147,6 @@ function apachesolr_uninstall() {
   variable_del('apachesolr_mlt_blocks');
   variable_del('apachesolr_cron_limit');
   variable_del('apachesolr_enabled_facets');
-  // Remove tables.
-  drupal_uninstall_schema('apachesolr');
   // Remove blocks.
   db_query('DELETE FROM {blocks} WHERE module = "apachesolr"');
 }
@@ -215,7 +211,7 @@ function apachesolr_update_6001() {
 function apachesolr_update_6002() {
   $ret = array();
   // Make sure no nodes end up with a timestamp that's in the future.
-  $time = (int) time();
+  $time = (int) REQUEST_TIME;
   $ret[] = update_sql("UPDATE {apachesolr_search_node} SET changed = $time WHERE changed > $time");
   return $ret;
 }
@@ -226,7 +222,7 @@ function apachesolr_update_6002() {
 function apachesolr_update_6003() {
   $ret = array();
   if (module_exists('book')) {
-    $time = (int) time();
+    $time = (int) REQUEST_TIME;
     $ret[] = update_sql("UPDATE {apachesolr_search_node} SET changed = $time WHERE nid IN (SELECT nid from {book})");
   }
   return $ret;

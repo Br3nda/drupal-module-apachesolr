@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.install,v 1.8 2010/05/11 19:38:09 pwolanin Exp $
+// $Id: apachesolr_search.install,v 1.9 2010/05/12 14:04:20 pwolanin Exp $
 
 /**
  * @file
@@ -7,7 +7,7 @@
  */
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  * Update to namespace tracking.
  */
 function apachesolr_search_uninstall() {

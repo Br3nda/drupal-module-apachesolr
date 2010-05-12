@@ -1,9 +1,9 @@
 <?php
-// $Id: solr_index_and_search.test,v 1.8 2010/05/11 19:38:09 pwolanin Exp $
+// $Id: solr_index_and_search.test,v 1.9 2010/05/12 14:04:20 pwolanin Exp $
 
 class DrupalSolrMatchTestCase extends DrupalWebTestCase {
   /**
-   * Implementation of getInfo().
+   * Implements getInfo().
    */
   function getInfo() {
     return array(
