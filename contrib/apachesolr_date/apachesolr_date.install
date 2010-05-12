@@ -1,8 +1,8 @@
 <?php
-// $Id: apachesolr_date.install,v 1.2 2010/05/12 01:51:33 pwolanin Exp $
+// $Id: apachesolr_date.install,v 1.3 2010/05/12 03:04:16 pwolanin Exp $
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function apachesolr_date_uninstall() {
   // Remove blocks.

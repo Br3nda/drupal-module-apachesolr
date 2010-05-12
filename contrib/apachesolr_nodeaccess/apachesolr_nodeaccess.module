@@ -1,8 +1,8 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.6 2010/05/11 19:38:09 pwolanin Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.7 2010/05/12 03:04:17 pwolanin Exp $
 
 /**
- * Implementation of apachesolr_update_index
+ * Implements apachesolr_update_index
  */
 function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node, $namespace) {
   static $account;
@@ -59,7 +59,7 @@ function apachesolr_nodeaccess_build_subquery($account) {
 }
 
 /**
- * Implementation of hook_apachesolr_modify_query().
+ * Implements hook_apachesolr_modify_query().
  */
 function apachesolr_nodeaccess_apachesolr_modify_query(&$query, &$params, $caller = 'apachesolr_search') {
   if ($caller == 'apachesolr_views_query') {
@@ -81,7 +81,7 @@ function apachesolr_nodeaccess_apachesolr_modify_query(&$query, &$params, $calle
 }
 
 /**
- * Implementation of hook_nodeapi().
+ * Implements hook_nodeapi().
  *
  * Listen to this hook to find out when a node is being saved.
  */
@@ -96,7 +96,7 @@ function apachesolr_nodeaccess_nodeapi(&$node, $op) {
 }
 
 /**
- * Implementation of hook_node_access_records().
+ * Implements hook_node_access_records().
  *
  * Listen to this hook to find out when a node needs to be re-indexed
  * for its node access grants.
@@ -111,7 +111,7 @@ function apachesolr_nodeaccess_node_access_records($node) {
 }
 
 /**
- * Implementation of hook_form_alter().
+ * Implements hook_form_alter().
  */
 function apachesolr_nodeaccess_form_alter(&$form, $form_state, $form_id) {
   if ($form_id == 'node_configure_rebuild_confirm') {

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_commentsearch.install,v 1.2 2010/05/12 01:51:33 pwolanin Exp $
+// $Id: apachesolr_commentsearch.install,v 1.3 2010/05/12 03:04:16 pwolanin Exp $
 
 /**
  * @file
@@ -7,7 +7,7 @@
  */
 
 /**
- * Implementation of hook_install().
+ * Implements hook_install().
  */
 function apachesolr_commentsearch_install() {
   // Set apachesolr_index_comments_with_node so that comments aren't
@@ -16,7 +16,7 @@ function apachesolr_commentsearch_install() {
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function apachesolr_commentsearch_uninstall() {
   variable_del('apachesolr_index_comments_with_node');

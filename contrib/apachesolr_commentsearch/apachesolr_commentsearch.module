@@ -2,7 +2,7 @@
 
 
 /**
- * Implementation of hook_apachesolr_document_handlers().
+ * Implements hook_apachesolr_document_handlers().
  *
  * @param string $type
  *   Entity type. 'node', 'comment', and so forth. Used to evaluate whether this module
@@ -146,7 +146,7 @@ function apachesolr_commentsearch_delete_comment_from_index($comment) {
   try {
     $solr = apachesolr_get_solr();
     $solr->deleteById(apachesolr_document_id($comment->cid, 'comment'));
-    apachesolr_index_set_last_updated(time());
+    apachesolr_index_set_last_updated(REQUEST_TIME);
     return TRUE;
   }
   catch (Exception $e) {
@@ -169,7 +169,7 @@ function theme_apachesolr_commentsearch_breadcrumb_type($field) {
 }
 
 /**
- * Implementation of hook_theme().
+ * Implements hook_theme().
  */
 function apachesolr_commentsearch_theme() {
   return array(

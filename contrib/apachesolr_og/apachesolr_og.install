@@ -1,8 +1,8 @@
 <?php
-// $Id: apachesolr_og.install,v 1.6 2010/05/11 19:38:09 pwolanin Exp $
+// $Id: apachesolr_og.install,v 1.7 2010/05/12 03:04:17 pwolanin Exp $
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function apachesolr_og_uninstall() {
   // Remove blocks.
@@ -10,18 +10,18 @@ function apachesolr_og_uninstall() {
 }
 
 /**
- * Implementation of hook_enable().
+ * Implements hook_enable().
  */
 function apachesolr_og_enable() {
   $facet_missing = variable_get('apachesolr_facet_missing', array());
   $facet_missing['apachesolr_og']['im_og_gid'] = 1;
   variable_set('apachesolr_facet_missing', $facet_missing);
   drupal_set_message(t('All existing Organic Group posts will be re-indexed'), 'warning');
-  db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {og_ancestry})", time());
+  db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {og_ancestry})", REQUEST_TIME);
 }
 
 /**
- * Implementation of hook_disable().
+ * Implements hook_disable().
  */
 function apachesolr_og_disable() {
   // Disable all facets for this module.

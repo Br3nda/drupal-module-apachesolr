@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_og.module,v 1.7 2010/05/11 19:38:09 pwolanin Exp $
+// $Id: apachesolr_og.module,v 1.8 2010/05/12 03:04:17 pwolanin Exp $
 
 /**
  * @file
@@ -7,7 +7,7 @@
  */
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function apachesolr_og_menu() {
   return array(
@@ -50,7 +50,7 @@ function apachesolr_og_reindex() {
 }
 
 /**
- * Implementation of hook_apachesolr_update_index().
+ * Implements hook_apachesolr_update_index().
  */
 function apachesolr_og_apachesolr_update_index(&$document, $node) {
   // Index group posts
@@ -66,7 +66,7 @@ function apachesolr_og_apachesolr_update_index(&$document, $node) {
 }
 
 /**
- * Implementation of hook_apachesolr_modify_query().
+ * Implements hook_apachesolr_modify_query().
  */
 function apachesolr_og_apachesolr_modify_query(&$query, &$params, $caller) {
   // Fetch the group ID in results - however, this is currently not used.
@@ -77,7 +77,7 @@ function apachesolr_og_apachesolr_modify_query(&$query, &$params, $caller) {
 }
 
 /**
- * Implementation of hook_apachesolr_process_results().
+ * Implements hook_apachesolr_process_results().
  */
 function apachesolr_og_apachesolr_process_results(&$results) {
   $key = apachesolr_og_gid_key();
@@ -122,7 +122,7 @@ function apachesolr_og_gid_key() {
 }
 
 /**
- * Implementation of hook_apachesolr_facets().
+ * Implements hook_apachesolr_facets().
  */
 function apachesolr_og_apachesolr_facets() {
   $key = apachesolr_og_gid_key();
@@ -134,7 +134,7 @@ function apachesolr_og_apachesolr_facets() {
 }
 
 /**
- * Implementation of hook_block().
+ * Implements hook_block().
  */
 function apachesolr_og_block($op = 'list', $delta = 0, $edit = array()) {
   switch ($op) {
@@ -187,7 +187,7 @@ function apachesolr_og_group_name($facet, &$options) {
 }
 
 /**
- * Implementation of hook_theme().
+ * Implements hook_theme().
  *
  * The breadcrumb function assumes that apachesolr_og_gid_key() returns im_og_gid
  * If that changes, modify the theme name appropriately
