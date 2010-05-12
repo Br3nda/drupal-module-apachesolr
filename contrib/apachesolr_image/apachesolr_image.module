@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_image.module,v 1.10 2010/05/12 03:04:17 pwolanin Exp $
+// $Id: apachesolr_image.module,v 1.11 2010/05/12 20:21:38 pwolanin Exp $
 
 /**
  * Implements hook_apachesolr_update_index().
@@ -40,13 +40,18 @@ function apachesolr_image_apachesolr_modify_query(&$query, &$params, $caller) {
 function apachesolr_image_apachesolr_process_results(&$results) {
   foreach ($results as $index => $item) {
     if ($item['node']->type == 'image' && !empty($item['node']->ss_image_relative)) {
-      $results[$index]['snippet'] = theme('apachesolr_image_snippet', $item);
+      $results[$index]['snippet'] = theme('apachesolr_image_snippet', array('item' => $item));
     }
   }
 }
 
-function theme_apachesolr_image_snippet($item) {
-  return '<span class="apachesolr-image-result">'. theme('image', $item['node']->ss_image_relative, $item['title'], $item['title'], array('align' => 'left')) .'</span>'. $item['snippet'] . '<br clear="all"/>';
+function theme_apachesolr_image_snippet($vars){
+  $item = $vars['item'];
+  return '<span class="apachesolr-image-result">'. theme('image', array(
+    'path' => $item['node']->ss_image_relative, 
+    'alt' => $item['title'], 
+    'title' => $item['title'], 
+    'attributes' => array('align' => 'left'))) .'</span>'. $item['snippet'] . '<br clear="all"/>';
 }
 
 /**

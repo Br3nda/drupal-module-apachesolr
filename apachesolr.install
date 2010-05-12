@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.10 2010/05/12 14:04:20 pwolanin Exp $
+// $Id: apachesolr.install,v 1.11 2010/05/12 20:21:38 pwolanin Exp $
 
 /**
  * @file
@@ -200,7 +200,7 @@ function apachesolr_update_6000() {
 function apachesolr_update_6001() {
   $ret = array();
 
-  $ret[] = update_sql("UPDATE {blocks} set cache = " . BLOCK_CACHE_PER_PAGE . " WHERE module LIKE 'apachesolr%'");
+  $ret[] = update_sql("UPDATE {blocks} set cache = " . DRUPAL_CACHE_PER_PAGE . " WHERE module LIKE 'apachesolr%'");
 
   return $ret;
 }
@@ -236,10 +236,10 @@ function apachesolr_update_6004() {
   if (db_table_exists("{apachesolr_mlt}")) {
     require_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
     $result = db_query('SELECT id, data FROM {apachesolr_mlt} ORDER BY id ASC');
-    while ($row = db_fetch_array($result)) {
-      $delta = sprintf('mlt-%03d', $row['id']);
-      apachesolr_mlt_save_block(unserialize($row['data']), $delta);
-      $ret[] = update_sql("UPDATE {blocks} SET module = 'apachesolr', delta = '". $delta ."' WHERE module = 'apachesolr_mlt' AND delta ='". $row['id'] ."'");
+    foreach($result as $row){
+      $delta = sprintf('mlt-%03d', $row->id);
+      apachesolr_mlt_save_block(unserialize($row->data), $delta);
+      $ret[] = update_sql("UPDATE {blocks} SET module = 'apachesolr', delta = '". $delta ."' WHERE module = 'apachesolr_mlt' AND delta ='". $row->id ."'");
     }
     $ret[] = update_sql("DROP TABLE {apachesolr_mlt}");
   }

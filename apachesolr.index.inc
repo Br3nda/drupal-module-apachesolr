@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.6 2010/05/12 14:04:20 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.7 2010/05/12 20:21:38 pwolanin Exp $
 
 /**
  * @file
@@ -32,8 +32,7 @@ function apachesolr_node_to_document($node, $namespace) {
 
   if ($build_document) {
     // Build the node body.
-    $node->build_mode = 'search_index';
-    node_build_content($node);
+    node_build_content($node, 'search_index');    
     $node->body = drupal_render($node->content);
     $node->title = apachesolr_clean_text($node->title);
 
@@ -43,13 +42,13 @@ function apachesolr_node_to_document($node, $namespace) {
     // whether to index comments or not.
     $extra = array();
     $exclude_comments = in_array($node->type, variable_get('apachesolr_exclude_comments_types', array()), TRUE);
-    foreach (module_implements('nodeapi') as $module) {
+    foreach (module_implements('node_update_index') as $module) {
       if ($exclude_comments && $module == 'comment') {
         // Don't add comments.
         continue;
       }
-      $function = $module .'_nodeapi';
-      if ($output = $function($node, 'update index', FALSE, FALSE)) {
+      $function = $module . '_node_update_index';
+      if ($output = $function($node)) {
         $extra[$module] = $output;
       }
 
@@ -211,28 +210,39 @@ function apachesolr_cck_userreference_indexing_callback($node, $field_name, $cck
  * Extract taxonomy from $node and add to dynamic fields.
  */
 function apachesolr_add_taxonomy_to_document(&$document, $node) {
-  if (isset($node->taxonomy) && is_array($node->taxonomy)) {
-    foreach ($node->taxonomy as $term) {
-      // Double indexing of tids lets us do effecient searches (on tid)
-      // and do accurate per-vocabulary faceting.
-
-      // By including the ancestors to a term in the index we make
-      // sure that searches for general categories match specific
-      // categories, e.g. Fruit -> apple, a search for fruit will find
-      // content categorized with apple.
-      $ancestors = taxonomy_get_parents_all($term->tid);
-      foreach ($ancestors as $ancestor) {
-        $document->setMultiValue('tid', $ancestor->tid);
-        $document->setMultiValue('im_vid_'. $ancestor->vid, $ancestor->tid);
-        $name = apachesolr_clean_text($ancestor->name);
-        $document->setMultiValue('vid', $ancestor->vid);
-        $document->{'ts_vid_'. $ancestor->vid .'_names'} .= ' '. $name;
-        // We index each name as a string for cross-site faceting
-        // using the vocab name rather than vid in field construction .
-        $document->setMultiValue('sm_vid_'. apachesolr_vocab_name($ancestor->vid), $name);
+	list(, , $bundle) = entity_extract_ids('node', $node);
+	$instances = field_info_instances('node', $bundle);
+	// look for taxonomy field instances
+	foreach ($instances as $instance){
+		$field_name = $instance['field_name'];
+		$field = field_info_field_by_id($instance['field_id']);		 
+		if ($field['type'] == 'taxonomy_term_reference'){
+			//TODO: not sure how to correctly deal with languages here... Should we use field_available_languages? 
+      $lang = field_language('node', $node, $field_name);
+      $items = isset($node->{$field_name}[$lang]) ? $node->{$field_name}[$lang] : array();
+      foreach ($items as $item){
+      	$term = $item['taxonomy_term'];
+        // Double indexing of tids lets us do effecient searches (on tid)
+        // and do accurate per-vocabulary faceting.
+  
+        // By including the ancestors to a term in the index we make
+        // sure that searches for general categories match specific
+        // categories, e.g. Fruit -> apple, a search for fruit will find
+        // content categorized with apple.
+        $ancestors = taxonomy_get_parents_all($term->tid);
+        foreach ($ancestors as $ancestor) {
+          $document->setMultiValue('tid', $ancestor->tid);
+          $document->setMultiValue('im_vid_'. $ancestor->vid, $ancestor->tid);
+          $name = apachesolr_clean_text($ancestor->name);
+          $document->setMultiValue('vid', $ancestor->vid);
+          $document->{'ts_vid_'. $ancestor->vid .'_names'} .= ' '. $name;
+          // We index each name as a string for cross-site faceting
+          // using the vocab name rather than vid in field construction .
+          $document->setMultiValue('sm_vid_'. apachesolr_vocab_name($ancestor->vid), $name);
+        }
       }
-    }
-  }
+     }
+	}
 }
 
 /**
@@ -242,7 +252,7 @@ function apachesolr_vocab_name($vid) {
   static $names = array();
 
   if (!isset($names[$vid])) {
-    $vocab_name = db_query('SELECT v.name FROM {vocabulary} v WHERE v.vid = :vid', array(':vid' => $vid))->fetchField();
+    $vocab_name = db_query('SELECT v.name FROM {taxonomy_vocabulary} v WHERE v.vid = ?', array($vid))->fetchField();
     $names[$vid] = preg_replace('/[^a-zA-Z0-9_\x7f-\xff]/', '_', $vocab_name);
     // Fallback for names ending up all as '_'.
     $check = rtrim($names[$vid], '_');
@@ -357,11 +367,10 @@ function apachesolr_nodeapi_mass_update($nodes) {
       $unpublished_ids[$node->nid] = apachesolr_document_id($node->nid);
     }
   }
-  $time = REQUEST_TIME;
   try {
     $solr = apachesolr_get_solr();
     $solr->deleteByMultipleIds($unpublished_ids);
-    apachesolr_index_updated($time);
+    apachesolr_index_set_last_updated(REQUEST_TIME);
 
       // There was no exception, so update the table.
     if ($published_ids) {
@@ -391,7 +400,7 @@ function apachesolr_nodeapi_mass_delete($nodes) {
   try {
     $solr = apachesolr_get_solr();
     $solr->deleteByMultipleIds($ids);
-    apachesolr_index_updated($time);
+    apachesolr_index_set_last_updated(REQUEST_TIME);
     // There was no exception, so update the table.
     db_delete('apachesolr_search_node')->condition('nid', $nids, 'IN')->execute();
     return TRUE;

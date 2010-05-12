@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.9 2010/05/12 14:04:20 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.10 2010/05/12 20:21:38 pwolanin Exp $
 
 /**
  * @file
@@ -13,7 +13,7 @@ function apachesolr_settings() {
   if (empty($_POST)) {
     // update_help() loads install.inc via include_once, so not much
     // point in working around it.
-    include_once './includes/install.inc';
+    include_once DRUPAL_ROOT.'/includes/install.inc';
     module_load_include('install', 'apachesolr');
 
     foreach (apachesolr_requirements('runtime') as $requirement) {
@@ -141,7 +141,8 @@ function apachesolr_index_page() {
     $data->fields = array();
   }
 
-  $output = '';
+  $output = array();
+  $status_header = '';
   if (isset($data->index->numDocs)) {
     $pending_docs = $delay_msg = $delete_msg = '';
     try {
@@ -156,16 +157,16 @@ function apachesolr_index_page() {
     catch (Exception $e) {
       watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
     }
-    $output .= $solr_msg . $delay_msg;
+    $status_header .= $solr_msg . $delay_msg;
     $pending_msg = $stats_summary['@pending_docs'] ? t('(@pending_docs sent but not yet processed)', $stats_summary) : '';
-    $output .= '<p>' . t('Number of documents in index: @num !pending', array('@num' => $data->index->numDocs, '!pending' => $pending_msg)) . "</p>\n";
-    $output .= $delete_msg;
+    $status_header .= '<p>' . t('Number of documents in index: @num !pending', array('@num' => $data->index->numDocs, '!pending' => $pending_msg)) . "</p>\n";
+    $status_header .= $delete_msg;
   }
-  $output .= '<p>' . l(t('View more details on the search index contents'), 'admin/reports/apachesolr') . "</p>\n";
+  $status_header .= '<p>' . l(t('View more details on the search index contents'), 'admin/reports/apachesolr') . "</p>\n";
   if (variable_get('apachesolr_read_only', APACHESOLR_READ_WRITE) == APACHESOLR_READ_WRITE) {
-    // Display the Index Action form.
-    // XXX: bit of a hack
-    $output .= drupal_render(drupal_get_form('apachesolr_index_action_form'));
+    $output['apachesolr_index_action_status_header'] = array('#markup' => $status_header);
+    // Display the Delete Index form.
+    $output['apachesolr_index_action_form'] = drupal_get_form('apachesolr_index_action_form');
   }
   else {
     drupal_set_message(t('The index is in read-only mode. Options for deleting and re-indexing are therefore not available. The index mode can be changed on the !settings_page', array('!settings_page' => l(t('settings page'), 'admin/config/apachesolr'))), 'warning');
@@ -282,6 +283,7 @@ function apachesolr_enabled_facets_form() {
   }
 
   $enabled_facets = apachesolr_get_enabled_facets();
+  $form = array();
   $form['apachesolr_enabled_facets']['help'] = array(
     '#type' => 'item',
     '#markup' => t('You can use this screen to select which search filter blocks should be created by enabling the corresponding filters on this page. For performance reasons, you should only enable filters that you intend to have available to users on the search page.  After selecting which filter blocks to create, you will be sent to the blocks page where you can choose which of those blocks should be enabled when your users search by placing each block in a region.'),

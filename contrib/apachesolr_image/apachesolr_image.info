@@ -4,6 +4,6 @@ description = Integrates the Apache Solr and Image modules
 dependencies[] = image
 dependencies[] = apachesolr
 package = Apache Solr
-core = "7.x"
+core = 7.x
 
 files[] = apachesolr_image.module

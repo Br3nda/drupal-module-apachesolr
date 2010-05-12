@@ -1,14 +1,12 @@
-; $Id: apachesolr.info,v 1.10 2010/05/12 14:04:20 pwolanin Exp $
+; $Id: apachesolr.info,v 1.11 2010/05/12 20:21:38 pwolanin Exp $
 name = Apache Solr framework
 description = Framework for searching with Solr
 dependencies[] = search
 package = Apache Solr
-core = "7.x"
+core = 7.x
 
-; Files
+files[] = apachesolr.install
 files[] = apachesolr.module
 files[] = apachesolr.admin.inc
 files[] = apachesolr.index.inc
-files[] = apachesolr.install
-files[] = apachesolr.taxonomy.inc 
-
+files[] = apachesolr.taxonomy.inc

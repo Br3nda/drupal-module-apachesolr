@@ -1,24 +1,27 @@
-// $Id: apachesolr.js,v 1.4 2010/05/11 19:38:09 pwolanin Exp $
+// $Id: apachesolr.js,v 1.5 2010/05/12 20:21:38 pwolanin Exp $
+(function ($) {
 
-Drupal.behaviors.apachesolr = function(context) {
-  $('.apachesolr-hidden-facet', context).hide();
-  $('<a href="#" class="apachesolr-showhide"></a>').text(Drupal.t('Show more')).click(function() {
-    if ($(this).parent().find('.apachesolr-hidden-facet:visible').length == 0) {
-      $(this).parent().find('.apachesolr-hidden-facet').show();
-      $(this).text(Drupal.t('Show fewer'));
-    }
-    else {
-      $(this).parent().find('.apachesolr-hidden-facet').hide();
-      $(this).text(Drupal.t('Show more'));
-    }
-    return false;
-  }).appendTo($(Drupal.settings.apachesolr_show_more_blocks, context));
+Drupal.behaviors.apachesolr = {
+  attach: function(context, settings) {
+    $('.apachesolr-hidden-facet', context).hide();
+    $('<a href="#" class="apachesolr-showhide"></a>').text(Drupal.t('Show more')).click(function() {
+      if ($(this).parent().find('.apachesolr-hidden-facet:visible').length == 0) {
+        $(this).parent().find('.apachesolr-hidden-facet').show();
+        $(this).text(Drupal.t('Show fewer'));
+      }
+      else {
+        $(this).parent().find('.apachesolr-hidden-facet').hide();
+        $(this).text(Drupal.t('Show more'));
+      }
+      return false;
+    }).appendTo($(settings.apachesolr_show_more_blocks, context));
 
-  if (Drupal.settings.apachesolr_facetstyle == 'checkboxes') {
-    // Find all facet links and give them a checkbox
-    $('.apachesolr-facet', context).each(Drupal.apachesolr.addCheckbox);
-    // Find all unclick links and turn them into checkboxes
-    $('.apachesolr-unclick', context).each(Drupal.apachesolr.makeCheckbox);
+    if (settings.apachesolr_facetstyle == 'checkboxes') {
+      // Find all facet links and give them a checkbox
+      $('.apachesolr-facet', context).each(Drupal.apachesolr.addCheckbox);
+      // Find all unclick links and turn them into checkboxes
+      $('.apachesolr-unclick', context).each(Drupal.apachesolr.makeCheckbox);
+    }
   }
 }
 
@@ -48,3 +51,5 @@ Drupal.apachesolr.makeCheckbox = function() {
   // Add the checkbox, hide the link.
   $(this).before(checkbox).hide();
 }
+
+})(jQuery);

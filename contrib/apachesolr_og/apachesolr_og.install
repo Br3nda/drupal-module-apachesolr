@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_og.install,v 1.7 2010/05/12 03:04:17 pwolanin Exp $
+// $Id: apachesolr_og.install,v 1.8 2010/05/12 20:21:38 pwolanin Exp $
 
 /**
  * Implements hook_uninstall().
@@ -17,7 +17,7 @@ function apachesolr_og_enable() {
   $facet_missing['apachesolr_og']['im_og_gid'] = 1;
   variable_set('apachesolr_facet_missing', $facet_missing);
   drupal_set_message(t('All existing Organic Group posts will be re-indexed'), 'warning');
-  db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {og_ancestry})", REQUEST_TIME);
+  db_query("UPDATE {apachesolr_search_node} SET changed = ? WHERE nid IN (SELECT nid FROM {og_ancestry})", array(REQUEST_TIME));
 }
 
 /**

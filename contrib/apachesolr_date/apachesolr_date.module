@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_date.module,v 1.3 2010/05/12 03:04:16 pwolanin Exp $
+// $Id: apachesolr_date.module,v 1.4 2010/05/12 20:21:38 pwolanin Exp $
 
 /**
  * @file
@@ -51,7 +51,7 @@ function apachesolr_date_block($op = 'list', $delta = 0, $edit = array()) {
       $blocks = array();
       foreach ($enabled_facets as $delta => $facet_field) {
         if (isset($facets[$delta])) {
-          $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE);
+          $blocks[$delta] = $facets[$delta] + array('cache' => DRUPAL_CACHE_PER_PAGE);
           // TODO: This is ugly. The only consolation is that the admin can
           // override block titles anyway.
           $blocks[$delta]['label'] = $blocks[$delta]['label']  . ' (end)';
@@ -295,7 +295,7 @@ function apachesolr_date_search_date_range($query, $facet_field) {
       $tz = new DateTimeZone('UTC');
     }
     $table = $db_info['table'];
-    $start_value = db_result(db_query("SELECT MIN(cck.$column) FROM {{$table}} cck INNER JOIN {node} n ON cck.vid = n.vid WHERE n.status = 1"));
+    $start_value = db_query("SELECT MIN(cck.$column) FROM {{$table}} cck INNER JOIN {node} n ON cck.vid = n.vid WHERE n.status = 1")->fetchField();
     if (is_numeric($start_value)) {
       $start_iso = apachesolr_date_iso($start_value);
     }
@@ -305,7 +305,7 @@ function apachesolr_date_search_date_range($query, $facet_field) {
 
     // Subtract one second, so that this range's $end_iso is not equal to the
     // next range's $start_iso.
-    $end_value = db_result(db_query("SELECT MAX(cck.$column) FROM {{$table}} cck INNER JOIN {node} n ON cck.vid = n.vid WHERE n.status = 1"));
+    $end_value = db_query("SELECT MAX(cck.$column) FROM {{$table}} cck INNER JOIN {node} n ON cck.vid = n.vid WHERE n.status = 1")->fetchField();
     if (is_numeric($end_value)) {
       $end_iso = apachesolr_date_iso($end_value - 1);
     }
@@ -351,7 +351,10 @@ function apachesolr_date_date_facet_block($response, $query, $module, $delta, $f
     $facet_text = apachesolr_date_format_iso_by_gap($gap, $filter['#start']);
     $options['gap'] = $gap;
     $options['query'] = $new_query->get_url_queryvalues();
-    array_unshift($items, theme('apachesolr_unclick_link', $facet_text, $new_query->get_path(), $options));
+    array_unshift($items, theme('apachesolr_unclick_link', array(
+      'facet_text' => $facet_text, 
+      'path' => $new_query->get_path(), 
+      'options' => $options)));
   }
 
   // Add links for additional date filters.
@@ -413,14 +416,23 @@ function apachesolr_date_date_facet_block($response, $query, $module, $delta, $f
       $new_query = clone $query;
       $new_query->add_filter($facet_field, '['. $facet .' TO '. $range_end[$facet] .']');
       $options['query'] = $new_query->get_url_queryvalues();
-      $items[] = theme('apachesolr_facet_link', $facet_text, $new_query->get_path(), $options, $count, FALSE, $response->response->numFound);
+      $items[] = theme('apachesolr_facet_link', array(
+        'facet_text' => $facet_text, 
+        'path' => $new_query->get_path(), 
+        'options' => $options, 
+        'count' => $count, 
+        'active' => FALSE, 
+        'num_found' => $response->response->numFound));
     }
   }
   if (count($items) > 0) {
     // Get information needed by the rest of the blocks about limits.
     $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
     $limit = isset($initial_limits[$module][$delta]) ? $initial_limits[$module][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
-    $output = theme('apachesolr_facet_list', $items, $limit, $delta);
+    $output = theme('apachesolr_facet_list', array(
+      'items' => $items, 
+      'display_limit' => $limit, 
+      'delta' => $delta));
     return array('subject' => $filter_by, 'content' => $output);
   }
   return NULL;

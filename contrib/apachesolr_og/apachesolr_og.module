@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_og.module,v 1.8 2010/05/12 03:04:17 pwolanin Exp $
+// $Id: apachesolr_og.module,v 1.9 2010/05/12 20:21:38 pwolanin Exp $
 
 /**
  * @file
@@ -43,8 +43,8 @@ function apachesolr_og_admin() {
  */
 function apachesolr_og_reindex() {
   $result = db_query("SELECT nid FROM {og}");
-  while ($og = db_fetch_array($result)) {
-    apachesolr_mark_node($og['nid']);
+  foreach ($result as $og){
+    apachesolr_mark_node($og->nid);
   }
   drupal_set_message(t('All group nodes marked for re-indexing'));
 }
@@ -94,9 +94,12 @@ function apachesolr_og_apachesolr_process_results(&$results) {
   if ($groups) {
     // Copied code from og_node_groups_distinguish() and og_nodeapi().
     $accessible_groups = array();
-    $placeholders = db_placeholders($groups);
-    $result = db_query(db_rewrite_sql('SELECT n.nid FROM {node} n WHERE n.nid IN (' . $placeholders . ')'), $groups);
-    while ($row = db_fetch_object($result)) {
+    $query = db_select('node', 'n')
+      ->fields('n', array('nid'))  
+      ->condition('n.nid', $groups, 'IN');
+    $query->addTag('node_access');
+    $result = $query->execute();
+    foreach ($result as $row){
       $accessible_groups[] = $row->nid;
     }
     foreach ($results as $idx => $r) {
@@ -145,7 +148,7 @@ function apachesolr_og_block($op = 'list', $delta = 0, $edit = array()) {
       $blocks = array();
       foreach ($enabled_facets as $delta => $facet_field) {
         if (isset($facets[$delta])) {
-          $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE);
+          $blocks[$delta] = $facets[$delta] + array('cache' => DRUPAL_CACHE_PER_PAGE);
         }
       }
       return $blocks;
@@ -180,10 +183,11 @@ function apachesolr_og_block($op = 'list', $delta = 0, $edit = array()) {
 function apachesolr_og_group_name($facet, &$options) {
   if (!is_numeric($facet)) {
     $options['html'] = TRUE;
+    //TODO: theme_placeholder no longer exists in D7
     return theme('placeholder', t('No group'));
   }
 
-  return db_result(db_query("SELECT title FROM {node} WHERE nid = %d", $facet));
+  return db_query("SELECT title FROM {node} WHERE nid = ?", array($facet))->fetchField();
 }
 
 /**
@@ -207,6 +211,6 @@ function theme_apachesolr_breadcrumb_im_og_gid($field) {
     return t('No group');
   }
 
-  return db_result(db_query("SELECT title FROM {node} WHERE nid = %d", $group_id));
+  return db_query("SELECT title FROM {node} WHERE nid = ?", array($group_id))->fetchField();
 }
 
