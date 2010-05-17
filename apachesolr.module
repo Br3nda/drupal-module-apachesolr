@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.21 2010/05/12 20:21:38 pwolanin Exp $
+// $Id: apachesolr.module,v 1.22 2010/05/17 00:32:26 pwolanin Exp $
 
 /**
  * @file
@@ -153,8 +153,10 @@ function apachesolr_document_id($id, $entity = 'node') {
  */
 function apachesolr_user_update(&$edit, $account, $category) {
   if (isset($edit['name']) && $account->name != $edit['name']) {
-    db_query("UPDATE {apachesolr_search_node} SET changed = ? WHERE nid IN (SELECT nid FROM {node} WHERE uid = ?)", array(REQUEST_TIME, $account->uid));
-  }	
+  	// TODO: performance issue. see http://drupal.org/node/592522
+    $nid_query = db_select('node')->fields('node', array('nid'))->where("uid = :uid", array(':uid' => $account->uid));
+    db_update('apachesolr_search_node')->condition('nid', $nid_query, 'IN')->fields(array('changed' => REQUEST_TIME))->execute();
+  }
 }
 
 /**
@@ -163,7 +165,9 @@ function apachesolr_user_update(&$edit, $account, $category) {
  * Mark nodes as needing re-indexing if a term name changes.
  */
 function apachesolr_taxonomy_term_update($term) {
-  db_query("UPDATE {apachesolr_search_node} SET changed = ? WHERE nid IN (SELECT nid FROM {term_node} WHERE tid = ?)", array(REQUEST_TIME, $term->tid));
+  // TODO: performance issue. see http://drupal.org/node/592522
+	$nid_query = db_select('term_node')->fields('term_node', array('nid'))->where("tid = :tid", array(':tid' => $term->tid));
+	db_update('apachesolr_search_node')->condition('nid', $nid_query, 'IN')->fields(array('changed' => REQUEST_TIME))->execute();
   // TODO: the rest, such as term deletion.
 }
 
@@ -287,22 +291,33 @@ function apachesolr_clear_last_index($namespace = '') {
  */
 function apachesolr_rebuild_index_table($type = NULL) {
   if (isset($type)) {
-    $nids = db_select('node')->fields('node', array('nid'))->condition('type', $type);
-    db_delete('apachesolr_search_node')->condition('nid', $nids, 'IN')->execute();
+    $sel_query = db_select('node')
+      ->fields('node', array('nid'))
+      ->condition('type', $type);
+    db_delete('apachesolr_search_node')->condition('nid', $sel_query, 'IN')->execute();
+
     // Populate table
-    // TODO: use db_insert()
-    db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed)
-              SELECT n.nid, n.status, :time AS changed
-              FROM {node} n WHERE n.type = ':type'", array(':time' => REQUEST_TIME, ':type' => $type));
+    $sel_query = db_select('node')
+      ->fields('node', array('nid', 'status'))
+      ->condition('type', $type);
+    $sel_query->addExpression(REQUEST_TIME, 'changed');
+
+    db_insert('apachesolr_search_node')->fields(array('nid', 'status', 'changed'))
+      ->from($sel_query)
+      ->execute();
   }
   else {
     db_delete('apachesolr_search_node')->execute();
     // Populate table
-    // TODO: use db_insert()
-    db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed)
-              SELECT n.nid, n.status, GREATEST(n.created, n.changed, COALESCE(c.last_comment_timestamp, 0)) AS changed
-              FROM {node} n
-              LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid");
+    $sel_query = db_select('node', 'n')
+      ->fields('n', array('nid', 'status'));
+    $sel_query->leftJoin('node_comment_statistics', 'c', 'n.nid = c.nid');
+    $sel_query->addExpression('GREATEST(n.created, n.changed, COALESCE(c.last_comment_timestamp, 0))', 'changed');
+
+    db_insert('apachesolr_search_node')->fields(array('nid', 'status', 'changed'))
+      ->from($sel_query)
+      ->execute();
+
     // Make sure no nodes end up with a timestamp that's in the future.
     db_update('apachesolr_search_node')->condition('changed', REQUEST_TIME, '>')->fields(array('changed' => REQUEST_TIME))->execute();
     apachesolr_clear_last_index();
@@ -592,7 +607,7 @@ function apachesolr_clear_cache() {
  * Implements hook_node_insert().
  */
 function apachesolr_node_insert($node) {
-  // Make sure no node ends up with a timestamp that's in the future by using 
+  // Make sure no node ends up with a timestamp that's in the future by using
   // REQUEST_TIME rather than the node's changed or created timestamp.
   db_insert('apachesolr_search_node')->fields(array('nid' => $node->nid, 'status' => $node->status, 'changed' => REQUEST_TIME))->execute();
 }
@@ -709,13 +724,13 @@ function apachesolr_block_info(){
     'info' => t('Apache Solr Core: Sorting'),
     'cache' => DRUPAL_CACHE_PER_PAGE,
   );
-  return $blocks;	
+  return $blocks;
 }
 
 /**
  * Implements hook_block_view().
  */
-function apachesolr_block_view($delta = ''){	
+function apachesolr_block_view($delta = ''){
   if ($delta != 'sort' && ($node = menu_get_object()) && (!arg(2) || arg(2) == 'view')) {
     $suggestions = array();
     // Determine whether the user can view the current node.
@@ -765,7 +780,7 @@ function apachesolr_block_view($delta = ''){
       else {
         $direction = '';
         $new_direction = $sort['default'];
-      }      
+      }
 	  $new_query->set_solrsort($name, $new_direction);
       $sort_links[$name] = array(
         'title' => $sort['title'],
@@ -779,11 +794,11 @@ function apachesolr_block_view($delta = ''){
     drupal_alter('apachesolr_sort_links', $sort_links);
     foreach ($sort_links as $name => $link) {
       $themed_links[$name] = theme('apachesolr_sort_link', array(
-        'text' => $link['title'], 
-        'path' => $link['path'], 
-        'options' => $link['options'], 
-        'active' => $link['active'], 
-        'direction' => $link['direction']));        
+        'text' => $link['title'],
+        'path' => $link['path'],
+        'options' => $link['options'],
+        'active' => $link['active'],
+        'direction' => $link['direction']));
     }
     return array(
 	  'subject' => t('Sort by'),
@@ -795,7 +810,7 @@ function apachesolr_block_view($delta = ''){
 /**
  * Implements hook_block_configure().
  */
-function apachesolr_block_configure($delta = ''){	
+function apachesolr_block_configure($delta = ''){
   if ($delta != 'sort') {
     require_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
     return apachesolr_mlt_block_form($delta);
@@ -805,7 +820,7 @@ function apachesolr_block_configure($delta = ''){
 /**
  * Implements hook_block_save().
  */
-function apachesolr_block_save($delta = '', $edit = array()){	
+function apachesolr_block_save($delta = '', $edit = array()){
   if ($delta != 'sort') {
     require_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
     apachesolr_mlt_save_block($edit, $delta);
@@ -1044,19 +1059,19 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
         $new_query->remove_filter($facet_field, $facet);
         $options['query'] = $new_query->get_url_queryvalues();
         $link = theme('apachesolr_unclick_link', array(
-          'facet_text' => $facet_text, 
-          'path' => $new_query->get_path(), 
+          'facet_text' => $facet_text,
+          'path' => $new_query->get_path(),
           'options' => $options));
       }
       else {
         $new_query->add_filter($facet_field, $facet, $exclude);
         $options['query'] = $new_query->get_url_queryvalues();
         $link = theme('apachesolr_facet_link', array(
-          'facet_text' => $facet_text, 
+          'facet_text' => $facet_text,
           'path' => $new_query->get_path(),
-          'options' => $options, 
-          'count' => $count, 
-          'active' => FALSE, 
+          'options' => $options,
+          'count' => $count,
+          'active' => FALSE,
           'num_found' => $response->response->numFound));
       }
 
@@ -1076,8 +1091,8 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
       $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
       $limit = isset($initial_limits[$module][$delta]) ? $initial_limits[$module][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
       $output = theme('apachesolr_facet_list', array(
-        'items' => $items, 
-        'display_limit' => $limit, 
+        'items' => $items,
+        'display_limit' => $limit,
         'delta' => $delta));
       return array('subject' => $filter_by, 'content' => $output);
     }
@@ -1106,8 +1121,8 @@ function apachesolr_date_facet_block($response, $query, $module, $delta, $facet_
     }
     $options['query'] = $new_query->get_url_queryvalues();
     array_unshift($items, theme('apachesolr_unclick_link', array(
-      'facet_text' => $facet_text, 
-      'path' => $new_query->get_path(), 
+      'facet_text' => $facet_text,
+      'path' => $new_query->get_path(),
       'options' => $options)));
   }
   // Add links for additional date filters.
@@ -1147,11 +1162,11 @@ function apachesolr_date_facet_block($response, $query, $module, $delta, $facet_
       $new_query->add_filter($facet_field, '['. $facet .' TO '. $range_end[$facet] .']');
       $options['query'] = $new_query->get_url_queryvalues();
       $items[] = theme('apachesolr_facet_link', array(
-        'facet_text' => $facet_text, 
-        'path' => $new_query->get_path(), 
-        'options' => $options, 
-        'count' => $count, 
-        'active' => FALSE, 
+        'facet_text' => $facet_text,
+        'path' => $new_query->get_path(),
+        'options' => $options,
+        'count' => $count,
+        'active' => FALSE,
         'num_found' => $response->response->numFound));
     }
   }
@@ -1160,8 +1175,8 @@ function apachesolr_date_facet_block($response, $query, $module, $delta, $facet_
     $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
     $limit = isset($initial_limits[$module][$delta]) ? $initial_limits[$module][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
     $output = theme('apachesolr_facet_list', array(
-      'items' => $items, 
-      'display_limit' => $limit, 
+      'items' => $items,
+      'display_limit' => $limit,
       'delta' => $delta));
     return array('subject' => $filter_by, 'content' => $output);
   }

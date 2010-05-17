@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_og.module,v 1.9 2010/05/12 20:21:38 pwolanin Exp $
+// $Id: apachesolr_og.module,v 1.10 2010/05/17 00:32:26 pwolanin Exp $
 
 /**
  * @file
@@ -187,7 +187,7 @@ function apachesolr_og_group_name($facet, &$options) {
     return theme('placeholder', t('No group'));
   }
 
-  return db_query("SELECT title FROM {node} WHERE nid = ?", array($facet))->fetchField();
+  return db_query("SELECT title FROM {node} WHERE nid = :nid", array(':nid' => $facet))->fetchField();
 }
 
 /**
@@ -211,6 +211,6 @@ function theme_apachesolr_breadcrumb_im_og_gid($field) {
     return t('No group');
   }
 
-  return db_query("SELECT title FROM {node} WHERE nid = ?", array($group_id))->fetchField();
+  return db_query("SELECT title FROM {node} WHERE nid = :nid", array(':nid' => $group_id))->fetchField();
 }
 

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.11 2010/05/12 20:21:38 pwolanin Exp $
+// $Id: apachesolr.install,v 1.12 2010/05/17 00:32:26 pwolanin Exp $
 
 /**
  * @file
@@ -147,8 +147,8 @@ function apachesolr_uninstall() {
   variable_del('apachesolr_mlt_blocks');
   variable_del('apachesolr_cron_limit');
   variable_del('apachesolr_enabled_facets');
-  // Remove blocks.
-  db_query('DELETE FROM {blocks} WHERE module = "apachesolr"');
+  // Remove blocks.  
+  db_delete('blocks')->condition('module', 'apachesolr')->execute();   
 }
 
 /**
@@ -236,6 +236,7 @@ function apachesolr_update_6004() {
   if (db_table_exists("{apachesolr_mlt}")) {
     require_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
     $result = db_query('SELECT id, data FROM {apachesolr_mlt} ORDER BY id ASC');
+    db_delete('blocks')->condition('module', 'apachesolr_search')->execute();
     foreach($result as $row){
       $delta = sprintf('mlt-%03d', $row->id);
       apachesolr_mlt_save_block(unserialize($row->data), $delta);

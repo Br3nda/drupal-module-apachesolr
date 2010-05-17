@@ -22,7 +22,7 @@ function apachesolr_commentsearch_apachesolr_document_handlers($type, $namespace
 
 function apachesolr_commentsearch_node_to_comments($node, $namespace) {
   $documents = array();
-  $result = db_query("SELECT c.*, u.name AS registered_name FROM {comments} c INNER JOIN {users} u ON c.uid = u.uid WHERE c.nid = ?", array($node->nid));
+  $result = db_query("SELECT c.*, u.name AS registered_name FROM {comments} c INNER JOIN {users} u ON c.uid = u.uid WHERE c.nid = :nid", array(':nid' => node->nid));
   foreach($result as $comment){
     $text = check_markup($comment->comment, $comment->format, FALSE);
 
@@ -165,7 +165,7 @@ function theme_apachesolr_commentsearch_breadcrumb_type($field) {
   if ($type == 'comment') {
     return t('Comment');
   }
-  return node_get_types('name', $type);
+  return node_type_get_name($type);
 }
 
 /**
@@ -211,11 +211,11 @@ function apachesolr_commentsearch_page_count($num_comments, $node, $cid) {
       // Threaded comments. See the documentation for comment_render().
       if ($order == COMMENT_ORDER_NEWEST_FIRST) {
         // Newest first: find the last thread with new comment
-        $result = db_query('(SELECT cid, thread FROM {comments} WHERE nid = ? AND status = 0 ORDER BY timestamp DESC) ORDER BY thread', array($node->nid));
+        $result = db_query('(SELECT cid, thread FROM {comments} WHERE nid = :nid AND status = 0 ORDER BY timestamp DESC) ORDER BY thread', array(':nid' => $node->nid));
       }
       else {
         // Oldest first: find the first thread with new comment
-        $result = db_query('(SELECT thread FROM {comments} WHERE nid = ? AND status = 0 ORDER BY timestamp DESC) ORDER BY SUBSTRING(thread, 1, (LENGTH(thread) - 1))', array($node->nid));
+        $result = db_query('(SELECT thread FROM {comments} WHERE nid = :nid AND status = 0 ORDER BY timestamp DESC) ORDER BY SUBSTRING(thread, 1, (LENGTH(thread) - 1))', array(':nid' => $node->nid));
       }
       $count = 0;
       foreach($result as $row){

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.15 2010/05/12 20:21:38 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.16 2010/05/17 00:32:26 pwolanin Exp $
 
 /**
  * @file
@@ -79,10 +79,10 @@ function apachesolr_search_menu_alter(&$menu) {
     }
   }
   if (variable_get('apachesolr_search_taxonomy_links', 0)) {
-    if (isset($menu['taxonomy/term/%'])) {
-      $menu['taxonomy/term/%']['page callback'] = 'apachesolr_search_taxonomy_term_page';
-      $menu['taxonomy/term/%']['file path'] = drupal_get_path('module', 'apachesolr_search');
-      $menu['taxonomy/term/%']['file'] = 'apachesolr.taxonomy.inc';
+    if (isset($menu['taxonomy/term/%taxonomy_term'])) {
+      $menu['taxonomy/term/%taxonomy_term']['page callback'] = 'apachesolr_search_taxonomy_term_page';
+      $menu['taxonomy/term/%taxonomy_term']['file path'] = drupal_get_path('module', 'apachesolr_search');
+      $menu['taxonomy/term/%taxonomy_term']['file'] = 'apachesolr.taxonomy.inc';
     }
   }
 }
@@ -184,20 +184,7 @@ function apachesolr_search_view($type = NULL) {
 
       // Collect the search results. See search_data().
       $search_result = apachesolr_search_search_execute($keys);
-      if (isset($search_result) && is_array($search_result) && count($search_result)) {
-        if (module_hook($type, 'search_page')) {
-          $content = module_invoke($type, 'search_page', $search_result);
-        }
-        else {        	
-          $content = theme('search_results', array('results' => $search_result, 'type' => $type));          
-        }
-      } 
-      else if ($content) {
-        $content = theme('search_results_listing', array('title' => t('Search results'), 'content' => $search_result));
-      }
-      else {
-        $content = theme('search_results_listing', array('title' => t('Your search yielded no results'), 'content' => theme('apachesolr_search_noresults')));
-      }
+      $content = apachesolr_search_theme_search_results($search_result, $type);
     }
     elseif ($type != 'node') {
       // Ignore $type == node. Since we override the menu path to search to point
@@ -226,6 +213,25 @@ function apachesolr_search_view($type = NULL) {
   return $build;
 }
 
+
+function apachesolr_search_theme_search_results($search_result, $type){
+  if (isset($search_result) && is_array($search_result) && count($search_result)) {
+    if (module_hook($type, 'search_page')) {
+      $content = module_invoke($type, 'search_page', $search_result);
+    }
+    else {          
+      $content = theme('search_results', array('results' => $search_result, 'type' => $type));          
+    }
+  } 
+  else if ($search_result) {
+    $content = theme('search_results_listing', array('title' => t('Search results'), 'content' => $search_result));
+  }
+  else {
+    $content = theme('search_results_listing', array('title' => t('Your search yielded no results'), 'content' => theme('apachesolr_search_noresults')));
+  }
+
+  return $content;
+}
 /**
  * Implements hook_apachesolr_document_handlers().
  *
@@ -1452,7 +1458,7 @@ function theme_apachesolr_breadcrumb_tid($vars) {
  */
 function theme_apachesolr_breadcrumb_type($vars) {
   $field = $vars['field'];
-  return node_get_types('name', $field['#value']);
+  return node_type_get_name($field['#value']);
 }
 
 /**

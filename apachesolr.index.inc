@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.7 2010/05/12 20:21:38 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.8 2010/05/17 00:32:26 pwolanin Exp $
 
 /**
  * @file
@@ -32,8 +32,10 @@ function apachesolr_node_to_document($node, $namespace) {
 
   if ($build_document) {
     // Build the node body.
-    node_build_content($node, 'search_index');    
-    $node->body = drupal_render($node->content);
+    $build = node_view($node, 'search_index');
+    unset($build['#theme']);
+    $node->body = drupal_render($build);
+    
     $node->title = apachesolr_clean_text($node->title);
 
     // Fetch extra data normally not visible, including comments.
@@ -252,7 +254,7 @@ function apachesolr_vocab_name($vid) {
   static $names = array();
 
   if (!isset($names[$vid])) {
-    $vocab_name = db_query('SELECT v.name FROM {taxonomy_vocabulary} v WHERE v.vid = ?', array($vid))->fetchField();
+    $vocab_name = db_query('SELECT v.name FROM {taxonomy_vocabulary} v WHERE v.vid = :vid', array(':vid' => $vid))->fetchField();
     $names[$vid] = preg_replace('/[^a-zA-Z0-9_\x7f-\xff]/', '_', $vocab_name);
     // Fallback for names ending up all as '_'.
     $check = rtrim($names[$vid], '_');

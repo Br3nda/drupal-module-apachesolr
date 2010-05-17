@@ -1,60 +1,50 @@
 <?php
-// $Id: apachesolr.taxonomy.inc,v 1.4 2010/05/12 20:21:38 pwolanin Exp $
+// $Id: apachesolr.taxonomy.inc,v 1.5 2010/05/17 00:32:26 pwolanin Exp $
 
 /**
  * Overrides taxonomy/term/X links
  */
-function apachesolr_search_taxonomy_term_page($str_tids = '', $depth = 0, $op = 'page') {
-  drupal_add_feed(url('taxonomy/term/' . $str_tids . '/' . $depth . '/feed'), 'RSS - '. $title);
-
-  $vids_to_override = apachesolr_get_enabled_facets('apachesolr_search');
-
-  $terms = taxonomy_terms_parse_string($str_tids);
-  $redirect_to_apachesolr = TRUE;
-
-  // Only support one term, only page callbacks, and only depth = 0 (because of way Solr indexing works)
-  if ((count($terms['tids']) > 1 && $terms['operator'] != 'and') || ($op != 'page') || ($depth != 0)) {
-    $redirect_to_apachesolr = FALSE;
+//function apachesolr_search_taxonomy_term_page($str_tids = '', $depth = 0, $op = 'page') {
+function apachesolr_search_taxonomy_term_page($term) {	
+  // Build breadcrumb based on the hierarchy of the term.
+  $current = (object) array(
+    'tid' => $term->tid,
+  );
+  $breadcrumb = array();
+  while ($parents = taxonomy_get_parents($current->tid)) {
+    $current = array_shift($parents);
+    $breadcrumb[] = l($current->name, 'taxonomy/term/' . $current->tid);
   }
-  else {
-    // Check if term belongs to vocabulary selected by admin as an available filter
-    $term = taxonomy_term_load($terms['tids'][0]);
-    $vocabulary_facet_name = 'im_vid_' . $term->vid;
+  $breadcrumb[] = l(t('Home'), NULL);
+  $breadcrumb = array_reverse($breadcrumb);
+  drupal_set_breadcrumb($breadcrumb);
+  drupal_add_feed(url('taxonomy/term/' . $term->tid . '/feed'), 'RSS - ' . $term->name);
 
-    if (!in_array($vocabulary_facet_name, $vids_to_override)) {
-      $redirect_to_apachesolr = FALSE;
-    }
+  $build['term_heading'] = array(
+    '#prefix' => '<div class="term-listing-heading">',
+    '#suffix' => '</div>',
+    'term' => taxonomy_term_view($term, 'full'),
+  );
+
+  $filters = 'tid:' . $term->tid;
+  $solrsort = variable_get('apachesolr_search_taxonomy_sort', 'created desc');
+  $page = isset($_GET['page']) ? $_GET['page'] : 0;
+  $type = 'apachesolr_Search';
+  $_GET['retain-filters'] = 1; //?? 
+
+  $search_result = apachesolr_search_run('', $filters, $solrsort, 'search/apachesolr_search', $page);
+    
+  if ($search_result){
+    $build['content'] = array(
+      '#markup' => apachesolr_search_theme_search_results( $search_result, $type )
+    );      	
   }
-
-  if ($redirect_to_apachesolr == FALSE) {
-    // Fallback to normal taxonomy/term page
-    require_once(drupal_get_path('module', 'taxonomy') .'/taxonomy.pages.inc');
-    return taxonomy_term_page($str_tids, $depth, $op);
+  else{
+    $build['no_content'] = array(
+      '#prefix' => '<p>',
+      '#markup' => t('There is currently no content classified with this term.'),
+      '#suffix' => '</p>',
+    );  	
   }
-  else {
-    $filters = 'tid:' . array_pop($terms['tids']);
-    $solrsort = variable_get('apachesolr_search_taxonomy_sort', 'created desc');
-    $page = isset($_GET['page']) ? $_GET['page'] : 0;
-    $_GET['retain-filters'] = 1;
-
-    try {
-      $data = apachesolr_search_run('', $filters, $solrsort, 'search/apachesolr_search', $page);
-      $results = theme('search_results', $data, $type);
-    }
-    catch (Exception $e) {
-      watchdog('Apache Solr', t('Error running search'));
-    }
-
-    // Set the title to the term name like taxonomy does.
-    drupal_set_title(check_plain($term->name));
-
-    if ($results) {
-      $results = theme('box', t('Results for %term', array('%term' => $term->name)), $results);
-    }
-    else {
-      $results = theme('box', t('Your search yielded no results'), search_help('search#noresults', drupal_help_arg()));
-    }
-
-    return drupal_get_form('search_form', NULL, '', 'apachesolr_search') . $results;
-  }
+  return $build;
 }

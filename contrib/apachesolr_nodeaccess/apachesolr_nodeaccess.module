@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.8 2010/05/12 20:21:38 pwolanin Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.9 2010/05/17 00:32:26 pwolanin Exp $
 
 /**
  * Implements apachesolr_update_index
@@ -14,7 +14,7 @@ function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node, $names
 
   if (!node_access('view', $node, $account)) {
     // Get node access grants.
-    $result = db_query('SELECT * FROM {node_access} WHERE (nid = 0 OR nid = ?) AND grant_view = 1', array($node->nid));
+    $result = db_query('SELECT * FROM {node_access} WHERE (nid = 0 OR nid = :nid) AND grant_view = 1', array(':nid' => $node->nid));
     foreach($result as $grant){
       $key = 'nodeaccess_' . apachesolr_site_hash() . '_' . $grant->realm;
       $document->setMultiValue($key, $grant->gid);
