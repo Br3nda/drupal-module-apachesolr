@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.8 2010/05/17 00:32:26 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.9 2010/05/22 02:30:57 pwolanin Exp $
 
 /**
  * @file
@@ -305,10 +305,16 @@ function apachesolr_add_tags_to_document(&$document, $text) {
 
 /**
  * hook_cron() helper to try to make {apachesolr_search_node} consistent with {node}.
+ * TODO: this function is never used
  */
 function apachesolr_cron_check_node_table() {
   // Check for unpublished content that wasn't deleted from the index.
-  $result = db_query("SELECT n.nid, n.status FROM {apachesolr_search_node} asn INNER JOIN {node} n ON n.nid = asn.nid WHERE asn.status <> n.status");
+  $query = db_select('apachesolr_search_node', 'asn')  
+    ->fields('n', array('nid', 'status'))
+    ->condition('asn.status', 'n.status', '<>');
+  $query->innerJoin('node', 'n', 'n.nid = asn.nid');
+  $result = $query->execute();  
+  
   $node_lists = array();
   $nodes = array();
   // Update or delete at most this many in each Solr query.
@@ -332,7 +338,12 @@ function apachesolr_cron_check_node_table() {
     }
   }
   // Check for deleted content that wasn't deleted from the index.
-  $result = db_query("SELECT asn.nid FROM {apachesolr_search_node} asn LEFT JOIN {node} n ON n.nid = asn.nid WHERE n.nid IS NULL");
+  $query = db_select('apachesolr_search_node', 'asn')
+    ->fields('asn', array('nid'))
+    ->isNull('n.nid');
+  $query->leftJoin('node', 'n', 'n.nid = asn.nid');
+  $result = $query->execute();
+  
   $node_lists = array();
   $nodes = array();
   foreach ($result as $node) {

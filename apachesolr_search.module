@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.16 2010/05/17 00:32:26 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.17 2010/05/22 02:30:57 pwolanin Exp $
 
 /**
  * @file
@@ -61,8 +61,8 @@ function apachesolr_search_menu() {
 function apachesolr_search_menu_alter(&$menu) {
   if (isset($menu['search/apachesolr_search/%menu_tail'])) {
     $menu['search']['page callback'] = 'apachesolr_search_view';
-    $menu['search/apachesolr_search']['page callback'] = 'apachesolr_search_view';
     $menu['search/apachesolr_search/%menu_tail']['page callback'] = 'apachesolr_search_view';
+    $menu['search/apachesolr_search'] = $menu['search'];
   }
   if (variable_get('apachesolr_search_make_default', 0)) {
     if (isset($menu['search/node/%menu_tail'])) {
@@ -155,7 +155,7 @@ function apachesolr_search_search_execute($keys = NULL){
 /**
  * Re-implementation of search_view().
  */
-function apachesolr_search_view($type = NULL) {
+function apachesolr_search_view($type = 'apachesolr_search') {
   $keys = trim(search_get_keys());
   $content = '';
   $build = array();
@@ -275,6 +275,9 @@ function apachesolr_search_browse($keys = '', $filters = '', $solrsort = '', $ba
   apachesolr_static_response_cache($response);
   apachesolr_has_searched(TRUE);
 
+  //this sets $theme_key global variable
+  drupal_theme_initialize();
+  
   // Get blocks for all enabled filters
   $blocks = array();
   $rids = array_keys($user->roles);
@@ -291,7 +294,7 @@ function apachesolr_search_browse($keys = '', $filters = '', $solrsort = '', $ba
           count((array) $response->facet_counts->facet_dates->$facet_field) > 0) {
         // This bit is modeled on block.module, block_list().        
         $query = db_select('block', 'b');
-        $br_alias = $query->leftJoin('blocks_roles', 'br', 'b.module = br.module AND b.delta = br.delta');        
+        $br_alias = $query->leftJoin('block_role', 'br', 'b.module = br.module AND b.delta = br.delta');        
         $query
           ->fields('b')
           ->distinct()
@@ -299,12 +302,12 @@ function apachesolr_search_browse($keys = '', $filters = '', $solrsort = '', $ba
           ->condition('b.delta', $delta)
           ->condition('b.theme', $theme_key)
           ->condition('b.status', 1)
-          ->condition(db_or()->condition('br.rid', $rids, 'IN')->isNull('r.rid'))          
+          ->condition(db_or()->condition('br.rid', $rids, 'IN')->isNull('br.rid'))          
           ->range(0, 1);
         $query->addTag('node_access');
         $result = $query->execute();        
         $block = $result->fetchObject();
-        $hook_block = (object)module_invoke($module, 'block', 'view', $delta);
+        $hook_block = (object)module_invoke($module, 'block_view', $delta);
         $block->content = $hook_block->content;
         $block->subject = str_replace(t('Filter by '), t('Browse by '), $hook_block->subject);
         // We can safely assume these values, since we're taking over the block display.
@@ -334,7 +337,9 @@ function theme_apachesolr_browse_blocks($vars) {
   $result = "<div class='apachesolr_browse_block'><h2>" . t('Browse available categories') .'</h2>';
   $result .= '<p>' . t('Pick a category to launch a search.') . '</p>';
   foreach ($blocks as $facet_field => $block) {
-    $result .= theme('block', $block);
+    //$result .= theme('block', array('block' => $block));
+    $result .= theme('block', array('elements' => array('#block' => $block, '#children' => $block->content)));
+    
   }
   $result .= '</div>';
 

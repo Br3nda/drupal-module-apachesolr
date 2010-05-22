@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.22 2010/05/17 00:32:26 pwolanin Exp $
+// $Id: apachesolr.module,v 1.23 2010/05/22 02:30:57 pwolanin Exp $
 
 /**
  * @file
@@ -166,8 +166,8 @@ function apachesolr_user_update(&$edit, $account, $category) {
  */
 function apachesolr_taxonomy_term_update($term) {
   // TODO: performance issue. see http://drupal.org/node/592522
-	$nid_query = db_select('term_node')->fields('term_node', array('nid'))->where("tid = :tid", array(':tid' => $term->tid));
-	db_update('apachesolr_search_node')->condition('nid', $nid_query, 'IN')->fields(array('changed' => REQUEST_TIME))->execute();
+  $nid_query = db_select('taxonomy_index')->fields('taxonomy_index', array('nid'))->where("tid = :tid", array(':tid' => $term->tid));
+  db_update('apachesolr_search_node')->condition('nid', $nid_query, 'IN')->fields(array('changed' => REQUEST_TIME))->execute();
   // TODO: the rest, such as term deletion.
 }
 
@@ -253,9 +253,23 @@ function apachesolr_node_type_update($info) {
  * Helper function for modules implmenting hook_search's 'status' op.
  */
 function apachesolr_index_status($namespace) {
-  list($excluded_types, $args, $join_sql, $exclude_sql) = apachesolr_exclude_types($namespace);
-  $total = db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE asn.status = 1 " . $exclude_sql)->fetchField();
-  $remaining = db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > :last_changed OR (asn.changed = :last_changed AND asn.nid > :last_nid)) AND asn.status = 1 "  . $exclude_sql, $args)->fetchField();
+	//TODO: remove old code 
+  //list($excluded_types, $args, $join_sql, $exclude_sql) = apachesolr_exclude_types($namespace);  
+  //$total = db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE asn.status = 1 " . $exclude_sql)->fetchField();
+  $excluded_types = apachesolr_get_excluded_types($namespace);
+  list($last_change, $last_nid) = apachesolr_get_last_change($namespace);
+  
+  $query = db_select('apachesolr_search_node', 'asn')->countQuery()->condition('asn.status', 1);
+  apachesolr_query_add_excluded_types($query, $excluded_types);
+  $total = $query->execute()->fetchField();
+    
+  //$remaining = db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > :last_changed OR (asn.changed = :last_changed AND asn.nid > :last_nid)) AND asn.status = 1 "  . $exclude_sql, $args)->fetchField();
+  $query = db_select('apachesolr_search_node', 'asn')->countQuery()
+    ->condition('asn.status', 1)
+    ->condition(db_or()->condition('asn.changed', $last_change, '>')->condition(db_and()->condition('asn.changed', $last_change)->condition('asn.nid', $last_nid, '>')));
+  apachesolr_query_add_excluded_types($query, $excluded_types);
+  $remaining = $query->execute()->fetchField();
+
   return array('remaining' => $remaining, 'total' => $total);
 }
 
@@ -325,18 +339,24 @@ function apachesolr_rebuild_index_table($type = NULL) {
   cache_clear_all('*', 'cache_apachesolr', TRUE);
 }
 
-function apachesolr_exclude_types($namespace) {
-  extract(apachesolr_get_last_index($namespace));
+function apachesolr_get_excluded_types($namespace) {
   $excluded_types = module_invoke_all('apachesolr_types_exclude', $namespace);
-  $args = array(':last_changed' => $last_change, ':last_nid' => $last_nid);
-  $join_sql = '';
-  $exclude_sql = '';
   if ($excluded_types) {
     $excluded_types = array_unique($excluded_types);
-    $join_sql = "INNER JOIN {node} n ON n.nid = asn.nid ";
-    $exclude_sql = "AND n.type NOT IN('" . implode("','", $excluded_types) . "') ";
   }
-  return array($excluded_types, $args, $join_sql, $exclude_sql);
+  return $excluded_types;
+}
+
+function apachesolr_query_add_excluded_types($query, $excluded_types){	
+  if($excluded_types){
+    $query->innerJoin('node', 'n', 'n.nid = asn.nid');
+    $query->condition('n.type', $excluded_types, 'NOT IN');
+  }	
+}
+
+function apachesolr_get_last_change($namespace) {
+  extract(apachesolr_get_last_index($namespace));
+  return array($last_change, $last_nid);
 }
 
 /**
@@ -347,9 +367,21 @@ function apachesolr_get_nodes_to_index($namespace, $limit) {
   if (variable_get('apachesolr_read_only', 0)) {
     return $rows;
   }
-  list($excluded_types, $args, $join_sql, $exclude_sql) = apachesolr_exclude_types($namespace);
-  // TODO: update to use new API
-  $result = db_query_range("SELECT asn.nid, asn.changed FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > :last_changed OR (asn.changed = :last_changed AND asn.nid > :last_nid)) AND asn.status = 1 ". $exclude_sql ."ORDER BY asn.changed ASC, asn.nid ASC", 0, $limit, $args);
+
+  $excluded_types = apachesolr_get_excluded_types($namespace);
+  list($last_change, $last_nid) = apachesolr_get_last_change($namespace);
+  //TODO: remove old code
+  //list($excluded_types, $args, $join_sql, $exclude_sql) = apachesolr_exclude_types($namespace);
+  //$result = db_query_range("SELECT asn.nid, asn.changed FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > :last_changed OR (asn.changed = :last_changed AND asn.nid > :last_nid)) AND asn.status = 1 ". $exclude_sql ."ORDER BY asn.changed ASC, asn.nid ASC", 0, $limit, $args);
+  $query = db_select('apachesolr_search_node', 'asn')
+    ->fields('asn', array('nid', 'changed'))
+    ->condition('asn.status', 1)
+    ->condition(db_or()->condition('asn.changed', $last_change, '>')->condition(db_and()->condition('asn.changed', $last_change)->condition('asn.nid', $last_nid, '>')))
+    ->orderBy('asn.changed', 'ASC')
+    ->orderBy('asn.nid', 'ASC')
+    ->range(0, $limit);
+  apachesolr_query_add_excluded_types($query, $excluded_types);
+  $result = $query->execute();
   return $result;
 }
 
@@ -396,6 +428,7 @@ function apachesolr_index_nodes($rows, $namespace) {
   $documents = array();
   $old_position = apachesolr_get_last_index($namespace);
   $position = $old_position;
+  $position['nodes_processed'] = 0;
 
   // Invoke hook_apachesolr_document_handlers to find out what modules build $documents
   // from nodes in this namespace.
@@ -420,6 +453,7 @@ function apachesolr_index_nodes($rows, $namespace) {
       watchdog('Apache Solr', 'Error constructing documents to index: <br /> !message', array('!message' => nl2br(strip_tags($e->getMessage()))), WATCHDOG_ERROR);
       break;
     }
+    $position['nodes_processed']++;
   }
 
   // Flatten $documents

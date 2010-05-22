@@ -1,11 +1,11 @@
 <?php
-// $Id: apachesolr.taxonomy.inc,v 1.5 2010/05/17 00:32:26 pwolanin Exp $
+// $Id: apachesolr.taxonomy.inc,v 1.6 2010/05/22 02:30:57 pwolanin Exp $
 
 /**
  * Overrides taxonomy/term/X links
  */
 //function apachesolr_search_taxonomy_term_page($str_tids = '', $depth = 0, $op = 'page') {
-function apachesolr_search_taxonomy_term_page($term) {	
+function apachesolr_search_taxonomy_term_page($term) {
   // Build breadcrumb based on the hierarchy of the term.
   $current = (object) array(
     'tid' => $term->tid,
@@ -33,18 +33,18 @@ function apachesolr_search_taxonomy_term_page($term) {
   $_GET['retain-filters'] = 1; //?? 
 
   $search_result = apachesolr_search_run('', $filters, $solrsort, 'search/apachesolr_search', $page);
-    
+
   if ($search_result){
     $build['content'] = array(
-      '#markup' => apachesolr_search_theme_search_results( $search_result, $type )
-    );      	
+      '#markup' => apachesolr_search_theme_search_results($search_result, $type)
+    );
   }
   else{
     $build['no_content'] = array(
       '#prefix' => '<p>',
       '#markup' => t('There is currently no content classified with this term.'),
       '#suffix' => '</p>',
-    );  	
+    );
   }
   return $build;
 }
