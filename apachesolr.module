@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.25 2010/05/26 22:36:51 pwolanin Exp $
+// $Id: apachesolr.module,v 1.26 2010/05/26 22:51:14 pwolanin Exp $
 
 /**
  * @file
@@ -76,7 +76,7 @@ function apachesolr_menu() {
     'type'               => MENU_DEFAULT_LOCAL_TASK,
   );
   $items['admin/config/search/apachesolr/mlt/add_block'] = array(
-    'title'              => 'Add More Like This block',
+    'title'              => 'Add a new content recommendation block',
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_mlt_add_block_form'),
     'access arguments'   => array('administer search'),

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.11 2010/05/22 02:30:57 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.12 2010/05/26 22:51:14 pwolanin Exp $
 
 /**
  * @file
@@ -8,6 +8,7 @@
 
 function apachesolr_settings() {
   $form = array();
+  $collapse_host = TRUE;
 
   // Perform a check to ensure the server is there
   if (empty($_POST)) {
@@ -18,25 +19,39 @@ function apachesolr_settings() {
 
     foreach (apachesolr_requirements('runtime') as $requirement) {
       $status = $requirement['severity'] == REQUIREMENT_ERROR ? 'error' : 'status';
-      drupal_set_message($requirement['title'] . ': ' . $requirement['value'], $status);
+      if ($status == 'error') {
+        drupal_set_message($requirement['title'] . ': ' . $requirement['value'], $status);
+        $collapse_host = FALSE;
+      }
     }
   }
+  // Add a link to add more mlt blocks.
+  $form['mlt_link'] = array(
+    '#type' => 'item',
+    '#description' => format_plural(count(apachesolr_mlt_list_blocks()), 'You currently have 1 block.', 'You currenly have @count blocks.'),
+  );
+  $form['apachesolr_host_settings'] = array(
+    '#title' => t('Solr host settings'),
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => $collapse_host,
+  );
 
-  $form['apachesolr_host'] = array(
+  $form['apachesolr_host_settings']['apachesolr_host'] = array(  
     '#type' => 'textfield',
     '#title' => t('Solr host name'),
     '#default_value' => variable_get('apachesolr_host', 'localhost'),
     '#description' => t('Host name of your Solr server, e.g. <code>localhost</code> or <code>example.com</code>.'),
     '#required' => TRUE,
   );
-  $form['apachesolr_port'] = array(
+  $form['apachesolr_host_settings']['apachesolr_port'] = array(
     '#type' => 'textfield',
     '#title' => t('Solr port'),
     '#default_value' => variable_get('apachesolr_port', '8983'),
     '#description' => t('Port on which the Solr server listens. The Jetty example server is 8983, while Tomcat is 8080 by default.'),
     '#required' => TRUE,
   );
-  $form['apachesolr_path'] = array(
+  $form['apachesolr_host_settings']['apachesolr_path'] = array(
     '#type' => 'textfield',
     '#title' => t('Solr path'),
     '#default_value' => variable_get('apachesolr_path', '/solr'),
@@ -81,12 +96,7 @@ function apachesolr_settings() {
     '#default_value' => variable_get('apachesolr_failure', 'show_error'),
     '#description' => t('What to display if Apache Solr search is not available.'),
   );
-  // Add a link to add more mlt blocks.
-  $form['mlt_link'] = array(
-    '#type' => 'item',
-    '#markup' => l(t('Add a new content recommendation block'), 'admin/config/apachesolr/mlt/add_block'),
-    '#description' => format_plural(count(apachesolr_mlt_list_blocks()), 'You currently have 1 block.', 'You currenly have @count blocks.'),
-  );
+
   $form['advanced'] = array(
     '#type' => 'fieldset',
     '#title' => t('Advanced configuration'),
