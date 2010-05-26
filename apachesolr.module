@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.23 2010/05/22 02:30:57 pwolanin Exp $
+// $Id: apachesolr.module,v 1.24 2010/05/26 22:07:16 pwolanin Exp $
 
 /**
  * @file
@@ -153,7 +153,7 @@ function apachesolr_document_id($id, $entity = 'node') {
  */
 function apachesolr_user_update(&$edit, $account, $category) {
   if (isset($edit['name']) && $account->name != $edit['name']) {
-  	// TODO: performance issue. see http://drupal.org/node/592522
+    // TODO: performance issue. see http://drupal.org/node/592522
     $nid_query = db_select('node')->fields('node', array('nid'))->where("uid = :uid", array(':uid' => $account->uid));
     db_update('apachesolr_search_node')->condition('nid', $nid_query, 'IN')->fields(array('changed' => REQUEST_TIME))->execute();
   }
@@ -253,16 +253,16 @@ function apachesolr_node_type_update($info) {
  * Helper function for modules implmenting hook_search's 'status' op.
  */
 function apachesolr_index_status($namespace) {
-	//TODO: remove old code 
-  //list($excluded_types, $args, $join_sql, $exclude_sql) = apachesolr_exclude_types($namespace);  
+  //TODO: remove old code
+  //list($excluded_types, $args, $join_sql, $exclude_sql) = apachesolr_exclude_types($namespace);
   //$total = db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE asn.status = 1 " . $exclude_sql)->fetchField();
   $excluded_types = apachesolr_get_excluded_types($namespace);
   list($last_change, $last_nid) = apachesolr_get_last_change($namespace);
-  
+
   $query = db_select('apachesolr_search_node', 'asn')->countQuery()->condition('asn.status', 1);
   apachesolr_query_add_excluded_types($query, $excluded_types);
   $total = $query->execute()->fetchField();
-    
+
   //$remaining = db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > :last_changed OR (asn.changed = :last_changed AND asn.nid > :last_nid)) AND asn.status = 1 "  . $exclude_sql, $args)->fetchField();
   $query = db_select('apachesolr_search_node', 'asn')->countQuery()
     ->condition('asn.status', 1)
@@ -347,11 +347,11 @@ function apachesolr_get_excluded_types($namespace) {
   return $excluded_types;
 }
 
-function apachesolr_query_add_excluded_types($query, $excluded_types){	
+function apachesolr_query_add_excluded_types($query, $excluded_types){
   if($excluded_types){
     $query->innerJoin('node', 'n', 'n.nid = asn.nid');
     $query->condition('n.type', $excluded_types, 'NOT IN');
-  }	
+  }
 }
 
 function apachesolr_get_last_change($namespace) {
@@ -815,7 +815,7 @@ function apachesolr_block_view($delta = ''){
         $direction = '';
         $new_direction = $sort['default'];
       }
-	  $new_query->set_solrsort($name, $new_direction);
+    $new_query->set_solrsort($name, $new_direction);
       $sort_links[$name] = array(
         'title' => $sort['title'],
         'path' => $path,
@@ -835,9 +835,9 @@ function apachesolr_block_view($delta = ''){
         'direction' => $link['direction']));
     }
     return array(
-	  'subject' => t('Sort by'),
+    'subject' => t('Sort by'),
       'content' => theme('apachesolr_sort_list', array('items' => $themed_links))
-	);
+  );
   }
 }
 
@@ -956,11 +956,29 @@ function apachesolr_form_content_field_overview_form_alter(&$form, $form_state) 
 }
 
 /**
+ * Implements hook_form_[form_id]_alter(). (D7)
+ *
+ * Make sure to flush cache when fields are added.
+ */
+function apachesolr_form_field_ui_field_overview_form_alter(&$form, $form_state) {
+  $form['#submit'][] = 'apachesolr_clear_cache';
+}
+
+/**
  * Implements hook_form_[form_id]_alter().
  *
  * Make sure to flush cache when fields are updated.
  */
 function apachesolr_form_content_field_edit_form_alter(&$form, $form_state) {
+  $form['#submit'][] = 'apachesolr_clear_cache';
+}
+
+/**
+ * Implements hook_form_[form_id]_alter(). (D7)
+ *
+ * Make sure to flush cache when fields are updated.
+ */
+function apachesolr_form_field_ui_field_edit_form_alter(&$form, $form_state) {
   $form['#submit'][] = 'apachesolr_clear_cache';
 }
 
@@ -1059,7 +1077,7 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
         $facet_text = $facet_callback($facet, $options);
       }
       elseif ($exclude) {
-        $facet_text = theme('placeholder', t('Missing this field'));
+        $facet_text = drupal_placeholder(array('text' => t('Missing this field')));
       }
       else {
         $facet_text = $facet;
@@ -1526,6 +1544,9 @@ function apachesolr_modify_query(&$query, &$params, $caller) {
       if (strpos($delta, '_cck_') !== FALSE) {
         $fields[] = trim(drupal_substr($delta, 7, drupal_strlen($delta)));
       }
+      elseif(strpos($delta, '_field_') !== FALSE){
+        $fields[] = trim(drupal_substr($delta, 3, drupal_strlen($delta)));
+      }
       elseif ($delta == 'tid') {
         if (function_exists('taxonomy_term_load')) {
           foreach ($values as $value) {
@@ -1763,13 +1784,10 @@ function apachesolr_current_query($query = NULL, $namespace = 'apachesolr_search
 }
 
 /**
- * array('index_type' => 'integer',
- *        'multiple' => TRUE,
- *        'name' => 'fieldname',
- *        ),
  */
-function apachesolr_index_key($field) {
-  switch ($field['index_type']) {
+function apachesolr_index_key($field_info) {
+  $field = $field_info['field'];
+  switch ($field_info['index_type']) {
     case 'text':
       $type_prefix = 't';
       break;
@@ -1812,8 +1830,9 @@ function apachesolr_index_key($field) {
     default:
       $type_prefix = 's';
   }
-  $sm = $field['multiple'] ? 'm_' : 's_';
-  return $type_prefix . $sm . $field['name'];
+  //$sm = $field['multiple'] ? 'm_' : 's_';
+  $sm = $field['cardinality'] > 1 ? 'm_' : 's_';
+  return $type_prefix . $sm . $field['field_name'];
 }
 
 /**
@@ -1845,6 +1864,9 @@ function apachesolr_field_name_map($field_name) {
     }
     foreach (apachesolr_cck_fields() as $name => $field) {
       $map[apachesolr_index_key($field)] = t('CCK @type field %label', array('@type' => $field['index_type'], '%label' => $field['label']));
+    }
+    foreach (apachesolr_fields() as $field_nm => $field_info) {
+      $map[apachesolr_index_key($field_info)] = t('Field of type @type: %label', array('@type' => $field_info['field']['type'], '%label' => $field_info['display_name']));
     }
     drupal_alter('apachesolr_field_name_map', $map);
   }
@@ -1949,6 +1971,66 @@ function apachesolr_cck_fields() {
   return $fields;
 }
 
+
+/**
+ * Returns array containing information about fields that should be indexed
+ */
+function apachesolr_fields() {
+  static $fields = null;
+
+  if (is_null($fields)) {
+    $fields = array();
+    $mappings = array(
+      'list' => array(
+        'display_callback' => 'apachesolr_text_field_display_callback',
+        'indexing_callback' => 'apachesolr_field_indexing_callback',
+        'index_type' => 'string'),
+      'list_number' => array(
+        'display_callback' => 'apachesolr_text_field_display_callback',
+        'indexing_callback' => 'apachesolr_field_indexing_callback',
+        'index_type' => 'string'),
+      'list_text' => array(
+        'display_callback' => 'apachesolr_text_field_display_callback',
+        'indexing_callback' => 'apachesolr_field_indexing_callback',
+        'index_type' => 'string')
+    );
+
+    // Allow other modules to add or alter mappings.
+    drupal_alter('apachesolr_field_mappings', $mappings);
+
+    $instances = field_info_instances('node');
+    foreach (field_info_fields() as $field_name => $field) {
+      if (isset($mappings['per-field'][$field_name]) || isset($mappings[$field['type']])) {
+        // mappings
+        if( isset($mappings['per-field'][$field_name]) ){
+          $fields[$field_name] = $mappings['per-field'][$field['type']];
+        }
+        else{
+          $fields[$field_name] = $mappings[$field['type']];
+        }
+        // the field object
+        $fields[$field_name]['field'] = $field;
+
+        //set display name
+        $display_name = array();
+        foreach ($instances as $bundle_name => $bundle){
+          if (isset($bundle[$field_name])){
+            $display_name[] = $bundle[$field_name]['label'];
+          }
+        }
+        $fields[$field_name]['display_name'] = (!empty($display_name)? implode(', ', array_unique($display_name)): $field_name);
+      }
+    }
+
+    // TODO: do we need this?
+    // Allow other modules to alter fields
+    // drupal_alter('apachesolr_fields', $fields);
+  }
+
+  return $fields;
+}
+
+
 /**
  * Implements hook_content_fieldapi().
  */
@@ -1957,6 +2039,13 @@ function apachesolr_content_fieldapi($op) {
     cache_clear_all('*', 'cache_apachesolr', TRUE);
   }
 }
+
+
+
+function apachesolr_text_field_display_callback($facet, $options) {
+  return $facet;
+}
+
 
 /**
  * Use the content.module's content_format() to format the

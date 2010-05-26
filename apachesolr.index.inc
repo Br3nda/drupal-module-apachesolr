@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.9 2010/05/22 02:30:57 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.10 2010/05/26 22:07:16 pwolanin Exp $
 
 /**
  * @file
@@ -35,7 +35,7 @@ function apachesolr_node_to_document($node, $namespace) {
     $build = node_view($node, 'search_index');
     unset($build['#theme']);
     $node->body = drupal_render($build);
-    
+
     $node->title = apachesolr_clean_text($node->title);
 
     // Fetch extra data normally not visible, including comments.
@@ -143,6 +143,37 @@ function apachesolr_node_to_document($node, $namespace) {
         }
       }
     }
+
+    // Handle fields
+    $indexed_fields = apachesolr_fields();
+    foreach ($indexed_fields as $field_name => $field_info) {
+      // See if the node has fields that can be indexed
+      if (isset($node->$field_name)) {
+        // Got a field.
+        $function = $field_info['indexing_callback'];
+        $fields = NULL;
+        if ($field_info['indexing_callback'] && function_exists($function)) {
+          // NOTE: This function should always return an array.
+          $fields = $function($node, $field_name, $field_info);
+        }
+
+        if (is_array($fields)) {
+          // NOTE: If this were done as $key => $value, and the $index_key were
+          // done within the loop, could we support indexing one CCK field to
+          // multiple Solr fields?
+          foreach ($fields as $field) {
+            if ($field_info['field']['cardinality'] > 1) {
+              $document->setMultiValue($field['key'], apachesolr_clean_text($field['value']));
+            }
+            else {
+              $document->{$field['key']} = apachesolr_clean_text($field['value']);
+            }
+          }
+        }
+      }
+    }
+
+
     // Index book module data.
     if (!empty($node->book['bid'])) {
       // Hard-coded - must change if apachesolr_index_key() changes.
@@ -171,6 +202,27 @@ function apachesolr_cck_text_indexing_callback($node, $field_name, $cck_info) {
           'value' => $index_value,
         );
       }
+    }
+  }
+  return $fields;
+}
+
+/**
+ * Callback that converts node filed into an array
+ */
+function apachesolr_field_indexing_callback($node, $field_name, $field_info) {
+  $fields = array();
+  if (isset($node->{$field_name})) {
+    $index_key = apachesolr_index_key($field_info);
+    $lang = field_language('node', $node, $field_name);
+    $field = $node->$field_name;
+    $allowed_values = list_allowed_values($field_info['field']);
+    //TODO: should we use field_filter_xss() on $allowed_values??
+    foreach ($field[$lang] as $fval) {
+      $fields[] = array(
+        'key' => $index_key,
+        'value' => isset($allowed_values[$fval['value']]) ? $allowed_values[$fval['value']] : $fval['value'],
+      );
     }
   }
   return $fields;
@@ -212,21 +264,21 @@ function apachesolr_cck_userreference_indexing_callback($node, $field_name, $cck
  * Extract taxonomy from $node and add to dynamic fields.
  */
 function apachesolr_add_taxonomy_to_document(&$document, $node) {
-	list(, , $bundle) = entity_extract_ids('node', $node);
-	$instances = field_info_instances('node', $bundle);
-	// look for taxonomy field instances
-	foreach ($instances as $instance){
-		$field_name = $instance['field_name'];
-		$field = field_info_field_by_id($instance['field_id']);		 
-		if ($field['type'] == 'taxonomy_term_reference'){
-			//TODO: not sure how to correctly deal with languages here... Should we use field_available_languages? 
+  list(, , $bundle) = entity_extract_ids('node', $node);
+  $instances = field_info_instances('node', $bundle);
+  // look for taxonomy field instances
+  foreach ($instances as $instance) {
+    $field_name = $instance['field_name'];
+    $field = field_info_field_by_id($instance['field_id']);
+    if ($field['type'] == 'taxonomy_term_reference') {
+      //TODO: not sure how to correctly deal with languages here... Should we use field_available_languages()?
       $lang = field_language('node', $node, $field_name);
       $items = isset($node->{$field_name}[$lang]) ? $node->{$field_name}[$lang] : array();
-      foreach ($items as $item){
-      	$term = $item['taxonomy_term'];
+      foreach ($items as $item) {
+        $term = $item['taxonomy_term'];
         // Double indexing of tids lets us do effecient searches (on tid)
         // and do accurate per-vocabulary faceting.
-  
+
         // By including the ancestors to a term in the index we make
         // sure that searches for general categories match specific
         // categories, e.g. Fruit -> apple, a search for fruit will find
@@ -243,8 +295,8 @@ function apachesolr_add_taxonomy_to_document(&$document, $node) {
           $document->setMultiValue('sm_vid_'. apachesolr_vocab_name($ancestor->vid), $name);
         }
       }
-     }
-	}
+    }
+  }
 }
 
 /**
@@ -309,12 +361,12 @@ function apachesolr_add_tags_to_document(&$document, $text) {
  */
 function apachesolr_cron_check_node_table() {
   // Check for unpublished content that wasn't deleted from the index.
-  $query = db_select('apachesolr_search_node', 'asn')  
+  $query = db_select('apachesolr_search_node', 'asn')
     ->fields('n', array('nid', 'status'))
     ->condition('asn.status', 'n.status', '<>');
   $query->innerJoin('node', 'n', 'n.nid = asn.nid');
-  $result = $query->execute();  
-  
+  $result = $query->execute();
+
   $node_lists = array();
   $nodes = array();
   // Update or delete at most this many in each Solr query.
@@ -343,7 +395,7 @@ function apachesolr_cron_check_node_table() {
     ->isNull('n.nid');
   $query->leftJoin('node', 'n', 'n.nid = asn.nid');
   $result = $query->execute();
-  
+
   $node_lists = array();
   $nodes = array();
   foreach ($result as $node) {
