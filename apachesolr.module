@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.24 2010/05/26 22:07:16 pwolanin Exp $
+// $Id: apachesolr.module,v 1.25 2010/05/26 22:36:51 pwolanin Exp $
 
 /**
  * @file
@@ -14,24 +14,23 @@ define('APACHESOLR_READ_ONLY', 1);
  */
 function apachesolr_menu() {
   $items = array();
-  $items['admin/config/apachesolr'] = array(
-    'title'              => 'Apache Solr',
+  $items['admin/config/search/apachesolr'] = array(
+    'title'              => 'Apache Solr search integration',
     'description'        => 'Administer Apache Solr.',
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_settings'),
     'access callback'    => 'user_access',
     'access arguments'   => array('administer search'),
     'file'               => 'apachesolr.admin.inc',
-    'type'               => MENU_NORMAL_ITEM,
   );
-  $items['admin/config/apachesolr/settings'] = array(
+  $items['admin/config/search/apachesolr/settings'] = array(
     'title'              => 'Settings',
     'weight'             => -10,
     'access arguments'   => array('administer search'),
     'file'               => 'apachesolr.admin.inc',
-    'type'               => MENU_LOCAL_TASK,
+    'type'               => MENU_DEFAULT_LOCAL_TASK,
   );
-  $items['admin/config/apachesolr/enabled-filters'] = array(
+  $items['admin/config/search/apachesolr/enabled-filters'] = array(
     'title'              => 'Enabled filters',
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_enabled_facets_form'),
@@ -40,7 +39,7 @@ function apachesolr_menu() {
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_LOCAL_TASK,
   );
-  $items['admin/config/apachesolr/index'] = array(
+  $items['admin/config/search/apachesolr/index'] = array(
     'title'              => 'Search index',
     'page callback'      => 'apachesolr_index_page',
     'access arguments'   => array('administer search'),
@@ -48,7 +47,7 @@ function apachesolr_menu() {
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_LOCAL_TASK,
   );
-  $items['admin/config/apachesolr/index/confirm/clear'] = array(
+  $items['admin/config/search/apachesolr/index/confirm/clear'] = array(
     'title'              => 'Confirm the re-indexing of all content',
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_clear_index_confirm'),
@@ -56,7 +55,7 @@ function apachesolr_menu() {
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_CALLBACK,
   );
-  $items['admin/config/apachesolr/index/confirm/delete'] = array(
+  $items['admin/config/search/apachesolr/index/confirm/delete'] = array(
     'title'              => 'Confirm index deletion',
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_delete_index_confirm'),
@@ -66,6 +65,7 @@ function apachesolr_menu() {
   );
   $items['admin/reports/apachesolr'] = array(
     'title'              => 'Apache Solr search index',
+    'description'        => 'Infromation about the contents of the index the server',
     'page callback'      => 'apachesolr_index_report',
     'access arguments'   => array('access site reports'),
     'file'               => 'apachesolr.admin.inc',
@@ -75,14 +75,15 @@ function apachesolr_menu() {
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_DEFAULT_LOCAL_TASK,
   );
-  $items['admin/config/apachesolr/mlt/add_block'] = array(
+  $items['admin/config/search/apachesolr/mlt/add_block'] = array(
+    'title'              => 'Add More Like This block',
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_mlt_add_block_form'),
     'access arguments'   => array('administer search'),
     'file'               => 'apachesolr.admin.inc',
-    'type'               => MENU_CALLBACK,
+    'type'               => MENU_LOCAL_ACTION,
   );
-  $items['admin/config/apachesolr/mlt/delete_block/%'] = array(
+  $items['admin/config/search/apachesolr/mlt/delete_block/%'] = array(
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('apachesolr_mlt_delete_block_form', 5),
     'access arguments'   => array('administer search'),
