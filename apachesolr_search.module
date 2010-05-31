@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.75 2010/05/07 20:13:54 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.76 2010/05/31 01:56:25 pwolanin Exp $
 
 /**
  * @file
@@ -1476,6 +1476,8 @@ function apachesolr_get_parent_terms($tids) {
 function apachesolr_search_currentsearch_block($response, $query) {
   $fields = $query->get_filters();
   $links = array();
+  $facets = array();
+
   // If current search has keys, offer current search without them
   if ($keys = $query->get_query_basic()) {
     $links[] = theme('apachesolr_unclick_link', $keys, $query->get_path(''), array('query' => $query->get_url_queryvalues()));
