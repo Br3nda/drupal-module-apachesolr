@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_date.module,v 1.1.2.4 2010/05/03 18:50:27 jpmckinney Exp $
+// $Id: apachesolr_date.module,v 1.1.2.5 2010/06/02 21:24:25 jpmckinney Exp $
 
 /**
  * @file
@@ -144,6 +144,13 @@ function apachesolr_date_apachesolr_cck_fields_alter(&$mappings) {
   $mappings['datestamp']['date_text']   = $defaults;
   $mappings['datestamp']['date_select']['indexing_callback'] = 'apachesolr_date_datestamp_field_indexing_callback';
   $mappings['datestamp']['date_text']['indexing_callback']   = 'apachesolr_date_datestamp_field_indexing_callback';
+
+  if (module_exists('date_popup')) {
+    $mappings['date']['date_popup']      = $defaults;
+    $mappings['datetime']['date_popup']  = $defaults;
+    $mappings['datestamp']['date_popup'] = $defaults;
+    $mappings['datestamp']['date_popup']['indexing_callback'] = 'apachesolr_date_datestamp_field_indexing_callback';
+  }
 }
 
 /**
