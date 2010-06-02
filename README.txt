@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.11 2010/05/11 19:38:09 pwolanin Exp $ */
+/* $Id: README.txt,v 1.12 2010/06/02 20:58:21 jpmckinney Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -210,22 +210,22 @@ hook_apachesolr_cck_fields_alter(&$mappings)
   text fields with option widgets:
 
     $mappings['text'] = array(
-      'optionwidgets_select' => array('callback' => '', 'index_type' => 'string'),
-      'optionwidgets_buttons' => array('callback' => '', 'index_type' => 'string')
+      'optionwidgets_select' => array('indexing_callback' => '', 'index_type' => 'string'),
+      'optionwidgets_buttons' => array('indexing_callback' => '', 'index_type' => 'string')
     );
 
   In your _alter hook implementation you can add additional field types such as:
 
-    $mappings['number_integer']['number'] = array('callback' => '', 'index_type' => 'integer');
+    $mappings['number_integer']['number'] = array('indexing_callback' => '', 'index_type' => 'integer');
 
   You can allso add a mapping for a specific field.  This will take precedence over any
   mapping for a general field type. A field-specific mapping would look like:
 
-    $mappings['per-field']['field_model_name'] = array('callback' => '', 'index_type' => 'string');
+    $mappings['per-field']['field_model_name'] = array('indexing_callback' => '', 'index_type' => 'string');
 
   or
 
-    $mappings['per-field']['field_model_price'] = array('callback' => '', 'index_type' => 'float');
+    $mappings['per-field']['field_model_price'] = array('indexing_callback' => '', 'index_type' => 'float');
 
 hook_apachesolr_types_exclude($namespace)
 
