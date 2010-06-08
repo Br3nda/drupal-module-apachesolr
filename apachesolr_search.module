@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.77 2010/06/02 20:51:07 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.78 2010/06/08 16:52:47 jpmckinney Exp $
 
 /**
  * @file
@@ -1125,7 +1125,7 @@ function apachesolr_search_form_search_form_alter(&$form, $form_state) {
 
     if (variable_get('apachesolr_search_spellcheck', TRUE) && $apachesolr_has_searched && ($response = apachesolr_static_response_cache())) {
       // Get spellchecker suggestions into an array.
-      if (isset($response->spellcheck->suggestions)) {
+      if (isset($response->spellcheck->suggestions) && $response->spellcheck->suggestions) {
         $suggestions = get_object_vars($response->spellcheck->suggestions);
         if ($suggestions) {
           // Get the original query and replace words.
