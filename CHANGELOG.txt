@@ -1,12 +1,17 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.110 2010/04/08 18:47:13 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.111 2010/06/11 21:59:52 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#824154 by pwolanin: update schema.xml to add preserveOriginal="1" to WordDelimiterFilterFactory.
+#804590 by ygerasimov: Bug in building query from subqueries in Solr_Base_Query
+#818608 by nofun: fix 5.3 warning on get_object_vars() 
+#382878 by smoothify: Store the real teaser in the index
 
-Apache Solr integration 6.x-2.0-BETA1, 2010-04-08
+
+Apache Solr integration 6.x-2.0-BETA2, 2010-04-08
 ------------------------------
 #660754 by jhedstrom: Added Allow key sorting of facets.
 #614644 by netsensei | robertDouglass: Fixed Forms attached to Apachesolr search results won't work.
