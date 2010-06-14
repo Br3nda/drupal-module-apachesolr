@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.47 2010/05/03 19:08:12 jpmckinney Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.48 2010/06/14 02:51:30 pwolanin Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -207,6 +207,18 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     $this->field_map = array();
     // We have to re-parse the filters.
     $this->parse_filters();
+  }
+
+  function get_keys() {
+    return $this->keys;
+  }
+
+  function set_keys($keys) {
+    $this->keys = $keys;
+  }
+
+  public function remove_keys() {
+    $this->keys = '';
   }
 
   public function add_subquery(Drupal_Solr_Query_Interface $query, $fq_operator = 'OR', $q_operator = 'AND') {
