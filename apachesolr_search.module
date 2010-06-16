@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.23 2010/06/16 20:33:48 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.24 2010/06/16 21:01:15 jpmckinney Exp $
 
 /**
  * @file
@@ -191,10 +191,16 @@ function apachesolr_search_view($type = NULL) {
       // to this function, we have to count on core searches coming in here, too.
       switch (variable_get('apachesolr_search_browse', 'browse')) {
         case 'browse':
-          // Show search form and browse-by blocks.
-          $blocks = apachesolr_search_browse('', '', '', 'search/' . $type);
-          if (count($blocks) > 0) {
-            $content = theme('apachesolr_browse_blocks', array('blocks' => $blocks));
+          try {
+            // Show search form and browse-by blocks.
+            $blocks = apachesolr_search_browse('', '', '', 'search/' . $type);
+            if (count($blocks) > 0) {
+              $content = theme('apachesolr_browse_blocks', array('blocks' => $blocks));
+            }
+          }
+          catch (Exception $e) {
+            watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+            apachesolr_failure(t('Solr search'), $keys);
           }
           break;
         case 'blocks':
