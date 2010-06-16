@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.17 2010/06/11 16:22:12 jpmckinney Exp $
+// $Id: Solr_Base_Query.php,v 1.18 2010/06/16 14:24:34 jpmckinney Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -433,7 +433,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
             $subqueries[] = $value;
           }
         }
-        $fq['subqueries'][$id] =  " {$data['#q_operator']} (" . implode(" $operator " , $subqueries) . ")";
+        $fq['subqueries'][$id] =  " (" . implode(" $operator " , $subqueries) . ")";
       }
     }
     return $fq;
