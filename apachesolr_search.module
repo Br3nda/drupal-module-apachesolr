@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.22 2010/06/08 16:53:31 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.23 2010/06/16 20:33:48 jpmckinney Exp $
 
 /**
  * @file
@@ -1408,7 +1408,7 @@ function apachesolr_search_theme() {
     'apachesolr_search_snippets' => array(
       'arguments' => array('doc' => NULL, 'snippets' => NULL),
     ),
-    'apachersolr_search_noresults' => array(
+    'apachesolr_search_noresults' => array(
       'arguments' => array(),
     ),
   );
