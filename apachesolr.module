@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.98 2010/05/03 18:50:27 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.99 2010/06/16 20:36:48 jpmckinney Exp $
 
 /**
  * @file
@@ -545,8 +545,14 @@ function apachesolr_flush_caches() {
  * require clearing Luke cache etc.
  */
 function apachesolr_clear_cache() {
-  $solr = apachesolr_get_solr();
-  $solr->clearCache();
+  try {
+    $solr = apachesolr_get_solr();
+    $solr->clearCache();
+  }
+  catch (Exception $e) {
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    drupal_set_message(nl2br(check_plain($e->getMessage())), 'warning');
+  }
 }
 
 /**

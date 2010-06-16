@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.1.2.11.2.3 2009/12/26 12:04:03 robertDouglass Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.1.2.11.2.4 2010/06/16 20:36:48 jpmckinney Exp $
 
 /**
  * Implementation of apachesolr_update_index
@@ -31,6 +31,8 @@ function apachesolr_nodeaccess_apachesolr_update_index(&$document, $node, $names
  * Creates a Solr query for a given user
  *
  * @param $account an account to get grants for and build a solr query
+ *
+ * @throws Exception
  */
 function apachesolr_nodeaccess_build_subquery($account) {
   if (!user_access('access content', $account)) {
