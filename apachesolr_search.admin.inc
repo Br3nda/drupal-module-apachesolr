@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.admin.inc,v 1.1.2.25 2010/05/01 03:26:13 jpmckinney Exp $
+// $Id: apachesolr_search.admin.inc,v 1.1.2.26 2010/06/16 20:43:39 jpmckinney Exp $
 
 /**
  * @file
@@ -242,9 +242,15 @@ function apachesolr_search_type_boost_form_submit($form_id, &$form_state) {
     // Note - we omit a check on empty($old_excluded_types[$type]) so that
     // the admin can re-submit this page if the delete operation fails.
     if (!empty($new_excluded_types[$type])) {
-      $solr = apachesolr_get_solr();
-      $solr->deleteByQuery("type:$type");
-      apachesolr_index_updated(time());
+      try {
+        $solr = apachesolr_get_solr();
+        $solr->deleteByQuery("type:$type");
+        apachesolr_index_updated(time());
+      }
+      catch (Exception $e) {
+        watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+        drupal_set_message(t('The Apache Solr search engine is not available. Please contact your site administrator.'), 'error');
+      }
     }
   }
 
