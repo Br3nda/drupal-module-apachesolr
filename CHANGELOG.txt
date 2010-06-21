@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.170 2010/06/14 02:51:30 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.171 2010/06/21 19:28:39 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#830976 by eosrei, pwolanin: make sure we return a non-zero ping time on success.
 #824534 backport from 6.x-2.x of method to replace keywords in query object.
 #824154 by pwolanin: update schema.xml to add preserveOriginal="1" to WordDelimiterFilterFactory.
 #818608 by nofun: fix 5.3 warning on get_object_vars() 

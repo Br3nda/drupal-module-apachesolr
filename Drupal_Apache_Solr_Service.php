@@ -1,5 +1,5 @@
 <?php
-// $Id: Drupal_Apache_Solr_Service.php,v 1.1.2.29 2010/05/03 19:08:12 jpmckinney Exp $
+// $Id: Drupal_Apache_Solr_Service.php,v 1.1.2.30 2010/06/21 19:28:39 pwolanin Exp $
 require_once 'SolrPhpClient/Apache/Solr/Service.php';
 
 /**
@@ -45,7 +45,8 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     $response = new Apache_Solr_Response($data, $headers);
 
     if ($response->getHttpStatus() == 200) {
-      return microtime(TRUE) - $start;
+      // Add 0.1 ms to the ping time so we never return 0.0.
+      return microtime(TRUE) - $start + 0.0001;
     }
     else {
       return FALSE;
