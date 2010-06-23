@@ -16,7 +16,7 @@
  limitations under the License.
 -->
 
-<config>
+<config name="drupal-0.9.6">
 
   <!-- Set this to 'false' if you want solr to continue working after it has 
        encountered an severe configuration error.  In a production environment, 
@@ -172,8 +172,8 @@
          maxTime - oldest uncommited update (in ms) is this long ago
     -->
     <autoCommit> 
-      <maxDocs>50</maxDocs>
-      <maxTime>15000</maxTime> 
+      <maxDocs>2000</maxDocs>
+      <maxTime>120000</maxTime> 
     </autoCommit>
 
 
@@ -482,8 +482,8 @@
      <str name="f.body.hl.alternateField">body</str>
      <str name="f.body.hl.maxAlternateFieldLength">256</str>
      <!-- JS: I wasn't getting good results here... I'm turning off for now
-     because I was getting periods (.) by themselves at the begining of
-     snippets and don't feel like deubgging anymore.  Without the regex is
+     because I was getting periods (.) by themselves at the beginning of
+     snippets and don't feel like debugging anymore.  Without the regex is
      faster too -->
      <!--<str name="f.body.hl.fragmenter">regex</str>--> <!-- defined below -->
 
