@@ -16,7 +16,7 @@
  limitations under the License.
 -->
 
-<config>
+<config name="drupal-1.9.6">
 
   <!-- Set this to 'false' if you want solr to continue working after it has 
        encountered an severe configuration error.  In a production environment, 
@@ -172,8 +172,8 @@
          maxTime - oldest uncommited update (in ms) is this long ago
     -->
     <autoCommit> 
-      <maxDocs>50</maxDocs>
-      <maxTime>15000</maxTime> 
+      <maxDocs>2000</maxDocs>
+      <maxTime>120000</maxTime> 
     </autoCommit>
 
 
