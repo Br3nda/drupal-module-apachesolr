@@ -16,7 +16,7 @@
  limitations under the License.
 -->
 
-<config>
+<config name="drupal-0.9.6">
 
   <!-- Set this to 'false' if you want solr to continue working after it has 
        encountered an severe configuration error.  In a production environment, 
