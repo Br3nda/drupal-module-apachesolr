@@ -423,7 +423,7 @@
     <lst name="master">
         <str name="replicateAfter">commit</str>
         <str name="replicateAfter">startup</str>
-        <str name="confFiles">schema.xml,stopwords.txt,elevate.xml</str>
+        <str name="confFiles">schema.xml,mapping-ISOLatin1Accent.txt,protwords.txt,stopwords.txt,synonyms.txt,elevate.xml</str>
     </lst>
 </requestHandler>
  MASTER_REPLICATION_END -->
