@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- $Id: schema.xml,v 1.1.2.1.2.33.2.3 2010/06/11 22:22:26 pwolanin Exp $ -->
+<!-- $Id: schema.xml,v 1.1.2.1.2.33.2.4 2010/07/01 02:47:56 pwolanin Exp $ -->
 
 <!--
  This is the Solr schema file. This file should be named "schema.xml" and
@@ -11,7 +11,7 @@
  http://wiki.apache.org/solr/SchemaXml
 -->
 
-<schema name="drupal-0.9.6" version="1.2">
+<schema name="drupal-1.1" version="1.2">
     <!-- attribute "name" is the name of this schema and is only used for display purposes.
          Applications should change this to reflect the nature of the search collection.
          version="1.2" is Solr's version number for the schema syntax and semantics.  It should
@@ -420,7 +420,7 @@
    <!-- BACKWARDS COMPATIBILITY -->
    <!-- Here is where we store fields which are no longer used -->
    
-   <!-- Fields previously used for sorting  -->
+   <!-- Fields previously used for sorting -->
    <field name="stitle" type="string" indexed="true" stored="true"/>
    <field name="title_sort" type="sortString" indexed="true" stored="false"/>
 

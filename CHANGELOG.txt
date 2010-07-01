@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.112.2.54 2010/06/23 16:44:56 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.112.2.55 2010/07/01 02:47:56 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 5.x-2.x, 2010-xx-xx
 ------------------------------
+#348832 by pwolanin: Increase maxFieldLength to 20000, rationalize version strings.
 #835850 by pwolanin: add more replicated files to solrconfig.xml master section.
 #830976 by eosrei, pwolanin: make sure we return a non-zero ping time on success.
 #824154 by pwolanin: update schema.xml to add preserveOriginal="1" to WordDelimiterFilterFactory.
