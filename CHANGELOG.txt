@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.173 2010/06/28 01:59:56 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.174 2010/07/01 02:42:07 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#348832 by pwolanin: Increase maxFieldLength to 20000, rationalize version strings.
 #704190 by pwolanin: Add page callbacks to display conf files in the index in reports.
 #835850 by pwolanin: add more replicated files to solrconfig.xml master section.
 #830976 by eosrei, pwolanin: make sure we return a non-zero ping time on success.
