@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.147 2010/06/08 16:53:09 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.148 2010/07/07 19:37:05 pwolanin Exp $
 
 /**
  * @file
@@ -141,42 +141,43 @@ function apachesolr_search_search($op = 'search', $keys = NULL) {
  * Re-implementation of search_view().
  */
 function apachesolr_search_view($type = NULL) {
+  if (empty($type)) {
+    // Note: search/X can not be a default tab because it would take on the
+    // path of its parent (search). It would prevent remembering keywords when
+    // switching tabs. This is why we drupal_goto to it from the parent instead.
+    drupal_goto('search/apachesolr_search');
+  }
   $keys = trim(search_get_keys());
+  // Construct the search form.  If the user submits POST data, this will
+  // redirect to a GET request before the search actually runs.
+  $form = drupal_get_form('search_form', NULL, $keys, $type);
+  // We did not redirect, so run the search if needed.
   $results = '';
-  // Search form submits with POST but redirects to GET.
-  if (!isset($_POST['keys'])) {
-    if (empty($type)) {
-      // Note: search/X can not be a default tab because it would take on the
-      // path of its parent (search). It would prevent remembering keywords when
-      // switching tabs. This is why we drupal_goto to it from the parent instead.
-      drupal_goto('search/apachesolr_search');
+  $filters = '';
+  if ($type == 'apachesolr_search' && isset($_GET['filters'])) {
+    $filters = trim($_GET['filters']);
+  }
+  // Only perform search if there is non-whitespace search term or filters:
+  if ($keys || $filters) {
+    // Log the search keys:
+    $log = $keys;
+    if ($filters) {
+      $log .= 'filters='. $filters;
     }
-    $filters = '';
-    if ($type == 'apachesolr_search' && isset($_GET['filters'])) {
-      $filters = trim($_GET['filters']);
+    watchdog('search', '%keys (@type).', array('%keys' => $log, '@type' => t('Search')), WATCHDOG_NOTICE, l(t('results'), 'search/'. $type .'/'. $keys));
+
+    // Collect the search results:
+    $results = search_data($keys, $type);
+
+    if ($results) {
+      $results = theme('box', t('Search results'), $results);
     }
-    // Only perform search if there is non-whitespace search term or filters:
-    if ($keys || $filters) {
-      // Log the search keys:
-      $log = $keys;
-      if ($filters) {
-        $log .= 'filters='. $filters;
-      }
-      watchdog('search', '%keys (@type).', array('%keys' => $log, '@type' => t('Search')), WATCHDOG_NOTICE, l(t('results'), 'search/'. $type .'/'. $keys));
-
-      // Collect the search results:
-      $results = search_data($keys, $type);
-
-      if ($results) {
-        $results = theme('box', t('Search results'), $results);
-      }
-      else {
-        $results = theme('box', t('Your search yielded no results'), variable_get('apachesolr_search_noresults', apachesolr_search_noresults()));
-      }
+    else {
+      $results = theme('box', t('Your search yielded no results'), variable_get('apachesolr_search_noresults', apachesolr_search_noresults()));
     }
   }
-  // Construct the search form.
-  return drupal_get_form('search_form', NULL, $keys, $type) . $results;
+
+  return $form . $results;
 }
 
 function apachesolr_search_noresults() {
