@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.203 2010/06/28 01:59:56 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.204 2010/07/07 20:43:36 pwolanin Exp $
 
 /**
  * @file
@@ -170,7 +170,15 @@ function apachesolr_user($op, &$edit, &$account) {
   switch ($op) {
     case 'update':
       if (isset($edit['name']) && $account->name != $edit['name']) {
-        db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {node} WHERE uid = %d)", time(), $account->uid);
+        switch ($GLOBALS['db_type']) {
+          case 'mysql':
+          case 'mysqli':
+            db_query("UPDATE {apachesolr_search_node} asn INNER JOIN {node} n ON asn.nid = n.nid SET asn.changed = %d WHERE n.uid = %d", time(), $account->uid);
+            break;
+          default:
+            db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {node} WHERE uid = %d)", time(), $account->uid);
+            break;
+        }
       }
       break;
   }
@@ -183,7 +191,15 @@ function apachesolr_user($op, &$edit, &$account) {
  */
 function apachesolr_taxonomy($op, $type, $edit) {
   if ($type == 'term' && ($op == 'update')) {
-    db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {term_node} WHERE tid = %d)", time(), $edit['tid']);
+    switch ($GLOBALS['db_type']) {
+      case 'mysql':
+      case 'mysqli':
+        db_query("UPDATE {apachesolr_search_node} asn INNER JOIN {term_node} tn ON asn.nid = tn.nid SET asn.changed = %d WHERE tn.tid = %d", time(), $edit['tid']);
+        break;
+      default:
+        db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {term_node} WHERE tid = %d)", time(), $edit['tid']);
+        break;
+    }
   }
   // TODO: the rest, such as term deletion.
 }
@@ -225,7 +241,15 @@ function apachesolr_mark_node($nid) {
 function apachesolr_node_type($op, $info) {
   if ($op != 'delete' && !empty($info->old_type) && $info->old_type != $info->type) {
     // We cannot be sure we are going before or after node module.
-    db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {node} WHERE type = '%s' OR type = '%s')", time(), $info->old_type, $info->type);
+    switch ($GLOBALS['db_type']) {
+      case 'mysql':
+      case 'mysqli':
+        db_query("UPDATE {apachesolr_search_node} asn INNER JOIN {node} n ON asn.nid = n.nid SET asn.changed = %d WHERE (n.type = '%s' OR n.type = '%s')", time(), $info->old_type, $info->type);
+        break;
+      default:
+        db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {node} WHERE type = '%s' OR type = '%s')", time(), $info->old_type, $info->type);
+        break;
+    }
   }
 }
 
@@ -270,8 +294,17 @@ function apachesolr_clear_last_index($namespace = '') {
  *   A single content type to be reindexed, leaving the others unaltered.
  */
 function apachesolr_rebuild_index_table($type = NULL) {
+
   if (isset($type)) {
-    db_query("DELETE FROM {apachesolr_search_node} WHERE nid IN (SELECT nid FROM {node} WHERE type = '%s')", $type);
+    switch ($GLOBALS['db_type']) {
+      case 'mysql':
+      case 'mysqli':
+        db_query("DELETE FROM {apachesolr_search_node} USING {apachesolr_search_node} asn INNER JOIN {node} n ON asn.nid = n.nid WHERE n.type = '%s'", $type);
+        break;
+      default: 
+        db_query("DELETE FROM {apachesolr_search_node} WHERE nid IN (SELECT nid FROM {node} WHERE type = '%s')", $type);
+        break;
+    }
     // Populate table
     db_query("INSERT INTO {apachesolr_search_node} (nid, status, changed)
               SELECT n.nid, n.status, %d AS changed
