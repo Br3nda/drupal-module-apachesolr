@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.80 2010/06/16 20:36:48 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.81 2010/07/08 18:52:16 jpmckinney Exp $
 
 /**
  * @file
@@ -1029,7 +1029,8 @@ function apachesolr_search_get_type($facet) {
     $type = t('Comment');
   }
   // A disabled or missing node type returns FALSE.
-  return ($type === FALSE) ? $facet : $type;
+  $name = ($type === FALSE) ? $facet : $type;
+  return apachesolr_tt("nodetype:type:$facet:name", $name);
 }
 
 /**
@@ -1408,7 +1409,8 @@ function theme_apachesolr_breadcrumb_tid($field) {
  * Return the human readable text for a content type.
  */
 function theme_apachesolr_breadcrumb_type($field) {
-  return node_get_types('name', $field['#value']);
+  $name = node_get_types('name', $field['#value']);
+  return apachesolr_tt("nodetype:type:{$field['#value']}:name", $name);
 }
 
 /**
