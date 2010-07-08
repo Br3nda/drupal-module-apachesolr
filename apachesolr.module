@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.204 2010/07/07 20:43:36 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.205 2010/07/08 18:52:11 jpmckinney Exp $
 
 /**
  * @file
@@ -1890,3 +1890,16 @@ interface Drupal_Solr_Query_Interface {
    */
   function remove_subqueries();
 }
+
+/** 
+ * Wrapper function for tt() if i18nstrings enabled.
+ */
+function apachesolr_tt($name, $string, $langcode = NULL, $update = FALSE) {
+  if (module_exists('i18nstrings')) {
+    return tt($name, $string, $langcode, $update);
+  }
+  else {
+    return $string;
+  }
+}
+
