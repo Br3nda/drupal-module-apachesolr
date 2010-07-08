@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161.2.34 2010/07/07 20:44:56 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.35 2010/07/08 18:52:13 jpmckinney Exp $
 
 /**
  * @file
@@ -1869,3 +1869,16 @@ interface Drupal_Solr_Query_Interface {
    */
   function set_available_sort($field, $sort);
 }
+
+/** 
+ * Wrapper function for tt() if i18nstrings enabled.
+ */
+function apachesolr_tt($name, $string, $langcode = NULL, $update = FALSE) {
+  if (module_exists('i18nstrings')) {
+    return tt($name, $string, $langcode, $update);
+  }
+  else {
+    return $string;
+  }
+}
+
