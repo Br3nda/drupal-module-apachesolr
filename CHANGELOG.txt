@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.176 2010/07/07 20:43:36 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.177 2010/07/15 03:05:21 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#853564 by pwolanin: fix regression from #614644 - still need to see if there is POST data.
 #592522 by pwolanin, quaoar: use multi-table sytax for MySQL to avoid killer sub-selects.
 #614644 by pwolanin: Improved compatibility with other forms (based on Drupal 7 core).
 #348832 by pwolanin: Increase maxFieldLength to 20000, rationalize version strings.
