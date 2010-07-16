@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.151 2010/07/16 22:50:26 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.152 2010/07/16 22:58:39 pwolanin Exp $
 
 /**
  * @file
@@ -150,7 +150,7 @@ function apachesolr_search_view($type = NULL) {
   $keys = trim(search_get_keys());
   // Construct the search form.  If the user submits POST data, this will
   // redirect to a GET request before the search actually runs.
-  if (!empty($_POST)) {
+  if (isset($_POST['form_id']) && $_POST['form_id'] == 'search_form') {
     $form = drupal_get_form('search_form', NULL, $keys, $type);
   }
   // We did not redirect, so run the search if needed.
@@ -179,6 +179,7 @@ function apachesolr_search_view($type = NULL) {
     }
   }
   if (empty($form)) {
+    // The form may be altered based on the query that was run.
     $form = drupal_get_form('search_form', NULL, $keys, $type);
   }
   return $form . $results;
