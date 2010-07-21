@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.152 2010/07/16 22:58:39 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.153 2010/07/21 02:43:01 pwolanin Exp $
 
 /**
  * @file
@@ -226,6 +226,9 @@ function apachesolr_search_execute($keys, $filterstring, $solrsort, $base_path =
     // No highlighting, use the teaser as a snippet.
     $params['fl'] .= ',teaser';
   }
+  if (module_exists('upload')) {
+    $params['fl'] .= ',is_upload_count';
+  }
   apachesolr_search_add_facet_params($params, $query);
   apachesolr_search_add_boost_params($params, $query, apachesolr_get_solr());
 
@@ -414,6 +417,10 @@ function apachesolr_process_response($response, $query, $params) {
       drupal_alter('apachesolr_search_result', $doc);
       // Copy code from comment_nodeapi().
       $extra[] = format_plural($doc->comment_count, '1 comment', '@count comments');
+      // Copy code from upload_nodeapi()
+      if (isset($doc->is_upload_count)) {
+        $extra[] = format_plural($doc->is_upload_count, '1 attachment', '@count attachments');
+      }
       $fields = array();
       foreach ($doc->getFieldNames() as $field_name) {
         $fields[$field_name] = $doc->$field_name;
