@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.153 2010/07/21 02:43:01 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.154 2010/07/22 02:28:44 pwolanin Exp $
 
 /**
  * @file
@@ -539,7 +539,7 @@ function apachesolr_search_apachesolr_facets() {
       // $delta can only be 32 chars, and the CCK field name may be this
       // long also, so we cannot add anything to it.
       $facets[$field['field_name']] = array(
-        'info' => t('Apache Solr Search: Filter by @field', array('@field' => $field['label'])),
+        'info' => t('Apache Solr Search: Filter by @field', array('@field' => $field['widget']['label'])),
         'facet_field' => apachesolr_index_key($field),
       );
     }

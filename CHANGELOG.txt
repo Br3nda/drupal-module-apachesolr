@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.178 2010/07/21 02:43:01 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.179 2010/07/22 02:28:43 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#751004 by jpmckinney, camidoo, rjbrown99, pwolanin: fix use of CCK API, handle NODE_BUILD_SEARCH_INDEX exclusion setting in the UI.
 #373824 by pwolanin: show count of attached files to mimic upload module with node search.
 #853564 by pwolanin: fix regression from #614644 - still need to see if there is POST data.
 #592522 by pwolanin, quaoar: use multi-table sytax for MySQL to avoid killer sub-selects.

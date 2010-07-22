@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.205 2010/07/08 18:52:11 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.206 2010/07/22 02:28:44 pwolanin Exp $
 
 /**
  * @file
@@ -594,6 +594,43 @@ function _apachesolr_nodeapi_update($node, $set_message = TRUE) {
   }
   else {
     db_query('UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid = %d', time(), $node->status, $node->nid);
+  }
+}
+
+/**
+ * Implementation of hook_content_fieldapi().
+ */
+function apachesolr_content_fieldapi($op, $field) {
+  switch ($op) {
+    case 'delete instance':
+      apachesolr_mark_node_type($field['type_name']);
+      break;
+    case 'update instance':
+      // Get the previous value from the table.
+      $previous = content_field_instance_read(array('field_name' => $field['field_name'], 'type_name' => $field['type_name']));
+      $prev_field = array_pop($previous);
+      if ($field['display_settings'][NODE_BUILD_SEARCH_INDEX]['exclude'] != $prev_field['display_settings'][NODE_BUILD_SEARCH_INDEX]['exclude']) {
+        apachesolr_mark_node_type($field['type_name']);
+      }
+      elseif ($field['multiple'] != $prev_field['multiple']) {
+        apachesolr_mark_node_type($field['type_name']);
+      }
+      break;
+  }
+}
+
+/**
+ * Mark all nodes of one type as needing re-indexing.
+ */
+function apachesolr_mark_node_type($type_name) {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("UPDATE {apachesolr_search_node} asn INNER JOIN {node} n ON asn.nid = n.nid SET asn.changed = %d WHERE n.type = '%s'", time(), $type_name);
+      break;
+    default:
+      db_query("UPDATE {apachesolr_search_node} SET changed = %d WHERE nid IN (SELECT nid FROM {node} WHERE type = '%s')", time(), $type_name);
+      break;
   }
 }
 
@@ -1433,10 +1470,12 @@ function apachesolr_field_name_map($field_name) {
 function apachesolr_cck_fields() {
   static $fields;
 
-  if (is_null($fields)) {
+  if (!isset($fields)) {
     $fields = array();
     // If CCK isn't enabled, do nothing.
     if (module_exists('content')) {
+      module_load_include('inc', 'content', 'includes/content.crud');
+      $cck_field_instances = content_field_instance_read();
       // A single default mapping for all text fields.
       $mappings['text'] = array(
         'optionwidgets_select' => array('callback' => '', 'index_type' => 'string'),
@@ -1448,21 +1487,31 @@ function apachesolr_cck_fields() {
       // $mappings['per-field']['field_model_price'] = array('callback' => '', 'index_type' => 'float');
       // Allow other modules to add or alter mappings.
       drupal_alter('apachesolr_cck_fields', $mappings);
-      $result = db_query("SELECT  i.field_name, f.multiple, f.type AS field_type, i.widget_type, i.label FROM {content_node_field_instance} i INNER JOIN {content_node_field} f ON i.field_name = f.field_name;");
-      while ($row = db_fetch_object($result)) {
-        // Only deal with fields that have option widgets (facets don't make sense otherwise), or fields that have specific mappings.
-        if ((isset($mappings[$row->field_type][$row->widget_type]) && !isset($fields[$row->field_name])) || isset($mappings['per-field'][$row->field_name])) {
-          if (isset($mappings['per-field'][$row->field_name])) {
-            $row->index_type = $mappings['per-field'][$row->field_name]['index_type'];
-            $row->callback = $mappings['per-field'][$row->field_name]['callback'];
+      foreach ($cck_field_instances as $instance) {
+        $field_type = $instance['type'];
+        $field_name = $instance['field_name'];
+        $widget_type = $instance['widget']['type'];
+        // Only deal with fields that have index mappings and that have not been marked for exclusion.
+        if ((isset($mappings[$field_type][$widget_type]) || isset($mappings['per-field'][$field_name])) && empty($instance['display_settings'][NODE_BUILD_SEARCH_INDEX]['exclude'])) {
+          if (isset($mappings['per-field'][$field_name])) {
+            $instance['index_type'] = $mappings['per-field'][$field_name]['index_type'];
+            $instance['callback'] = $mappings['per-field'][$field_name]['callback'];
           }
           else {
-            $row->index_type = $mappings[$row->field_type][$row->widget_type]['index_type'];
-            $row->callback = $mappings[$row->field_type][$row->widget_type]['callback'];
+            $instance['index_type'] = $mappings[$field_type][$widget_type]['index_type'];
+            $instance['callback'] = $mappings[$field_type][$widget_type]['callback'];
           }
-          $row->multiple = (bool) $row->multiple;
-          $row->name = 'cck_' . $row->field_name;
-          $fields[$row->field_name] = (array) $row;
+          $instance['multiple'] = (bool) $instance['multiple'];
+          $instance['name'] = 'cck_' . $field_name;
+          if (isset($fields[$field_name]) && is_array($fields[$field_name])) {
+            // Merge together settings when used for multiple node types.
+            $fields[$field_name] = array_merge($fields[$field_name], $instance);
+          }
+          else {
+            $fields[$field_name] = $instance;
+          }
+          $fields[$field_name]['content_types'][] = $instance['type_name'];
+          unset($fields[$field_name]['type_name']);
         }
       }
     }
