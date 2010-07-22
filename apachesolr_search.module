@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.82 2010/07/22 04:30:27 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.83 2010/07/22 20:05:45 jpmckinney Exp $
 
 /**
  * @file
@@ -948,7 +948,7 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
       $sortpre = $field_name;
     }
     elseif (isset($facet_query_sorts['apachesolr_search'][$field_name]) && strpos($facet_query_sorts['apachesolr_search'][$field_name], 'index') === 0) {
-      // If this block is to be alphabetically sorted, change $sortpre.
+      // If this block is to be alphabetically/numerically sorted by value, change $sortpre.
       $sortpre = $facet_text;
     }
     else {
@@ -967,11 +967,22 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
   }
 
   if ($sort && $items) {
-    if (!isset($facet_query_sorts['apachesolr_search'][$field_name]) || in_array($facet_query_sorts['apachesolr_search'][$field_name], array('index asc', 'index key asc'))) {
-      ksort($items, SORT_STRING);
-    }
-    elseif (in_array($facet_query_sorts['apachesolr_search'][$field_name], array('index desc', 'index key desc'))) {
-      krsort($items, SORT_STRING);
+    switch ($facet_query_sorts['apachesolr_search'][$field_name]) {
+      'index numeric asc':
+        ksort($items, SORT_NUMERIC);
+        break;
+      'index numeric desc':
+        krsort($items, SORT_NUMERIC);
+        break;
+      'index desc':
+      'index key desc':
+        krsort($items, SORT_STRING);
+        break;
+      'index asc':
+      'index key asc':
+      default:
+        ksort($items, SORT_STRING);
+        break;
     }
   }
   return array_values($items);

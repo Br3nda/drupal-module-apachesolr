@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.102 2010/07/22 02:57:29 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.103 2010/07/22 20:05:45 jpmckinney Exp $
 
 /**
  * @file
@@ -1039,7 +1039,7 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
         $sortpre = $facet;
       }
       elseif (isset($facet_query_sorts[$module][$delta]) && strpos($facet_query_sorts[$module][$delta], 'index') === 0) {
-        // If this block is to be alphabetically sorted, change $sortpre.
+        // If this block is to be alphabetically/numerically sorted by value, change $sortpre.
         $sortpre = $facet_text;
       }
       elseif ($exclude) {
@@ -1069,11 +1069,22 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
     }
     // Unless a facet is active only display 2 or more.
     if ($items && ($response->response->numFound > 1 || $contains_active)) {
-      if (!isset($facet_query_sorts[$module][$delta]) || in_array($facet_query_sorts[$module][$delta], array('index asc', 'index key asc'))) {
-        ksort($items, SORT_STRING);
-      }
-      elseif (in_array($facet_query_sorts[$module][$delta], array('index desc', 'index key desc'))) {
-        krsort($items, SORT_STRING);
+      switch ($facet_query_sorts[$module][$delta]) {
+        'index numeric asc':
+          ksort($items, SORT_NUMERIC);
+          break;
+        'index numeric desc':
+          krsort($items, SORT_NUMERIC);
+          break;
+        'index desc':
+        'index key desc':
+          krsort($items, SORT_STRING);
+          break;
+        'index asc':
+        'index key asc':
+        default:
+          ksort($items, SORT_STRING);
+          break;
       }
       // Get information needed by the rest of the blocks about limits.
       $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
@@ -1335,8 +1346,20 @@ function apachesolr_facetcount_form($module, $delta) {
     $form['apachesolr_facet_query_sort'] = array(
       '#type' => 'radios',
       '#title' => t('Sort order of facet links'),
-      '#options' => array('count' => t('Count'), 'index asc' => t('Alphanumeric, ascending'), 'index desc' => t('Alphanumeric, descending'), 'index key asc' => t('Key sort, ascending'), 'index key desc' => t('Key sort, descending')),
-      '#description' => t('The sort order of facet links in this block. %Count, which is the default, will show facets with the most results first. %Alphanumeric will sort alphabetically, either ascending or descending.', array('%Count' => t('Count'), '%Alphanumeric' => t('Alphanumeric'))),
+      '#options' => array(
+        'count' => t('Count'),
+        'index asc' => t('Alphabetical, ascending'),
+        'index desc' => t('Alphabetical, descending'),
+        'index numeric asc' => t('Numeric, ascending'),
+        'index numeric desc' => t('Numeric, descending'),
+        'index key asc' => t('Key sort, ascending'),
+        'index key desc' => t('Key sort, descending'),
+      ),
+      '#description' => t('The sort order of facet links in this block. %Count, which is the default, will show facets with the most results first. %Alphabetical will sort alphabetically, and %Numeric numerically, either ascending or descending.', array(
+        '%Count' => t('Count'),
+        '%Alphabetical' => t('Alphanumeric'),
+        '%Numeric' => t('Numeric'),
+      )),
       '#default_value' => isset($sorts[$module][$delta]) ? $sorts[$module][$delta] : 'count',
     );
   }
