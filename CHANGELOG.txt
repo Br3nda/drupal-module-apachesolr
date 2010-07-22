@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.9 2010/06/23 16:44:16 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.10 2010/07/22 03:13:40 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 7.x-1.x-xxxx, xxxx-xx-xx
 ------------------------------
+#536990 by pwolanin | jpmckinney, janusman: always index content as an anonymous user.
 #835850 by pwolanin: add more replicated files to solrconfig.xml master section.
 #830976 by eosrei, pwolanin: make sure we return a non-zero ping time on success.
 #795912 by tjwallace, dmitry_bezer, jpmckinney, pwolanin: inital Drupal 7 port.
