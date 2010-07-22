@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.29 2010/07/21 02:43:01 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.30 2010/07/22 20:16:27 jpmckinney Exp $
 
 /**
  * @file
@@ -301,20 +301,28 @@ function apachesolr_nodeapi_mass_update($nodes) {
   if (empty($nodes)) {
     return TRUE;
   }
-  $ids = array();
+  $published_ids = array();
+  $unpublished_ids = array();
   foreach ($nodes as $node) {
-    if (!$node->status) {
-      $ids[] = apachesolr_document_id($node->nid);
+    if ($node->status) {
+      $published_ids[$node->nid] = apachesolr_document_id($node->nid);
+    }
+    else {
+      $unpublished_ids[$node->nid] = apachesolr_document_id($node->nid);
     }
   }
   $time = time();
   try {
     $solr = apachesolr_get_solr();
-    $solr->deleteByMultipleIds($ids);
+    $solr->deleteByMultipleIds($unpublished_ids);
     apachesolr_index_updated($time);
-    foreach ($nodes as $node) {
+
       // There was no exception, so update the table.
-      db_query('UPDATE {apachesolr_search_node} SET changed = %d, status = %d WHERE nid = %d', $time, $node->status, $node->nid);
+    if ($published_ids) {
+      db_query('UPDATE {apachesolr_search_node} SET changed = %d, status = 1 WHERE nid IN ('. db_placeholders($published_ids) .')', array_merge((array) $time, array_keys($published_ids)));
+    }
+    if ($unpublished_ids) {
+      db_query('UPDATE {apachesolr_search_node} SET changed = %d, status = 0 WHERE nid IN ('. db_placeholders($unpublished_ids) .')', array_merge((array) $time, array_keys($unpublished_ids)));
     }
     return TRUE;
   }
