@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.206 2010/07/22 02:28:44 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.207 2010/07/22 02:55:23 pwolanin Exp $
 
 /**
  * @file
@@ -394,6 +394,12 @@ function apachesolr_index_nodes($rows, $namespace = '', $callback = 'apachesolr_
   $old_position = apachesolr_get_last_index($namespace);
   $position = $old_position;
 
+  // Always build the content for the index as an anonynmous user.
+  global $user;
+  session_save_session(FALSE);
+  $saved_user = $user;
+  $user = drupal_anonymous_user();
+
   foreach ($rows as $row) {
     try {
       $callback($documents, $row->nid, $namespace);
@@ -407,6 +413,9 @@ function apachesolr_index_nodes($rows, $namespace = '', $callback = 'apachesolr_
       break;
     }
   }
+  // Restore the user.
+  $user = $saved_user;
+  session_save_session(TRUE);
 
   if (count($documents)) {
     try {

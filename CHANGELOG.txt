@@ -1,27 +1,28 @@
-// $Id: CHANGELOG.txt,v 1.1.2.179 2010/07/22 02:28:43 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.180 2010/07/22 02:55:23 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 ------------------------------
+#536990 by pwolanin | jpmckinney, janusman: always index content as an anonymous user.
 #751004 by jpmckinney, camidoo, rjbrown99, pwolanin: fix use of CCK API, handle NODE_BUILD_SEARCH_INDEX exclusion setting in the UI.
 #373824 by pwolanin: show count of attached files to mimic upload module with node search.
 #853564 by pwolanin: fix regression from #614644 - still need to see if there is POST data.
 #592522 by pwolanin, quaoar: use multi-table sytax for MySQL to avoid killer sub-selects.
-#614644 by pwolanin: Improved compatibility with other forms (based on Drupal 7 core).
+#614644 by pwolanin: Improved compatibility with other forms (based on Drupal 7 core issue patch).
 #348832 by pwolanin: Increase maxFieldLength to 20000, rationalize version strings.
 #704190 by pwolanin: Add page callbacks to display conf files in the index in reports.
 #835850 by pwolanin: add more replicated files to solrconfig.xml master section.
 #830976 by eosrei, pwolanin: make sure we return a non-zero ping time on success.
 #824534 backport from 6.x-2.x of method to replace keywords in query object.
 #824154 by pwolanin: update schema.xml to add preserveOriginal="1" to WordDelimiterFilterFactory.
-#818608 by nofun: fix 5.3 warning on get_object_vars() 
+#818608 by nofun: fix 5.3 warning on get_object_vars().
         by jpmckinney: Fix whitespace. Respect coding standards. Fix watchdog argument. Redo apachesolr_facet_block refactorings from 6.x-2.x
 #759638 by pwolanin: refactor code to make it possible for multiple modules to run a search.
 #763072 by robertDouglass, justinrandell: Fixed warnings when indexing old, crappy html.
 #614644 by netsensei | robertDouglass: Fixed Forms attached to Apachesolr search results won't work.
-#747346 by robertDouglass, pwolanin | lazysoundsystem: Fixed Typo in apachesolr_search().module.
+#747346 by robertDouglass, pwolanin | lazysoundsystem: Fixed Typo in apachesolr_search.module.
 #750426 by mkalkbrenner: remove ununsed textTight type from schema.xml.
 #751420 by Damien Tournoud, pwolanin, skwashd: shorter site hash with different algorithm.
 #742998 by pwolanin: stop catching exceptions in the solr factory function.
