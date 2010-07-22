@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.101 2010/07/08 18:52:16 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.102 2010/07/22 02:57:29 pwolanin Exp $
 
 /**
  * @file
@@ -389,6 +389,12 @@ function apachesolr_index_nodes($rows, $namespace) {
   $callbacks = module_invoke_all('apachesolr_document_handlers', 'node', $namespace);
   $callbacks = array_filter($callbacks, 'function_exists');
 
+  // Always build the content for the index as an anonynmous user.
+  global $user;
+  session_save_session(FALSE);
+  $saved_user = $user;
+  $user = drupal_anonymous_user();
+
   foreach ($rows as $row) {
     try {
       // Build node. Set reset = TRUE to avoid static caching of all nodes that get indexed.
@@ -408,6 +414,9 @@ function apachesolr_index_nodes($rows, $namespace) {
       break;
     }
   }
+  // Restore the user.
+  $user = $saved_user;
+  session_save_session(TRUE);
 
   // Flatten $documents
   $tmp = array();
