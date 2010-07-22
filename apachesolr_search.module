@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.43 2010/07/08 18:52:13 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.4.44 2010/07/22 04:29:43 pwolanin Exp $
 
 /**
  * @file
@@ -128,7 +128,7 @@ function apachesolr_search_view($type = NULL) {
     }
     $keys = trim(search_get_keys());
     $filters = '';
-    if ($type == 'apachesolr_search' && isset($_GET['filters'])) {
+    if (isset($_GET['filters'])) {
       $filters = trim($_GET['filters']);
     }
     // Only perform search if there is non-whitespace search term or filters:
