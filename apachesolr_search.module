@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.26 2010/07/22 20:05:28 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.27 2010/07/22 21:13:22 jpmckinney Exp $
 
 /**
  * @file
@@ -1062,18 +1062,18 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
 
   if ($sort && $items) {
     switch ($facet_query_sorts['apachesolr_search'][$field_name]) {
-      'index numeric asc':
+      case 'index numeric asc':
         ksort($items, SORT_NUMERIC);
         break;
-      'index numeric desc':
+      case 'index numeric desc':
         krsort($items, SORT_NUMERIC);
         break;
-      'index desc':
-      'index key desc':
+      case 'index desc':
+      case 'index key desc':
         krsort($items, SORT_STRING);
         break;
-      'index asc':
-      'index key asc':
+      case 'index asc':
+      case 'index key asc':
       default:
         ksort($items, SORT_STRING);
         break;

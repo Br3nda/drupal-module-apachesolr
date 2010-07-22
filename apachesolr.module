@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.29 2010/07/22 20:05:28 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.30 2010/07/22 21:13:22 jpmckinney Exp $
 
 /**
  * @file
@@ -1150,18 +1150,18 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
     // Unless a facet is active only display 2 or more.
     if ($items && ($response->response->numFound > 1 || $contains_active)) {
       switch ($facet_query_sorts[$module][$delta]) {
-        'index numeric asc':
+        case 'index numeric asc':
           ksort($items, SORT_NUMERIC);
           break;
-        'index numeric desc':
+        case 'index numeric desc':
           krsort($items, SORT_NUMERIC);
           break;
-        'index desc':
-        'index key desc':
+        case 'index desc':
+        case 'index key desc':
           krsort($items, SORT_STRING);
           break;
-        'index asc':
-        'index key asc':
+        case 'index asc':
+        case 'index key asc':
         default:
           ksort($items, SORT_STRING);
           break;
