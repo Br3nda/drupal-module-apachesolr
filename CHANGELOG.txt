@@ -1,10 +1,15 @@
-// $Id: CHANGELOG.txt,v 1.1.2.183 2010/07/25 15:12:18 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.184 2010/07/25 16:16:46 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
-Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
+Apache Solr Search Integration 6.x-1.2, xxxx-xx-xx
 ------------------------------
+
+
+Apache Solr Search Integration 6.x-1.1, 2010-07-25
+------------------------------
+#864160 by pwolanin: Allow the caller a last chance to modify the query and params.
 #847040 by Agileware: Allow other modules to use facet only searching.
 #536990 by pwolanin | jpmckinney, janusman: always index content as an anonymous user.
 #751004 by jpmckinney, camidoo, rjbrown99, pwolanin: fix use of CCK API, handle NODE_BUILD_SEARCH_INDEX exclusion setting in the UI.
