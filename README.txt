@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.25.2.8 2010/01/21 14:14:56 claudiucristea Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.25.2.9 2010/07/25 16:33:19 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -184,6 +184,13 @@ hook_apachesolr_modify_query(&$query, &$params, $caller);
           // I only want to see articles by the admin!
           $query->add_filter("uid", 1);         
         }        
+
+CALLER_finalize_query(&$query, &$params);
+
+  The module calling apachesolr_do_query() may implement a function that is run after
+  hook_apachesolr_modify_query() and allows the caller to make final changes to the
+  query and params before the query is sent to Solr.  The function name is built
+  from the $caller parameter to apachesolr_do_query().
 
 hook_apachesolr_prepare_query(&$query, &$params, $caller);
 
