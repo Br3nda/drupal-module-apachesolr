@@ -1,4 +1,4 @@
-// $Id: CHANGELOG.txt,v 1.1.2.181 2010/07/22 04:34:23 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.182 2010/07/25 14:59:44 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
@@ -19,7 +19,9 @@ Apache Solr Search Integration 6.x-1.x, xxxx-xx-xx
 #824534 backport from 6.x-2.x of method to replace keywords in query object.
 #824154 by pwolanin: update schema.xml to add preserveOriginal="1" to WordDelimiterFilterFactory.
 #818608 by nofun: fix 5.3 warning on get_object_vars().
-        by jpmckinney: Fix whitespace. Respect coding standards. Fix watchdog argument. Redo apachesolr_facet_block refactorings from 6.x-2.x
+#592722 by jpmckinney: Reorder code in Solr_Base_Query and Drupal_Solr_Query_Interface.
+           Fix some comments. Remove E_STRICT warnings. Respect coding standards.
+#       by jpmckinney: Fix whitespace. Respect coding standards. Fix watchdog argument. Redo apachesolr_facet_block refactorings from 6.x-2.x
 #759638 by pwolanin: refactor code to make it possible for multiple modules to run a search.
 #763072 by robertDouglass, justinrandell: Fixed warnings when indexing old, crappy html.
 #614644 by netsensei | robertDouglass: Fixed Forms attached to Apachesolr search results won't work.
