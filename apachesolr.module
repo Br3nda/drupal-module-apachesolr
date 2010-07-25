@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.104 2010/07/22 21:13:05 jpmckinney Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.105 2010/07/25 16:31:43 pwolanin Exp $
 
 /**
  * @file
@@ -1626,6 +1626,12 @@ function apachesolr_do_query($caller, $current_query, $params = array('rows' => 
 
   if (!$query) {
     return array(NULL, array());
+  }
+  // Final chance for the caller to modify the query and params. The signature
+  // is: CALLER_finalize_query(&$query, &$params);
+  $function = $caller . '_finalize_query';
+  if (function_exists($function)) {
+    $function($query, $params);
   }
 
   $keys = $query->get_query_basic();
