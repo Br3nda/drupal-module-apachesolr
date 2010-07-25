@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.10 2010/07/22 03:13:40 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.11 2010/07/25 16:34:06 pwolanin Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 7.x-1.x-xxxx, xxxx-xx-xx
 ------------------------------
+#864160 by pwolanin: Allow the caller a last chance to modify the query and params.
 #536990 by pwolanin | jpmckinney, janusman: always index content as an anonymous user.
 #835850 by pwolanin: add more replicated files to solrconfig.xml master section.
 #830976 by eosrei, pwolanin: make sure we return a non-zero ping time on success.
