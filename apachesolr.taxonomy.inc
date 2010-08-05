@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.taxonomy.inc,v 1.1.2.5 2010/05/01 05:05:19 jpmckinney Exp $
+// $Id: apachesolr.taxonomy.inc,v 1.1.2.6 2010/08/05 08:18:35 robertDouglass Exp $
 
 /**
  * Overrides taxonomy/term/X links
@@ -38,8 +38,9 @@ function apachesolr_search_taxonomy_term_page($str_tids = '', $depth = 0, $op = 
     $_GET['retain-filters'] = 1;
 
     try {
+      module_load_include('inc', 'search', 'search.pages');
       $data = apachesolr_search_execute('', $filters, $solrsort, 'search/apachesolr_search', $page);
-      $results = theme('search_results', $data, $type);
+      $results = theme('search_results', $data, 'apachesolr_search');
     }
     catch (Exception $e) {
       watchdog('Apache Solr', t('Error running search'));
