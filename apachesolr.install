@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.install,v 1.13 2010/05/26 22:36:51 pwolanin Exp $
+// $Id: apachesolr.install,v 1.14 2010/08/11 00:06:33 pwolanin Exp $
 
 /**
  * @file
@@ -147,8 +147,8 @@ function apachesolr_uninstall() {
   variable_del('apachesolr_mlt_blocks');
   variable_del('apachesolr_cron_limit');
   variable_del('apachesolr_enabled_facets');
-  // Remove blocks.  
-  db_delete('blocks')->condition('module', 'apachesolr')->execute();   
+  // Remove blocks.
+  db_delete('block')->condition('module', 'apachesolr')->execute();
 }
 
 /**

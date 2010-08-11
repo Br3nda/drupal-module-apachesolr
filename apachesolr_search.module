@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.27 2010/07/22 21:13:22 jpmckinney Exp $
+// $Id: apachesolr_search.module,v 1.28 2010/08/11 00:06:33 pwolanin Exp $
 
 /**
  * @file
@@ -296,8 +296,9 @@ function apachesolr_search_browse($keys = '', $filters = '', $solrsort = '', $ba
       if ($delta == 'currentsearch') {
         continue;
       }
-      if (count((array) $response->facet_counts->facet_fields->$facet_field) > 0 ||
-          count((array) $response->facet_counts->facet_dates->$facet_field) > 0) {
+      $fc = $response->facet_counts;
+      if ((isset($fc->facet_fields->$facet_field) && count((array) $fc->facet_fields->$facet_field) > 0) ||
+          (isset($fc->facet_dates->$facet_field) && count((array) $fc->facet_dates->$facet_field) > 0)) {
         // This bit is modeled on block.module, block_list().
         $query = db_select('block', 'b');
         $br_alias = $query->leftJoin('block_role', 'br', 'b.module = br.module AND b.delta = br.delta');
@@ -313,17 +314,21 @@ function apachesolr_search_browse($keys = '', $filters = '', $solrsort = '', $ba
         $query->addTag('node_access');
         $result = $query->execute();
         $block = $result->fetchObject();
-        $hook_block = (object)module_invoke($module, 'block_view', $delta);
-        $block->content = $hook_block->content;
-        $block->subject = str_replace(t('Filter by '), t('Browse by '), $hook_block->subject);
-        // We can safely assume these values, since we're taking over the block display.
-        $block->visibility = TRUE;
-        $block->enabled = TRUE;
-        // This hook is made up. It should be in Drupal core, and it is quite useful.
-        // Including it here because it has saved the day on projects.
-        drupal_alter('block', $block);
-        if ($block->enabled && $block->visibility) {
-          $blocks["{$module}_{$delta}"] = $block;
+        if ($block) {
+          // TODO: not sure if we should show facets that have no corresponding enabled blocks here.
+          // Anyways without this condition there will be warnings if fetchObject() returns false
+          $hook_block = (object)module_invoke($module, 'block_view', $delta);
+          $block->content = $hook_block->content;
+          $block->subject = str_replace(t('Filter by '), t('Browse by '), $hook_block->subject);
+          // We can safely assume these values, since we're taking over the block display.
+          $block->visibility = TRUE;
+          $block->enabled = TRUE;
+          // This hook is made up. It should be in Drupal core, and it is quite useful.
+          // Including it here because it has saved the day on projects.
+          drupal_alter('block', $block);
+          if ($block->enabled && $block->visibility) {
+            $blocks["{$module}_{$delta}"] = $block;
+          }
         }
       }
     }
@@ -724,27 +729,12 @@ function apachesolr_search_apachesolr_facets() {
     }
   }
 
-  // Get CCK field facets.
-  $fields = apachesolr_cck_fields();
-  if ($fields) {
-    foreach ($fields as $name => $field) {
-      // $delta can only be 32 chars, and the CCK field name may be this
-      // long also, so we cannot add anything to it.
-      $facets[$field['field_name']] = array_merge($field, array(
-          'info' => t('CCK @field_type field: Filter by @field (@field_name)', array('@field_type' => $field['field_type'], '@field' => $field['label'], '@field_name' => $field['field_name'])),
-          'facet_field' => apachesolr_index_key($field),
-          'content_types' => $field['content_types'],
-        )
-      );
-    }
-  }
-
   // Get field facets.
-  $fields = apachesolr_fields();
-  foreach ($fields as $field_name => $field_info) {
-    $facets[$field_name] = array(
-        'info' => t('Field @field_name: Filter by @field_dname', array('@field_name' => $field_name, '@field_dname' => $field_info['display_name'])),
-        'facet_field' => apachesolr_index_key($field_info),
+  $fields = apachesolr_node_fields();
+  foreach ($fields as $index_key => $field_info) {
+    $facets[$index_key] = array(
+        'info' => t('Field @field_name: Filter by @field_dname', array('@field_name' => $field_info['field']['field_name'], '@field_dname' => $field_info['display_name'])),
+        'facet_field' => $index_key,
         'content_types' => $field_info['field']['bundles']['node'],
     );
   }
@@ -819,27 +809,17 @@ function apachesolr_search_block_view($delta = ''){
         return apachesolr_date_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by post date'));
 
       default:
-        if ($fields = apachesolr_cck_fields()) {
-          foreach ($fields as $name => $field) {
-            if ($field['field_name'] == $delta) {
-              $index_key = apachesolr_index_key($field);
-              $callback = isset($field['display_callback']) ? $field['display_callback'] : FALSE;
-              $block_function = (isset($field['facet_block_callback']) && function_exists($field['facet_block_callback'])) ? $field['facet_block_callback'] : 'apachesolr_facet_block';
-              return $block_function($response, $query, 'apachesolr_search', $delta, $index_key, t('Filter by @field', array('@field' => $field['label'])), $callback);
-            }
-          }
-        }
-        if ($fields = apachesolr_fields()) {
-          foreach ($fields as $field_name => $field_info) {
-            if ($field_info['field']['field_name'] == $delta) {
-              $index_key = apachesolr_index_key($field_info);
-              $callback = isset($field_info['display_callback']) ? $field_info['display_callback'] : FALSE;
-              $block_function = (isset($field_info['facet_block_callback']) && function_exists($field_info['facet_block_callback'])) ? $field_info['facet_block_callback'] : 'apachesolr_facet_block';
-              return $block_function($response, $query, 'apachesolr_search', $delta, $index_key, t('Filter by @field', array('@field' => $field_info['display_name'])), $callback);
-            }
+        if ($fields = apachesolr_node_fields()) {
+          if (isset($fields[$delta])) {
+            $fields_info = $fields[$delta];
+            $index_key = apachesolr_index_key($field_info);
+            $callback = $field_info['display_callback'] ? $field_info['display_callback'] : FALSE;
+            $block_function = ($field_info['facet_block_callback'] && function_exists($field_info['facet_block_callback'])) ? $field_info['facet_block_callback'] : 'apachesolr_facet_block';
+            return $block_function($response, $query, 'apachesolr_search', $delta, $index_key, t('Filter by @field', array('@field' => $field_info['display_name'])), $callback);
           }
         }
     }
+
   }
 }
 
@@ -1305,7 +1285,7 @@ function apachesolr_search_form_apachesolr_settings_alter(&$form, $form_state) {
     ),
     '#default_value' => variable_get('apachesolr_search_browse', 'browse'),
     '#description' => t("This is what is shown when the user enters an empty search, or removes all filters from an active search. Remember to enable filters on the !filterslink and assign blocks to regions on the !blocklink", array(
-      '!filterslink' => l('enabled filters page', 'admin/config/apachesolr/enabled-filters'),
+      '!filterslink' => l('enabled filters page', 'admin/config/search/apachesolr/enabled-filters'),
       '!blocklink' => l('block settings page', 'admin/build/block'),
     )),
   );
@@ -1324,7 +1304,7 @@ function apachesolr_search_form_apachesolr_settings_alter(&$form, $form_state) {
     '#type' => 'radios',
     '#title' => t('Use Apache Solr for taxonomy links'),
     '#default_value' => variable_get('apachesolr_search_taxonomy_links', 0),
-    '#description' => t('Note: Vocabularies that need this behavior need to be checked off on the <a href="@enabled_filters_url">enabled filters</a> settings page', array('@enabled_filters_url' => url('admin/config/apachesolr/enabled-filters'))),
+    '#description' => t('Note: Vocabularies that need this behavior need to be checked off on the <a href="@enabled_filters_url">enabled filters</a> settings page', array('@enabled_filters_url' => url('admin/config/search/apachesolr/enabled-filters'))),
     '#options' => array(0 => t('Disabled'), 1 => t('Enabled')),
   );
   $form['advanced']['apachesolr_search_taxonomy_previous'] = array(
@@ -1405,7 +1385,7 @@ function apachesolr_search_theme() {
     'apachesolr_breadcrumb_language' => array(
       'arguments' => array('field' => NULL, 'exclude' => FALSE),
     ),
-    'apachesolr_breadcrumb_cck' => array(
+    'apachesolr_breadcrumb_field' => array(
       'arguments' => array('field' => NULL),
     ),
     'apachesolr_breadcrumb_changed' => array(
@@ -1437,23 +1417,23 @@ function apachesolr_search_theme() {
  *
  */
 function apachesolr_search_apachesolr_theme_breadcrumb_alter(&$fieldname) {
-  $matches = preg_split('/_cck_/', $fieldname);
+  $matches = preg_split('/_field_/', $fieldname);
   if (isset($matches[1])) {
-    $fieldname = 'apachesolr_breadcrumb_cck';
+    $fieldname = 'apachesolr_breadcrumb_field';
   }
 }
 
 /**
- * Theme function for CCK fields in breadcrumbs.
+ * Theme function for fields in breadcrumbs.
  * TODO: The logic for getting here is too convoluted, and
- * there are too many bizarre naming conventions in play (_cck_, _end).
- * The checks for _cck_ and _end MUST get refactored.
+ * there are too many bizarre naming conventions in play (_field_, _end).
+ * The checks for _field_ and _end MUST get refactored.
  */
-function theme_apachesolr_breadcrumb_cck($vars) {
+function theme_apachesolr_breadcrumb_field($vars) {
   $field = $vars['field'];
-  $matches = preg_split('/_cck_/', $field['#name']);
+  $matches = preg_split('/_field_/', $field['#name']);
   if (isset($matches[1])) {
-    $match = $matches[1];
+    $match = 'field_'.$matches[1];
 
     // TODO: If the apachesolr_date module is present we might
     // have fields with the suffix '_end'. These are the end-dates
@@ -1462,7 +1442,8 @@ function theme_apachesolr_breadcrumb_cck($vars) {
       $match = preg_replace('/_end{1}$/', '', $match);
     }
 
-    $mappings = apachesolr_cck_fields();
+    //$mappings = apachesolr_cck_fields();
+    $mappings = apachesolr_node_fields();
     if (isset($mappings[$match]['display_callback'])) {
       $function = $mappings[$match]['display_callback'];
       if (function_exists($function)) {

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.12 2010/05/26 22:51:14 pwolanin Exp $
+// $Id: apachesolr.admin.inc,v 1.13 2010/08/11 00:06:33 pwolanin Exp $
 
 /**
  * @file
@@ -37,7 +37,7 @@ function apachesolr_settings() {
     '#collapsed' => $collapse_host,
   );
 
-  $form['apachesolr_host_settings']['apachesolr_host'] = array(  
+  $form['apachesolr_host_settings']['apachesolr_host'] = array(
     '#type' => 'textfield',
     '#title' => t('Solr host name'),
     '#default_value' => variable_get('apachesolr_host', 'localhost'),
@@ -179,7 +179,7 @@ function apachesolr_index_page() {
     $output['apachesolr_index_action_form'] = drupal_get_form('apachesolr_index_action_form');
   }
   else {
-    drupal_set_message(t('The index is in read-only mode. Options for deleting and re-indexing are therefore not available. The index mode can be changed on the !settings_page', array('!settings_page' => l(t('settings page'), 'admin/config/apachesolr'))), 'warning');
+    drupal_set_message(t('The index is in read-only mode. Options for deleting and re-indexing are therefore not available. The index mode can be changed on the !settings_page', array('!settings_page' => l(t('settings page'), 'admin/config/search/apachesolr'))), 'warning');
   }
 
   return $output;
@@ -269,7 +269,8 @@ function apachesolr_enabled_facets_form_submit($form, &$form_state) {
   apachesolr_save_enabled_facets($enabled);
   // This cache being stale can prevent new facet filters from working.
   apachesolr_clear_cache();
-  drupal_set_message($form_state['values']['submit_message'], 'warning');
+  $msg = t('The Apache Solr filters settings were changed.  To arrange the blocks for your enabled filters, visit the <a href="@url">blocks administration page</a>.', array('@url' => url('admin/structure/block')));
+  drupal_set_message($msg, 'warning');
 }
 
 /**
@@ -338,10 +339,6 @@ function apachesolr_enabled_facets_form() {
   );
 
   $form['#tree'] = TRUE;
-  $form['submit_message'] = array(
-    '#type' => 'value',
-    '#markup' => t('The Apache Solr filters settings were changed.  To arrange the blocks for your enabled filters, visit the <a href="@url">blocks administration page</a>.', array('@url' => url('admin/build/block'))),
-  );
 
   return $form;
 }
@@ -404,11 +401,11 @@ function apachesolr_index_action_form_submit($form, &$form_state) {
       break;
 
     case 'reindex':
-      $form_state['redirect'] = 'admin/config/apachesolr/index/confirm/clear';
+      $form_state['redirect'] = 'admin/config/search/apachesolr/index/confirm/clear';
       break;
 
     case 'delete':
-      $form_state['redirect'] = 'admin/config/apachesolr/index/confirm/delete';
+      $form_state['redirect'] = 'admin/config/search/apachesolr/index/confirm/delete';
       break;
   }
 }
@@ -419,7 +416,7 @@ function apachesolr_index_action_form_submit($form, &$form_state) {
  */
 function apachesolr_clear_index_confirm() {
   $form = array();
-  return confirm_form($form, t('Are you sure you want to queue content for reindexing?'), 'admin/config/apachesolr/index', t('All content on the site will be queued for indexing. The documents currently in the Solr index will remain searchable. The content will be gradually resubmitted to Solr during cron runs.'), t('Reindex'), t('Cancel'));
+  return confirm_form($form, t('Are you sure you want to queue content for reindexing?'), 'admin/config/search/apachesolr/index', t('All content on the site will be queued for indexing. The documents currently in the Solr index will remain searchable. The content will be gradually resubmitted to Solr during cron runs.'), t('Reindex'), t('Cancel'));
 }
 
 /**
@@ -428,7 +425,7 @@ function apachesolr_clear_index_confirm() {
  * @see apachesolr_clear_index_confirm()
  */
 function apachesolr_clear_index_confirm_submit($form, &$form_state) {
-  $form_state['redirect'] = 'admin/config/apachesolr/index';
+  $form_state['redirect'] = 'admin/config/search/apachesolr/index';
   apachesolr_rebuild_index_table();
   drupal_set_message(t('All the content on your site is queued for indexing. You can wait for it to be indexed during cron runs, or you can manually reindex it.'), 'warning');
 }
@@ -439,7 +436,7 @@ function apachesolr_clear_index_confirm_submit($form, &$form_state) {
  */
 function apachesolr_delete_index_confirm() {
   $form = array();
-  return confirm_form($form, t('Are you sure you want to delete the search index?'), 'admin/config/apachesolr/index', t("All documents in the Solr index will be deleted. This is rarely necessary unless your index is corrupt or you have installed a new schema.xml. After doing this your content will need to be queued for indexing."), t('Delete'), t('Cancel'));
+  return confirm_form($form, t('Are you sure you want to delete the search index?'), 'admin/config/search/apachesolr/index', t("All documents in the Solr index will be deleted. This is rarely necessary unless your index is corrupt or you have installed a new schema.xml. After doing this your content will need to be queued for indexing."), t('Delete'), t('Cancel'));
 }
 
 /**
@@ -448,7 +445,7 @@ function apachesolr_delete_index_confirm() {
  * @see apachesolr_delete_index_confirm()
  */
 function apachesolr_delete_index_confirm_submit($form, &$form_state) {
-  $form_state['redirect'] = 'admin/config/apachesolr/index';
+  $form_state['redirect'] = 'admin/config/search/apachesolr/index';
   try {
     apachesolr_delete_index();
     drupal_set_message(t('The Apache Solr content index has been erased. All the content on your site is queued for indexing. You can wait for it to be indexed during cron runs, or you can manually reindex it.'), 'warning');
@@ -633,7 +630,6 @@ function apachesolr_mlt_block_form($delta = NULL) {
     '#default_value' => $block['mlt_custom_filters'],
     '#weight' => '-1',
   );
-
 
   return $form;
 }

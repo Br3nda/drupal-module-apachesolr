@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.install,v 1.10 2010/05/17 00:32:26 pwolanin Exp $
+// $Id: apachesolr_search.install,v 1.11 2010/08/11 00:06:33 pwolanin Exp $
 
 /**
  * @file
@@ -14,8 +14,8 @@ function apachesolr_search_uninstall() {
   $stored = variable_get('apachesolr_index_last', array());
   unset($stored['apachesolr_search']);
   variable_set('apachesolr_index_last', $stored);
-  // Remove blocks.  
-  db_delete('blocks')->condition('module', 'apachesolr_search')->execute();
+  // Remove blocks.
+  db_delete('block')->condition('module', 'apachesolr_search')->execute();
 }
 
 /**
@@ -78,3 +78,10 @@ function apachesolr_search_update_6003() {
   variable_set('apachesolr_facet_missing', $facet_missing);
   return $ret;
 }
+
+function apachesolr_search_update_7000() {
+  // TODO - possibly rename block deltas, etc.
+  // TODO: if apachesolr was the default - make sure it's the default search module
+}
+
+// TODO: hook_enable?

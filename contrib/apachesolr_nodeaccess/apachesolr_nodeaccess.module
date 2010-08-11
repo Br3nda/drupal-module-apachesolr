@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_nodeaccess.module,v 1.10 2010/06/16 21:01:15 jpmckinney Exp $
+// $Id: apachesolr_nodeaccess.module,v 1.11 2010/08/11 00:06:33 pwolanin Exp $
 
 /**
  * Implements apachesolr_update_index
@@ -83,18 +83,18 @@ function apachesolr_nodeaccess_apachesolr_modify_query(&$query, &$params, $calle
 }
 
 /**
- * Implements hook_nodeapi().
- *
- * Listen to this hook to find out when a node is being saved.
+ * Implements hook_node_insert().
+ * hook_node*() is called before hook_node_access_records() in node_save().
  */
-function apachesolr_nodeaccess_nodeapi(&$node, $op) {
-  switch ($op) {
-    case 'insert':
-    case 'update':
-      // hook_nodeapi() is called before hook_node_access_records() in node_save().
-      $node->apachesolr_nodeaccess_ignore = 1;
-      break;
-  }
+function apachesolr_nodeaccess_node_insert($node){
+  $node->apachesolr_nodeaccess_ignore = 1;
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function apachesolr_nodeaccess_node_update($node){
+  $node->apachesolr_nodeaccess_ignore = 1;
 }
 
 /**

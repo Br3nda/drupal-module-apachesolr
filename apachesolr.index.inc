@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.10 2010/05/26 22:07:16 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.11 2010/08/11 00:06:33 pwolanin Exp $
 
 /**
  * @file
@@ -78,7 +78,7 @@ function apachesolr_node_to_document($node, $namespace) {
     $document->translate = $node->translate;
     if (empty($node->language)) {
       // 'und' is the language-neutral code in Drupal 7.
-      $document->language = 'und';
+      $document->language = LANGUAGE_NONE;
     }
     else {
       $document->language = $node->language;
@@ -107,52 +107,22 @@ function apachesolr_node_to_document($node, $namespace) {
     if (function_exists('drupal_get_path_alias')) {
       // Add any path alias to the index, looking first for language specific
       // aliases but using language neutral aliases otherwise.
-      $language = empty($node->language) ? '' : $node->language;
+      $language = empty($node->language) ? NULL : $node->language;
       $output = drupal_get_path_alias($path, $language);
       if ($output && $output != $path) {
         $document->path_alias = $output;
       }
     }
 
-    // Get CCK fields list
-    $cck_fields = apachesolr_cck_fields();
-    // NOTE: One CCK field might result in multiple Solr fields.
-    foreach ($cck_fields as $key => $cck_info) {
-      if (isset($node->$key)) {
-        // Got a CCK field. See if it is to be indexed.
-        $function = $cck_info['indexing_callback'];
-        $fields = NULL;
-        if ($cck_info['indexing_callback'] && function_exists($function)) {
-          // NOTE: This function should always return an array.
-          $fields = $function($node, $key, $cck_info);
-        }
-        // NOTE: This is now being done in the mandatory indexing callback.
-        // $index_key = apachesolr_index_key($cck_info);
-        if (is_array($fields)) {
-          // NOTE: If this were done as $key => $value, and the $index_key were
-          // done within the loop, could we support indexing one CCK field to
-          // multiple Solr fields?
-          foreach ($fields as $field) {
-            if ($cck_info['multiple']) {
-              $document->setMultiValue($field['key'], apachesolr_clean_text($field['value']));
-            }
-            else {
-              $document->{$field['key']} = apachesolr_clean_text($field['value']);
-            }
-          }
-        }
-      }
-    }
-
     // Handle fields
-    $indexed_fields = apachesolr_fields();
+    $indexed_fields = apachesolr_node_fields();
     foreach ($indexed_fields as $field_name => $field_info) {
       // See if the node has fields that can be indexed
       if (isset($node->$field_name)) {
         // Got a field.
         $function = $field_info['indexing_callback'];
         $fields = NULL;
-        if ($field_info['indexing_callback'] && function_exists($function)) {
+        if ($function && function_exists($function)) {
           // NOTE: This function should always return an array.
           $fields = $function($node, $field_name, $field_info);
         }
@@ -191,37 +161,22 @@ function apachesolr_node_to_document($node, $namespace) {
   return $document;
 }
 
-function apachesolr_cck_text_indexing_callback($node, $field_name, $cck_info) {
-  $fields = array();
-  if (isset($node->{$field_name})) {
-    $index_key = apachesolr_index_key($cck_info);
-    foreach ($node->$field_name as $field) {
-      if ($index_value = (isset($field['safe']) && strlen($field['safe'])) ? $field['safe'] : FALSE) {
-        $fields[] = array(
-          'key' => $index_key,
-          'value' => $index_value,
-        );
-      }
-    }
-  }
-  return $fields;
-}
-
 /**
- * Callback that converts node filed into an array
+ * Callback that converts list module field into an array
  */
-function apachesolr_field_indexing_callback($node, $field_name, $field_info) {
+function apachesolr_fields_list_indexing_callback($node, $field_name, $field_info) {
   $fields = array();
   if (isset($node->{$field_name})) {
     $index_key = apachesolr_index_key($field_info);
-    $lang = field_language('node', $node, $field_name);
     $field = $node->$field_name;
-    $allowed_values = list_allowed_values($field_info['field']);
+    list($lang, $values) = each($field);
+    //$allowed_values = list_allowed_values($field_info['field']);
     //TODO: should we use field_filter_xss() on $allowed_values??
-    foreach ($field[$lang] as $fval) {
+    // isset($allowed_values[$fval['value']]) ? $allowed_values[$fval['value']] : $fval['value'],
+    foreach ($values as $fval) {
       $fields[] = array(
         'key' => $index_key,
-        'value' => isset($allowed_values[$fval['value']]) ? $allowed_values[$fval['value']] : $fval['value'],
+        'value' => $fval['value'],
       );
     }
   }
@@ -289,6 +244,9 @@ function apachesolr_add_taxonomy_to_document(&$document, $node) {
           $document->setMultiValue('im_vid_'. $ancestor->vid, $ancestor->tid);
           $name = apachesolr_clean_text($ancestor->name);
           $document->setMultiValue('vid', $ancestor->vid);
+          if (!isset($document->{'ts_vid_'. $ancestor->vid .'_names'})){
+            $document->{'ts_vid_'. $ancestor->vid .'_names'} = '';
+          }
           $document->{'ts_vid_'. $ancestor->vid .'_names'} .= ' '. $name;
           // We index each name as a string for cross-site faceting
           // using the vocab name rather than vid in field construction .
@@ -346,6 +304,9 @@ function apachesolr_add_tags_to_document(&$document, $text) {
     $tag = strtolower($tag);
     // We don't want to index links auto-generated by the url filter.
     if ($tag != 'a' || !preg_match('@(?:http://|https://|ftp://|mailto:|smb://|afp://|file://|gopher://|news://|ssl://|sslv2://|sslv3://|tls://|tcp://|udp://|www\.)[a-zA-Z0-9]+@', $matches[2][$key])) {
+      if (!isset($document->{$tags_to_index[$tag]})){
+        $document->{$tags_to_index[$tag]} = '';
+      }
       $document->{$tags_to_index[$tag]} .= ' '. $matches[2][$key];
     }
   }

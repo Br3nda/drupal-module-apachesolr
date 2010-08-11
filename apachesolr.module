@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.31 2010/07/25 16:32:39 pwolanin Exp $
+// $Id: apachesolr.module,v 1.32 2010/08/11 00:06:33 pwolanin Exp $
 
 /**
  * @file
@@ -222,24 +222,6 @@ function apachesolr_mark_node($nid) {
 }
 
 /**
- * Implements hook_node_type().
- *
- * Mark nodes as needing re-indexing if a node type name changes.
- */
-
-/**
- * Implements of hook_node_type_delete().
- */
-//function apachesolr_node_type_delete($info) {
-//}
-
-/**
- * Implements of hook_node_type_insert().
- */
-//function apachesolr_node_type_insert($info) {
-//}
-
-/**
  * Implements of hook_node_type_update().
  */
 function apachesolr_node_type_update($info) {
@@ -260,16 +242,17 @@ function apachesolr_index_status($namespace) {
   $excluded_types = apachesolr_get_excluded_types($namespace);
   list($last_change, $last_nid) = apachesolr_get_last_change($namespace);
 
-  $query = db_select('apachesolr_search_node', 'asn')->countQuery()->condition('asn.status', 1);
+  $query = db_select('apachesolr_search_node', 'asn')->condition('asn.status', 1);
   apachesolr_query_add_excluded_types($query, $excluded_types);
-  $total = $query->execute()->fetchField();
+  //$query = db_query('SELECT COUNT(*) FROM {apachesolr_search_node} asn WHERE asn.status = 1');
+  $total = $query->countQuery()->execute()->fetchField();
 
   //$remaining = db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > :last_changed OR (asn.changed = :last_changed AND asn.nid > :last_nid)) AND asn.status = 1 "  . $exclude_sql, $args)->fetchField();
-  $query = db_select('apachesolr_search_node', 'asn')->countQuery()
+  $query = db_select('apachesolr_search_node', 'asn')
     ->condition('asn.status', 1)
     ->condition(db_or()->condition('asn.changed', $last_change, '>')->condition(db_and()->condition('asn.changed', $last_change)->condition('asn.nid', $last_nid, '>')));
   apachesolr_query_add_excluded_types($query, $excluded_types);
-  $remaining = $query->execute()->fetchField();
+  $remaining = $query->countQuery()->execute()->fetchField();
 
   return array('remaining' => $remaining, 'total' => $total);
 }
@@ -950,9 +933,6 @@ function apachesolr_get_facet_definition_by_field_name($field_name) {
   }
 }
 
-
-//bezer: these hooks are for CCK forms!
-
 /**
  * Implements hook_form_[form_id]_alter().
  *
@@ -963,29 +943,11 @@ function apachesolr_form_node_type_form_alter(&$form, $form_state) {
 }
 
 /**
- * Implements hook_form_[form_id]_alter().
- *
- * Make sure to flush cache when fields are added.
- */
-function apachesolr_form_content_field_overview_form_alter(&$form, $form_state) {
-  $form['#submit'][] = 'apachesolr_clear_cache';
-}
-
-/**
  * Implements hook_form_[form_id]_alter(). (D7)
  *
  * Make sure to flush cache when fields are added.
  */
 function apachesolr_form_field_ui_field_overview_form_alter(&$form, $form_state) {
-  $form['#submit'][] = 'apachesolr_clear_cache';
-}
-
-/**
- * Implements hook_form_[form_id]_alter().
- *
- * Make sure to flush cache when fields are updated.
- */
-function apachesolr_form_content_field_edit_form_alter(&$form, $form_state) {
   $form['#submit'][] = 'apachesolr_clear_cache';
 }
 
@@ -1829,10 +1791,15 @@ function apachesolr_current_query($query = NULL, $namespace = 'apachesolr_search
 }
 
 /**
+ * Construct a dynamic index name based on information about a field.
+ *
+ * array('index_type' => 'integer',
+ *        'multiple' => TRUE,
+ *        'name' => 'fieldname',
+ *        ),
  */
-function apachesolr_index_key($field_info) {
-  $field = $field_info['field'];
-  switch ($field_info['index_type']) {
+function apachesolr_index_key($field) {
+  switch ($field['index_type']) {
     case 'text':
       $type_prefix = 't';
       break;
@@ -1875,9 +1842,8 @@ function apachesolr_index_key($field_info) {
     default:
       $type_prefix = 's';
   }
-  //$sm = $field['multiple'] ? 'm_' : 's_';
-  $sm = $field['cardinality'] > 1 ? 'm_' : 's_';
-  return $type_prefix . $sm . $field['field_name'];
+  $sm = $field['multiple'] ? 'm_' : 's_';
+  return $type_prefix . $sm . $field['name'];
 }
 
 /**
@@ -1907,10 +1873,7 @@ function apachesolr_field_name_map($field_name) {
         $map['im_vid_'. $vocab->vid] = t('Taxonomy term IDs from the %name vocabulary', array('%name' => $vocab->name));
       }
     }
-    foreach (apachesolr_cck_fields() as $name => $field) {
-      $map[apachesolr_index_key($field)] = t('CCK @type field %label', array('@type' => $field['index_type'], '%label' => $field['label']));
-    }
-    foreach (apachesolr_fields() as $field_nm => $field_info) {
+    foreach (apachesolr_node_fields() as $field_nm => $field_info) {
       $map[apachesolr_index_key($field_info)] = t('Field of type @type: %label', array('@type' => $field_info['field']['type'], '%label' => $field_info['display_name']));
     }
     drupal_alter('apachesolr_field_name_map', $map);
@@ -1919,181 +1882,104 @@ function apachesolr_field_name_map($field_name) {
 }
 
 /**
- * Invokes hook_apachesolr_cck_field_mappings to find out how to handle CCK fields.
+ * Returns array containing information about node fields that should be indexed
  */
-function apachesolr_cck_fields() {
-  static $fields;
+function apachesolr_node_fields() {
+  static $fields = NULL;
 
-  if (is_null($fields)) {
-    $fields = array();
-    // If CCK isn't enabled, do nothing.
-    if (module_exists('content')) {
-      // A single default mapping for all text fields.
-      $mappings['text'] = array(
-        'optionwidgets_select' => array(
-          'display_callback' => 'apachesolr_cck_text_field_callback',
-          'indexing_callback' => 'apachesolr_cck_text_indexing_callback',
-          'index_type' => 'string',
-        ),
-        'optionwidgets_buttons' => array(
-          'display_callback' => 'apachesolr_cck_text_field_callback',
-          'indexing_callback' => 'apachesolr_cck_text_indexing_callback',
-          'index_type' => 'string',
-        ),
-      );
-      $mappings['nodereference'] = array(
-        'nodereference_buttons' => array(
-          'display_callback' => 'apachesolr_cck_nodereference_field_callback',
-          'indexing_callback' => 'apachesolr_cck_nodereference_indexing_callback',
-          'index_type' => 'integer',
-        ),
-        'nodereference_select' => array(
-          'display_callback' => 'apachesolr_cck_nodereference_field_callback',
-          'indexing_callback' => 'apachesolr_cck_nodereference_indexing_callback',
-          'index_type' => 'integer',
-        ),
-        'nodereference_autocomplete' => array(
-          'display_callback' => 'apachesolr_cck_nodereference_field_callback',
-          'indexing_callback' => 'apachesolr_cck_nodereference_indexing_callback',
-          'index_type' => 'integer',
-        ),
-      );
-      $mappings['userreference'] = array(
-        'userreference_buttons' => array(
-          'display_callback' => 'apachesolr_cck_userreference_field_callback',
-          'indexing_callback' => 'apachesolr_cck_userreference_indexing_callback',
-          'index_type' => 'integer',
-        ),
-        'userreference_select' => array(
-          'display_callback' => 'apachesolr_cck_userreference_field_callback',
-          'indexing_callback' => 'apachesolr_cck_userreference_indexing_callback',
-          'index_type' => 'integer',
-        ),
-        'userreference_autocomplete' => array(
-          'display_callback' => 'apachesolr_cck_userreference_field_callback',
-          'indexing_callback' => 'apachesolr_cck_userreference_indexing_callback',
-          'index_type' => 'integer',
-        ),
-      );
-      // Allow other modules to add or alter mappings.
-      drupal_alter('apachesolr_cck_fields', $mappings);
-      // TODO: use db_select
-      $result = db_query("SELECT i.field_name, f.multiple, f.type AS field_type, i.widget_type, i.label, i.type_name AS content_type FROM {content_node_field_instance} i INNER JOIN {content_node_field} f ON i.field_name = f.field_name;");
-      foreach ($result as $row) {
-        // Only deal with fields that have option widgets (facets don't make sense otherwise), or fields that have specific mappings.
-        if ((isset($mappings[$row->field_type][$row->widget_type]) ||  isset($mappings['per-field'][$row->field_name]))) {
-          if (isset($mappings['per-field'][$row->field_name])) {
-            $field = $mappings['per-field'][$row->field_name];
-            $fields[$row->field_name] = $field;
-          }
-          else {
-            $field = $mappings[$row->field_type][$row->widget_type];
-          }
-          // It's important that we put the 'cck_' here because several points in the later processing
-          // depend on it to route program flow to cck specific handlers.
-          $row->name              = 'cck_' . $row->field_name;
-          $row->index_type        = $field['index_type'];
-          $row->indexing_callback = $field['indexing_callback'];
-          $row->display_callback  = $field['display_callback'];
-          if (isset($field['facet_block_callback'])) {
-            $row->facet_block_callback = $field['facet_block_callback'];
-          }
-          $row->multiple          = (bool) $row->multiple;
-
-          if (isset($fields[$row->field_name])) {
-            $fields[$row->field_name] = array_merge((array) $fields[$row->field_name], (array) $row);
-          }
-          else {
-            $fields[$row->field_name] = (array) $row;
-          }
-          $fields[$row->field_name]['content_types'][] = $row->content_type;
-          unset($fields[$row->field_name]['content_type']);
-        }
-      }
-    }
-  }
-
-  return $fields;
-}
-
-
-/**
- * Returns array containing information about fields that should be indexed
- */
-function apachesolr_fields() {
-  static $fields = null;
-
-  if (is_null($fields)) {
+  if (!isset($fields)) {
     $fields = array();
     $mappings = array(
       'list' => array(
-        'display_callback' => 'apachesolr_text_field_display_callback',
-        'indexing_callback' => 'apachesolr_field_indexing_callback',
-        'index_type' => 'string'),
+        'display_callback' => 'apachesolr_fields_list_display_callback',
+        'indexing_callback' => 'apachesolr_fields_list_indexing_callback',
+        'index_type' => 'string',
+      ),
       'list_number' => array(
-        'display_callback' => 'apachesolr_text_field_display_callback',
-        'indexing_callback' => 'apachesolr_field_indexing_callback',
-        'index_type' => 'string'),
+        'display_callback' => 'apachesolr_fields_list_display_callback',
+        'indexing_callback' => 'apachesolr_fields_list_indexing_callback',
+        'index_type' => 'string',
+      ),
       'list_text' => array(
-        'display_callback' => 'apachesolr_text_field_display_callback',
-        'indexing_callback' => 'apachesolr_field_indexing_callback',
-        'index_type' => 'string')
+        'display_callback' => 'apachesolr_fields_list_display_callback',
+        'indexing_callback' => 'apachesolr_fields_list_indexing_callback',
+        'index_type' => 'string',
+      ),
+      'list_boolean' => array(
+        'display_callback' => 'apachesolr_fields_list_display_callback',
+        'indexing_callback' => 'apachesolr_fields_list_indexing_callback',
+        'index_type' => 'string',
+      ),
+      'node_reference' => array(
+        'display_callback' => 'apachesolr_cck_nodereference_field_callback',
+        'indexing_callback' => 'apachesolr_cck_nodereference_indexing_callback',
+        'index_type' => 'integer',
+      ),
+      'user_reference' => array(
+        'display_callback' => 'apachesolr_cck_userreference_field_callback',
+        'indexing_callback' => 'apachesolr_cck_userreference_indexing_callback',
+        'index_type' => 'integer',
+      ),
     );
 
     // Allow other modules to add or alter mappings.
     drupal_alter('apachesolr_field_mappings', $mappings);
-
+    foreach (array_keys($mappings) as $key) {
+      // Set all values with defaults.
+      $mappings[$key] += array(
+        'display_callback' => '',
+        'indexing_callback' => '',
+        'index_type' => 'string',
+        'name_callback' => '',
+        'facet_block_callback' => '',
+      );
+    }
+    // We are only concerned about fields on node entities.
     $instances = field_info_instances('node');
     foreach (field_info_fields() as $field_name => $field) {
-      if (isset($mappings['per-field'][$field_name]) || isset($mappings[$field['type']])) {
-        // mappings
-        if( isset($mappings['per-field'][$field_name]) ){
-          $fields[$field_name] = $mappings['per-field'][$field['type']];
+      $row = array();
+      if (isset($field['bundles']['node']) && (isset($mappings['per-field'][$field_name]) || isset($mappings[$field['type']]))) {
+        // Find the mapping.
+        if (isset($mappings['per-field'][$field_name])){
+          $row = $mappings['per-field'][$field_name];
         }
-        else{
-          $fields[$field_name] = $mappings[$field['type']];
+        else {
+          $row = $mappings[$field['type']];
         }
-        // the field object
-        $fields[$field_name]['field'] = $field;
-
-        //set display name
+        // The field info array.
+        $row['field'] = $field;
+        // Field API allows any field to be multi-valued.
+        $row['multiple'] = TRUE;
+        // Name is used to consruct the field name in the index.  cck_ prefix
+        // is legacy, but shoudl not conflict.
+        $function = $row['name_callback'];
+        if ($function && function_exists($function)) {
+          $row['name'] = $function($field);
+        }
+        else {
+          $row['name'] = $field['module'] . '_' . $field_name;
+        }
+        // Set display name
         $display_name = array();
-        foreach ($instances as $bundle_name => $bundle){
-          if (isset($bundle[$field_name])){
-            $display_name[] = $bundle[$field_name]['label'];
+        foreach ($field['bundles']['node'] as $node_type){
+          if ($instances[$node_type][$field_name]['display']['search_index'] != 'hidden') {
+            $row['display_name'] = $instances[$node_type][$field_name]['label'];
+            $row['content_types'][] = $node_type;
           }
         }
-        $fields[$field_name]['display_name'] = (!empty($display_name)? implode(', ', array_unique($display_name)): $field_name);
+        // Only add to the $fields array if some instances are displayed for the search index.
+        if (!empty($row['content_types'])) {
+          // Use the Solr index key as the array key.
+          $fields[apachesolr_index_key($row)] = $row;
+        }
       }
     }
-
-    // TODO: do we need this?
-    // Allow other modules to alter fields
-    // drupal_alter('apachesolr_fields', $fields);
   }
-
   return $fields;
 }
 
-
 /**
- * Implements hook_content_fieldapi().
- */
-function apachesolr_content_fieldapi($op) {
-  if ($op == 'update instance') {
-    cache_clear_all('*', 'cache_apachesolr', TRUE);
-  }
-}
-
-
-
-function apachesolr_text_field_display_callback($facet, $options) {
-  return $facet;
-}
-
-
-/**
- * Use the content.module's content_format() to format the
+ * Use the list.module's list_allowed_values() to format the
  * field based on its value ($facet).
  *
  *  @param $facet string
@@ -2101,9 +1987,15 @@ function apachesolr_text_field_display_callback($facet, $options) {
  *  @param $options
  *    An array of options including the hook_block $delta.
  */
-function apachesolr_cck_text_field_callback($facet, $options) {
-  if (function_exists('content_format')) {
-    return content_format($options['delta'], array('value' => $facet));
+function apachesolr_fields_list_display_callback($facet, $options) {
+  // @see list_field_formatter_view()
+  $fields = field_info_fields();
+  $field_name = $options['delta'];
+  if (isset($fields[$field_name])) {
+    $allowed_values = list_allowed_values($field);
+    if (isset($allowed_values[$facet])) {
+      $output = field_filter_xss($allowed_values[$facet]);
+    }
   }
   else {
     return $facet;
@@ -2264,7 +2156,7 @@ function apachesolr_mlt_suggestions($settings, $id) {
 function apachesolr_form_block_admin_display_form_alter(&$form) {
   foreach ($form as $key => $block) {
     if ((strpos($key, "apachesolr_mlt-") === 0) && $block['module']['#value'] == 'apachesolr') {
-      $form[$key]['delete'] = array('#value' => l(t('delete'), 'admin/config/apachesolr/mlt/delete_block/'. $block['delta']['#value']));
+      $form[$key]['delete'] = array('#value' => l(t('delete'), 'admin/config/search/apachesolr/mlt/delete_block/'. $block['delta']['#value']));
     }
   }
 }
@@ -2410,7 +2302,7 @@ function theme_apachesolr_facet_list($vars) {
   }
   $admin_link = '';
   if (user_access('administer search')) {
-    $admin_link = l(t('Configure enabled filters'), 'admin/config/apachesolr/enabled-filters');
+    $admin_link = l(t('Configure enabled filters'), 'admin/config/search/apachesolr/enabled-filters');
   }
   return theme('item_list', array('items' => $items)) . $admin_link;
 }
