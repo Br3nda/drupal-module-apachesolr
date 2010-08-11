@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.208 2010/07/25 16:16:46 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.209 2010/08/11 21:43:16 pwolanin Exp $
 
 /**
  * @file
@@ -8,6 +8,37 @@
 
 define('APACHESOLR_READ_WRITE', 0);
 define('APACHESOLR_READ_ONLY', 1);
+
+/**
+ * Implementation of hook_init().
+ *
+ * PHP 5.1 compatability code.
+ */
+function apachesolr_init() {
+  if (!function_exists('json_decode')) {
+    // Zend files include other files.
+    set_include_path(dirname(__FILE__) . PATH_SEPARATOR . get_include_path());
+    require_once 'Zend/Json/Decoder.php';
+    require_once 'Zend/Json/Encoder.php';
+  
+    /**
+     * Substitute for missing PHP built-in functions.
+     */
+    function json_decode($string, $assoc = FALSE) {
+      if ($assoc) {
+        $objectDecodeType = Zend_Json::TYPE_ARRAY;
+      }
+      else {
+        $objectDecodeType = Zend_Json::TYPE_OBJECT;
+      }
+      return Zend_Json_Decoder::decode($string, $objectDecodeType);
+    }
+
+    function json_encode($data) {
+      return Zend_Json_Encoder::encode($data, $objectDecodeType);
+    }
+  }
+}
 
 /**
  * Implementation of hook_menu().

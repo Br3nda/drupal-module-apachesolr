@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.155 2010/07/22 04:34:23 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.156 2010/08/11 21:43:16 pwolanin Exp $
 
 /**
  * @file
@@ -928,11 +928,14 @@ function apachesolr_search_form_search_form_alter(&$form, $form_state) {
     $form['basic']['apachesolr_search']['#tree'] = TRUE;
     $form['basic']['apachesolr_search']['queryvalues'] = array(
       '#type' => 'hidden',
-      '#default_value' => serialize($queryvalues),
+      // We use JSON encoding instead of PHP serialize, since otherwise we be
+      // at risk of user input being injected into the hidden string and
+      // unserialized.
+      '#default_value' => json_encode($queryvalues),
     );
     $form['basic']['apachesolr_search']['get'] = array(
       '#type' => 'hidden',
-      '#default_value' => serialize(array_diff_key($_GET, array('q' => 1, 'page' => 1, 'filters' => 1, 'solrsort' => 1, 'retain-filters' => 1))),
+      '#default_value' => json_encode(array_diff_key($_GET, array('q' => 1, 'page' => 1, 'filters' => 1, 'solrsort' => 1, 'retain-filters' => 1))),
     );
     if ($queryvalues || isset($form_state['post']['apachesolr_search']['retain-filters'])) {
       $form['basic']['apachesolr_search']['retain-filters'] = array(
@@ -983,8 +986,8 @@ function apachesolr_search_form_search_submit($form, &$form_state) {
   if (variable_get('clean_url', '0')) {
     $keys = str_replace('+', '%2B', $keys);
   }
-  $get = unserialize($fv['apachesolr_search']['get']);
-  $queryvalues = unserialize($fv['apachesolr_search']['queryvalues']);
+  $get = json_decode($fv['apachesolr_search']['get'], TRUE);
+  $queryvalues = json_decode($fv['apachesolr_search']['queryvalues'], TRUE);
   if (!empty($fv['apachesolr_search']['retain-filters']) && $queryvalues) {
     $get = $queryvalues + $get;
     $get['retain-filters'] = '1';
