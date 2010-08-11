@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.209 2010/08/11 21:43:16 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.210 2010/08/11 21:49:19 pwolanin Exp $
 
 /**
  * @file
@@ -439,9 +439,8 @@ function apachesolr_index_nodes($rows, $namespace = '', $callback = 'apachesolr_
       $position['last_nid'] = $row->nid;
     }
     catch (Exception $e) {
-      // Something bad happened - don't continue.
-      watchdog('Apache Solr', 'Error constructing documents to index: <br /> !message', array('!message' => nl2br(strip_tags($e->getMessage()))), WATCHDOG_ERROR);
-      break;
+      // Something bad happened - log the error.
+      watchdog('Apache Solr', 'Error constructing documents to index: <br /> !message', array('!message' => "Node ID: {$row->nid}<br />" . nl2br(strip_tags($e->getMessage()))), WATCHDOG_ERROR);
     }
   }
   // Restore the user.
