@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.11 2010/08/11 00:06:33 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.12 2010/08/12 02:42:30 pwolanin Exp $
 
 /**
  * @file
@@ -170,9 +170,6 @@ function apachesolr_fields_list_indexing_callback($node, $field_name, $field_inf
     $index_key = apachesolr_index_key($field_info);
     $field = $node->$field_name;
     list($lang, $values) = each($field);
-    //$allowed_values = list_allowed_values($field_info['field']);
-    //TODO: should we use field_filter_xss() on $allowed_values??
-    // isset($allowed_values[$fval['value']]) ? $allowed_values[$fval['value']] : $fval['value'],
     foreach ($values as $fval) {
       $fields[] = array(
         'key' => $index_key,

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.28 2010/08/11 00:06:33 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.29 2010/08/12 02:42:30 pwolanin Exp $
 
 /**
  * @file
@@ -59,23 +59,12 @@ function apachesolr_search_menu() {
  * Implements hook_menu_alter().
  */
 function apachesolr_search_menu_alter(&$menu) {
-  if (isset($menu['search/apachesolr_search/%menu_tail'])) {
-    $menu['search']['page callback'] = 'apachesolr_search_view';
-    $menu['search/apachesolr_search/%menu_tail']['page callback'] = 'apachesolr_search_view';
-    //$menu['search/apachesolr_search']['page callback'] = 'apachesolr_search_view';
-  }
+
   if (variable_get('apachesolr_search_make_default', 0)) {
     if (isset($menu['search/node/%menu_tail'])) {
       // Hide the node search tab.
       $menu['search/node/%menu_tail']['type'] = MENU_CALLBACK;
-      unset($menu['search/node/%menu_tail']['title callback'], $menu['search/node/%menu_tail']['title arguments']);
       $menu['search/node/%menu_tail']['title'] = 'Search';
-    }
-    if (isset($menu['search/apachesolr_search/%menu_tail'])) {
-      // Alter the solr search tab
-      $menu['search/apachesolr_search/%menu_tail']['weight'] = -10;
-      unset($menu['search/apachesolr_search/%menu_tail']['title callback'], $menu['search/apachesolr_search/%menu_tail']['title arguments']);
-      $menu['search/apachesolr_search/%menu_tail']['title'] = 'Content';
     }
   }
   if (variable_get('apachesolr_search_taxonomy_links', 0)) {
@@ -106,20 +95,16 @@ function apachesolr_search_apachesolr_types_exclude($namespace) {
   }
 }
 
-
-/**
- * Implementations of hook_search_*().
- */
 /**
  * Implementation of hook_search_info().
  */
 function apachesolr_search_search_info() {
-  return array(
-    'title' => 'Apache Solr',
-    'path' => 'apachesolr_search',
-  );
+  return variable_get('apachesolr_search_search_info', array(
+    'title' => 'Search',
+    'path' => 'content',
+    'conditions_callback' => 'apachesolr_search_conditions',
+  ));
 }
-
 
 /**
  * Implementation of hook_search_reset().
@@ -138,13 +123,12 @@ function apachesolr_search_search_status(){
 /**
  * Implementation of hook_search_execute().
  */
-function apachesolr_search_search_execute($keys = NULL){
-  $filters = isset($_GET['filters']) ? $_GET['filters'] : '';
+function apachesolr_search_search_execute($keys = NULL, $conditions = NULL) {
+  $filters = isset($conditions['filters']) ? $conditions['filters'] : '';
   $solrsort = isset($_GET['solrsort']) ? $_GET['solrsort'] : '';
   $page = isset($_GET['page']) ? $_GET['page'] : 0;
   try {
-    $results = apachesolr_search_run($keys, $filters, $solrsort, 'search/' . arg(1), $page);
-    return $results;
+    return apachesolr_search_run($keys, $filters, $solrsort, 'search/' . arg(1), $page);
   }
   catch (Exception $e) {
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
@@ -153,72 +137,20 @@ function apachesolr_search_search_execute($keys = NULL){
 }
 
 /**
- * Re-implementation of search_view().
+ * Implementation of a search_view() conditions callback.
  */
-function apachesolr_search_view($type = NULL) {
-  $keys = trim(search_get_keys());
-  $content = '';
-  $build = array();
-  // Search form submits with POST but redirects to GET.
-  if (!isset($_POST['keys'])) {
-    if (empty($type)) {
-      // Note: search/X can not be a default tab because it would take on the
-      // path of its parent (search). It would prevent remembering keywords when
-      // switching tabs. This is why we drupal_goto to it from the parent instead.
-      drupal_goto('search/apachesolr_search');
-    }
-    $filters = '';
-    if (isset($_GET['filters'])) {
-      $filters = trim($_GET['filters']);
-    }
-    // Only perform search if there is non-whitespace search term or filters:
-    if ($keys || $filters || variable_get('apachesolr_search_browse', 'browse') == 'results') {
-      if (variable_get('apachesolr_logging', TRUE)) {
-        // Log the search keys:
-        $log = $keys;
-        if ($filters) {
-          $log .= 'filters='. $filters;
-        }
-        watchdog('search', '%keys (@type).', array('%keys' => $log, '@type' => t('Search')), WATCHDOG_NOTICE, l(t('results'), 'search/'. $type .'/'. $keys));
-      }
+function apachesolr_search_conditions() {
+  $conditions = array();
 
-      // Collect the search results. See search_data().
-      $search_result = apachesolr_search_search_execute($keys);
-      $content = apachesolr_search_theme_search_results($search_result, $type);
-    }
-    elseif ($type != 'node') {
-      // Ignore $type == node. Since we override the menu path to search to point
-      // to this function, we have to count on core searches coming in here, too.
-      switch (variable_get('apachesolr_search_browse', 'browse')) {
-        case 'browse':
-          try {
-            // Show search form and browse-by blocks.
-            $blocks = apachesolr_search_browse('', '', '', 'search/' . $type);
-            if (count($blocks) > 0) {
-              $content = theme('apachesolr_browse_blocks', array('blocks' => $blocks));
-            }
-          }
-          catch (Exception $e) {
-            watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
-            apachesolr_failure(t('Solr search'), $keys);
-          }
-          break;
-        case 'blocks':
-          // Launch search so that hook_block() will show blocks.
-          $dummy = search_data($keys, $type);
-          break;
-        default:
-          break;
-      }
-    }
+  if (isset($_GET['filters']) && trim($_GET['filters'])) {
+    $conditions['filters'] = trim($_GET['filters']);
   }
-  // Construct the search form.
-  // TODO Not sure what is going on down here...
-  $build['search_form'] = drupal_get_form('search_form', NULL, $keys, $type);
-  $build['search_results']['#markup'] = $content;
-  return $build;
+  if (variable_get('apachesolr_search_browse', 'browse') == 'results') {
+    // Set a condition so the search is triggered.
+    $conditions['apachesolr_search_browse'] = 'results';
+  }
+  return $conditions;
 }
-
 
 function apachesolr_search_theme_search_results($search_result, $type){
   if (isset($search_result) && is_array($search_result) && count($search_result)) {
@@ -1129,63 +1061,12 @@ function apachesolr_search_form_search_admin_settings_alter(&$form, $form_state)
 
 /**
  * Implements hook_form_[form_id]_alter().
- */
-function apachesolr_search_form_search_theme_form_alter(&$form, $form_state) {
-  apachesolr_search_form_search_block_form_alter($form, $form_state);
-}
-
-/**
- * Implements hook_form_[form_id]_alter().
- */
-function apachesolr_search_form_search_block_form_alter(&$form, $form_state) {
-  if (variable_get('apachesolr_search_make_default', 0)) {
-    if (!isset($form['#submit'])) {
-      $form['#submit'] = array('apachesolr_search_search_box_form_submit');
-    }
-    else {
-      $key = array_search('search_box_form_submit', $form['#submit']);
-      if ($key !== FALSE) {
-        // Replace the search module's function.
-        $form['#submit'][$key] = 'apachesolr_search_search_box_form_submit';
-      }
-    }
-  }
-}
-
-/**
- * Process a block search form submission.
- *
- * @see search_box_form_submit()
- */
-function apachesolr_search_search_box_form_submit($form, &$form_state) {
-  // The search form relies on control of the redirect destination for its
-  // functionality, so we override any static destination set in the request,
-  // for example by drupal_access_denied() or drupal_not_found()
-  // (see http://drupal.org/node/292565).
-  if (isset($_REQUEST['destination'])) {
-    unset($_REQUEST['destination']);
-  }
-  if (isset($_REQUEST['edit']['destination'])) {
-    unset($_REQUEST['edit']['destination']);
-  }
-
-  $form_id = $form['form_id']['#value'];
-  $keys = $form_state['values'][$form_id];
-  // Handle Apache webserver clean URL quirks.
-  if (variable_get('clean_url', '0')) {
-    $keys = str_replace('+', '%2B', $keys);
-  }
-  $form_state['redirect'] = 'search/apachesolr_search/'. trim($keys);
-}
-
-/**
- * Implements hook_form_[form_id]_alter().
  *
  * This adds spelling suggestions, retain filters to the search form.
  */
 function apachesolr_search_form_search_form_alter(&$form, $form_state) {
   if ($form['module']['#value'] == 'apachesolr_search') {
-    $form['#submit'] = array('apachesolr_search_form_search_submit');
+    $form['#submit'][] = 'apachesolr_search_form_search_submit';
     // No other modification make sense unless a query is active.
     // Note - this means that the query must always be run before
     // calling drupal_get_form('search_form').
@@ -1200,11 +1081,11 @@ function apachesolr_search_form_search_form_alter(&$form, $form_state) {
     $form['basic']['apachesolr_search']['#tree'] = TRUE;
     $form['basic']['apachesolr_search']['queryvalues'] = array(
       '#type' => 'hidden',
-      '#default_value' => serialize($queryvalues),
+      '#default_value' => json_encode($queryvalues),
     );
     $form['basic']['apachesolr_search']['get'] = array(
       '#type' => 'hidden',
-      '#default_value' => serialize(array_diff_key($_GET, array('q' => 1, 'page' => 1, 'filters' => 1, 'solrsort' => 1, 'retain-filters' => 1))),
+      '#default_value' => json_encode(array_diff_key($_GET, array('q' => 1, 'page' => 1, 'filters' => 1, 'solrsort' => 1, 'retain-filters' => 1))),
     );
     if ($queryvalues || isset($form_state['post']['apachesolr_search']['retain-filters'])) {
       $form['basic']['apachesolr_search']['retain-filters'] = array(
@@ -1244,28 +1125,20 @@ function apachesolr_search_form_search_form_alter(&$form, $form_state) {
 }
 
 /**
- * Added form submit function to account for Apache mode_rewrite quirks.
+ * Added form submit function to retain filters.
  *
  * @see apachesolr_search_form_search_form_alter()
  */
 function apachesolr_search_form_search_submit($form, &$form_state) {
   $fv = $form_state['values'];
-  $keys = $fv['processed_keys'];
-  $base = 'search/'. $fv['module'] . '/';
-  if (variable_get('clean_url', '0')) {
-    $keys = str_replace('+', '%2B', $keys);
-  }
-  $get = unserialize($fv['apachesolr_search']['get']);
-  $queryvalues = unserialize($fv['apachesolr_search']['queryvalues']);
+  $get = json_decode($fv['apachesolr_search']['get'], TRUE);
+  $queryvalues = json_decode($fv['apachesolr_search']['queryvalues'], TRUE);
   if (!empty($fv['apachesolr_search']['retain-filters']) && $queryvalues) {
     $get = $queryvalues + $get;
     $get['retain-filters'] = '1';
   }
-  $form_state['redirect'] = array($base . $keys, $get);
-  // TODO decide if we want to make the facet blocks in the well an option.
-//  if ($keys == '' && !$queryvalues) {
-//    form_set_error('keys', t('Please enter some keywords.'));
-//  }
+  // Add the query values into the redirect.
+  $form_state['redirect'] = array($form_state['redirect'], $get);
 }
 
 /**
