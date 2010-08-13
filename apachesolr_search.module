@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.29 2010/08/12 02:42:30 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.30 2010/08/13 00:02:36 pwolanin Exp $
 
 /**
  * @file
@@ -126,9 +126,9 @@ function apachesolr_search_search_status(){
 function apachesolr_search_search_execute($keys = NULL, $conditions = NULL) {
   $filters = isset($conditions['filters']) ? $conditions['filters'] : '';
   $solrsort = isset($_GET['solrsort']) ? $_GET['solrsort'] : '';
-  $page = isset($_GET['page']) ? $_GET['page'] : 0;
+
   try {
-    return apachesolr_search_run($keys, $filters, $solrsort, 'search/' . arg(1), $page);
+    return apachesolr_search_run($keys, $filters, $solrsort, 'search/' . arg(1), pager_find_page();
   }
   catch (Exception $e) {
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
@@ -503,7 +503,7 @@ function apachesolr_search_process_response($response, $query, $params) {
   // We default to getting snippets from the body.
   $hl_fl = isset($params['hl.fl']) ? $params['hl.fl'] : 'body';
   $total = $response->response->numFound;
-  apachesolr_pager_init($total, $params['rows']);
+  pager_default_initialize($total, $params['rows']);
   if ($total > 0) {
     foreach ($response->response->docs as $doc) {
       $extra = array();
@@ -674,11 +674,9 @@ function apachesolr_search_apachesolr_facets() {
   return $facets;
 }
 
+
 /**
- * Implement hook_block_*().
- */
-/**
- * Implements of hook_block_info().
+ * Implements hook_block_info().
  */
 function apachesolr_search_block_info(){
   $enabled_facets = apachesolr_get_enabled_facets('apachesolr_search');
@@ -728,26 +726,26 @@ function apachesolr_search_block_view($delta = ''){
       case 'currentsearch':
         return apachesolr_search_currentsearch_block($response, $query);
       case 'is_book_bid':
-        return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by book'), 'apachesolr_search_get_book');
+        return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, t('Filter by book'), 'apachesolr_search_get_book');
       case 'language':
-        return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by language'), 'apachesolr_search_language_name');
+        return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, t('Filter by language'), 'apachesolr_search_language_name');
       case 'uid':
-        return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by author'), 'apachesolr_search_get_username');
+        return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, t('Filter by author'), 'apachesolr_search_get_username');
       case 'type':
-        return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by type'), 'apachesolr_search_get_type');
+        return apachesolr_facet_block($response, $query, 'apachesolr_search', $delta, t('Filter by type'), 'apachesolr_search_get_type');
       case 'changed':
-        return apachesolr_date_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by modification date'));
+        return apachesolr_date_facet_block($response, $query, 'apachesolr_search', $delta, t('Filter by modification date'));
       case 'created':
-        return apachesolr_date_facet_block($response, $query, 'apachesolr_search', $delta, $delta, t('Filter by post date'));
+        return apachesolr_date_facet_block($response, $query, 'apachesolr_search', $delta, t('Filter by post date'));
 
       default:
         if ($fields = apachesolr_node_fields()) {
           if (isset($fields[$delta])) {
+            // The $delta is the index key.
             $fields_info = $fields[$delta];
-            $index_key = apachesolr_index_key($field_info);
             $callback = $field_info['display_callback'] ? $field_info['display_callback'] : FALSE;
             $block_function = ($field_info['facet_block_callback'] && function_exists($field_info['facet_block_callback'])) ? $field_info['facet_block_callback'] : 'apachesolr_facet_block';
-            return $block_function($response, $query, 'apachesolr_search', $delta, $index_key, t('Filter by @field', array('@field' => $field_info['display_name'])), $callback);
+            return $block_function($response, $query, 'apachesolr_search', $delta, t('Filter by @field', array('@field' => $field_info['display_name'])), $callback);
           }
         }
     }

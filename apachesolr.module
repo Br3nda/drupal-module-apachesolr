@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.32 2010/08/11 00:06:33 pwolanin Exp $
+// $Id: apachesolr.module,v 1.33 2010/08/13 00:02:36 pwolanin Exp $
 
 /**
  * @file
@@ -749,7 +749,7 @@ function apachesolr_save_module_facets($module, $facets = array()) {
 /**
  * Implements hook_block_info().
  */
-function apachesolr_block_info(){
+function apachesolr_block_info() {
   // Get all of the moreLikeThis blocks that the user has created
   $blocks = apachesolr_mlt_list_blocks();
   // Add the sort block.
@@ -763,7 +763,7 @@ function apachesolr_block_info(){
 /**
  * Implements hook_block_view().
  */
-function apachesolr_block_view($delta = ''){
+function apachesolr_block_view($delta = '') {
   if ($delta != 'sort' && ($node = menu_get_object()) && (!arg(2) || arg(2) == 'view')) {
     $suggestions = array();
     // Determine whether the user can view the current node.
@@ -843,7 +843,7 @@ function apachesolr_block_view($delta = ''){
 /**
  * Implements hook_block_configure().
  */
-function apachesolr_block_configure($delta = ''){
+function apachesolr_block_configure($delta = '') {
   if ($delta != 'sort') {
     require_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
     return apachesolr_mlt_block_form($delta);
@@ -853,7 +853,7 @@ function apachesolr_block_configure($delta = ''){
 /**
  * Implements hook_block_save().
  */
-function apachesolr_block_save($delta = '', $edit = array()){
+function apachesolr_block_save($delta = '', $edit = array()) {
   if ($delta != 'sort') {
     require_once(drupal_get_path('module', 'apachesolr') .'/apachesolr.admin.inc');
     apachesolr_mlt_save_block($edit, $delta);
@@ -1035,7 +1035,7 @@ function apachesolr_block_admin_configure_submit($form, &$form_state) {
 /**
  * Helper function for displaying a facet block.
  */
-function apachesolr_facet_block($response, $query, $module, $delta, $facet_field, $filter_by, $facet_callback = FALSE) {
+function apachesolr_facet_block($response, $query, $module, $facet_field, $filter_by, $facet_callback = FALSE) {
   if (!empty($response->facet_counts->facet_fields->$facet_field)) {
     $facet_query_sorts = variable_get('apachesolr_facet_query_sorts', array());
     $contains_active = FALSE;
@@ -1130,11 +1130,12 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
       }
       // Get information needed by the rest of the blocks about limits.
       $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
-      $limit = isset($initial_limits[$module][$delta]) ? $initial_limits[$module][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
+      $limit = isset($initial_limits[$module][$facet_field]) ? $initial_limits[$module][$facet_field] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
       $output = theme('apachesolr_facet_list', array(
         'items' => $items,
         'display_limit' => $limit,
-        'delta' => $delta));
+        'delta' => $facet_field,
+      ));
       return array('subject' => $filter_by, 'content' => $output);
     }
   }
@@ -1146,7 +1147,7 @@ function apachesolr_facet_block($response, $query, $module, $delta, $facet_field
  *
  * TODO: Refactor with apachesolr_facet_block().
  */
-function apachesolr_date_facet_block($response, $query, $module, $delta, $facet_field, $filter_by, $facet_callback = FALSE) {
+function apachesolr_date_facet_block($response, $query, $module, $facet_field, $filter_by, $facet_callback = FALSE) {
   $items = array();
 
   $new_query = clone $query;
@@ -1214,11 +1215,12 @@ function apachesolr_date_facet_block($response, $query, $module, $delta, $facet_
   if (count($items) > 0) {
     // Get information needed by the rest of the blocks about limits.
     $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
-    $limit = isset($initial_limits[$module][$delta]) ? $initial_limits[$module][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
+    $limit = isset($initial_limits[$module][$facet_field]) ? $initial_limits[$module][$facet_field] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
     $output = theme('apachesolr_facet_list', array(
       'items' => $items,
       'display_limit' => $limit,
-      'delta' => $delta));
+      'delta' => $facet_field,
+    ));
     return array('subject' => $filter_by, 'content' => $output);
   }
   return NULL;
@@ -1453,35 +1455,6 @@ function apachesolr_facetcount_save($edit) {
 }
 
 /**
- * Initialize a pager for theme('pager') without running an SQL query.
- *
- * @see pager_query()
- *
- * @param $total
- *  The total number of items found.
- * @param $limit
- *  The number of items you will display per page.
- * @param $element
- *  An optional integer to distinguish between multiple pagers on one page.
- *
- * @return
- *  The current page for $element. 0 by default if $_GET['page'] is empty.
- */
-function apachesolr_pager_init($total, $limit = 10, $element = 0) {
-  global $pager_page_array, $pager_total, $pager_total_items;
-  $page = isset($_GET['page']) ? $_GET['page'] : '';
-
-  // Convert comma-separated $page to an array, used by other functions.
-  $pager_page_array = explode(',', $page);
-
-  // We calculate the total of pages as ceil(items / limit).
-  $pager_total_items[$element] = $total;
-  $pager_total[$element] = ceil($pager_total_items[$element] / $limit);
-  $pager_page_array[$element] = max(0, min((int)$pager_page_array[$element], ((int)$pager_total[$element]) - 1));
-  return $pager_page_array[$element];
-}
-
-/**
  * This hook allows modules to modify the query and params objects.
  *
  * Example:
@@ -1541,13 +1514,6 @@ function apachesolr_modify_query(&$query, &$params, $caller) {
       $fq = $tag = '';
       $op = 'AND';
       $fields = array($delta);
-      // CCK and taxonomy facet field block deltas are not the same as their Solr index field names.
-      if (strpos($delta, '_cck_') !== FALSE) {
-        $fields[] = trim(drupal_substr($delta, 7, drupal_strlen($delta)));
-      }
-      elseif(strpos($delta, '_field_') !== FALSE){
-        $fields[] = trim(drupal_substr($delta, 3, drupal_strlen($delta)));
-      }
       elseif ($delta == 'tid') {
         if (function_exists('taxonomy_term_load')) {
           foreach ($values as $value) {

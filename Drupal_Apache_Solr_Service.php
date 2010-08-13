@@ -1,5 +1,5 @@
 <?php
-// $Id: Drupal_Apache_Solr_Service.php,v 1.9 2010/08/12 21:23:05 pwolanin Exp $
+// $Id: Drupal_Apache_Solr_Service.php,v 1.10 2010/08/13 00:02:36 pwolanin Exp $
 
 require_once 'SolrPhpClient/Apache/Solr/Service.php';
 
@@ -299,50 +299,38 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
   }
 
   protected function _makeHttpRequest($url, $method = 'GET', $headers = array(), $content = '', $timeout = FALSE) {
-    $requestOptions = array(
+    $options = array(
       'headers' => $headers,
       'method' => $method,
       'data' => $content
     );
-    //Set timeout
-    if($timeout){
-      $requestOptions['timeout'] = $timeout;
-    }
-    $result = drupal_http_request($url, $requestOptions);
 
-    // This will no longer be needed after http://drupal.org/node/345591 is committed
-    $responses = array(
-      0 => 'Request failed',
-      100 => 'Continue', 101 => 'Switching Protocols',
-      200 => 'OK', 201 => 'Created', 202 => 'Accepted', 203 => 'Non-Authoritative Information', 204 => 'No Content', 205 => 'Reset Content', 206 => 'Partial Content',
-      300 => 'Multiple Choices', 301 => 'Moved Permanently', 302 => 'Found', 303 => 'See Other', 304 => 'Not Modified', 305 => 'Use Proxy', 307 => 'Temporary Redirect',
-      400 => 'Bad Request', 401 => 'Unauthorized', 402 => 'Payment Required', 403 => 'Forbidden', 404 => 'Not Found', 405 => 'Method Not Allowed', 406 => 'Not Acceptable', 407 => 'Proxy Authentication Required', 408 => 'Request Time-out', 409 => 'Conflict', 410 => 'Gone', 411 => 'Length Required', 412 => 'Precondition Failed', 413 => 'Request Entity Too Large', 414 => 'Request-URI Too Large', 415 => 'Unsupported Media Type', 416 => 'Requested range not satisfiable', 417 => 'Expectation Failed',
-      500 => 'Internal Server Error', 501 => 'Not Implemented', 502 => 'Bad Gateway', 503 => 'Service Unavailable', 504 => 'Gateway Time-out', 505 => 'HTTP Version not supported'
-    );
+    if ($timeout) {
+      $options['timeout'] = $timeout;
+    }
+
+    $result = drupal_http_request($url, $options);
 
     if (!isset($result->code) || $result->code < 0) {
       $result->code = 0;
+      $result->status_message = 'Request failed';
     }
 
     if (isset($result->error)) {
-      $responses[0] .= ': ' . check_plain($result->error);
+      $result->status_message .= ': ' . check_plain($result->error);
     }
 
     if (!isset($result->data)) {
       $result->data = '';
     }
 
-    if (!isset($responses[$result->code])) {
-      $result->code = floor($result->code / 100) * 100;
-    }
-
-    $protocol = "HTTP/1.1";
-    $headers[] = "{$protocol} {$result->code} {$responses[$result->code]}";
+    $headers[] = "{$result->protocol} {$result->code} {$result->status_message}";
     if (isset($result->headers)) {
       foreach ($result->headers as $name => $value) {
         $headers[] = "$name: $value";
       }
     }
+
     return array($result->data, $headers);
   }
 }
