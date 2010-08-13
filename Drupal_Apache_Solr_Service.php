@@ -1,23 +1,7 @@
 <?php
-// $Id: Drupal_Apache_Solr_Service.php,v 1.10 2010/08/13 00:02:36 pwolanin Exp $
+// $Id: Drupal_Apache_Solr_Service.php,v 1.11 2010/08/13 00:03:18 pwolanin Exp $
 
 require_once 'SolrPhpClient/Apache/Solr/Service.php';
-
-/**
- * PHP 5.1 compatability code.
- */
-if (!function_exists('json_decode')) {
-  // Zend files include other files.
-  set_include_path(dirname(__FILE__) . PATH_SEPARATOR . get_include_path());
-  require_once 'Zend/Json/Decoder.php';
-
-  /**
-   * Substitute for missing PHP built-in function.
-   */
-  function json_decode($string) {
-    return Zend_Json_Decoder::decode($string, 0);
-  }
-}
 
 class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
 
