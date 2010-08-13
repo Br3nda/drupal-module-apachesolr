@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.12 2010/08/12 02:42:30 pwolanin Exp $
+// $Id: apachesolr.index.inc,v 1.13 2010/08/13 21:16:22 pwolanin Exp $
 
 /**
  * @file
@@ -33,11 +33,11 @@ function apachesolr_node_to_document($node, $namespace) {
   if ($build_document) {
     // Build the node body.
     $build = node_view($node, 'search_index');
+    // Why do we need this?
     unset($build['#theme']);
-    $node->body = drupal_render($build);
+    $text = drupal_render($build);
 
     $node->title = apachesolr_clean_text($node->title);
-
     // Fetch extra data normally not visible, including comments.
     // We do this manually (with module_implements instead of node_invoke_nodeapi)
     // because we want a keyed array to come back. Only in this way can we decide
@@ -59,7 +59,7 @@ function apachesolr_node_to_document($node, $namespace) {
       unset($extra['comment']);
     }
 
-    $text = $node->body . "\n\n" . implode(' ', $extra);
+    $text .= "\n\n" . implode(' ', $extra);
 
     $document = new Apache_Solr_Document();
     $document->id = apachesolr_document_id($node->nid);
@@ -72,8 +72,6 @@ function apachesolr_node_to_document($node, $namespace) {
     $document->status = $node->status;
     $document->sticky = $node->sticky;
     $document->promote = $node->promote;
-    // TODO: $node->moderate has been removed
-    //$document->moderate = $node->moderate;
     $document->tnid = $node->tnid;
     $document->translate = $node->translate;
     if (empty($node->language)) {
@@ -114,35 +112,25 @@ function apachesolr_node_to_document($node, $namespace) {
       }
     }
 
-    // Handle fields
+    // Handle fields including taxonomy.
     $indexed_fields = apachesolr_node_fields();
-    foreach ($indexed_fields as $field_name => $field_info) {
+    foreach ($indexed_fields as $index_key => $field_info) {
+      $field_name = $field_info['field']['field_name'];
       // See if the node has fields that can be indexed
-      if (isset($node->$field_name)) {
+      if (isset($node->{$field_name})) {
         // Got a field.
         $function = $field_info['indexing_callback'];
-        $fields = NULL;
         if ($function && function_exists($function)) {
-          // NOTE: This function should always return an array.
-          $fields = $function($node, $field_name, $field_info);
-        }
-
-        if (is_array($fields)) {
-          // NOTE: If this were done as $key => $value, and the $index_key were
-          // done within the loop, could we support indexing one CCK field to
-          // multiple Solr fields?
+          // NOTE: This function should always return an array.  One
+          // node field may be indexed to multiple Solr fields.
+          $fields = $function($node, $field_name, $index_key, $field_info);
           foreach ($fields as $field) {
-            if ($field_info['field']['cardinality'] > 1) {
-              $document->setMultiValue($field['key'], apachesolr_clean_text($field['value']));
-            }
-            else {
-              $document->{$field['key']} = apachesolr_clean_text($field['value']);
-            }
+            // It's fine to use this method also for single value fields.
+            $document->setMultiValue($field['key'], $field['value']);
           }
         }
       }
     }
-
 
     // Index book module data.
     if (!empty($node->book['bid'])) {
@@ -150,7 +138,6 @@ function apachesolr_node_to_document($node, $namespace) {
       $document->is_book_bid = (int) $node->book['bid'];
     }
     apachesolr_add_tags_to_document($document, $text);
-    apachesolr_add_taxonomy_to_document($document, $node);
 
     // Let modules add to the document.
     foreach (module_implements('apachesolr_update_index') as $module) {
@@ -162,72 +149,15 @@ function apachesolr_node_to_document($node, $namespace) {
 }
 
 /**
- * Callback that converts list module field into an array
+ * Callback that converts term_reference field into an array
  */
-function apachesolr_fields_list_indexing_callback($node, $field_name, $field_info) {
+function apachesolr_term_reference_indexing_callback($node, $field_name, $index_key, $field_info) {
   $fields = array();
-  if (isset($node->{$field_name})) {
-    $index_key = apachesolr_index_key($field_info);
+  $vocab_names = array();
+  if (!empty($node->{$field_name}) && function_exists('taxonomy_get_parents_all')) {
     $field = $node->$field_name;
-    list($lang, $values) = each($field);
-    foreach ($values as $fval) {
-      $fields[] = array(
-        'key' => $index_key,
-        'value' => $fval['value'],
-      );
-    }
-  }
-  return $fields;
-}
-
-function apachesolr_cck_nodereference_indexing_callback($node, $field_name, $cck_info) {
-  $fields = array();
-  if (isset($node->{$field_name})) {
-    $index_key = apachesolr_index_key($cck_info);
-    foreach ($node->$field_name as $field) {
-      if ($index_value = (isset($field['nid']) && strlen($field['nid'])) ? $field['nid'] : FALSE) {
-        $fields[] = array(
-          'key' => $index_key,
-          'value' => $index_value,
-        );
-      }
-    }
-  }
-  return $fields;
-}
-
-function apachesolr_cck_userreference_indexing_callback($node, $field_name, $cck_info) {
-  $fields = array();
-  if (isset($node->$field_name)) {
-    $index_key = apachesolr_index_key($cck_info);
-    foreach ($node->{$field_name} as $field) {
-      if ($index_value = (isset($field['uid']) && strlen($field['uid'])) ? $field['uid'] : FALSE) {
-        $fields[] = array(
-          'key' => $index_key,
-          'value' => $index_value,
-        );
-      }
-    }
-  }
-  return $fields;
-}
-
-/**
- * Extract taxonomy from $node and add to dynamic fields.
- */
-function apachesolr_add_taxonomy_to_document(&$document, $node) {
-  list(, , $bundle) = entity_extract_ids('node', $node);
-  $instances = field_info_instances('node', $bundle);
-  // look for taxonomy field instances
-  foreach ($instances as $instance) {
-    $field_name = $instance['field_name'];
-    $field = field_info_field_by_id($instance['field_id']);
-    if ($field['type'] == 'taxonomy_term_reference') {
-      //TODO: not sure how to correctly deal with languages here... Should we use field_available_languages()?
-      $lang = field_language('node', $node, $field_name);
-      $items = isset($node->{$field_name}[$lang]) ? $node->{$field_name}[$lang] : array();
+    list($lang, $items) = each($field);
       foreach ($items as $item) {
-        $term = $item['taxonomy_term'];
         // Double indexing of tids lets us do effecient searches (on tid)
         // and do accurate per-vocabulary faceting.
 
@@ -235,23 +165,39 @@ function apachesolr_add_taxonomy_to_document(&$document, $node) {
         // sure that searches for general categories match specific
         // categories, e.g. Fruit -> apple, a search for fruit will find
         // content categorized with apple.
-        $ancestors = taxonomy_get_parents_all($term->tid);
+        $ancestors = taxonomy_get_parents_all($item['tid']);
         foreach ($ancestors as $ancestor) {
-          $document->setMultiValue('tid', $ancestor->tid);
-          $document->setMultiValue('im_vid_'. $ancestor->vid, $ancestor->tid);
+          $fields[] = array(
+            'key' => 'tid',
+            'value' => $ancestor->tid,
+          );
+          $fields[] = array(
+            'key' => 'im_vid_'. $ancestor->vid,
+            'value' => $ancestor->tid,
+          );
+          $fields[] = array(
+            'key' => 'im_vid_'. $ancestor->vid,
+            'value' => $ancestor->tid,
+          );
           $name = apachesolr_clean_text($ancestor->name);
-          $document->setMultiValue('vid', $ancestor->vid);
-          if (!isset($document->{'ts_vid_'. $ancestor->vid .'_names'})){
-            $document->{'ts_vid_'. $ancestor->vid .'_names'} = '';
-          }
-          $document->{'ts_vid_'. $ancestor->vid .'_names'} .= ' '. $name;
+          $vocab_names[$ancestor->vid][] = $name;
           // We index each name as a string for cross-site faceting
           // using the vocab name rather than vid in field construction .
-          $document->setMultiValue('sm_vid_'. apachesolr_vocab_name($ancestor->vid), $name);
+          $fields[] = array(
+            'key' => 'sm_vid_'. apachesolr_vocab_name($ancestor->vid),
+            'value' => $name,
+          );
         }
       }
-    }
+      // Index the term names into a text field for MLT queries and keyword searching.
+      foreach ($vocab_names as $vid => $names) {
+        $fields[] = array(
+          'key' => 'ts_vid_'. $vid .'_names',
+          'value' => implode(' ', $names),
+        );
+      }
   }
+  return $fields;
 }
 
 /**
@@ -270,6 +216,56 @@ function apachesolr_vocab_name($vid) {
     }
   }
   return $names[$vid];
+}
+
+/**
+ * Callback that converts list module field into an array
+ */
+function apachesolr_fields_list_indexing_callback($node, $field_name, $index_key, $field_info) {
+  $fields = array();
+  if (!empty($node->{$field_name})) {
+    $field = $node->$field_name;
+    list($lang, $values) = each($field);
+    foreach ($values as $fval) {
+      $fields[] = array(
+        'key' => $index_key,
+        'value' => apachesolr_clean_text($fval['value']),
+      );
+    }
+  }
+  return $fields;
+}
+
+function apachesolr_cck_nodereference_indexing_callback($node, $field_name, $index_key, $cck_info) {
+  $fields = array();
+  if (!empty($node->{$field_name})) {
+    $index_key = apachesolr_index_key($cck_info);
+    foreach ($node->$field_name as $field) {
+      if ($index_value = (isset($field['nid']) && strlen($field['nid'])) ? $field['nid'] : FALSE) {
+        $fields[] = array(
+          'key' => $index_key,
+          'value' => $index_value,
+        );
+      }
+    }
+  }
+  return $fields;
+}
+
+function apachesolr_cck_userreference_indexing_callback($node, $field_name, $index_key, $cck_info) {
+  $fields = array();
+  if (!empty($node->$field_name)) {
+    $index_key = apachesolr_index_key($cck_info);
+    foreach ($node->{$field_name} as $field) {
+      if ($index_value = (isset($field['uid']) && strlen($field['uid'])) ? $field['uid'] : FALSE) {
+        $fields[] = array(
+          'key' => $index_key,
+          'value' => $index_value,
+        );
+      }
+    }
+  }
+  return $fields;
 }
 
 /**
@@ -304,7 +300,7 @@ function apachesolr_add_tags_to_document(&$document, $text) {
       if (!isset($document->{$tags_to_index[$tag]})){
         $document->{$tags_to_index[$tag]} = '';
       }
-      $document->{$tags_to_index[$tag]} .= ' '. $matches[2][$key];
+      $document->{$tags_to_index[$tag]} .= ' '. apachesolr_clean_text($matches[2][$key]);
     }
   }
 }

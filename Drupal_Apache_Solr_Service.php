@@ -1,5 +1,5 @@
 <?php
-// $Id: Drupal_Apache_Solr_Service.php,v 1.11 2010/08/13 00:03:18 pwolanin Exp $
+// $Id: Drupal_Apache_Solr_Service.php,v 1.12 2010/08/13 21:16:22 pwolanin Exp $
 
 require_once 'SolrPhpClient/Apache/Solr/Service.php';
 
@@ -299,7 +299,7 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
       $result->code = 0;
       $result->status_message = 'Request failed';
     }
-
+    // Additional information may be in the error property.
     if (isset($result->error)) {
       $result->status_message .= ': ' . check_plain($result->error);
     }
@@ -307,14 +307,13 @@ class Drupal_Apache_Solr_Service extends Apache_Solr_Service {
     if (!isset($result->data)) {
       $result->data = '';
     }
-
+    // The headers have to be reformatted for the response class.
     $headers[] = "{$result->protocol} {$result->code} {$result->status_message}";
     if (isset($result->headers)) {
       foreach ($result->headers as $name => $value) {
         $headers[] = "$name: $value";
       }
     }
-
     return array($result->data, $headers);
   }
 }

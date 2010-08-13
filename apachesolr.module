@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.33 2010/08/13 00:02:36 pwolanin Exp $
+// $Id: apachesolr.module,v 1.34 2010/08/13 21:16:22 pwolanin Exp $
 
 /**
  * @file
@@ -1034,13 +1034,15 @@ function apachesolr_block_admin_configure_submit($form, &$form_state) {
 
 /**
  * Helper function for displaying a facet block.
+ *
+ * The $delta param is the Solr index field name.
  */
-function apachesolr_facet_block($response, $query, $module, $facet_field, $filter_by, $facet_callback = FALSE) {
-  if (!empty($response->facet_counts->facet_fields->$facet_field)) {
+function apachesolr_facet_block($response, $query, $module, $delta, $filter_by, $facet_callback = FALSE) {
+  if (!empty($response->facet_counts->facet_fields->$delta)) {
     $facet_query_sorts = variable_get('apachesolr_facet_query_sorts', array());
     $contains_active = FALSE;
     $items = array();
-    foreach ($response->facet_counts->facet_fields->$facet_field as $facet => $count) {
+    foreach ($response->facet_counts->facet_fields->$delta as $facet => $count) {
       $options = array('delta' => $delta);
       $exclude = FALSE;
 
@@ -1061,7 +1063,7 @@ function apachesolr_facet_block($response, $query, $module, $facet_field, $filte
         $facet_text = $facet;
       }
 
-      $active = $query->has_filter($facet_field, $facet);
+      $active = $query->has_filter($delta, $facet);
 
       if ($active) {
         // '*' sorts before all numbers.
@@ -1086,7 +1088,7 @@ function apachesolr_facet_block($response, $query, $module, $facet_field, $filte
       $new_query = clone $query;
       if ($active) {
         $contains_active = TRUE;
-        $new_query->remove_filter($facet_field, $facet);
+        $new_query->remove_filter($delta, $facet);
         $options['query'] = $new_query->get_url_queryvalues();
         $link = theme('apachesolr_unclick_link', array(
           'facet_text' => $facet_text,
@@ -1094,7 +1096,7 @@ function apachesolr_facet_block($response, $query, $module, $facet_field, $filte
           'options' => $options));
       }
       else {
-        $new_query->add_filter($facet_field, $facet, $exclude);
+        $new_query->add_filter($delta, $facet, $exclude);
         $options['query'] = $new_query->get_url_queryvalues();
         $link = theme('apachesolr_facet_link', array(
           'facet_text' => $facet_text,
@@ -1134,7 +1136,7 @@ function apachesolr_facet_block($response, $query, $module, $facet_field, $filte
       $output = theme('apachesolr_facet_list', array(
         'items' => $items,
         'display_limit' => $limit,
-        'delta' => $facet_field,
+        'delta' => $delta,
       ));
       return array('subject' => $filter_by, 'content' => $output);
     }
@@ -1514,7 +1516,7 @@ function apachesolr_modify_query(&$query, &$params, $caller) {
       $fq = $tag = '';
       $op = 'AND';
       $fields = array($delta);
-      elseif ($delta == 'tid') {
+      if ($delta == 'tid') {
         if (function_exists('taxonomy_term_load')) {
           foreach ($values as $value) {
             $filters = $query->filter_extract($value, 'tid');
@@ -1876,6 +1878,12 @@ function apachesolr_node_fields() {
         'indexing_callback' => 'apachesolr_fields_list_indexing_callback',
         'index_type' => 'string',
       ),
+      'taxonomy_term_reference' => array(
+        'display_callback' => 'apachesolr_search_taxonomy_get_term',
+        'indexing_callback' => 'apachesolr_term_reference_indexing_callback',
+        'index_type' => 'integer',
+        'facet_block_callback' => 'apachesolr_search_taxonomy_facet_block',
+      ),
       'node_reference' => array(
         'display_callback' => 'apachesolr_cck_nodereference_field_callback',
         'indexing_callback' => 'apachesolr_cck_nodereference_indexing_callback',
@@ -1896,11 +1904,12 @@ function apachesolr_node_fields() {
         'display_callback' => '',
         'indexing_callback' => '',
         'index_type' => 'string',
-        'name_callback' => '',
         'facet_block_callback' => '',
+        'name_callback' => '',
       );
     }
     // We are only concerned about fields on node entities.
+    $modules = system_get_info('module');
     $instances = field_info_instances('node');
     foreach (field_info_fields() as $field_name => $field) {
       $row = array();
@@ -1916,8 +1925,10 @@ function apachesolr_node_fields() {
         $row['field'] = $field;
         // Field API allows any field to be multi-valued.
         $row['multiple'] = TRUE;
-        // Name is used to consruct the field name in the index.  cck_ prefix
-        // is legacy, but shoudl not conflict.
+        // Since we use the index key as the block delta in apachesolr_search, we need a name
+        // to build whatever the index key is that is used for faceting.
+        // @todo: for fields like taxonomy we are indexing multiple Solr fields
+        // per node field, but are keying on a single Solr field name here.
         $function = $row['name_callback'];
         if ($function && function_exists($function)) {
           $row['name'] = $function($field);
@@ -1925,6 +1936,7 @@ function apachesolr_node_fields() {
         else {
           $row['name'] = $field['module'] . '_' . $field_name;
         }
+        $row['module_name'] = $modules[$field['module']]['name'];
         // Set display name
         $display_name = array();
         foreach ($field['bundles']['node'] as $node_type){
@@ -1942,6 +1954,18 @@ function apachesolr_node_fields() {
     }
   }
   return $fields;
+}
+
+function apacehsolr_term_reference_name($field) {
+  if (isset($field['settings']['allowed_values'][0]['vid'])) {
+    $vid = $field['settings']['allowed_values'][0]['vid'];
+    $name = 'vid_' . $vid;
+  }
+  else {
+    // Fallback.
+    $name = $field['module'] . '_' . $field['field_name'];
+  }
+  return $name;
 }
 
 /**

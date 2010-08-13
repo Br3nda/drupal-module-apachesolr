@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.30 2010/08/13 00:02:36 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.31 2010/08/13 21:16:22 pwolanin Exp $
 
 /**
  * @file
@@ -128,7 +128,7 @@ function apachesolr_search_search_execute($keys = NULL, $conditions = NULL) {
   $solrsort = isset($_GET['solrsort']) ? $_GET['solrsort'] : '';
 
   try {
-    return apachesolr_search_run($keys, $filters, $solrsort, 'search/' . arg(1), pager_find_page();
+    return apachesolr_search_run($keys, $filters, $solrsort, 'search/' . arg(1), pager_find_page());
   }
   catch (Exception $e) {
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
@@ -644,30 +644,13 @@ function apachesolr_search_apachesolr_facets() {
     );
   }
 
-  // Get taxonomy vocabulary facets.
-  if (module_exists('taxonomy')) {
-
-    $vocabs = taxonomy_get_vocabularies();
-    foreach ($vocabs as $vid => $vocab) {
-      // In this case the delta and facet field are the same.
-      $delta = 'im_vid_' . $vid;
-      $facets[$delta] = array(
-        'info' => t('Taxonomy vocabulary: Filter by taxonomy @name', array('@name' => $vocab->name)),
-        'facet_field' => $delta,
-        //'content_types' => $vocab->nodes,
-        'content_types' => apachesolr_search_vocabulary_content_types($vid),
-        'display_callback' => 'apachesolr_search_taxonomy_get_term',
-      );
-    }
-  }
-
   // Get field facets.
   $fields = apachesolr_node_fields();
   foreach ($fields as $index_key => $field_info) {
     $facets[$index_key] = array(
-        'info' => t('Field @field_name: Filter by @field_dname', array('@field_name' => $field_info['field']['field_name'], '@field_dname' => $field_info['display_name'])),
+        'info' => t('@module_name Field: Filter by @field_dname (@field_name)', array('@module_name' => $field_info['module_name'], '@field_name' => $field_info['field']['field_name'], '@field_dname' => $field_info['display_name'])),
         'facet_field' => $index_key,
-        'content_types' => $field_info['field']['bundles']['node'],
+        'content_types' => $field_info['content_types'],
     );
   }
 
@@ -717,11 +700,6 @@ function apachesolr_search_block_view($delta = ''){
       return;
     }
 
-    // Handle taxonomy vocabulary facets
-    if (strpos($delta, 'im_vid_') === 0) {
-      return apachesolr_search_taxonomy_facet_block($response, $query, $delta);
-    }
-
     switch ($delta) {
       case 'currentsearch':
         return apachesolr_search_currentsearch_block($response, $query);
@@ -737,19 +715,18 @@ function apachesolr_search_block_view($delta = ''){
         return apachesolr_date_facet_block($response, $query, 'apachesolr_search', $delta, t('Filter by modification date'));
       case 'created':
         return apachesolr_date_facet_block($response, $query, 'apachesolr_search', $delta, t('Filter by post date'));
-
       default:
         if ($fields = apachesolr_node_fields()) {
           if (isset($fields[$delta])) {
             // The $delta is the index key.
-            $fields_info = $fields[$delta];
+            $field_info = $fields[$delta];
             $callback = $field_info['display_callback'] ? $field_info['display_callback'] : FALSE;
             $block_function = ($field_info['facet_block_callback'] && function_exists($field_info['facet_block_callback'])) ? $field_info['facet_block_callback'] : 'apachesolr_facet_block';
             return $block_function($response, $query, 'apachesolr_search', $delta, t('Filter by @field', array('@field' => $field_info['display_name'])), $callback);
           }
         }
+        break;
     }
-
   }
 }
 
@@ -787,7 +764,7 @@ function apachesolr_search_collect_children($field) {
 /**
  * Generate the facet block for a taxonomy vid delta.
  */
-function apachesolr_search_taxonomy_facet_block($response, $query, $delta) {
+function apachesolr_search_taxonomy_facet_block($response, $query, $module, $delta, $filter_by, $facet_callback = FALSE) {
   $vid = substr($delta, 7);
   if (!module_exists('taxonomy') || !is_numeric($vid)) {
     return;
@@ -802,12 +779,12 @@ function apachesolr_search_taxonomy_facet_block($response, $query, $delta) {
     foreach ($response->facet_counts->facet_fields->$delta as $tid => $count) {
        // TODO - for now we don't handle facet missing.
       if ($tid != '_empty_') {
-        $active = $query->has_filter('tid', $tid);
+        $active = $query->has_filter($delta, $tid);
         if ($active) {
           $contains_active = TRUE;
         }
         $facets[$tid] = array(
-          '#name' => 'tid',
+          '#name' => $delta,
           '#value' => $tid,
           '#exclude' => FALSE,
           '#count' => $count,
@@ -846,7 +823,7 @@ function apachesolr_search_taxonomy_facet_block($response, $query, $delta) {
           if ($field['#active'] && $field['#parent'] && !$facets[$field['#parent']]['#active']) {
             // This parent has an active child.
             $added_active = TRUE;
-            $query->add_filter('tid', $field['#parent']);
+            $query->add_filter($delta, $field['#parent']);
             $facets[$field['#parent']]['#active'] = TRUE;
           }
         }
