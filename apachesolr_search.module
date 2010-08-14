@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.33 2010/08/14 13:44:20 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.34 2010/08/14 15:08:13 pwolanin Exp $
 
 /**
  * @file
@@ -190,6 +190,8 @@ function apachesolr_search_apachesolr_document_handlers($type, $namespace) {
 }
 
 /**
+ * Implments hook_finalize_query().
+ *
  * Handle OR facets.
  */
 function apachesolr_search_finalize_query($query) {
@@ -907,14 +909,6 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
   foreach ($facets as $field) {
     $facet_text = '';
     $field_name = $field['#name'];
-    if (function_exists('taxonomy_term_load')) {
-      // Taxonomy filters in the query string use the tid field.
-      if ($field_name == 'tid') {
-        // Each taxonomy vocabulary in the Solr index uses its own field.
-        $term = taxonomy_term_load($field['#value']);
-        $field_name = 'im_vid_' . $term->vid;
-      }
-    }
     $facet_definition = apachesolr_get_facet_definition_by_field_name($field_name);
     if (isset($facet_definition['display_callback'])) {
       $function = $facet_definition['display_callback'];
@@ -1443,13 +1437,15 @@ function theme_apachesolr_search_noresults() {
 </ul>');
 }
 
-function apachesolr_get_parent_terms($tids) {
+function apachesolr_search_get_parent_terms($tids) {
   // Find the starting tid terms and then all their parents.
   $parent_terms = array();
   $new_tids = $tids;
   do {
     $query = db_select('taxonomy_term_hierarchy', 't')
       ->fields('t', array('tid', 'parent'))
+      ->innerJoin('taxonomy_term_data', 'td', 't.tid = td.tid')
+      ->fields('td', array('vid', 'name', 'weight'))
       ->condition('t.tid', $new_tids, 'IN');
     $query->addTag('node_access');
     $result = $query->execute();
@@ -1489,25 +1485,27 @@ function apachesolr_search_currentsearch_block($response, $query) {
     $reflect_hierarchy = apachesolr_search_get_hierarchical_vocabularies();
     $facets = array();
     foreach ($fields as $index => $field) {
-      if ($field['#name'] && 'tid' == $field['#name']) {
-        $term = taxonomy_term_load($field['#value']);
-        if ($reflect_hierarchy[$term->vid]) {
+      if ($field['#name'] && (strpos($field['#name'], 'im_vid_') === 0) && is_numeric($field['#value'])) {
+        $vid = substr($field['#name'], 7);
+        $tid = $field['#value'];
+        if ($reflect_hierarchy[$vid]) {
           $fields[$index] += array('#parent' => 0, '#children' => array());
           // Just save the index for later lookup.
-          $facets[$term->tid] = $index;
+          $facets[$tid] = $index;
         }
       }
     }
     if ($facets) {
       // Get all term hierarchy information.
-      $all_terms = apachesolr_get_parent_terms(array_keys($facets));
+      $all_terms = apachesolr_search_get_parent_terms(array_keys($facets));
       foreach ($all_terms as $tid => $term) {
         if (!isset($facets[$tid])) {
           // This is a parent that is missing from the query.  E.g. we started
           // on a taxonomy/term/$tid page.
-          $query->add_filter('tid', $tid);
+          $field_name = 'im_vid_' . $term->vid;
+          $query->add_filter($field_name, $tid);
           // Ordering is wonky, but oh well...
-          $fields[] = array('#name' => 'tid', '#value' => $tid, '#exclude' => FALSE, '#parent' => 0, '#children' => array());
+          $fields[] = array('#name' => $field_name, '#value' => $tid, '#exclude' => FALSE, '#parent' => 0, '#children' => array());
           // Get the index of the newly added facet.
           end($fields);
           $facets[$tid] = key($fields);
@@ -1552,9 +1550,10 @@ function apachesolr_search_get_hierarchical_vocabularies() {
       $vocabularies = taxonomy_get_vocabularies();
       $force_flat = variable_get('apachesolr_search_force_flat_vocabularies', array());
       foreach ($vocabularies as $voc) {
-        // If the vocabulary is not multiple-parent hierarchical and not
-        // freetagging and not designated to be forced to display flat.
-        if ($voc->hierarchy != 2 /* (TODO: not sure how to handle this in d7 so just commenting this out) && $voc->tags != 1*/ && empty($force_flat[$voc->vid])) {
+        // See if the vocabulary is hierarchical and not not designated to be
+        // forced to display flat. Note that even free-tagging vocabs may
+        // have admin-defined hierarchy.
+        if ($voc->hierarchy == 1 && empty($force_flat[$voc->vid])) {
           $result[$voc->vid] = 1;
         }
       }

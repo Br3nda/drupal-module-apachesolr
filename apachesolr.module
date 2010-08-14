@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.36 2010/08/14 13:44:20 pwolanin Exp $
+// $Id: apachesolr.module,v 1.37 2010/08/14 15:08:13 pwolanin Exp $
 
 /**
  * @file
@@ -236,18 +236,13 @@ function apachesolr_node_type_update($info) {
  * Helper function for modules implmenting hook_search's 'status' op.
  */
 function apachesolr_index_status($namespace) {
-  //TODO: remove old code
-  //list($excluded_types, $args, $join_sql, $exclude_sql) = apachesolr_exclude_types($namespace);
-  //$total = db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE asn.status = 1 " . $exclude_sql)->fetchField();
   $excluded_types = apachesolr_get_excluded_types($namespace);
   list($last_change, $last_nid) = apachesolr_get_last_change($namespace);
 
   $query = db_select('apachesolr_search_node', 'asn')->condition('asn.status', 1);
   apachesolr_query_add_excluded_types($query, $excluded_types);
-  //$query = db_query('SELECT COUNT(*) FROM {apachesolr_search_node} asn WHERE asn.status = 1');
   $total = $query->countQuery()->execute()->fetchField();
 
-  //$remaining = db_query("SELECT COUNT(asn.nid) FROM {apachesolr_search_node} asn ". $join_sql ."WHERE (asn.changed > :last_changed OR (asn.changed = :last_changed AND asn.nid > :last_nid)) AND asn.status = 1 "  . $exclude_sql, $args)->fetchField();
   $query = db_select('apachesolr_search_node', 'asn')
     ->condition('asn.status', 1)
     ->condition(db_or()->condition('asn.changed', $last_change, '>')->condition(db_and()->condition('asn.changed', $last_change)->condition('asn.nid', $last_nid, '>')));
