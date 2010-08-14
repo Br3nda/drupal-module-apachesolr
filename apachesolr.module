@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.34 2010/08/13 21:16:22 pwolanin Exp $
+// $Id: apachesolr.module,v 1.35 2010/08/14 00:16:30 pwolanin Exp $
 
 /**
  * @file
@@ -1132,7 +1132,7 @@ function apachesolr_facet_block($response, $query, $module, $delta, $filter_by, 
       }
       // Get information needed by the rest of the blocks about limits.
       $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
-      $limit = isset($initial_limits[$module][$facet_field]) ? $initial_limits[$module][$facet_field] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
+      $limit = isset($initial_limits[$module][$delta]) ? $initial_limits[$module][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
       $output = theme('apachesolr_facet_list', array(
         'items' => $items,
         'display_limit' => $limit,
@@ -1457,17 +1457,17 @@ function apachesolr_facetcount_save($edit) {
 }
 
 /**
- * This hook allows modules to modify the query and params objects.
+ * This hook allows modules to modify the query object.
  *
  * Example:
  *
- * function my_module_apachesolr_modify_query(&$query, &$params, $caller) {
+ * function my_module_apachesolr_modify_query($query, $caller) {
  *   // I only want to see articles by the admin!
  *   $query->add_filter("uid", 1);
  *
  * }
  */
-function apachesolr_modify_query(&$query, &$params, $caller) {
+function apachesolr_modify_query($query, $caller) {
   if (empty($query)) {
     // This should only happen if Solr is not set up - avoids fatal errors.
     return;
@@ -1477,27 +1477,27 @@ function apachesolr_modify_query(&$query, &$params, $caller) {
   // $query object don't end up in the $params.
   foreach (module_implements('apachesolr_modify_query') as $module) {
     $function_name = $module . '_apachesolr_modify_query';
-    $function_name($query, $params, $caller);
+    $function_name($query, $caller);
   }
 
-  // TODO: The query object should hold all the params.
-  // Add array of fq parameters.
+  // TODO: make this process internal to the query object.
   if ($query && ($fq = $query->get_fq())) {
     foreach ($fq as $delta => $values) {
       if (is_array($values) || is_object($values)) {
         foreach ($values as $value) {
-          $params['fq'][$delta][] = $value;
+          $query->params['fq'][$delta][] = $value;
         }
       }
     }
   }
   // Add sort if present.
+  // TODO: make this process internal to the query object.
   if ($query) {
     $sort = $query->get_solrsort();
     $sortstring = $sort['#name'] .' '. $sort['#direction'];
     // We don't bother telling Solr to do its default sort.
     if ($sortstring != 'score desc') {
-      $params['sort'] = $sortstring;
+      $query->params['sort'] = $sortstring;
     }
   }
   $ors = array();
@@ -1510,8 +1510,8 @@ function apachesolr_modify_query(&$query, &$params, $caller) {
     }
   }
 
-  if (isset($params['fq'])) {
-    $filter_queries = $params['fq'];
+  if (isset($query->params['fq'])) {
+    $filter_queries = $query->params['fq'];
     foreach ($filter_queries as $delta => $values) {
       $fq = $tag = '';
       $op = 'AND';
@@ -1530,9 +1530,9 @@ function apachesolr_modify_query(&$query, &$params, $caller) {
         $tag = "{!tag=$delta}";
         $op = 'OR';
       }
-      $fq = implode(" $op ", $params['fq'][$delta]);
-      $params['fq'][] = $tag . $fq;
-      unset($params['fq'][$delta]);
+      $fq = implode(" $op ", $query->params['fq'][$delta]);
+      $query->params['fq'][] = $tag . $fq;
+      unset($query->params['fq'][$delta]);
     }
   }
 }
@@ -1627,21 +1627,19 @@ function apachesolr_server_status($host = NULL, $port = NULL, $path = NULL) {
  * @param $current_query
  *   A query object from apachesolr_drupal_query().  It will be modified by
  *   hook_apachesolr_prepare_query() and then cached in apachesolr_current_query().
- * @param $params
- *   Array of parameters to pass to Solr.  Must include at least 'rows'.
  * @param $page
- *   For paging into results, using $params['rows'] results per page.
+ *   For paging into results, using $current_query->params['rows'] results per page.
  *
  * @return array($final_query, $response)
  *
  * @throws Exception
  */
-function apachesolr_do_query($caller, $current_query, $params = array('rows' => 10), $page = 0) {
+function apachesolr_do_query($caller, $current_query, $page = 0) {
   // Allow modules to alter the query prior to statically caching it.
   // This can e.g. be used to add available sorts.
   foreach (module_implements('apachesolr_prepare_query') as $module) {
     $function_name = $module . '_apachesolr_prepare_query';
-    $function_name($current_query, $params, $caller);
+    $function_name($current_query, $caller);
   }
 
   // Cache the original query. Since all the built queries go through
@@ -1649,39 +1647,37 @@ function apachesolr_do_query($caller, $current_query, $params = array('rows' => 
   $query = apachesolr_current_query($current_query, $caller);
 
   // This hook allows modules to modify the query and params objects.
-  apachesolr_modify_query($query, $params, $caller);
-  $params['start'] = $page * $params['rows'];
+  apachesolr_modify_query($query, $caller);
+  $query->params['start'] = $page * $query->params['rows'];
 
   if (!$query) {
     return array(NULL, array());
   }
-  // Final chance for the caller to modify the query and params. The signature
-  // is: CALLER_finalize_query(&$query, &$params);
+  // Final chance for the caller to modify the query. The signature
+  // is: CALLER_finalize_query($query);
   $function = $caller . '_finalize_query';
   if (function_exists($function)) {
-    $function($query, $params);
+    $function($query);
   }
 
   $keys = $query->get_query_basic();
-  if ($keys == '' && isset($params['fq'])) {
+  if ($keys == '' && isset($query->params['fq'])) {
     // Move the fq params to q.alt for better performance.
     $qalt = array();
-    foreach ($params['fq'] as $delta => $value) {
+    foreach ($query->params['fq'] as $delta => $value) {
       // Move the fq param if it has no local params and is not negative.
       if (!preg_match('/^(?:\{!|-)/', $value)) {
         $qalt[] = $value;
-        unset($params['fq'][$delta]);
+        unset($query->params['fq'][$delta]);
       }
     }
     if ($qalt) {
-      $params['q.alt'] = implode(' ', $qalt);
+      $query->params['q.alt'] = implode(' ', $qalt);
     }
   }
-  // This is the object that does the communication with the solr server.
-  $solr = apachesolr_get_solr();
   // We must run htmlspecialchars() here since converted entities are in the index.
   // and thus bare entities &, > or < won't match.
-  $response = $solr->search(htmlspecialchars($keys, ENT_NOQUOTES, 'UTF-8'), $params['start'], $params['rows'], $params);
+  $response = $query->search(htmlspecialchars($keys, ENT_NOQUOTES, 'UTF-8'));
   // The response is cached so that it is accessible to the blocks and anything
   // else that needs it beyond the initial search.
   apachesolr_static_response_cache($response, $caller);
@@ -2086,7 +2082,6 @@ function apachesolr_theme() {
 function apachesolr_mlt_suggestions($settings, $id) {
 
   try {
-    $solr = apachesolr_get_solr();
     $fields = array(
       'mlt_mintf' => 'mlt.mintf',
       'mlt_mindf' => 'mlt.mindf',
@@ -2096,39 +2091,41 @@ function apachesolr_mlt_suggestions($settings, $id) {
       'mlt_boost' => 'mlt.boost',
       'mlt_qf' => 'mlt.qf',
     );
-
-    $params = array(
+    // @TODO: some way to specify a Solr object?
+    $query = apachesolr_drupal_query('id:' . $id);
+    $query->params = array(
       'qt' => 'mlt',
       'fl' => 'nid,title,path,url',
       'mlt.fl' => implode(',', $settings['mlt_fl']),
+      'start' => 0,
+      'rows' => $settings['num_results'],
     );
 
     foreach ($fields as $form_key => $name) {
       if (!empty($settings[$form_key])) {
-        $params[$name] = $settings[$form_key];
+        $query->params[$name] = $settings[$form_key];
       }
     }
-    $query = apachesolr_drupal_query('id:' . $id);
 
     $type_filters = array();
     if (is_array($settings['mlt_type_filters'])) {
       foreach ($settings['mlt_type_filters'] as $type_filter) {
         $type_filters[] = "type:{$type_filter}";
       }
-      $params['fq']['mlt'][] = '(' . implode(' OR ', $type_filters) . ') ';
+      $query->params['fq']['mlt'][] = '(' . implode(' OR ', $type_filters) . ') ';
     }
 
     if ($custom_filters = $settings['mlt_custom_filters']) {
-      $params['fq']['mlt'][] = $custom_filters;
+      $query->params['fq']['mlt'][] = $custom_filters;
     }
 
-    // This hook allows modules to modify the query and params objects.
-    apachesolr_modify_query($query, $params, 'apachesolr_mlt');
+    // This hook allows modules to modify the query object.
+    apachesolr_modify_query($query, 'apachesolr_mlt');
     if (empty($query)) {
       return;
     }
 
-    $response = $solr->search($query->get_query_basic(), 0, $settings['num_results'], $params);
+    $response = $query->search();
 
     if ($response->response) {
       $docs = (array) end($response->response);
@@ -2447,4 +2444,25 @@ interface Drupal_Solr_Query_Interface {
    * Remove all subqueries.
    */
   function remove_subqueries();
+
+  /**
+   * Send a search query using the Solr object passed into the constructor.
+   *
+   * @param $keys
+   *   If not set, the query object will supply keywords based on its
+   *   instance variables. The params for the search are taken from
+   *   the public $query->params array.
+   *
+   * @return
+   *   A response object.
+   */
+  function search($keys = NULL);
+
+  /**
+   * Call a method on the Solr object passed into the constructor.
+   *
+   * @return
+   *   Any method return.
+   */
+  function solr($method);
 }

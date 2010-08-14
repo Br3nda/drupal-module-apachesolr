@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.18 2010/06/16 14:24:34 jpmckinney Exp $
+// $Id: Solr_Base_Query.php,v 1.19 2010/08/14 00:16:30 pwolanin Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -59,6 +59,11 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
    * Each query/subquery will have a unique ID
    */
   public $id;
+
+  /**
+   * The parameters that get sent to Solr.
+   */
+  public $params = array('start' => 0, 'rows' => 10);
 
   /**
    * A keyed array where the key is a position integer and the value
@@ -449,5 +454,16 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
       }
     }
     return $query;
+  }
+
+  function search($keys = NULL) {
+    if (!isset($keys)) {
+      $keys = $this->rebuild_query();
+    }
+    return $this->solr->search($keys, $this->params['start'], $this->params['rows'], $this->params);
+  }
+
+  function solr($method) {
+    return $this->solr->$method();
   }
 }
