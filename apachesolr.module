@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.35 2010/08/14 00:16:30 pwolanin Exp $
+// $Id: apachesolr.module,v 1.36 2010/08/14 13:44:20 pwolanin Exp $
 
 /**
  * @file
@@ -1498,41 +1498,6 @@ function apachesolr_modify_query($query, $caller) {
     // We don't bother telling Solr to do its default sort.
     if ($sortstring != 'score desc') {
       $query->params['sort'] = $sortstring;
-    }
-  }
-  $ors = array();
-  $facet_info = apachesolr_get_facet_definitions();
-  foreach ($facet_info as $infos) {
-    foreach ($infos as $delta => $facet) {
-      if ($facet['operator'] == 'OR') {
-        $ors[] = $delta;
-      }
-    }
-  }
-
-  if (isset($query->params['fq'])) {
-    $filter_queries = $query->params['fq'];
-    foreach ($filter_queries as $delta => $values) {
-      $fq = $tag = '';
-      $op = 'AND';
-      $fields = array($delta);
-      if ($delta == 'tid') {
-        if (function_exists('taxonomy_term_load')) {
-          foreach ($values as $value) {
-            $filters = $query->filter_extract($value, 'tid');
-            $term = taxonomy_term_load($filters[0]['#value']);
-            $fields[] = 'im_vid_' . $term->vid;
-          }
-        }
-      }
-
-      if (array_intersect($fields, $ors)) {
-        $tag = "{!tag=$delta}";
-        $op = 'OR';
-      }
-      $fq = implode(" $op ", $query->params['fq'][$delta]);
-      $query->params['fq'][] = $tag . $fq;
-      unset($query->params['fq'][$delta]);
     }
   }
 }

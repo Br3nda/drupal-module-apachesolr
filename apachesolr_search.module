@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.32 2010/08/14 00:16:30 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.33 2010/08/14 13:44:20 pwolanin Exp $
 
 /**
  * @file
@@ -186,6 +186,38 @@ function apachesolr_search_theme_search_results($search_result, $type){
 function apachesolr_search_apachesolr_document_handlers($type, $namespace) {
   if ($type == 'node' && $namespace == 'apachesolr_search') {
     return array('apachesolr_node_to_document');
+  }
+}
+
+/**
+ * Handle OR facets.
+ */
+function apachesolr_search_finalize_query($query) {
+  $ors = array();
+  $facet_info = apachesolr_get_facet_definitions();
+  foreach ($facet_info as $infos) {
+    foreach ($infos as $delta => $facet) {
+      if ($facet['operator'] == 'OR') {
+        $ors[] = $delta;
+      }
+    }
+  }
+
+  if (isset($query->params['fq'])) {
+    $filter_queries = $query->params['fq'];
+    foreach ($filter_queries as $delta => $values) {
+      $fq = $tag = '';
+      $op = 'AND';
+      $fields = array($delta);
+
+      if (array_intersect($fields, $ors)) {
+        $tag = "{!tag=$delta}";
+        $op = 'OR';
+      }
+      $fq = implode(" $op ", $query->params['fq'][$delta]);
+      $query->params['fq'][] = $tag . $fq;
+      unset($query->params['fq'][$delta]);
+    }
   }
 }
 
