@@ -1,5 +1,5 @@
 <?php
-// $Id: Solr_Base_Query.php,v 1.1.4.48 2010/06/14 02:51:30 pwolanin Exp $
+// $Id: Solr_Base_Query.php,v 1.1.4.49 2010/08/19 16:39:04 pwolanin Exp $
 
 class Solr_Base_Query implements Drupal_Solr_Query_Interface {
 
@@ -66,7 +66,9 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
    * used for filter queries, e.g. array('#name' => 'uid', '#value' => 0)
    * for anonymous content.
    */
-  protected $fields;
+  protected $fields = array();
+  protected $fields_added = array();
+  protected $fields_removed = array();
 
   /**
    * The complete filter string for a query.  Usually from $_GET['filters']
@@ -163,7 +165,9 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
   }
 
   public function add_filter($field, $value, $exclude = FALSE, $callbacks = array()) {
-    $this->fields[] = array('#exclude' => $exclude, '#name' => $field, '#value' => trim($value), '#callbacks' => $callbacks);
+    $filter = array('#exclude' => $exclude, '#name' => $field, '#value' => trim($value), '#callbacks' => $callbacks);
+    $this->fields[] = $filter;
+    $this->fields_added[] = $filter;
   }
 
   public function remove_filter($name, $value = NULL) {
@@ -171,17 +175,26 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
     if (empty($name)) {
       return;
     }
+    // Record the removal.
+    $this->fields_removed[$name][] = $value;
+    // Remove from the public list of filters.
+    $this->unset_filter($this->fields, $name, $value);
+    // Remove from the list of filters added with add_filter()
+    $this->unset_filter($this->fields_added, $name, $value);
+  }
+
+  protected function unset_filter(&$fields, $name, $value) {
     if (!isset($value)) {
-      foreach ($this->fields as $pos => $values) {
+      foreach ($fields as $pos => $values) {
         if ($values['#name'] == $name) {
-          unset($this->fields[$pos]);
+          unset($fields[$pos]);
         }
       }
     }
     else {
-      foreach ($this->fields as $pos => $values) {
+      foreach ($fields as $pos => $values) {
         if ($values['#name'] == $name && $values['#value'] == $value) {
-          unset($this->fields[$pos]);
+          unset($fields[$pos]);
         }
       }
     }
@@ -375,6 +388,7 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
    */
   protected function parse_filters() {
     $this->fields = array();
+    $parsed_fields = array();
     $filterstring = $this->filterstring;
 
     // Gets information about the fields already in solr index.
@@ -390,13 +404,19 @@ class Solr_Base_Query implements Drupal_Solr_Query_Interface {
           // $solr_keys and $solr_crumbs are keyed on $pos so that query order
           // is maintained. This is important for breadcrumbs.
           $filter['#name'] = $name;
-          $this->fields[$pos] = $filter;
+          $parsed_fields[$pos] = $filter;
         }
       }
     }
     // Even though the array has the right keys they are likely in the wrong
     // order. ksort() sorts the array by key while maintaining the key.
-    ksort($this->fields);
+    ksort($parsed_fields);
+    foreach ($this->fields_removed as $name => $values) {
+      foreach ($values as $val) {
+        $this->unset_filter($parsed_fields, $name, $val);
+      }
+    }
+    $this->fields = array_merge(array_values($parsed_fields), $this->fields_added);
   }
 
   /**
