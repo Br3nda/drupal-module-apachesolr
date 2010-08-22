@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.112.2.59 2010/07/25 16:33:19 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.112.2.60 2010/08/22 08:30:00 pwolanin Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 5.x-2.x, 2010-xx-xx
 ------------------------------
+#885950 by pwolanin, csevb10 preserve added/removed filters when filterstring is re-parsed.
 #864160 by pwolanin: Allow the caller a last chance to modify the query and params.
 #847040 by Agileware: Allow other modules to use facet only searching.
 #536990 by pwolanin | jpmckinney, janusman: always index content as an anonymous user.
