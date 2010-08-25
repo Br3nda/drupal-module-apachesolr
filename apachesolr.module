@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.37 2010/08/14 15:08:13 pwolanin Exp $
+// $Id: apachesolr.module,v 1.38 2010/08/25 07:30:42 pwolanin Exp $
 
 /**
  * @file
@@ -1862,6 +1862,8 @@ function apachesolr_node_fields() {
         'index_type' => 'string',
         'facet_block_callback' => '',
         'name_callback' => '',
+        // Field API allows any field to be multi-valued.
+        'multiple' => TRUE,
       );
     }
     // We are only concerned about fields on node entities.
@@ -1871,7 +1873,7 @@ function apachesolr_node_fields() {
       $row = array();
       if (isset($field['bundles']['node']) && (isset($mappings['per-field'][$field_name]) || isset($mappings[$field['type']]))) {
         // Find the mapping.
-        if (isset($mappings['per-field'][$field_name])){
+        if (isset($mappings['per-field'][$field_name])) {
           $row = $mappings['per-field'][$field_name];
         }
         else {
@@ -1879,8 +1881,6 @@ function apachesolr_node_fields() {
         }
         // The field info array.
         $row['field'] = $field;
-        // Field API allows any field to be multi-valued.
-        $row['multiple'] = TRUE;
         // Since we use the index key as the block delta in apachesolr_search, we need a name
         // to build whatever the index key is that is used for faceting.
         // @todo: for fields like taxonomy we are indexing multiple Solr fields
@@ -1895,7 +1895,7 @@ function apachesolr_node_fields() {
         $row['module_name'] = $modules[$field['module']]['name'];
         // Set display name
         $display_name = array();
-        foreach ($field['bundles']['node'] as $node_type){
+        foreach ($field['bundles']['node'] as $node_type) {
           if ($instances[$node_type][$field_name]['display']['search_index'] != 'hidden') {
             $row['display_name'] = $instances[$node_type][$field_name]['label'];
             $row['content_types'][] = $node_type;
