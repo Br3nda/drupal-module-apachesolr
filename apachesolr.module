@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.38 2010/08/25 07:30:42 pwolanin Exp $
+// $Id: apachesolr.module,v 1.39 2010/08/25 09:15:08 pwolanin Exp $
 
 /**
  * @file
@@ -1839,6 +1839,7 @@ function apachesolr_node_fields() {
         'indexing_callback' => 'apachesolr_term_reference_indexing_callback',
         'index_type' => 'integer',
         'facet_block_callback' => 'apachesolr_search_taxonomy_facet_block',
+        'name_callback' => 'apacehsolr_term_reference_name',
       ),
       'node_reference' => array(
         'display_callback' => 'apachesolr_cck_nodereference_field_callback',
