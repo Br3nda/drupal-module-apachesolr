@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.161.2.37 2010/07/25 16:33:19 pwolanin Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.161.2.38 2010/09/01 16:33:33 robertDouglass Exp $
 
 /**
  * @file
@@ -1219,7 +1219,7 @@ function apachesolr_get_solr($host = NULL, $port = NULL, $path = NULL) {
  *
  * @throws Exception
  */
-function apachesolr_do_query($caller, $current_query, $params = array('rows' => 10), $page = 0) {
+function apachesolr_do_query($caller, $current_query, &$params = array('rows' => 10), $page = 0) {
   // Allow modules to alter the query prior to statically caching it.
   // This can e.g. be used to add available sorts.
   foreach (module_implements('apachesolr_prepare_query') as $module) {
