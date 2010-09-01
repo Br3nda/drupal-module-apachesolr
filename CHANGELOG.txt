@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.188 2010/08/19 16:39:04 pwolanin Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.189 2010/09/01 16:32:31 robertDouglass Exp $
 
 Apache Solr Search Integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr Search Integration 6.x-1.3, xxxx-xx-xx
 ------------------------------
+#899560 by robertDouglass: Fixed apachesolr_do_query() has to take $params by reference.
 #885950 by pwolanin, csevb10 preserve added/removed filters when filterstring is re-parsed.
 
 Apache Solr Search Integration 6.x-1.2, 2010-08-11
