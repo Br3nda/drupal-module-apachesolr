@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.126 2010/09/03 19:16:49 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.127 2010/09/03 19:18:32 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#878996 by pwolanin | weri: Added Don't break the loop .
 #373824 by pwolanin | David Stosik: Fixed Attachment count is not displayed in search results.
 #896324 by ahankinson | jpmckinney: Fixed module_invoke() called too late.
 #901720 by robertDouglass: Fixed Highlighting snippets in search results not flexible enough, and logic improvement.
