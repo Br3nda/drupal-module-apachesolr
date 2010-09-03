@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.122 2010/09/01 16:31:08 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.123 2010/09/03 18:22:48 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#899590 by robertDouglass: Changed CCK facet definitions needs to expand its role and have a 'facets' param.
 #899560 by robertDouglass: Fixed apachesolr_do_query() has to take $params by reference.
 #751004 by pwolanin, jpmckinney, rjbrown99, robertDouglass | EugenMayer, camidoo: Fixed Respect NODE_BUILD_SEARCH_INDEX exclusion setting.
 #885950 by pwolanin, csevb10 preserve added/removed filters when filterstring is re-parsed.

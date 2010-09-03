@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.108 2010/09/01 16:31:08 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.109 2010/09/03 18:22:48 robertDouglass Exp $
 
 /**
  * @file
@@ -1907,11 +1907,13 @@ function apachesolr_cck_fields() {
           'display_callback' => 'apachesolr_cck_text_field_callback',
           'indexing_callback' => 'apachesolr_cck_text_indexing_callback',
           'index_type' => 'string',
+          'facets' => TRUE,
         ),
         'optionwidgets_buttons' => array(
           'display_callback' => 'apachesolr_cck_text_field_callback',
           'indexing_callback' => 'apachesolr_cck_text_indexing_callback',
           'index_type' => 'string',
+          'facets' => TRUE,
         ),
       );
       $mappings['nodereference'] = array(
@@ -1919,16 +1921,19 @@ function apachesolr_cck_fields() {
           'display_callback' => 'apachesolr_cck_nodereference_field_callback',
           'indexing_callback' => 'apachesolr_cck_nodereference_indexing_callback',
           'index_type' => 'integer',
+          'facets' => TRUE,
         ),
         'nodereference_select' => array(
           'display_callback' => 'apachesolr_cck_nodereference_field_callback',
           'indexing_callback' => 'apachesolr_cck_nodereference_indexing_callback',
           'index_type' => 'integer',
+          'facets' => TRUE,
         ),
         'nodereference_autocomplete' => array(
           'display_callback' => 'apachesolr_cck_nodereference_field_callback',
           'indexing_callback' => 'apachesolr_cck_nodereference_indexing_callback',
           'index_type' => 'integer',
+          'facets' => TRUE,
         ),
       );
       $mappings['userreference'] = array(
@@ -1936,16 +1941,19 @@ function apachesolr_cck_fields() {
           'display_callback' => 'apachesolr_cck_userreference_field_callback',
           'indexing_callback' => 'apachesolr_cck_userreference_indexing_callback',
           'index_type' => 'integer',
+          'facets' => TRUE,
         ),
         'userreference_select' => array(
           'display_callback' => 'apachesolr_cck_userreference_field_callback',
           'indexing_callback' => 'apachesolr_cck_userreference_indexing_callback',
           'index_type' => 'integer',
+          'facets' => TRUE,
         ),
         'userreference_autocomplete' => array(
           'display_callback' => 'apachesolr_cck_userreference_field_callback',
           'indexing_callback' => 'apachesolr_cck_userreference_indexing_callback',
           'index_type' => 'integer',
+          'facets' => TRUE,
         ),
       );
       // Allow other modules to add or alter mappings.
@@ -1955,17 +1963,24 @@ function apachesolr_cck_fields() {
         $field_type = $instance['type'];
         $field_name = $instance['field_name'];
         $widget_type = $instance['widget']['type'];
+        if (!isset($mappings[$field_type][$widget_type]) && !isset($mappings['per_field'][$field_name]) && isset($mappings[$field_type]['default'])) {
+          $widget_type = 'default';
+        }
         // Only deal with fields that have index mappings and that have not been marked for exclusion.
-        if ((isset($mappings[$field_type][$widget_type]) || isset($mappings['per-field'][$field_name])) && empty($instance['display_settings'][NODE_BUILD_SEARCH_INDEX]['exclude'])) {
+       if ((isset($mappings[$field_type][$widget_type]) ||
+             isset($mappings['per-field'][$field_name])) &&
+             empty($instance['display_settings'][NODE_BUILD_SEARCH_INDEX]['exclude'])) {
           if (isset($mappings['per-field'][$field_name])) {
             $instance['index_type'] = $mappings['per-field'][$field_name]['index_type'];
             $instance['indexing_callback'] = $mappings['per-field'][$field_name]['indexing_callback'];
             $instance['display_callback'] = $mappings['per-field'][$field_name]['display_callback'];
+            $instance['facets'] = $mappings['per-field'][$field_name]['facets'];
           }
           else {
             $instance['index_type'] = $mappings[$field_type][$widget_type]['index_type'];
             $instance['indexing_callback'] = $mappings[$field_type][$widget_type]['indexing_callback'];
             $instance['display_callback'] = $mappings[$field_type][$widget_type]['display_callback'];
+            $instance['facets'] = $mappings[$field_type][$widget_type]['facets'];
           }
           $instance['multiple'] = (bool) $instance['multiple'];
           $instance['name'] = 'cck_' . $field_name;

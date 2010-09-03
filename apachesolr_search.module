@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.86 2010/09/01 15:16:44 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.87 2010/09/03 18:22:48 robertDouglass Exp $
 
 /**
  * @file
@@ -671,14 +671,16 @@ function apachesolr_search_apachesolr_facets() {
   $fields = apachesolr_cck_fields();
   if ($fields) {
     foreach ($fields as $name => $field) {
-      // $delta can only be 32 chars, and the CCK field name may be this
-      // long also, so we cannot add anything to it.
-      $facets[$field['field_name']] = array_merge($field, array(
-          'info' => t('CCK @field_type field: Filter by @field (@field_name)', array('@field_type' => $field['field_type'], '@field' => $field['widget']['label'], '@field_name' => $field['field_name'])),
+      if ($field['facets']) {
+        // $delta can only be 32 chars, and the CCK field name may be this
+        // long also, so we cannot add anything to it.
+        $placeholders = array('@field_type' => $field['field_type'], '@field' => $field['widget']['label'], '@field_name' => $field['field_name']);
+        $facets[$field['field_name']] = array_merge($field, array(
+          'info' => t('CCK @field_type field: Filter by @field (@field_name)', $placeholders),
           'facet_field' => apachesolr_index_key($field),
           'content_types' => $field['content_types'],
-        )
-      );
+        ));
+      }
     }
   }
   return $facets;

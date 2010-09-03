@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_date.module,v 1.1.2.5 2010/06/02 21:24:25 jpmckinney Exp $
+// $Id: apachesolr_date.module,v 1.1.2.6 2010/09/03 18:24:20 robertDouglass Exp $
 
 /**
  * @file
@@ -132,6 +132,7 @@ function apachesolr_date_apachesolr_cck_fields_alter(&$mappings) {
       'index_type' => 'tdate',
       'facet_block_callback' => 'apachesolr_date_date_facet_block',
       'display_callback'     => 'apachesolr_date_display_callback',
+      'facets' => TRUE,
   );
   // NOTE: The structure of this array essentially blocks us from having
   // multiple mappings per CCK field. For that we'd need a structure like
