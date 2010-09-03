@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.index.inc,v 1.1.2.6.2.30 2010/05/03 19:38:24 jpmckinney Exp $
+// $Id: apachesolr.index.inc,v 1.1.2.6.2.31 2010/09/03 19:14:58 robertDouglass Exp $
 
 /**
  * @file
@@ -149,6 +149,9 @@ function apachesolr_node_to_document($node, $namespace) {
     apachesolr_add_tags_to_document($document, $text);
     apachesolr_add_taxonomy_to_document($document, $node);
 
+    if (isset($node->files) && is_array($node->files)) {
+      $document->is_upload_count = count($node->files);
+    }
     // Let modules add to the document.
     foreach (module_implements('apachesolr_update_index') as $module) {
       $function = $module .'_apachesolr_update_index';

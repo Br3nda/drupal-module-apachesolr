@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.89 2010/09/03 18:59:57 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.90 2010/09/03 19:14:58 robertDouglass Exp $
 
 /**
  * @file
@@ -533,11 +533,9 @@ function apachesolr_search_process_response($response, $query, $params) {
   apachesolr_pager_init($total, $params['rows']);
   if ($total > 0) {
     foreach ($response->response->docs as $doc) {
-      $extra = array();
-
+	  // Snippets.
       // Start with an empty snippets array.
       $snippets = array();
-
       // Find the nicest available snippet.
       foreach ($hl_fl as $hl_param) {
         if (isset($response->highlighting->{$doc->id}->$hl_param)) {
@@ -554,10 +552,11 @@ function apachesolr_search_process_response($response, $query, $params) {
         }
       }
       $snippet = theme('apachesolr_search_snippets', $doc, $snippets);
-
       if (!isset($doc->body)) {
         $doc->body = $snippet;
       }
+
+
       $doc->created = strtotime($doc->created);
       $doc->changed = strtotime($doc->changed);
       $extra = array();
