@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.87 2010/09/03 18:22:48 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.88 2010/09/03 18:35:02 robertDouglass Exp $
 
 /**
  * @file
@@ -528,23 +528,32 @@ function apachesolr_search_add_boost_params(&$params, $query, $solr) {
 function apachesolr_search_process_response($response, $query, $params) {
   $results = array();
   // We default to getting snippets from the body.
-  $hl_fl = isset($params['hl.fl']) ? $params['hl.fl'] : 'body';
+  $hl_fl = isset($params['hl.fl']) ? explode(',', $params['hl.fl']) : array('body');
   $total = $response->response->numFound;
   apachesolr_pager_init($total, $params['rows']);
   if ($total > 0) {
     foreach ($response->response->docs as $doc) {
       $extra = array();
 
+      // Start with an empty snippets array.
+      $snippets = array();
+
       // Find the nicest available snippet.
-      if (isset($response->highlighting->{$doc->id}->$hl_fl)) {
-        $snippet = theme('apachesolr_search_snippets', $doc, $response->highlighting->{$doc->id}->$hl_fl);
+      foreach ($hl_fl as $hl_param) {
+        if (isset($response->highlighting->{$doc->id}->$hl_param)) {
+          // Merge arrays preserving keys.
+          foreach ($response->highlighting->{$doc->id}->$hl_param as $values) {
+            $snippets[$hl_param] = $values;
+          }
+        }
       }
-      elseif (isset($doc->teaser)) {
-        $snippet = theme('apachesolr_search_snippets', $doc, array(truncate_utf8($doc->teaser, 256, TRUE)));
+      // If there's no snippet at this point, add the teaser.
+      if (strlen($snippet) == 0) {
+        if (isset($doc->teaser)) {
+          $snippets[] = truncate_utf8($doc->teaser, 256, TRUE);
+        }
       }
-      else {
-        $snippet = '';
-      }
+      $snippet = theme('apachesolr_search_snippets', $doc, $snippets);
 
       if (!isset($doc->body)) {
         $doc->body = $snippet;
@@ -1332,7 +1341,7 @@ function apachesolr_search_theme() {
       'arguments' => array('total_found' => NULL, 'links' => NULL),
     ),
     'apachesolr_search_snippets' => array(
-      'arguments' => array('doc' => NULL, 'snippets' => NULL),
+      'arguments' => array('doc' => NULL, 'snippets' => array()),
     ),
     'apachesolr_search_noresults' => array(
       'arguments' => array(),
@@ -1455,9 +1464,21 @@ function theme_apachesolr_currentsearch($total_found, $links) {
  * @param array $snippets
  *
  */
-function theme_apachesolr_search_snippets($doc, $snippets) {
-  return implode(' ... ', $snippets) .' ...';
+function theme_apachesolr_search_snippets($doc, $snippets = array()) {
+  $result = '';
+  if (isset($snippets['body'])) {
+    $result .= $snippets['body'];
+    unset($snippets['body']);
+  }
+  if (isset($snippets['teaser'])) {
+    $result .= (strlen($result) > 0) ? ' ... ' : '';
+    $result .= $snippets['teaser'];
+    unset($snippets['teaser']);
+  }
+  $result .= (strlen($result) > 0) ? ' ... ' : '';
+  return $result . implode(' ... ', $snippets) . ' ...';
 }
+
 
 /**
  * Brief message to display when no results match the query.
