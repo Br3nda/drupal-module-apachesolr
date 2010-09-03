@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.124 2010/09/03 18:35:35 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.125 2010/09/03 18:59:57 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#896324 by ahankinson | jpmckinney: Fixed module_invoke() called too late.
 #901720 by robertDouglass: Fixed Highlighting snippets in search results not flexible enough, and logic improvement.
 #899590 by robertDouglass: Changed CCK facet definitions needs to expand its role and have a 'facets' param.
 #899560 by robertDouglass: Fixed apachesolr_do_query() has to take $params by reference.

@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.88 2010/09/03 18:35:02 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.89 2010/09/03 18:59:57 robertDouglass Exp $
 
 /**
  * @file
@@ -275,12 +275,12 @@ function apachesolr_search_browse($keys = '', $filters = '', $solrsort = '', $ba
       if (count((array) $response->facet_counts->facet_fields->$facet_field) > 0 ||
           count((array) $response->facet_counts->facet_dates->$facet_field) > 0) {
         // This bit is modeled on block.module, block_list().
+        $hook_block = (object)module_invoke($module, 'block', 'view', $delta);
         $result = db_query_range(db_rewrite_sql("SELECT DISTINCT b.* FROM {blocks} b
           LEFT JOIN {blocks_roles} r ON b.module = r.module AND b.delta = r.delta
           WHERE b.module = '%s' AND b.delta = '%s' AND b.theme = '%s' AND b.status = 1
             AND (r.rid IN (". db_placeholders($rids) .") OR r.rid IS NULL)", 'b', 'bid'), array_merge(array($module, $delta, $theme_key), $rids), 0, 1);
         $block = db_fetch_object($result);
-        $hook_block = (object)module_invoke($module, 'block', 'view', $delta);
         $block->content = $hook_block->content;
         $block->subject = str_replace(t('Filter by '), t('Browse by '), $hook_block->subject);
         // We can safely assume these values, since we're taking over the block display.
