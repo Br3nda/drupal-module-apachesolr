@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.admin.inc,v 1.1.2.28.2.36 2010/05/03 18:50:27 jpmckinney Exp $
+// $Id: apachesolr.admin.inc,v 1.1.2.28.2.37 2010/09/03 19:28:11 robertDouglass Exp $
 
 /**
  * @file
@@ -492,6 +492,57 @@ function apachesolr_mlt_add_block_form_submit($form, &$form_state) {
   apachesolr_mlt_save_block($form_state['values']);
   drupal_set_message('New content recommendation block created.  Drag it into a region to enable it');
   $form_state['redirect'] = 'admin/build/block';
+}
+
+/**
+ * Page callback to show available conf files.
+ */
+function apachesolr_config_files_overview() {
+  $output = '';
+  $xml = NULL;
+  try {
+    $solr = apachesolr_get_solr();
+    $response = $solr->makeServletRequest('admin/file');
+    $xml = simplexml_load_string($response->getRawResponse());
+  }
+  catch (Exception $e) {
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    drupal_set_message(nl2br(check_plain($e->getMessage())), "warning");
+  }
+  if ($xml) {
+    $files = $xml->xpath('//lst[@name="files"]/lst');
+    $items = array();
+    foreach ($files as $file) {
+      $atr = $file->attributes();
+      $name = (string) $atr[0];
+      $str = l($name, 'admin/reports/apachesolr/conf/'. $name);
+      $str .= '<br />' . format_date(strtotime((string) $file->date));
+      $str .= '<br />' . t('Size (bytes): @bytes', array('@bytes' => (string) $file->long));
+      $items[$name] = $str;
+    }
+    ksort($items);
+    $output .= theme('item_list', array_values($items));
+  }
+  return $output;
+}
+
+/**
+ * Page callback to show one conf file.
+ */
+function apachesolr_config_file($name) {
+  $output = '';
+  try {
+    $solr = apachesolr_get_solr();
+    $response = $solr->makeServletRequest('admin/file', array('file' => $name));
+    $raw_file = $response->getRawResponse();
+    $output = '<pre>' . check_plain($raw_file) . '</pre>';
+    drupal_set_title(check_plain($name));
+  }
+  catch (Exception $e) {
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    drupal_set_message(nl2br(check_plain($e->getMessage())), "warning");
+  }
+  return $output;
 }
 
 /**

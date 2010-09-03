@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.127 2010/09/03 19:18:32 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.128 2010/09/03 19:28:11 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#704190 by pwolanin: Added Add page callbacks to display conf files in the index in reports.
 #878996 by pwolanin | weri: Added Don't break the loop .
 #373824 by pwolanin | David Stosik: Fixed Attachment count is not displayed in search results.
 #896324 by ahankinson | jpmckinney: Fixed module_invoke() called too late.

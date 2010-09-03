@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.110 2010/09/03 19:18:32 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.111 2010/09/03 19:28:11 robertDouglass Exp $
 
 /**
  * @file
@@ -104,6 +104,22 @@ function apachesolr_menu() {
     'title'              => 'Search index',
     'file'               => 'apachesolr.admin.inc',
     'type'               => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['admin/reports/apachesolr/conf'] = array(
+    'title'              => 'Configuration files',
+    'page callback'      => 'apachesolr_config_files_overview',
+    'access arguments'   => array('access site reports'),
+    'file'               => 'apachesolr.admin.inc',
+    'weight'             => 5,
+    'type'               => MENU_LOCAL_TASK,
+  );
+  $items['admin/reports/apachesolr/conf/%'] = array(
+    'title'              => 'Configuration file',
+    'page callback'      => 'apachesolr_config_file',
+    'page arguments'     => array(4),
+    'access arguments'   => array('access site reports'),
+    'file'               => 'apachesolr.admin.inc',
+    'type'               => MENU_CALLBACK,
   );
   $items['admin/settings/apachesolr/mlt/add_block'] = array(
     'page callback'      => 'drupal_get_form',
