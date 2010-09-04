@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.131 2010/09/04 11:58:09 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.132 2010/09/04 12:07:15 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#840358 by pwolanin | torstenzenk: Fixed Error searching Taxonomies.
 #828412 by eosrei | jpmckinney: Fixed apachesolr_get_facet_definition() searches incorrect field for definition.
 #864146 by pwolanin | jpmckinney: Fixed When moving fq to q.alt, we should parenthesize each fq.
 NEW MODULE: ApacheSolr Text; takes care of text fields from CCK with content permissions.
