@@ -1,9 +1,12 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.132 2010/09/04 12:07:15 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.133 2010/09/04 12:41:37 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
+------------------------------
+
+Apache Solr integration 6.x-2.0-BETA3, 2010-09-04
 ------------------------------
 #840358 by pwolanin | torstenzenk: Fixed Error searching Taxonomies.
 #828412 by eosrei | jpmckinney: Fixed apachesolr_get_facet_definition() searches incorrect field for definition.
