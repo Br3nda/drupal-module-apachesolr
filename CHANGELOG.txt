@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.129 2010/09/04 11:18:44 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.130 2010/09/04 11:25:14 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#864146 by pwolanin | jpmckinney: Fixed When moving fq to q.alt, we should parenthesize each fq.
 NEW MODULE: ApacheSolr Text; takes care of text fields from CCK with content permissions.
 #704190 by pwolanin: Added Add page callbacks to display conf files in the index in reports.
 #878996 by pwolanin | weri: Added Don't break the loop .

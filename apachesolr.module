@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.111 2010/09/03 19:28:11 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.112 2010/09/04 11:25:14 robertDouglass Exp $
 
 /**
  * @file
@@ -1687,7 +1687,7 @@ function apachesolr_do_query($caller, $current_query, &$params = array('rows' =>
     foreach ($params['fq'] as $delta => $value) {
       // Move the fq param if it has no local params and is not negative.
       if (!preg_match('/^(?:\{!|-)/', $value)) {
-        $qalt[] = $value;
+        $qalt[] = '(' . $value . ')';
         unset($params['fq'][$delta]);
       }
     }
