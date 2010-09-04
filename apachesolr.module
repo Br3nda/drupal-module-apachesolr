@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr.module,v 1.1.2.12.2.155.2.112 2010/09/04 11:25:14 robertDouglass Exp $
+// $Id: apachesolr.module,v 1.1.2.12.2.155.2.113 2010/09/04 11:58:09 robertDouglass Exp $
 
 /**
  * @file
@@ -939,7 +939,7 @@ function apachesolr_get_facet_definition_by_field_name($field_name) {
   $definitions = apachesolr_get_facet_definitions();
   foreach ($definitions as $module => $facets) {
     foreach ($facets as $key => $values) {
-      if (isset($values['field_name']) && $values['field_name'] == $field_name) {
+      if (isset($values['facet_field']) && $values['facet_field'] == $field_name) {
         return $definitions[$module][$key];
       }
     }

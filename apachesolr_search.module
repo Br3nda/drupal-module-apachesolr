@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.91 2010/09/03 19:16:49 robertDouglass Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.111.2.92 2010/09/04 11:58:09 robertDouglass Exp $
 
 /**
  * @file
@@ -1008,7 +1008,7 @@ function apachesolr_search_nested_facet_items($query, $facets, $num_found, $sort
 function apachesolr_search_taxonomy_get_term($tid) {
   if (function_exists('taxonomy_get_term')) {
     $term = taxonomy_get_term($tid);
-    return $term['name'];
+    return $term->name;
   }
 }
 
