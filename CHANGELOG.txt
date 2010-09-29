@@ -1,10 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.99.2.134 2010/09/13 15:26:54 robertDouglass Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.99.2.135 2010/09/29 14:26:07 robertDouglass Exp $
 
 Apache Solr integration x.x-x.x, xxxx-xx-xx
 ------------------------------
 
 Apache Solr integration 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#925700 by janusman: Changed Quick fix: reduce t() string duplicity.
 #910100 by robertDouglass: Changed Make whole $snippets array available to theme layer.
 
 Apache Solr integration 6.x-2.0-BETA3, 2010-09-04
