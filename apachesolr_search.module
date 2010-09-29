@@ -1,5 +1,5 @@
 <?php
-// $Id: apachesolr_search.module,v 1.1.2.6.2.156 2010/08/11 21:43:16 pwolanin Exp $
+// $Id: apachesolr_search.module,v 1.1.2.6.2.157 2010/09/29 14:25:19 robertDouglass Exp $
 
 /**
  * @file
@@ -727,7 +727,7 @@ function apachesolr_search_taxonomy_facet_block($response, $query, $delta) {
       $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
       $limit = isset($initial_limits['apachesolr_search'][$delta]) ? $initial_limits['apachesolr_search'][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
       return array(
-        'subject' => t('Filter by @name', array('@name' => $vocab->name)),
+        'subject' => t('Filter by @field', array('@field' => $vocab->name)),
         'content' => theme('apachesolr_facet_list', $items, $limit),
       );
     }
