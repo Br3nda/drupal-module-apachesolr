@@ -1,4 +1,4 @@
-/* $Id: README.txt,v 1.1.2.1.2.25.2.9 2010/07/25 16:33:19 pwolanin Exp $ */
+/* $Id: README.txt,v 1.1.2.1.2.25.2.10 2010/10/11 17:19:41 pwolanin Exp $ */
 
 This module integrates Drupal with the Apache Solr search platform. Solr search
 can be used as a replacement for core content search and boasts both extra
@@ -69,7 +69,7 @@ download, which includes all the items which are not in Drupal.org CVS due to
 CVS use policy. See the download link here: 
 http://acquia.com/documentation/acquia-search/activation
 
-Download Solr 1.4 from:
+Download the latest Solr 1.4.x release (e.g. 1.4.1) from:
 http://www.apache.org/dyn/closer.cgi/lucene/solr/
 
 Unpack the tarball somewhere not visible to the web (not in your apache docroot
@@ -77,18 +77,18 @@ and not inside of your drupal directory).
 
 The Solr download comes with an example application that you can use for
 testing, development, and even for smaller production sites. This
-application is found at apache-solr-nightly/example.
+application is found at apache-solr-1.4.1/example.
 
-Move apache-solr-nightly/example/solr/conf/schema.xml and rename it to
+Move apache-solr-1.4.1/example/solr/conf/schema.xml and rename it to
 something like schema.bak. Then move the schema.xml that comes with the
 ApacheSolr Drupal module to take its place.
 
-Similarly, move apache-solr-nightly/example/solr/conf/solrconfig.xml and rename
+Similarly, move apache-solr-1.4.1/example/solr/conf/solrconfig.xml and rename
 it like solrconfig.bak. Then move the solrconfig.xml that comes with the
 ApacheSolr Drupal module to take its place.
 
 Now start the solr application by opening a shell, changing directory to
-apache-solr-nightly/example, and executing the command java -jar start.jar
+apache-solr-1.4.1/example, and executing the command java -jar start.jar
 
 Test that your solr server is now available by visiting
 http://localhost:8983/solr/admin/
